@@ -60,7 +60,7 @@ export default async function AdminDashboardPage() {
       {/* Sites List */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#1A1A1A]">Tous les sites</h2>
+          <h2 className="text-lg font-semibold text-[#1A1A1A]">Tous les sites Hopper </h2>
           <span className="text-sm text-[#1A1A1A]/60">{totalSites} site(s)</span>
         </div>
 
