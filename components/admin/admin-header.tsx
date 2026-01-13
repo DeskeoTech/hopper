@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 const pageTitles: Record<string, string> = {
-  "/admin": "Dashboard",
+  "/admin": "Dashboard Hopper",
   "/admin/sites": "Sites",
   "/admin/reservations": "Réservations",
   "/admin/users": "Utilisateurs",
