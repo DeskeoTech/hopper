@@ -1,9 +1,9 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { Bell, Search, User } from "lucide-react"
+import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { signOut } from "@/app/login/actions"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard Hopper",
@@ -13,7 +13,11 @@ const pageTitles: Record<string, string> = {
   "/admin/settings": "Paramètres",
 }
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  userEmail?: string | null
+}
+
+export function AdminHeader({ userEmail }: AdminHeaderProps) {
   const pathname = usePathname()
 
   // Get title - check for dynamic routes
@@ -25,6 +29,18 @@ export function AdminHeader() {
   return (
     <header className="flex h-16 items-center justify-between bg-card px-6">
       <h1 className="type-h3 text-foreground">{title}</h1>
+
+      <div className="flex items-center gap-4">
+        {userEmail && (
+          <span className="type-small text-muted-foreground">{userEmail}</span>
+        )}
+        <form action={signOut}>
+          <Button type="submit" variant="ghost" size="sm">
+            <LogOut className="size-4" />
+            <span className="sr-only">Déconnexion</span>
+          </Button>
+        </form>
+      </div>
     </header>
   )
 }

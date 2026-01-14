@@ -24,3 +24,9 @@ export async function getSupabaseServerClient() {
     },
   )
 }
+
+export async function getUser() {
+  const supabase = await getSupabaseServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  return user
+}
