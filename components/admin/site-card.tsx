@@ -12,9 +12,9 @@ interface SiteCardProps {
 export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-brand-accent/50">
+      <article className="overflow-hidden rounded-sm border border-border bg-card transition-all hover:border-foreground/50">
         {/* Image */}
-        <div className="relative h-44 overflow-hidden bg-brand-muted">
+        <div className="relative h-44 overflow-hidden bg-muted">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -33,7 +33,7 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          <h3 className="text-lg font-semibold text-foreground group-hover:text-brand-accent transition-colors">
+          <h3 className="text-lg font-semibold text-foreground transition-colors">
             {site.name}
           </h3>
 

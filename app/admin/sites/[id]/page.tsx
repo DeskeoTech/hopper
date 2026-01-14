@@ -60,12 +60,12 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-accent">
-            <Building2 className="h-7 w-7 text-brand-accent-foreground" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-sm bg-muted">
+            <Building2 className="h-7 w-7 text-foreground" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-foreground">{site.name}</h1>
+              <h1 className="type-h2 text-foreground">{site.name}</h1>
               <StatusBadge status={site.status} size="md" />
             </div>
             <div className="mt-1 flex items-center gap-2 text-muted-foreground">
@@ -74,7 +74,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
             </div>
           </div>
         </div>
-        <Button className="bg-brand text-brand-foreground hover:bg-brand/90">
+        <Button>
           <Edit className="mr-2 h-4 w-4" />
           Modifier
         </Button>
@@ -84,7 +84,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
         {/* Main Info - Left Column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Site Images */}
-          <div className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="overflow-hidden rounded-sm border border-border bg-card">
             {photoUrls.length > 0 ? (
               <div className="relative">
                 <img
@@ -99,11 +99,11 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                         key={photo.id}
                         src={photo.url}
                         alt={photo.filename || `${site.name} - ${index + 2}`}
-                        className="h-16 w-24 rounded-lg object-cover border-2 border-card shadow-md"
+                        className="h-16 w-24 rounded-sm object-cover border-2 border-card"
                       />
                     ))}
                     {photoUrls.length > 5 && (
-                      <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-black/60 text-white text-sm font-medium">
+                      <div className="flex h-16 w-24 items-center justify-center rounded-sm bg-foreground/60 text-background text-sm font-medium">
                         +{photoUrls.length - 5}
                       </div>
                     )}
@@ -111,7 +111,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                 )}
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center bg-brand-muted">
+              <div className="flex h-64 items-center justify-center bg-muted">
                 <div className="text-center text-muted-foreground">
                   <Building2 className="mx-auto h-12 w-12 mb-2" />
                   <p>Aucune photo</p>
@@ -122,9 +122,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
 
           {/* Instructions & Access */}
           {(site.instructions || site.access) && (
-            <div className="rounded-xl border border-border bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <FileText className="h-5 w-5 text-brand-accent" />
+            <div className="rounded-sm border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+                <FileText className="h-5 w-5" />
                 Instructions & Accès
               </h2>
               <div className="space-y-4">
@@ -145,9 +145,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           )}
 
           {/* Resources */}
-          <div className="rounded-xl border border-border bg-card p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Building2 className="h-5 w-5 text-brand-accent" />
+          <div className="rounded-sm border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+              <Building2 className="h-5 w-5" />
               Ressources ({resources?.length || 0})
             </h2>
 
@@ -175,9 +175,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
         {/* Sidebar - Right Column */}
         <div className="space-y-6">
           {/* Opening Hours */}
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-sm border border-border bg-card p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Clock className="h-5 w-5 text-brand-accent" />
+              <Clock className="h-5 w-5" />
               Horaires
             </h2>
             <div className="space-y-3">
@@ -192,7 +192,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                   <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {site.opening_days.map((day) => (
-                      <span key={day} className="rounded bg-brand-muted px-2 py-1 text-xs font-medium text-foreground">
+                      <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
                         {day}
                       </span>
                     ))}
@@ -206,9 +206,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* WiFi */}
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-sm border border-border bg-card p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Wifi className="h-5 w-5 text-brand-accent" />
+              <Wifi className="h-5 w-5" />
               WiFi
             </h2>
             {site.wifi_ssid ? (
@@ -233,9 +233,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* Equipments */}
-          <div className="rounded-xl border border-border bg-card p-6">
+          <div className="rounded-sm border border-border bg-card p-6">
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Calendar className="h-5 w-5 text-brand-accent" />
+              <Calendar className="h-5 w-5" />
               Équipements
             </h2>
             {site.equipments && site.equipments.length > 0 ? (
@@ -251,9 +251,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
 
           {/* Coordinates */}
           {(site.latitude || site.longitude) && (
-            <div className="rounded-xl border border-border bg-card p-6">
+            <div className="rounded-sm border border-border bg-card p-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <MapPin className="h-5 w-5 text-brand-accent" />
+                <MapPin className="h-5 w-5" />
                 Coordonnées GPS
               </h2>
               <div className="space-y-1 text-sm">

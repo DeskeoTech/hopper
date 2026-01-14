@@ -24,7 +24,7 @@ export function AdminHeader() {
 
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
-      <h1 className="text-xl font-semibold text-foreground">{title}</h1>
+      <h1 className="type-h3 text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">
         {/* Search */}
@@ -33,7 +33,7 @@ export function AdminHeader() {
           <Input
             type="search"
             placeholder="Rechercher..."
-            className="w-64 border-border bg-brand-muted pl-9 placeholder:text-muted-foreground focus-visible:ring-brand-accent"
+            className="w-64 border-border bg-muted pl-9 placeholder:text-muted-foreground focus-visible:ring-ring"
           />
         </div>
 

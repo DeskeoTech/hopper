@@ -7,9 +7,9 @@ interface ResourceCardProps {
 }
 
 const statusColors = {
-  available: "bg-success/10 text-success",
-  maintenance: "bg-warning/10 text-warning-foreground",
-  unavailable: "bg-destructive/10 text-destructive",
+  available: "bg-success/10 text-success border-success/30",
+  maintenance: "bg-warning/10 text-warning-foreground border-warning/30",
+  unavailable: "bg-destructive/10 text-destructive border-destructive/30",
 }
 
 const statusLabels = {
@@ -20,10 +20,10 @@ const statusLabels = {
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   return (
-    <div className="rounded-lg border border-border bg-brand-muted/50 p-4 transition-colors hover:bg-brand-muted">
+    <div className="rounded-sm border border-border bg-muted/50 p-4 transition-colors hover:bg-muted">
       <div className="flex items-start justify-between gap-2">
         <h4 className="font-medium text-foreground">{resource.name}</h4>
-        <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>
+        <span className={cn("rounded-sm border px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>
           {statusLabels[resource.status]}
         </span>
       </div>
