@@ -1,0 +1,92 @@
+export type SiteStatus = "open" | "closed"
+
+export type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
+
+export type Equipment =
+  | "barista"
+  | "stationnement_velo"
+  | "impression"
+  | "douches"
+  | "salle_sport"
+  | "terrasse"
+  | "rooftop"
+
+export interface Site {
+  id: string
+  name: string
+  address: string
+  status: SiteStatus
+  longitude: number | null
+  latitude: number | null
+  instructions: string | null
+  opening_days: string[] | null
+  opening_hours: string | null
+  wifi_ssid: string | null
+  wifi_password: string | null
+  access: string | null
+  equipments: Equipment[] | null
+  created_at: string
+  updated_at: string
+}
+
+export interface Resource {
+  id: string
+  site_id: string
+  name: string
+  type: ResourceType
+  capacity: number | null
+  floor: number | null
+  amenities: string[] | null
+  hourly_rate: number | null
+  daily_rate: number | null
+  instructions: string | null
+  status: "available" | "maintenance" | "unavailable"
+  created_at: string
+  updated_at: string
+}
+
+export interface SitePhoto {
+  id: string
+  site_id: string
+  url: string
+  alt: string | null
+  order: number
+  created_at: string
+}
+
+export interface SiteContact {
+  id: string
+  site_id: string
+  name: string
+  role: string | null
+  email: string | null
+  phone: string | null
+  created_at: string
+}
+
+export interface Database {
+  public: {
+    Tables: {
+      sites: {
+        Row: Site
+        Insert: Omit<Site, "id" | "created_at" | "updated_at">
+        Update: Partial<Omit<Site, "id" | "created_at" | "updated_at">>
+      }
+      resources: {
+        Row: Resource
+        Insert: Omit<Resource, "id" | "created_at" | "updated_at">
+        Update: Partial<Omit<Resource, "id" | "created_at" | "updated_at">>
+      }
+      site_photos: {
+        Row: SitePhoto
+        Insert: Omit<SitePhoto, "id" | "created_at">
+        Update: Partial<Omit<SitePhoto, "id" | "created_at">>
+      }
+      site_contacts: {
+        Row: SiteContact
+        Insert: Omit<SiteContact, "id" | "created_at">
+        Update: Partial<Omit<SiteContact, "id" | "created_at">>
+      }
+    }
+  }
+}
