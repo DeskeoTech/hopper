@@ -8,8 +8,6 @@ export default async function AdminDashboardPage() {
 
   const { data: sites, error } = await supabase.from("sites").select("*").order("name")
 
-  const { data: resourceCounts } = await supabase.from("resources").select("site_id")
-
   // Fetch all site photos (first photo per site)
   const { data: sitePhotos } = await supabase
     .from("site_photos")
@@ -23,12 +21,6 @@ export default async function AdminDashboardPage() {
     if (!siteImageMap[photo.site_id]) {
       siteImageMap[photo.site_id] = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
     }
-  })
-
-  // Count resources per site
-  const resourcesBysite: Record<string, number> = {}
-  resourceCounts?.forEach((r) => {
-    resourcesBysite[r.site_id] = (resourcesBysite[r.site_id] || 0) + 1
   })
 
   // Stats
@@ -85,7 +77,6 @@ export default async function AdminDashboardPage() {
               <SiteCard
                 key={site.id}
                 site={site}
-                resourceCount={resourcesBysite[site.id] || 0}
                 imageUrl={siteImageMap[site.id]}
               />
             ))}

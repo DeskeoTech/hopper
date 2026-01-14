@@ -1,15 +1,14 @@
 import Link from "next/link"
-import { MapPin, Users, Wifi, Clock, Building2 } from "lucide-react"
+import { MapPin, Wifi, Clock, Building2 } from "lucide-react"
 import { StatusBadge } from "@/components/admin/status-badge"
 import type { Site } from "@/lib/types/database"
 
 interface SiteCardProps {
   site: Site
-  resourceCount: number
   imageUrl?: string | null
 }
 
-export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
+export function SiteCard({ site, imageUrl }: SiteCardProps) {
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
       <article className="overflow-hidden rounded-lg bg-card transition-all">
@@ -44,10 +43,6 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
 
           {/* Meta info */}
           <div className="mt-4 flex items-center gap-4 pt-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              <span>{resourceCount} ressource(s)</span>
-            </div>
             {site.wifi_ssid && (
               <div className="flex items-center gap-1.5">
                 <Wifi className="h-3.5 w-3.5" />
