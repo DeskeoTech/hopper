@@ -39,7 +39,7 @@ export default async function AdminDashboardPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
-        <p className="text-red-600">Erreur lors du chargement des sites: {error.message}</p>
+        <p className="text-destructive">Erreur lors du chargement des sites: {error.message}</p>
       </div>
     )
   }
@@ -52,31 +52,31 @@ export default async function AdminDashboardPage() {
           title="Total Sites"
           value={totalSites}
           icon={Building2}
-          bgColor="bg-[#1A1A1A]"
-          textColor="text-white"
+          bgColor="bg-brand"
+          textColor="text-brand-foreground"
         />
         <StatCard
           title="Sites Ouverts"
           value={openSites}
           icon={CheckCircle2}
-          bgColor="bg-emerald-600"
-          textColor="text-white"
+          bgColor="bg-success"
+          textColor="text-success-foreground"
         />
-        <StatCard title="Sites Fermés" value={closedSites} icon={XCircle} bgColor="bg-red-500" textColor="text-white" />
+        <StatCard title="Sites Fermés" value={closedSites} icon={XCircle} bgColor="bg-destructive" textColor="text-destructive-foreground" />
         <StatCard
           title="Ressources"
           value={resourceCounts?.length || 0}
           icon={MapPin}
-          bgColor="bg-[#C5A572]"
-          textColor="text-[#1A1A1A]"
+          bgColor="bg-brand-accent"
+          textColor="text-brand-accent-foreground"
         />
       </div>
 
       {/* Sites List */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[#1A1A1A]">Tous les sites Hopper </h2>
-          <span className="text-sm text-[#1A1A1A]/60">{totalSites} site(s)</span>
+          <h2 className="text-lg font-semibold text-foreground">Tous les sites Hopper </h2>
+          <span className="text-sm text-muted-foreground">{totalSites} site(s)</span>
         </div>
 
         {sites && sites.length > 0 ? (
@@ -91,9 +91,9 @@ export default async function AdminDashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-[#1A1A1A]/20 bg-white p-12">
-            <Building2 className="mb-4 h-12 w-12 text-[#1A1A1A]/30" />
-            <p className="text-[#1A1A1A]/60">Aucun site trouvé</p>
+          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12">
+            <Building2 className="mb-4 h-12 w-12 text-muted-foreground/50" />
+            <p className="text-muted-foreground">Aucun site trouvé</p>
           </div>
         )}
       </section>

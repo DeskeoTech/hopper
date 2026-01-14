@@ -51,7 +51,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       {/* Back Button */}
       <Link
         href="/admin"
-        className="inline-flex items-center gap-2 text-sm text-[#1A1A1A]/60 hover:text-[#1A1A1A] transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         <ArrowLeft className="h-4 w-4" />
         Retour au dashboard
@@ -60,21 +60,21 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-[#C5A572]">
-            <Building2 className="h-7 w-7 text-[#1A1A1A]" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-accent">
+            <Building2 className="h-7 w-7 text-brand-accent-foreground" />
           </div>
           <div>
             <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-[#1A1A1A]">{site.name}</h1>
+              <h1 className="text-2xl font-bold text-foreground">{site.name}</h1>
               <StatusBadge status={site.status} size="md" />
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[#1A1A1A]/60">
+            <div className="mt-1 flex items-center gap-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
               <span>{site.address}</span>
             </div>
           </div>
         </div>
-        <Button className="bg-[#1A1A1A] text-white hover:bg-[#1A1A1A]/90">
+        <Button className="bg-brand text-brand-foreground hover:bg-brand/90">
           <Edit className="mr-2 h-4 w-4" />
           Modifier
         </Button>
@@ -84,7 +84,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
         {/* Main Info - Left Column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Site Images */}
-          <div className="overflow-hidden rounded-xl border border-[#1A1A1A]/10 bg-white">
+          <div className="overflow-hidden rounded-xl border border-border bg-card">
             {photoUrls.length > 0 ? (
               <div className="relative">
                 <img
@@ -99,7 +99,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                         key={photo.id}
                         src={photo.url}
                         alt={photo.filename || `${site.name} - ${index + 2}`}
-                        className="h-16 w-24 rounded-lg object-cover border-2 border-white shadow-md"
+                        className="h-16 w-24 rounded-lg object-cover border-2 border-card shadow-md"
                       />
                     ))}
                     {photoUrls.length > 5 && (
@@ -111,8 +111,8 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                 )}
               </div>
             ) : (
-              <div className="flex h-64 items-center justify-center bg-[#F5F1EB]">
-                <div className="text-center text-[#1A1A1A]/40">
+              <div className="flex h-64 items-center justify-center bg-brand-muted">
+                <div className="text-center text-muted-foreground">
                   <Building2 className="mx-auto h-12 w-12 mb-2" />
                   <p>Aucune photo</p>
                 </div>
@@ -122,22 +122,22 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
 
           {/* Instructions & Access */}
           {(site.instructions || site.access) && (
-            <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-                <FileText className="h-5 w-5 text-[#C5A572]" />
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <FileText className="h-5 w-5 text-brand-accent" />
                 Instructions & Accès
               </h2>
               <div className="space-y-4">
                 {site.instructions && (
                   <div>
-                    <h3 className="text-sm font-medium text-[#1A1A1A]/60">Instructions</h3>
-                    <p className="mt-1 text-[#1A1A1A] whitespace-pre-wrap">{site.instructions}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground">Instructions</h3>
+                    <p className="mt-1 text-foreground whitespace-pre-wrap">{site.instructions}</p>
                   </div>
                 )}
                 {site.access && (
                   <div>
-                    <h3 className="text-sm font-medium text-[#1A1A1A]/60">Accès</h3>
-                    <p className="mt-1 text-[#1A1A1A]">{site.access}</p>
+                    <h3 className="text-sm font-medium text-muted-foreground">Accès</h3>
+                    <p className="mt-1 text-foreground">{site.access}</p>
                   </div>
                 )}
               </div>
@@ -145,9 +145,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           )}
 
           {/* Resources */}
-          <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-              <Building2 className="h-5 w-5 text-[#C5A572]" />
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Building2 className="h-5 w-5 text-brand-accent" />
               Ressources ({resources?.length || 0})
             </h2>
 
@@ -155,7 +155,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
               <div className="space-y-6">
                 {Object.entries(resourcesByType).map(([type, typeResources]) => (
                   <div key={type}>
-                    <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-[#1A1A1A]/50">
+                    <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
                       {getResourceTypeLabel(type)} ({typeResources?.length})
                     </h3>
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -167,7 +167,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                 ))}
               </div>
             ) : (
-              <p className="text-[#1A1A1A]/50">Aucune ressource pour ce site</p>
+              <p className="text-muted-foreground">Aucune ressource pour ce site</p>
             )}
           </div>
         </div>
@@ -175,24 +175,24 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
         {/* Sidebar - Right Column */}
         <div className="space-y-6">
           {/* Opening Hours */}
-          <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-              <Clock className="h-5 w-5 text-[#C5A572]" />
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Clock className="h-5 w-5 text-brand-accent" />
               Horaires
             </h2>
             <div className="space-y-3">
               {site.opening_hours && (
                 <div>
-                  <span className="text-sm text-[#1A1A1A]/60">Heures d'ouverture</span>
-                  <p className="font-medium text-[#1A1A1A]">{site.opening_hours}</p>
+                  <span className="text-sm text-muted-foreground">Heures d'ouverture</span>
+                  <p className="font-medium text-foreground">{site.opening_hours}</p>
                 </div>
               )}
               {site.opening_days && site.opening_days.length > 0 && (
                 <div>
-                  <span className="text-sm text-[#1A1A1A]/60">Jours d'ouverture</span>
+                  <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {site.opening_days.map((day) => (
-                      <span key={day} className="rounded bg-[#F5F1EB] px-2 py-1 text-xs font-medium text-[#1A1A1A]">
+                      <span key={day} className="rounded bg-brand-muted px-2 py-1 text-xs font-medium text-foreground">
                         {day}
                       </span>
                     ))}
@@ -200,42 +200,42 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                 </div>
               )}
               {!site.opening_hours && (!site.opening_days || site.opening_days.length === 0) && (
-                <p className="text-[#1A1A1A]/50 text-sm">Non renseigné</p>
+                <p className="text-muted-foreground text-sm">Non renseigné</p>
               )}
             </div>
           </div>
 
           {/* WiFi */}
-          <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-              <Wifi className="h-5 w-5 text-[#C5A572]" />
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Wifi className="h-5 w-5 text-brand-accent" />
               WiFi
             </h2>
             {site.wifi_ssid ? (
               <div className="space-y-3">
                 <div>
-                  <span className="text-sm text-[#1A1A1A]/60">SSID</span>
-                  <p className="font-mono font-medium text-[#1A1A1A]">{site.wifi_ssid}</p>
+                  <span className="text-sm text-muted-foreground">SSID</span>
+                  <p className="font-mono font-medium text-foreground">{site.wifi_ssid}</p>
                 </div>
                 {site.wifi_password && (
                   <div>
-                    <span className="text-sm text-[#1A1A1A]/60">Mot de passe</span>
+                    <span className="text-sm text-muted-foreground">Mot de passe</span>
                     <div className="flex items-center gap-2">
-                      <Key className="h-4 w-4 text-[#1A1A1A]/40" />
-                      <p className="font-mono font-medium text-[#1A1A1A]">{site.wifi_password}</p>
+                      <Key className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-mono font-medium text-foreground">{site.wifi_password}</p>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-[#1A1A1A]/50 text-sm">Non renseigné</p>
+              <p className="text-muted-foreground text-sm">Non renseigné</p>
             )}
           </div>
 
           {/* Equipments */}
-          <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-              <Calendar className="h-5 w-5 text-[#C5A572]" />
+          <div className="rounded-xl border border-border bg-card p-6">
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Calendar className="h-5 w-5 text-brand-accent" />
               Équipements
             </h2>
             {site.equipments && site.equipments.length > 0 ? (
@@ -245,24 +245,24 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                 ))}
               </div>
             ) : (
-              <p className="text-[#1A1A1A]/50 text-sm">Aucun équipement renseigné</p>
+              <p className="text-muted-foreground text-sm">Aucun équipement renseigné</p>
             )}
           </div>
 
           {/* Coordinates */}
           {(site.latitude || site.longitude) && (
-            <div className="rounded-xl border border-[#1A1A1A]/10 bg-white p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-[#1A1A1A]">
-                <MapPin className="h-5 w-5 text-[#C5A572]" />
+            <div className="rounded-xl border border-border bg-card p-6">
+              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                <MapPin className="h-5 w-5 text-brand-accent" />
                 Coordonnées GPS
               </h2>
               <div className="space-y-1 text-sm">
                 <p>
-                  <span className="text-[#1A1A1A]/60">Latitude:</span>{" "}
+                  <span className="text-muted-foreground">Latitude:</span>{" "}
                   <span className="font-mono">{site.latitude}</span>
                 </p>
                 <p>
-                  <span className="text-[#1A1A1A]/60">Longitude:</span>{" "}
+                  <span className="text-muted-foreground">Longitude:</span>{" "}
                   <span className="font-mono">{site.longitude}</span>
                 </p>
               </div>

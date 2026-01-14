@@ -12,9 +12,9 @@ interface SiteCardProps {
 export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-xl border border-[#1A1A1A]/10 bg-white shadow-sm transition-all hover:shadow-md hover:border-[#C5A572]/50">
+      <article className="overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-all hover:shadow-md hover:border-brand-accent/50">
         {/* Image */}
-        <div className="relative h-44 overflow-hidden bg-[#F5F1EB]">
+        <div className="relative h-44 overflow-hidden bg-brand-muted">
           {imageUrl ? (
             <img
               src={imageUrl}
@@ -23,7 +23,7 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
-              <Building2 className="h-12 w-12 text-[#1A1A1A]/20" />
+              <Building2 className="h-12 w-12 text-foreground/20" />
             </div>
           )}
           <div className="absolute right-3 top-3">
@@ -33,17 +33,17 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          <h3 className="text-lg font-semibold text-[#1A1A1A] group-hover:text-[#C5A572] transition-colors">
+          <h3 className="text-lg font-semibold text-foreground group-hover:text-brand-accent transition-colors">
             {site.name}
           </h3>
 
-          <div className="mt-2 flex items-start gap-2 text-sm text-[#1A1A1A]/60">
+          <div className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="line-clamp-2">{site.address}</span>
           </div>
 
           {/* Meta info */}
-          <div className="mt-4 flex items-center gap-4 border-t border-[#1A1A1A]/10 pt-4 text-xs text-[#1A1A1A]/50">
+          <div className="mt-4 flex items-center gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5" />
               <span>{resourceCount} ressource(s)</span>
