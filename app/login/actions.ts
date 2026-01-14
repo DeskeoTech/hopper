@@ -1,7 +1,7 @@
 "use server"
 
 import { redirect } from "next/navigation"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 
 export async function signInWithMagicLink(formData: FormData) {
   const email = formData.get("email") as string
@@ -10,12 +10,12 @@ export async function signInWithMagicLink(formData: FormData) {
     return { error: "L'adresse email est requise" }
   }
 
-  const supabase = await getSupabaseServerClient()
+  const supabase = await createClient()
 
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/confirm`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/auth/callback`,
     },
   })
 
@@ -27,7 +27,7 @@ export async function signInWithMagicLink(formData: FormData) {
 }
 
 export async function signOut() {
-  const supabase = await getSupabaseServerClient()
+  const supabase = await createClient()
   await supabase.auth.signOut()
   redirect("/login")
 }
