@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Building2, Calendar, Users, Settings, LayoutDashboard, MapPin } from "lucide-react"
+import { Building2, Calendar, Users, Settings, LayoutDashboard, MapPin, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { name: "Accueil", href: "/admin", icon: Home },
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { name: "Sites", href: "/admin/sites", icon: Building2 },
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Utilisateurs", href: "/admin/users", icon: Users },
