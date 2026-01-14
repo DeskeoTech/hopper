@@ -25,30 +25,6 @@ export function AdminHeader() {
   return (
     <header className="flex h-16 items-center justify-between bg-card px-6">
       <h1 className="type-h3 text-foreground">{title}</h1>
-
-      <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher..."
-            className="w-64 border-border bg-muted pl-9 placeholder:text-muted-foreground focus-visible:ring-ring"
-          />
-        </div>
-
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-
-        {/* User */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <User className="h-5 w-5" />
-          <span className="sr-only">Profil</span>
-        </Button>
-      </div>
     </header>
   )
 }
