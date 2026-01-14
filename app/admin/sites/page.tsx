@@ -1,9 +1,9 @@
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { SiteCard } from "@/components/admin/site-card"
 import { Building2 } from "lucide-react"
 
 export default async function SitesPage() {
-  const supabase = await getSupabaseServerClient()
+  const supabase = await createClient()
 
   const { data: sites, error } = await supabase.from("sites").select("*").order("name")
 

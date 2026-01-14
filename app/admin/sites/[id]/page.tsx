@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { getSupabaseServerClient } from "@/lib/supabase/server"
+import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
@@ -13,7 +13,7 @@ interface SiteDetailsPageProps {
 
 export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) {
   const { id } = await params
-  const supabase = await getSupabaseServerClient()
+  const supabase = await createClient()
 
   // Fetch site data
   const { data: site, error } = await supabase.from("sites").select("*").eq("id", id).single()

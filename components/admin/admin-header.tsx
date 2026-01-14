@@ -1,9 +1,9 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { signOut } from "@/app/login/actions"
+import { createClient } from "@/lib/supabase/client"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard Hopper",
@@ -19,11 +19,19 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ userEmail }: AdminHeaderProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   // Get title - check for dynamic routes
   let title = pageTitles[pathname] || "Dashboard"
   if (pathname.startsWith("/admin/sites/") && pathname !== "/admin/sites") {
     title = "Détails du site"
+  }
+
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+    router.refresh()
   }
 
   return (
@@ -34,12 +42,10 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
         {userEmail && (
           <span className="type-small text-muted-foreground">{userEmail}</span>
         )}
-        <form action={signOut}>
-          <Button type="submit" variant="ghost" size="sm">
-            <LogOut className="size-4" />
-            <span className="sr-only">Déconnexion</span>
-          </Button>
-        </form>
+        <Button type="button" variant="ghost" size="sm" onClick={handleLogout}>
+          <LogOut className="size-4" />
+          <span className="sr-only">Déconnexion</span>
+        </Button>
       </div>
     </header>
   )
