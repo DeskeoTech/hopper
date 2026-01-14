@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-border bg-card p-12">
+          <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
             <Building2 className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <p className="text-muted-foreground">Aucun site trouvé</p>
           </div>
@@ -115,7 +115,7 @@ function StatCard({
   textColor: string
 }) {
   return (
-    <div className={`rounded-sm border border-border ${bgColor} p-5`}>
+    <div className={`rounded-lg ${bgColor} p-5`}>
       <div className="flex items-center justify-between">
         <div>
           <p className={`text-sm ${textColor}/70`}>{title}</p>

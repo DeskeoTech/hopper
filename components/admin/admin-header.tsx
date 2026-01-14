@@ -23,7 +23,7 @@ export function AdminHeader() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+    <header className="flex h-16 items-center justify-between bg-card px-6">
       <h1 className="type-h3 text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">
