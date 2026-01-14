@@ -25,6 +25,16 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
   // Fetch resources for this site
   const { data: resources } = await supabase.from("resources").select("*").eq("site_id", id).order("type").order("name")
 
+  // Fetch photos for this site
+  const { data: photos } = await supabase.from("site_photos").select("*").eq("site_id", id).order("created_at")
+
+  // Build public URLs for photos
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const photoUrls = photos?.map((photo) => ({
+    ...photo,
+    url: `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`,
+  })) || []
+
   // Group resources by type
   const resourcesByType = resources?.reduce(
     (acc, resource) => {
@@ -73,13 +83,41 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Info - Left Column */}
         <div className="space-y-6 lg:col-span-2">
-          {/* Site Image */}
+          {/* Site Images */}
           <div className="overflow-hidden rounded-xl border border-[#1A1A1A]/10 bg-white">
-            <img
-              src={`/placeholder.svg?height=300&width=800&query=modern coworking space interior ${site.name}`}
-              alt={site.name}
-              className="h-64 w-full object-cover"
-            />
+            {photoUrls.length > 0 ? (
+              <div className="relative">
+                <img
+                  src={photoUrls[0].url}
+                  alt={photoUrls[0].filename || site.name}
+                  className="h-64 w-full object-cover"
+                />
+                {photoUrls.length > 1 && (
+                  <div className="absolute bottom-4 left-4 flex gap-2 overflow-x-auto pb-2">
+                    {photoUrls.slice(1, 5).map((photo, index) => (
+                      <img
+                        key={photo.id}
+                        src={photo.url}
+                        alt={photo.filename || `${site.name} - ${index + 2}`}
+                        className="h-16 w-24 rounded-lg object-cover border-2 border-white shadow-md"
+                      />
+                    ))}
+                    {photoUrls.length > 5 && (
+                      <div className="flex h-16 w-24 items-center justify-center rounded-lg bg-black/60 text-white text-sm font-medium">
+                        +{photoUrls.length - 5}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-64 items-center justify-center bg-[#F5F1EB]">
+                <div className="text-center text-[#1A1A1A]/40">
+                  <Building2 className="mx-auto h-12 w-12 mb-2" />
+                  <p>Aucune photo</p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Instructions & Access */}
