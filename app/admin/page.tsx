@@ -67,15 +67,15 @@ export default async function AdminDashboardPage() {
           title="Ressources"
           value={resourceCounts?.length || 0}
           icon={MapPin}
-          bgColor="bg-brand-accent"
-          textColor="text-brand-accent-foreground"
+          bgColor="bg-muted"
+          textColor="text-foreground"
         />
       </div>
 
       {/* Sites List */}
       <section>
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">Tous les sites Hopper </h2>
+          <h2 className="type-h3 text-foreground">Tous les sites Hopper</h2>
           <span className="text-sm text-muted-foreground">{totalSites} site(s)</span>
         </div>
 
@@ -91,7 +91,7 @@ export default async function AdminDashboardPage() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border bg-card p-12">
+          <div className="flex flex-col items-center justify-center rounded-sm border border-dashed border-border bg-card p-12">
             <Building2 className="mb-4 h-12 w-12 text-muted-foreground/50" />
             <p className="text-muted-foreground">Aucun site trouvé</p>
           </div>
@@ -115,13 +115,13 @@ function StatCard({
   textColor: string
 }) {
   return (
-    <div className={`rounded-xl ${bgColor} p-5 shadow-sm`}>
+    <div className={`rounded-sm border border-border ${bgColor} p-5`}>
       <div className="flex items-center justify-between">
         <div>
           <p className={`text-sm ${textColor}/70`}>{title}</p>
           <p className={`mt-1 text-3xl font-bold ${textColor}`}>{value}</p>
         </div>
-        <div className={`rounded-full ${textColor}/10 p-3`}>
+        <div className={`rounded-sm ${textColor}/10 p-3`}>
           <Icon className={`h-6 w-6 ${textColor}`} />
         </div>
       </div>

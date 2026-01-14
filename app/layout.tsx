@@ -1,15 +1,50 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+// Font Header - ProgramNarOT Black for titles (H1/H2/H3)
+const headerFont = localFont({
+  src: '../public/fonts/brand-font/ProgramNarOT-Black.otf',
+  variable: '--font-header',
+  display: 'swap',
+  weight: '900',
+})
+
+// Font Body - Articulat CF for body text and UI
+const bodyFont = localFont({
+  src: [
+    {
+      path: '../public/fonts/articulat-cf/ArticulatCF-Regular.otf',
+      weight: '400',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/articulat-cf/ArticulatCF-Medium.otf',
+      weight: '500',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/articulat-cf/ArticulatCF-Bold.otf',
+      weight: '700',
+      style: 'normal',
+    },
+  ],
+  variable: '--font-body',
+  display: 'swap',
+})
+
+// Font Editorial - GT Alpina Italic for accent text
+const editorialFont = localFont({
+  src: '../public/fonts/gt-alpina/GTAlpina-Italic.otf',
+  variable: '--font-editorial',
+  display: 'swap',
+  style: 'italic',
+})
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Hopper - Deskeo',
+  description: 'Espaces de coworking Hopper by Deskeo',
   icons: {
     icon: [
       {
@@ -35,8 +70,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="fr">
+      <body
+        className={`${headerFont.variable} ${bodyFont.variable} ${editorialFont.variable} font-sans antialiased`}
+      >
         {children}
         <Analytics />
       </body>
