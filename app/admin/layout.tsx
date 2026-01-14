@@ -2,18 +2,21 @@ import type React from "react"
 import type { Metadata } from "next"
 import { AdminSidebar } from "@/components/admin/admin-sidebar"
 import { AdminHeader } from "@/components/admin/admin-header"
+import { getUser } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: "Hopper Admin - Deskeo",
   description: "Back-office de gestion des espaces de coworking Hopper",
 }
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const user = await getUser()
+
   return (
     <div className="flex min-h-screen bg-background">
       <AdminSidebar />
       <div className="flex flex-1 flex-col">
-        <AdminHeader />
+        <AdminHeader userEmail={user?.email} />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
