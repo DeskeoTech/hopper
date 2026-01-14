@@ -10,6 +10,21 @@ export default async function AdminDashboardPage() {
 
   const { data: resourceCounts } = await supabase.from("resources").select("site_id")
 
+  // Fetch all site photos (first photo per site)
+  const { data: sitePhotos } = await supabase
+    .from("site_photos")
+    .select("site_id, storage_path")
+    .order("created_at", { ascending: true })
+
+  // Build a map of site_id -> first photo URL
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const siteImageMap: Record<string, string> = {}
+  sitePhotos?.forEach((photo) => {
+    if (!siteImageMap[photo.site_id]) {
+      siteImageMap[photo.site_id] = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+    }
+  })
+
   // Count resources per site
   const resourcesBysite: Record<string, number> = {}
   resourceCounts?.forEach((r) => {
@@ -67,7 +82,12 @@ export default async function AdminDashboardPage() {
         {sites && sites.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             {sites.map((site) => (
-              <SiteCard key={site.id} site={site} resourceCount={resourcesBysite[site.id] || 0} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                resourceCount={resourcesBysite[site.id] || 0}
+                imageUrl={siteImageMap[site.id]}
+              />
             ))}
           </div>
         ) : (

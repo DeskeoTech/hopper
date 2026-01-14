@@ -1,24 +1,31 @@
 import Link from "next/link"
-import { MapPin, Users, Wifi, Clock } from "lucide-react"
+import { MapPin, Users, Wifi, Clock, Building2 } from "lucide-react"
 import { StatusBadge } from "@/components/admin/status-badge"
 import type { Site } from "@/lib/types/database"
 
 interface SiteCardProps {
   site: Site
   resourceCount: number
+  imageUrl?: string | null
 }
 
-export function SiteCard({ site, resourceCount }: SiteCardProps) {
+export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
       <article className="overflow-hidden rounded-xl border border-[#1A1A1A]/10 bg-white shadow-sm transition-all hover:shadow-md hover:border-[#C5A572]/50">
         {/* Image */}
-        <div className="relative h-44 overflow-hidden bg-[#1A1A1A]/5">
-          <img
-            src={`/placeholder.svg?height=176&width=400&query=coworking office space ${site.name}`}
-            alt={site.name}
-            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-          />
+        <div className="relative h-44 overflow-hidden bg-[#F5F1EB]">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={site.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center">
+              <Building2 className="h-12 w-12 text-[#1A1A1A]/20" />
+            </div>
+          )}
           <div className="absolute right-3 top-3">
             <StatusBadge status={site.status} />
           </div>
