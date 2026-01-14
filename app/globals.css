@@ -21,7 +21,7 @@
   /* Mappings shadcn/ui */
   --background: #F0E8DC;
   --foreground: #1B1918;
-  --card: #D9D0C4;
+  --card: #F5F0E8;
   --card-foreground: #1B1918;
   --popover: #F0E8DC;
   --popover-foreground: #1B1918;
@@ -39,12 +39,13 @@
   --input: #1B1918;
   --ring: #1B1918;
 
-  /* Radius - strict minimal */
-  --radius: 4px;
+  /* Radius - Deskeo signature (arrondis généreux) */
+  --radius: 20px;
   --radius-none: 0px;
-  --radius-xs: 2px;
-  --radius-sm: 4px;
-  --radius-md: 6px;
+  --radius-xs: 12px;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
 
   /* Sidebar */
   --sidebar: #1B1918;
@@ -112,11 +113,11 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
-  /* Radius - override defaults to enforce minimal radius */
-  --radius-sm: 2px;
-  --radius-md: 4px;
-  --radius-lg: 4px;
-  --radius-xl: 4px;
+  /* Radius - Deskeo signature (arrondis généreux) */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 28px;
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
