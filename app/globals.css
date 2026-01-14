@@ -1,82 +1,92 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
-
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
+  /* ========================================
+     DESIGN SYSTEM - HOPPER
+     ========================================
+     Palette: 3 couleurs principales + 1 erreur
+     - bg-primary: #F0E8DC (beige - fond principal)
+     - text-primary: #1B1918 (dark - texte, bordures, CTAs)
+     - bg-secondary: #D9D0C4 (beige foncé - cards, panels)
+     - error: rouge pastel (validation uniquement)
+  ======================================== */
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
+  /* Design System Colors */
+  --color-bg-primary: #F0E8DC;
+  --color-text-primary: #1B1918;
+  --color-bg-secondary: #D9D0C4;
+  --color-error: oklch(0.7 0.15 25);
+
+  /* Mappings shadcn/ui */
+  --background: #F0E8DC;
+  --foreground: #1B1918;
+  --card: #D9D0C4;
+  --card-foreground: #1B1918;
+  --popover: #F0E8DC;
+  --popover-foreground: #1B1918;
+  --primary: #1B1918;
+  --primary-foreground: #F0E8DC;
+  --secondary: transparent;
+  --secondary-foreground: #1B1918;
+  --muted: #D9D0C4;
+  --muted-foreground: #1B1918;
+  --accent: #D9D0C4;
+  --accent-foreground: #1B1918;
+  --destructive: oklch(0.7 0.15 25);
+  --destructive-foreground: #1B1918;
+  --border: #1B1918;
+  --input: #1B1918;
+  --ring: #1B1918;
+
+  /* Radius - strict minimal */
+  --radius: 4px;
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+
+  /* Sidebar */
+  --sidebar: #1B1918;
+  --sidebar-foreground: #F0E8DC;
+  --sidebar-primary: #1B1918;
+  --sidebar-primary-foreground: #F0E8DC;
+  --sidebar-accent: #D9D0C4;
+  --sidebar-accent-foreground: #1B1918;
+  --sidebar-border: #1B1918;
+  --sidebar-ring: #1B1918;
+
+  /* Brand */
+  --brand: #1B1918;
+  --brand-foreground: #F0E8DC;
+  --brand-accent: #D9D0C4;
+  --brand-accent-foreground: #1B1918;
+  --brand-muted: #D9D0C4;
+  --brand-muted-foreground: #1B1918;
+
+  /* Status colors (error uniquement, success/warning supprimés) */
+  --success: oklch(0.55 0.15 145);
+  --success-foreground: #1B1918;
+  --warning: oklch(0.7 0.12 75);
+  --warning-foreground: #1B1918;
+
+  /* Chart colors - monochrome avec opacité */
+  --chart-1: #1B1918;
+  --chart-2: rgba(27, 25, 24, 0.8);
+  --chart-3: rgba(27, 25, 24, 0.6);
+  --chart-4: rgba(27, 25, 24, 0.4);
+  --chart-5: rgba(27, 25, 24, 0.2);
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  /* Typography - 3 font families */
+  --font-header: 'BrandFont', system-ui, sans-serif;
+  --font-body: 'Articulat CF', system-ui, sans-serif;
+  --font-editorial: 'GT Alpina', Georgia, serif;
+  --font-sans: var(--font-body);
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback', monospace;
+
+  /* Color mappings */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -101,10 +111,14 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Radius - override defaults to enforce minimal radius */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+  --radius-xl: 4px;
+
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -113,6 +127,20 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand */
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-brand-accent: var(--brand-accent);
+  --color-brand-accent-foreground: var(--brand-accent-foreground);
+  --color-brand-muted: var(--brand-muted);
+  --color-brand-muted-foreground: var(--brand-muted-foreground);
+
+  /* Status */
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
 }
 
 @layer base {
@@ -121,5 +149,95 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* ========================================
+     TYPOGRAPHY UTILITIES
+     ======================================== */
+
+  /* Font Header - Brand font for titles */
+  .font-header {
+    font-family: var(--font-header);
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Font Editorial - Italic accent */
+  .font-editorial {
+    font-family: var(--font-editorial);
+    font-style: italic;
+  }
+
+  /* Type Scale */
+  .type-h1 {
+    font-family: var(--font-header);
+    font-size: clamp(36px, 4vw, 64px);
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .type-h2 {
+    font-family: var(--font-header);
+    font-size: clamp(28px, 3vw, 44px);
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .type-h3 {
+    font-family: var(--font-header);
+    font-size: 24px;
+    text-transform: uppercase;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1.0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .type-body {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 400;
+    line-height: 1.55;
+  }
+
+  .type-small {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  .type-editorial {
+    font-family: var(--font-editorial);
+    font-style: italic;
+  }
+
+  /* ========================================
+     CTA HOVER UTILITIES
+     États sans changement de couleur
+     ======================================== */
+
+  .cta-hover {
+    transition: transform 150ms ease;
+  }
+
+  .cta-hover:hover {
+    transform: translateY(-1px);
+  }
+
+  .cta-hover:active {
+    transform: translateY(0);
   }
 }

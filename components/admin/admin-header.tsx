@@ -23,28 +23,28 @@ export function AdminHeader() {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-[#1A1A1A]/10 bg-white px-6">
-      <h1 className="text-xl font-semibold text-[#1A1A1A]">{title}</h1>
+    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+      <h1 className="type-h3 text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#1A1A1A]/40" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             type="search"
             placeholder="Rechercher..."
-            className="w-64 border-[#1A1A1A]/20 bg-[#F5F1EB] pl-9 placeholder:text-[#1A1A1A]/40 focus-visible:ring-[#C5A572]"
+            className="w-64 border-border bg-muted pl-9 placeholder:text-muted-foreground focus-visible:ring-ring"
           />
         </div>
 
         {/* Notifications */}
-        <Button variant="ghost" size="icon" className="text-[#1A1A1A]/60 hover:text-[#1A1A1A]">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
         </Button>
 
         {/* User */}
-        <Button variant="ghost" size="icon" className="text-[#1A1A1A]/60 hover:text-[#1A1A1A]">
+        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
           <User className="h-5 w-5" />
           <span className="sr-only">Profil</span>
         </Button>

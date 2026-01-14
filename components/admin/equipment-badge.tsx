@@ -23,7 +23,7 @@ export function EquipmentBadge({ equipment }: EquipmentBadgeProps) {
   const Icon = config.icon
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#F5F1EB] px-3 py-1.5 text-xs font-medium text-[#1A1A1A]">
+    <span className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
       <Icon className="h-3.5 w-3.5" />
       {config.label}
     </span>

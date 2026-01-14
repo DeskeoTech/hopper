@@ -12,12 +12,14 @@ export function StatusBadge({ status, size = "sm" }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-medium",
+        "inline-flex items-center gap-1.5 rounded-sm border font-medium",
         size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm",
-        isOpen ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700",
+        isOpen
+          ? "bg-success/10 text-success border-success/30"
+          : "bg-destructive/10 text-destructive border-destructive/30",
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", isOpen ? "bg-emerald-500" : "bg-red-500")} />
+      <span className={cn("h-1.5 w-1.5 rounded-sm", isOpen ? "bg-success" : "bg-destructive")} />
       {isOpen ? "Ouvert" : "Fermé"}
     </span>
   )
