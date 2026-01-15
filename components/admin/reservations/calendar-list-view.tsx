@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, CalendarX } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -96,6 +96,20 @@ export function CalendarListView({ bookings }: CalendarListViewProps) {
       <ArrowUp className="ml-1 h-4 w-4" />
     ) : (
       <ArrowDown className="ml-1 h-4 w-4" />
+    )
+  }
+
+  if (bookings.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <CalendarX className="h-12 w-12 text-muted-foreground/50" />
+        <h3 className="mt-4 text-lg font-medium">
+          Aucune reservation pour cette periode
+        </h3>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Modifiez la plage de dates pour voir d&apos;autres reservations.
+        </p>
+      </div>
     )
   }
 

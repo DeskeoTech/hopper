@@ -70,12 +70,16 @@ export function ReservationsFilters({
   const clearFilters = () => {
     setSearch("")
     startTransition(() => {
-      // Preserve only view and date params
+      // Preserve only view, date, startDate, endDate params
       const params = new URLSearchParams()
-      const view = searchParams.get("view")
+      const viewParam = searchParams.get("view")
       const date = searchParams.get("date")
-      if (view) params.set("view", view)
+      const startDate = searchParams.get("startDate")
+      const endDate = searchParams.get("endDate")
+      if (viewParam) params.set("view", viewParam)
       if (date) params.set("date", date)
+      if (startDate) params.set("startDate", startDate)
+      if (endDate) params.set("endDate", endDate)
       router.push(`/admin/reservations?${params.toString()}`)
     })
   }
