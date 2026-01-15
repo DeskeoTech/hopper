@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { CompaniesTable } from "@/components/admin/companies-table"
 import { CompanySearch } from "@/components/admin/company-search"
@@ -67,7 +68,9 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       </div>
 
       {/* Search & Filters */}
-      <CompanySearch />
+      <Suspense fallback={<div className="h-10 animate-pulse rounded-lg bg-muted" />}>
+        <CompanySearch />
+      </Suspense>
 
       {/* Results count */}
       {companies && (
