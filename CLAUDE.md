@@ -63,6 +63,91 @@ Custom Deskeo brand with:
 - **Fonts:** ProgramNarOT (headers), Articulat CF (body), GT Alpina (editorial)
 - **Border radius:** 20px default
 
+## Responsive Design Guidelines
+
+**The site must be fully responsive.** Follow these patterns for all new components:
+
+### Breakpoints (Tailwind defaults)
+- `sm:` (640px) - Small tablets
+- `md:` (768px) - Tablets / sidebar visibility
+- `lg:` (1024px) - Desktop multi-column layouts
+- `xl:` (1280px) - Wide screens
+
+### Layout Patterns
+
+**Main content padding:**
+```tsx
+<main className="p-4 md:p-6">
+```
+
+**Card sections:**
+```tsx
+<div className="rounded-lg bg-card p-4 sm:p-6">
+```
+
+**Filter rows (stack on mobile, row on tablet+):**
+```tsx
+<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+```
+
+**Grid layouts (responsive columns):**
+```tsx
+// Cards grid
+<div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+
+// Detail page with sidebar
+<div className="grid gap-6 lg:grid-cols-3">
+  <div className="lg:col-span-2">Main content</div>
+  <div>Sidebar</div>
+</div>
+```
+
+**Page headers (icon + title + badge):**
+```tsx
+<div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+  <div className="flex h-10 w-10 shrink-0 ... sm:h-14 sm:w-14">
+    <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
+  </div>
+  <div className="min-w-0 flex-1">
+    <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+```
+
+### Table Responsiveness
+
+**Always wrap tables with overflow:**
+```tsx
+<div className="overflow-x-auto">
+  <Table>...</Table>
+</div>
+```
+
+**Hide secondary columns on mobile:**
+```tsx
+// Header
+<TableHead className="hidden md:table-cell">Column</TableHead>
+
+// Cell
+<TableCell className="hidden md:table-cell">Value</TableCell>
+```
+
+### Text & Content
+
+**Truncate long text:**
+```tsx
+<span className="truncate max-w-[200px]">{longText}</span>
+```
+
+**Break long words:**
+```tsx
+<span className="break-words">{address}</span>
+```
+
+**Hide text on mobile, show on tablet+:**
+```tsx
+<span className="hidden sm:inline">Full label</span>
+<span className="sm:hidden">Short</span>
+```
+
 ## Database Types
 
 Key types from `lib/types/database.ts`:
