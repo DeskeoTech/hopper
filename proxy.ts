@@ -1,6 +1,11 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+// Liste des domaines preview autorisés à bypass l'auth
+const PREVIEW_DOMAINS = [
+  'preview-hopper-app-kzmgtbawnwn5grk0ci0o.vusercontent.net',
+]
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -37,8 +42,13 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Vérifier si on est sur un domaine preview
+  const host = request.headers.get('host') || ''
+  const isPreviewDomain = PREVIEW_DOMAINS.some(domain => host.includes(domain))
+
   // If user is not authenticated and trying to access /admin, redirect to login
-  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
+  // (sauf sur les domaines preview)
+  if (!user && request.nextUrl.pathname.startsWith("/admin") && !isPreviewDomain) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
