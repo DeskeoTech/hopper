@@ -6,14 +6,17 @@ import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-mod
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { EditSubscriptionModal } from "@/components/admin/company-edit/edit-subscription-modal"
 import { UsersList } from "@/components/admin/company-edit/users-list"
+import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { cn } from "@/lib/utils"
 
 interface CompanyDetailsPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default async function CompanyDetailsPage({ params }: CompanyDetailsPageProps) {
+export default async function CompanyDetailsPage({ params, searchParams }: CompanyDetailsPageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
   const supabase = await createClient()
 
   // Fetch company data
@@ -172,6 +175,12 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
 
           {/* Users */}
           <UsersList companyId={company.id} initialUsers={users || []} />
+
+          {/* Reservations */}
+          <ReservationsSection
+            context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
+            searchParams={resolvedSearchParams}
+          />
         </div>
 
         {/* Sidebar - Right Column */}

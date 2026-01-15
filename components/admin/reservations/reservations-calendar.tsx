@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { useTransition, useMemo } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { useTransition, useMemo, useCallback } from "react"
 import {
   format,
   parseISO,
@@ -27,23 +27,38 @@ interface ReservationsCalendarProps {
   bookings: BookingWithDetails[]
   view: ViewMode
   referenceDate: string
+  paramPrefix?: string
 }
 
 export function ReservationsCalendar({
   bookings,
   view,
   referenceDate,
+  paramPrefix = "",
 }: ReservationsCalendarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
 
   const currentDate = parseISO(referenceDate)
 
+  // Helper to get prefixed param key
+  const getParamKey = useCallback(
+    (key: string) => `${paramPrefix}${key}`,
+    [paramPrefix]
+  )
+
+  // Helper to get param value with prefix
+  const getParam = useCallback(
+    (key: string) => searchParams.get(getParamKey(key)),
+    [searchParams, getParamKey]
+  )
+
   // Date range for list view
   const dateRange = useMemo<DateRange | undefined>(() => {
-    const startDateParam = searchParams.get("startDate")
-    const endDateParam = searchParams.get("endDate")
+    const startDateParam = getParam("startDate")
+    const endDateParam = getParam("endDate")
     if (startDateParam && endDateParam) {
       return {
         from: parseISO(startDateParam),
@@ -56,23 +71,27 @@ export function ReservationsCalendar({
       from: startOfWeek(now, { weekStartsOn: 1 }),
       to: endOfWeek(now, { weekStartsOn: 1 }),
     }
-  }, [searchParams])
+  }, [getParam])
 
-  const updateUrl = (updates: Record<string, string>) => {
-    const params = new URLSearchParams(searchParams.toString())
+  const updateUrl = useCallback(
+    (updates: Record<string, string>) => {
+      const params = new URLSearchParams(searchParams.toString())
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value) {
-        params.set(key, value)
-      } else {
-        params.delete(key)
-      }
-    })
+      Object.entries(updates).forEach(([key, value]) => {
+        const prefixedKey = getParamKey(key)
+        if (value) {
+          params.set(prefixedKey, value)
+        } else {
+          params.delete(prefixedKey)
+        }
+      })
 
-    startTransition(() => {
-      router.push(`/admin/reservations?${params.toString()}`)
-    })
-  }
+      startTransition(() => {
+        router.push(`${pathname}?${params.toString()}`)
+      })
+    },
+    [searchParams, pathname, router, getParamKey]
+  )
 
   const handleViewChange = (newView: ViewMode) => {
     updateUrl({ view: newView })
@@ -114,6 +133,17 @@ export function ReservationsCalendar({
       })
     }
   }
+
+  // Callback for month view day click - navigates to week view for that day
+  const handleDayNavigate = useCallback(
+    (day: Date) => {
+      updateUrl({
+        view: "week",
+        date: format(day, "yyyy-MM-dd"),
+      })
+    },
+    [updateUrl]
+  )
 
   // Format period title based on view
   const getPeriodTitle = () => {
@@ -184,7 +214,11 @@ export function ReservationsCalendar({
           <CalendarWeekView bookings={bookings} referenceDate={currentDate} />
         )}
         {view === "month" && (
-          <CalendarMonthView bookings={bookings} referenceDate={currentDate} />
+          <CalendarMonthView
+            bookings={bookings}
+            referenceDate={currentDate}
+            onDayNavigate={handleDayNavigate}
+          />
         )}
         {view === "list" && <CalendarListView bookings={bookings} />}
       </div>
