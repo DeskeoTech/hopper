@@ -66,13 +66,6 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // If user is authenticated and on login page, redirect to /admin
-  if (user && request.nextUrl.pathname === "/login") {
-    const url = request.nextUrl.clone()
-    url.pathname = "/admin"
-    return NextResponse.redirect(url)
-  }
-
   return supabaseResponse
 }
 
