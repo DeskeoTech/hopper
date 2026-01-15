@@ -20,6 +20,8 @@ interface ReservationsPageProps {
   searchParams: Promise<{
     view?: string
     date?: string
+    startDate?: string
+    endDate?: string
     site?: string
     company?: string
     status?: string
@@ -43,7 +45,16 @@ export default async function ReservationsPage({
   let startDate: Date
   let endDate: Date
 
-  if (view === "week") {
+  if (view === "list") {
+    // List view uses explicit startDate/endDate params, defaults to current week
+    if (params.startDate && params.endDate) {
+      startDate = parseISO(params.startDate)
+      endDate = parseISO(params.endDate)
+    } else {
+      startDate = startOfWeek(new Date(), { weekStartsOn: 1 })
+      endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
+    }
+  } else if (view === "week") {
     startDate = startOfWeek(referenceDate, { weekStartsOn: 1 })
     endDate = endOfWeek(referenceDate, { weekStartsOn: 1 })
   } else if (view === "month") {
