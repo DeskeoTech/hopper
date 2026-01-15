@@ -1,7 +1,6 @@
 "use client"
 
 import { useMemo } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import {
   format,
   parseISO,
@@ -13,13 +12,13 @@ import {
   isSameMonth,
   isSameDay,
 } from "date-fns"
-import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import type { BookingWithDetails } from "@/lib/types/database"
 
 interface CalendarMonthViewProps {
   bookings: BookingWithDetails[]
   referenceDate: Date
+  onDayNavigate?: (day: Date) => void
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
@@ -27,10 +26,8 @@ const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
 export function CalendarMonthView({
   bookings,
   referenceDate,
+  onDayNavigate,
 }: CalendarMonthViewProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-
   const monthStart = startOfMonth(referenceDate)
   const monthEnd = endOfMonth(referenceDate)
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 })
@@ -66,10 +63,9 @@ export function CalendarMonthView({
   }, [bookings])
 
   const handleDayClick = (day: Date) => {
-    const params = new URLSearchParams(searchParams.toString())
-    params.set("view", "week")
-    params.set("date", format(day, "yyyy-MM-dd"))
-    router.push(`/admin/reservations?${params.toString()}`)
+    if (onDayNavigate) {
+      onDayNavigate(day)
+    }
   }
 
   const isToday = (date: Date) => isSameDay(date, new Date())

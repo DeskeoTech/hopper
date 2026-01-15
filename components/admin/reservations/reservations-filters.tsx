@@ -1,11 +1,13 @@
 "use client"
 
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useState, useTransition, useMemo } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+
+export type HiddenFilter = "site" | "company" | "status" | "type" | "user" | "search"
 
 interface ReservationsFiltersProps {
   sites: Array<{ id: string; name: string | null }>
@@ -16,6 +18,8 @@ interface ReservationsFiltersProps {
     last_name: string | null
     email: string | null
   }>
+  hiddenFilters?: HiddenFilter[]
+  paramPrefix?: string
 }
 
 const resourceTypes = [
@@ -35,26 +39,36 @@ export function ReservationsFilters({
   sites,
   companies,
   users,
+  hiddenFilters = [],
+  paramPrefix = "",
 }: ReservationsFiltersProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
   const [isPending, startTransition] = useTransition()
 
-  const [search, setSearch] = useState(searchParams.get("search") || "")
+  // Helper to get prefixed param key
+  const getParamKey = (key: string) => `${paramPrefix}${key}`
+
+  // Helper to get param value with prefix
+  const getParam = (key: string) => searchParams.get(getParamKey(key))
+
+  const [search, setSearch] = useState(getParam("search") || "")
 
   const updateUrl = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString())
 
     Object.entries(updates).forEach(([key, value]) => {
+      const prefixedKey = getParamKey(key)
       if (value && value !== "all") {
-        params.set(key, value)
+        params.set(prefixedKey, value)
       } else {
-        params.delete(key)
+        params.delete(prefixedKey)
       }
     })
 
     startTransition(() => {
-      router.push(`/admin/reservations?${params.toString()}`)
+      router.push(`${pathname}?${params.toString()}`)
     })
   }
 
@@ -70,27 +84,29 @@ export function ReservationsFilters({
   const clearFilters = () => {
     setSearch("")
     startTransition(() => {
-      // Preserve only view, date, startDate, endDate params
-      const params = new URLSearchParams()
-      const viewParam = searchParams.get("view")
-      const date = searchParams.get("date")
-      const startDate = searchParams.get("startDate")
-      const endDate = searchParams.get("endDate")
-      if (viewParam) params.set("view", viewParam)
-      if (date) params.set("date", date)
-      if (startDate) params.set("startDate", startDate)
-      if (endDate) params.set("endDate", endDate)
-      router.push(`/admin/reservations?${params.toString()}`)
+      // Preserve only view, date, startDate, endDate params (with prefix)
+      // Also preserve any non-prefixed params if using a prefix
+      const params = new URLSearchParams(searchParams.toString())
+
+      // Delete all filter params with our prefix
+      params.delete(getParamKey("search"))
+      params.delete(getParamKey("site"))
+      params.delete(getParamKey("company"))
+      params.delete(getParamKey("status"))
+      params.delete(getParamKey("type"))
+      params.delete(getParamKey("user"))
+
+      router.push(`${pathname}?${params.toString()}`)
     })
   }
 
   const hasFilters =
     search ||
-    searchParams.get("site") ||
-    searchParams.get("company") ||
-    searchParams.get("status") ||
-    searchParams.get("type") ||
-    searchParams.get("user")
+    getParam("site") ||
+    getParam("company") ||
+    getParam("status") ||
+    getParam("type") ||
+    getParam("user")
 
   const siteOptions = useMemo(
     () => [
@@ -144,68 +160,87 @@ export function ReservationsFilters({
     [users]
   )
 
+  const showSearch = !hiddenFilters.includes("search")
+  const showSite = !hiddenFilters.includes("site")
+  const showCompany = !hiddenFilters.includes("company")
+  const showStatus = !hiddenFilters.includes("status")
+  const showType = !hiddenFilters.includes("type")
+  const showUser = !hiddenFilters.includes("user")
+
   return (
     <div className="space-y-4">
       {/* First row: Search + Site + Company */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <form onSubmit={handleSearchSubmit} className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="text"
-            placeholder="Rechercher par nom, email ou ressource..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9"
+        {showSearch && (
+          <form onSubmit={handleSearchSubmit} className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Rechercher par nom, email ou ressource..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9"
+            />
+          </form>
+        )}
+
+        {showSite && (
+          <SearchableSelect
+            options={siteOptions}
+            value={getParam("site") || "all"}
+            onValueChange={(value) => handleFilterChange("site", value)}
+            placeholder="Site"
+            searchPlaceholder="Rechercher un site..."
+            triggerClassName="w-full sm:w-[180px]"
           />
-        </form>
+        )}
 
-        <SearchableSelect
-          options={siteOptions}
-          value={searchParams.get("site") || "all"}
-          onValueChange={(value) => handleFilterChange("site", value)}
-          placeholder="Site"
-          searchPlaceholder="Rechercher un site..."
-          triggerClassName="w-full sm:w-[180px]"
-        />
-
-        <SearchableSelect
-          options={companyOptions}
-          value={searchParams.get("company") || "all"}
-          onValueChange={(value) => handleFilterChange("company", value)}
-          placeholder="Entreprise"
-          searchPlaceholder="Rechercher une entreprise..."
-          triggerClassName="w-full sm:w-[180px]"
-        />
+        {showCompany && (
+          <SearchableSelect
+            options={companyOptions}
+            value={getParam("company") || "all"}
+            onValueChange={(value) => handleFilterChange("company", value)}
+            placeholder="Entreprise"
+            searchPlaceholder="Rechercher une entreprise..."
+            triggerClassName="w-full sm:w-[180px]"
+          />
+        )}
       </div>
 
       {/* Second row: Status + Type + User + Clear */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <SearchableSelect
-          options={statusSelectOptions}
-          value={searchParams.get("status") || "all"}
-          onValueChange={(value) => handleFilterChange("status", value)}
-          placeholder="Statut"
-          searchPlaceholder="Rechercher un statut..."
-          triggerClassName="w-full sm:w-[160px]"
-        />
+        {showStatus && (
+          <SearchableSelect
+            options={statusSelectOptions}
+            value={getParam("status") || "all"}
+            onValueChange={(value) => handleFilterChange("status", value)}
+            placeholder="Statut"
+            searchPlaceholder="Rechercher un statut..."
+            triggerClassName="w-full sm:w-[160px]"
+          />
+        )}
 
-        <SearchableSelect
-          options={typeOptions}
-          value={searchParams.get("type") || "all"}
-          onValueChange={(value) => handleFilterChange("type", value)}
-          placeholder="Type de ressource"
-          searchPlaceholder="Rechercher un type..."
-          triggerClassName="w-full sm:w-[180px]"
-        />
+        {showType && (
+          <SearchableSelect
+            options={typeOptions}
+            value={getParam("type") || "all"}
+            onValueChange={(value) => handleFilterChange("type", value)}
+            placeholder="Type de ressource"
+            searchPlaceholder="Rechercher un type..."
+            triggerClassName="w-full sm:w-[180px]"
+          />
+        )}
 
-        <SearchableSelect
-          options={userOptions}
-          value={searchParams.get("user") || "all"}
-          onValueChange={(value) => handleFilterChange("user", value)}
-          placeholder="Utilisateur"
-          searchPlaceholder="Rechercher un utilisateur..."
-          triggerClassName="w-full sm:w-[200px]"
-        />
+        {showUser && (
+          <SearchableSelect
+            options={userOptions}
+            value={getParam("user") || "all"}
+            onValueChange={(value) => handleFilterChange("user", value)}
+            placeholder="Utilisateur"
+            searchPlaceholder="Rechercher un utilisateur..."
+            triggerClassName="w-full sm:w-[200px]"
+          />
+        )}
 
         {hasFilters && (
           <Button

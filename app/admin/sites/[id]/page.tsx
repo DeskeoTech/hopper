@@ -11,13 +11,16 @@ import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instruc
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) {
+export default async function SiteDetailsPage({ params, searchParams }: SiteDetailsPageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
   const supabase = await createClient()
 
   // Fetch site data
@@ -148,6 +151,12 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
               <p className="text-muted-foreground">Aucune ressource pour ce site</p>
             )}
           </div>
+
+          {/* Reservations */}
+          <ReservationsSection
+            context={{ type: "site", siteId: site.id, siteName: site.name }}
+            searchParams={resolvedSearchParams}
+          />
         </div>
 
         {/* Sidebar - Right Column */}
