@@ -54,6 +54,7 @@ npm run start    # Start production server
 - Styling uses Tailwind + `cn()` utility from `lib/utils.ts` for conditional classes
 - Import aliases: `@/components`, `@/lib`, `@/hooks`
 - **Dropdown filters must always include a search bar.** Use the `SearchableSelect` component from `@/components/ui/searchable-select` instead of the basic `Select` component for all filter dropdowns.
+- **Search bars must filter results in real-time.** Trigger the search on every input change (`onChange`), not only on form submit. This provides instant feedback to the user.
 
 ## Design System
 
