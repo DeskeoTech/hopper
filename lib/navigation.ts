@@ -2,7 +2,6 @@ import {
   Building2,
   Calendar,
   Briefcase,
-  Settings,
   LayoutDashboard,
   Home,
   type LucideIcon,
@@ -20,5 +19,4 @@ export const adminNavigation: NavItem[] = [
   { name: "Sites", href: "/admin/sites", icon: Building2 },
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Clients", href: "/admin/clients", icon: Briefcase },
-  { name: "Paramètres", href: "/admin/settings", icon: Settings },
 ]
