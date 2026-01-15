@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { MobileNav } from "./mobile-nav"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard Hopper",
@@ -36,7 +37,10 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
 
   return (
     <header className="flex h-16 items-center justify-between bg-card px-6">
-      <h1 className="type-h3 text-foreground">{title}</h1>
+      <div className="flex items-center gap-3">
+        <MobileNav />
+        <h1 className="type-h3 text-foreground">{title}</h1>
+      </div>
 
       <div className="flex items-center gap-4">
         {userEmail && (

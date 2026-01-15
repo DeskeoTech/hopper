@@ -1,24 +1,11 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { Building2, Calendar, Briefcase, Settings, LayoutDashboard, MapPin, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
-
-const navigation = [
-  { name: "Accueil", href: "/admin", icon: Home },
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Sites", href: "/admin/sites", icon: Building2 },
-  { name: "Réservations", href: "/admin/reservations", icon: Calendar },
-  { name: "Clients", href: "/admin/clients", icon: Briefcase },
-  { name: "Paramètres", href: "/admin/settings", icon: Settings },
-]
+import { MapPin } from "lucide-react"
+import { NavigationItems } from "./navigation-items"
 
 export function AdminSidebar() {
-  const pathname = usePathname()
-
   return (
-    <aside className="flex w-64 flex-col bg-brand text-brand-foreground">
+    <aside className="hidden md:flex w-64 flex-col bg-brand text-brand-foreground">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-brand-foreground/10 px-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand-accent">
@@ -31,24 +18,9 @@ export function AdminSidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-4">
-        {navigation.map((item) => {
-          const isActive = pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors",
-                isActive ? "bg-brand-accent text-brand-accent-foreground" : "text-brand-foreground/70 hover:bg-brand-foreground/10 hover:text-brand-foreground",
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              {item.name}
-            </Link>
-          )
-        })}
-      </nav>
+      <div className="flex-1 p-4">
+        <NavigationItems />
+      </div>
 
       {/* Footer */}
       <div className="border-t border-brand-foreground/10 p-4">
