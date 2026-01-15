@@ -8,12 +8,12 @@ Hopper is a Next.js 16 admin dashboard for managing coworking spaces (sites, res
 
 ## Commands
 
-```bash
+\`\`\`bash
 npm run dev      # Start development server (port 3000)
 npm run build    # Production build
 npm run lint     # Run ESLint
 npm run start    # Start production server
-```
+\`\`\`
 
 ## Architecture
 
