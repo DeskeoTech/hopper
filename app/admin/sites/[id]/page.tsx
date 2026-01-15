@@ -4,13 +4,15 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2 } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, CreditCard } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
 import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
 import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { EditPlansModal } from "@/components/admin/site-edit/edit-plans-modal"
+import { PlanBadge } from "@/components/admin/plan-badge"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
@@ -32,6 +34,25 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
 
   // Fetch photos for this site
   const { data: photos } = await supabase.from("site_photos").select("*").eq("site_id", id).order("created_at")
+
+  // Fetch all non-archived plans
+  const { data: plans } = await supabase
+    .from("plans")
+    .select("*")
+    .eq("archived", false)
+    .order("name")
+
+  // Fetch plan_sites associations for this site
+  const { data: planSites } = await supabase
+    .from("plan_sites")
+    .select("plan_id")
+    .eq("site_id", id)
+
+  // Build linked plans list
+  const linkedPlans = plans?.filter((plan) =>
+    planSites?.some((ps) => ps.plan_id === plan.id)
+  ) || []
+  const linkedPlanIds = planSites?.map((ps) => ps.plan_id) || []
 
   // Build public URLs for photos
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -238,6 +259,28 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
               </div>
             ) : (
               <p className="text-muted-foreground text-sm">Aucun équipement renseigné</p>
+            )}
+          </div>
+
+          {/* Forfaits */}
+          <div className="relative rounded-lg bg-card p-6">
+            <EditPlansModal
+              siteId={site.id}
+              allPlans={plans || []}
+              linkedPlanIds={linkedPlanIds}
+            />
+            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+              <CreditCard className="h-5 w-5" />
+              Forfaits
+            </h2>
+            {linkedPlans.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {linkedPlans.map((plan) => (
+                  <PlanBadge key={plan.id} plan={plan} />
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground text-sm">Aucun forfait associé</p>
             )}
           </div>
 

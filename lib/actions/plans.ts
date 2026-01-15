@@ -152,3 +152,35 @@ export async function removePlanSite(planId: string, siteId: string) {
   revalidatePath("/admin/settings")
   return { success: true }
 }
+
+export async function updateSitePlans(siteId: string, planIds: string[]) {
+  const supabase = await createClient()
+
+  // Delete existing associations for this site
+  const { error: deleteError } = await supabase
+    .from("plan_sites")
+    .delete()
+    .eq("site_id", siteId)
+
+  if (deleteError) {
+    return { error: deleteError.message }
+  }
+
+  // Insert new associations
+  if (planIds.length > 0) {
+    const { error: insertError } = await supabase.from("plan_sites").insert(
+      planIds.map((planId) => ({
+        plan_id: planId,
+        site_id: siteId,
+      }))
+    )
+
+    if (insertError) {
+      return { error: insertError.message }
+    }
+  }
+
+  revalidatePath(`/admin/sites/${siteId}`)
+  revalidatePath("/admin/settings")
+  return { success: true }
+}
