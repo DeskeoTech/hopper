@@ -1,6 +1,9 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
+// Pattern pour les domaines preview v0 (dynamiques)
+const PREVIEW_DOMAIN_PATTERN = /^preview-hopper-app-[a-z0-9]+\.vusercontent\.net$/i
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -37,18 +40,30 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Vérifier si on est sur un domaine preview
+  const host = request.headers.get('host') || ''
+  const isPreviewDomain = PREVIEW_DOMAIN_PATTERN.test(host)
+
   // If user is not authenticated and trying to access /admin, redirect to login
-  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
+  // (sauf sur les domaines preview)
+  if (!user && request.nextUrl.pathname.startsWith("/admin") && !isPreviewDomain) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
   }
 
-  // If user is authenticated and on login page, redirect to /admin
-  if (user && request.nextUrl.pathname === "/login") {
-    const url = request.nextUrl.clone()
-    url.pathname = "/admin"
-    return NextResponse.redirect(url)
+  // If user is authenticated, check role in users table
+  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role")
+      .eq("email", user.email)
+      .single()
+
+    // Only allow admin or deskeo roles
+    if (!userData || (userData.role !== "admin" && userData.role !== "deskeo")) {
+      return NextResponse.rewrite(new URL("/not-found", request.url))
+    }
   }
 
   return supabaseResponse

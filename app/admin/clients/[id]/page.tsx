@@ -6,14 +6,17 @@ import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-mod
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { EditSubscriptionModal } from "@/components/admin/company-edit/edit-subscription-modal"
 import { UsersList } from "@/components/admin/company-edit/users-list"
+import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { cn } from "@/lib/utils"
 
 interface CompanyDetailsPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default async function CompanyDetailsPage({ params }: CompanyDetailsPageProps) {
+export default async function CompanyDetailsPage({ params, searchParams }: CompanyDetailsPageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
   const supabase = await createClient()
 
   // Fetch company data
@@ -57,12 +60,12 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
       </Link>
 
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-sm bg-muted">
-          <Briefcase className="h-7 w-7 text-foreground" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
+          <Briefcase className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="type-h2 text-foreground">{company.name || "Sans nom"}</h1>
             <span
               className={cn(
@@ -88,7 +91,7 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
         {/* Main Content - Left Column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Contact Info */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditContactModal
               companyId={company.id}
               initialAddress={company.address}
@@ -135,7 +138,7 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
           </div>
 
           {/* Sites */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="rounded-lg bg-card p-4 sm:p-6">
             <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
               <Building2 className="h-5 w-5" />
               Sites accessibles ({sites.length})
@@ -172,12 +175,18 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
 
           {/* Users */}
           <UsersList companyId={company.id} initialUsers={users || []} />
+
+          {/* Reservations */}
+          <ReservationsSection
+            context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
+            searchParams={resolvedSearchParams}
+          />
         </div>
 
         {/* Sidebar - Right Column */}
         <div className="space-y-6">
           {/* Subscription */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditSubscriptionModal
               companyId={company.id}
               initialPeriod={company.subscription_period}
@@ -221,7 +230,7 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
 
           {/* Stripe */}
           {company.customer_id_stripe && (
-            <div className="rounded-lg bg-card p-6">
+            <div className="rounded-lg bg-card p-4 sm:p-6">
               <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                 <CreditCard className="h-5 w-5" />
                 Stripe
@@ -234,7 +243,7 @@ export default async function CompanyDetailsPage({ params }: CompanyDetailsPageP
           )}
 
           {/* Registration Info */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="rounded-lg bg-card p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-semibold text-foreground">Informations</h2>
             <div className="space-y-3 text-sm">
               {company.registration_date && (

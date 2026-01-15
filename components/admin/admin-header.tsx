@@ -4,13 +4,13 @@ import { usePathname, useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { MobileNav } from "./mobile-nav"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard Hopper",
   "/admin/sites": "Sites",
   "/admin/reservations": "Réservations",
   "/admin/users": "Utilisateurs",
-  "/admin/settings": "Paramètres",
 }
 
 interface AdminHeaderProps {
@@ -35,12 +35,17 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
   }
 
   return (
-    <header className="flex h-16 items-center justify-between bg-card px-6">
-      <h1 className="type-h3 text-foreground">{title}</h1>
+    <header className="flex h-16 items-center justify-between bg-card px-4 md:px-6">
+      <div className="flex items-center gap-3">
+        <MobileNav />
+        <h1 className="type-h3 text-foreground">{title}</h1>
+      </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         {userEmail && (
-          <span className="type-small text-muted-foreground">{userEmail}</span>
+          <span className="hidden truncate type-small text-muted-foreground sm:block sm:max-w-[200px]">
+            {userEmail}
+          </span>
         )}
         <Button type="button" variant="ghost" size="sm" onClick={handleLogout}>
           <LogOut className="size-4" />

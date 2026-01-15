@@ -86,6 +86,62 @@ export interface Company {
   updated_at: string
 }
 
+// Plan types
+export type PlanRecurrence = "daily" | "weekly" | "monthly"
+export type PlanServiceType = "plan" | "credit_purchase" | "coffee_subscription"
+
+export interface Plan {
+  id: string
+  airtable_id: string | null
+  name: string
+  price_per_seat_month: number | null
+  credits_per_month: number | null
+  credits_per_person_month: number | null
+  recurrence: PlanRecurrence | null
+  service_type: PlanServiceType | null
+  notes: string | null
+  archived: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PlanSite {
+  plan_id: string
+  site_id: string
+}
+
+// Booking types
+export type BookingStatus = "confirmed" | "cancelled" | "pending"
+
+export interface Booking {
+  id: string
+  airtable_id: string | null
+  user_id: string | null
+  resource_id: string | null
+  start_date: string
+  end_date: string
+  status: BookingStatus | null
+  seats_count: number | null
+  credits_used: number | null
+  notes: string | null
+  hubspot_deal_id: string | null
+  netsuite_invoice_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BookingWithDetails extends Booking {
+  resource_name: string | null
+  resource_type: ResourceType | null
+  site_id: string | null
+  site_name: string | null
+  user_first_name: string | null
+  user_last_name: string | null
+  user_email: string | null
+  company_id: string | null
+  company_name: string | null
+}
+
 // User types
 export type UserRole = "admin" | "user"
 export type UserStatus = "active" | "disabled"

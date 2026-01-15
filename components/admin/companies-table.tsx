@@ -117,7 +117,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
   }
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="overflow-x-auto rounded-lg border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -131,7 +131,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               </div>
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none"
+              className="hidden cursor-pointer select-none md:table-cell"
               onClick={() => handleSort("company_type")}
             >
               <div className="flex items-center">
@@ -140,7 +140,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               </div>
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none"
+              className="hidden cursor-pointer select-none lg:table-cell"
               onClick={() => handleSort("contact_email")}
             >
               <div className="flex items-center">
@@ -153,7 +153,8 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               onClick={() => handleSort("userCount")}
             >
               <div className="flex items-center justify-center">
-                Utilisateurs
+                <span className="hidden sm:inline">Utilisateurs</span>
+                <span className="sm:hidden">Users</span>
                 <SortIcon field="userCount" />
               </div>
             </TableHead>
@@ -187,10 +188,10 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               <TableCell className="font-medium">
                 {company.name || "Sans nom"}
               </TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground md:table-cell">
                 {getCompanyTypeLabel(company.company_type)}
               </TableCell>
-              <TableCell className="text-muted-foreground">
+              <TableCell className="hidden text-muted-foreground lg:table-cell">
                 {company.contact_email || "-"}
               </TableCell>
               <TableCell className="text-center">

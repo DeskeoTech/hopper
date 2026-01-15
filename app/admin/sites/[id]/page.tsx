@@ -11,13 +11,16 @@ import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instruc
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }
 
-export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) {
+export default async function SiteDetailsPage({ params, searchParams }: SiteDetailsPageProps) {
   const { id } = await params
+  const resolvedSearchParams = await searchParams
   const supabase = await createClient()
 
   // Fetch site data
@@ -63,12 +66,12 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       </Link>
 
       {/* Header */}
-      <div className="flex items-start gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-sm bg-muted">
-          <Building2 className="h-7 w-7 text-foreground" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
+          <Building2 className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
         </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="type-h2 text-foreground">{site.name}</h1>
             <StatusBadge status={site.status} size="md" />
             <EditHeaderModal
@@ -78,9 +81,9 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
               initialAddress={site.address}
             />
           </div>
-          <div className="mt-1 flex items-center gap-2 text-muted-foreground">
-            <MapPin className="h-4 w-4" />
-            <span>{site.address}</span>
+          <div className="mt-1 flex items-start gap-2 text-muted-foreground">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
+            <span className="break-words">{site.address}</span>
           </div>
         </div>
       </div>
@@ -92,7 +95,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           <SitePhotoGallery siteId={site.id} photos={photoUrls} siteName={site.name} />
 
           {/* Instructions & Access */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditInstructionsModal
               siteId={site.id}
               initialInstructions={site.instructions}
@@ -123,7 +126,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* Resources */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="rounded-lg bg-card p-4 sm:p-6">
             <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
               <Building2 className="h-5 w-5" />
               Ressources ({resources?.length || 0})
@@ -148,12 +151,18 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
               <p className="text-muted-foreground">Aucune ressource pour ce site</p>
             )}
           </div>
+
+          {/* Reservations */}
+          <ReservationsSection
+            context={{ type: "site", siteId: site.id, siteName: site.name }}
+            searchParams={resolvedSearchParams}
+          />
         </div>
 
         {/* Sidebar - Right Column */}
         <div className="space-y-6">
           {/* Opening Hours */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditHoursModal
               siteId={site.id}
               initialHours={site.opening_hours}
@@ -189,7 +198,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* WiFi */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditWifiModal
               siteId={site.id}
               initialSsid={site.wifi_ssid}
@@ -221,7 +230,7 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* Equipments */}
-          <div className="relative rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-4 sm:p-6">
             <EditEquipmentsModal
               siteId={site.id}
               initialEquipments={site.equipments}

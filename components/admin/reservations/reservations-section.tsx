@@ -1,9 +1,6 @@
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
-import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
-import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { ReservationsSectionClient } from "./reservations-section-client"
 import {
   startOfWeek,
   endOfWeek,
@@ -13,33 +10,35 @@ import {
   parseISO,
 } from "date-fns"
 import type { BookingWithDetails, ResourceType } from "@/lib/types/database"
+import type { HiddenFilter } from "./reservations-filters"
+import type { ViewMode } from "./view-toggle"
+import { Calendar } from "lucide-react"
 
-type ViewMode = "week" | "month" | "list"
+export type ReservationContext =
+  | { type: "site"; siteId: string; siteName: string }
+  | { type: "company"; companyId: string; companyName: string }
 
-interface ReservationsPageProps {
-  searchParams: Promise<{
-    view?: string
-    date?: string
-    startDate?: string
-    endDate?: string
-    site?: string
-    company?: string
-    status?: string
-    type?: string
-    user?: string
-    search?: string
-  }>
+interface ReservationsSectionProps {
+  context: ReservationContext
+  searchParams: Record<string, string | undefined>
+  paramPrefix?: string
+  showHeader?: boolean
 }
 
-export default async function ReservationsPage({
+export async function ReservationsSection({
+  context,
   searchParams,
-}: ReservationsPageProps) {
-  const params = await searchParams
+  paramPrefix = "res_",
+  showHeader = true,
+}: ReservationsSectionProps) {
   const supabase = await createClient()
 
+  // Helper to get prefixed param
+  const getParam = (key: string) => searchParams[`${paramPrefix}${key}`]
+
   // Determine view and reference date
-  const view = (params.view || "week") as ViewMode
-  const referenceDate = params.date ? parseISO(params.date) : new Date()
+  const view = (getParam("view") || "week") as ViewMode
+  const referenceDate = getParam("date") ? parseISO(getParam("date")!) : new Date()
 
   // Calculate date range based on view
   let startDate: Date
@@ -47,9 +46,11 @@ export default async function ReservationsPage({
 
   if (view === "list") {
     // List view uses explicit startDate/endDate params, defaults to current week
-    if (params.startDate && params.endDate) {
-      startDate = parseISO(params.startDate)
-      endDate = parseISO(params.endDate)
+    const startDateParam = getParam("startDate")
+    const endDateParam = getParam("endDate")
+    if (startDateParam && endDateParam) {
+      startDate = parseISO(startDateParam)
+      endDate = parseISO(endDateParam)
     } else {
       startDate = startOfWeek(new Date(), { weekStartsOn: 1 })
       endDate = endOfWeek(new Date(), { weekStartsOn: 1 })
@@ -66,7 +67,7 @@ export default async function ReservationsPage({
   }
 
   // Build bookings query with joins
-  let query = supabase
+  const { data: bookings, error: bookingsError } = await supabase
     .from("bookings")
     .select(
       `
@@ -91,13 +92,6 @@ export default async function ReservationsPage({
     .gte("start_date", startDate.toISOString())
     .lte("start_date", endDate.toISOString())
     .order("start_date")
-
-  // Apply filters
-  if (params.status && params.status !== "all") {
-    query = query.eq("status", params.status)
-  }
-
-  const { data: bookings, error: bookingsError } = await query
 
   // Fetch filter options
   const [sitesResult, companiesResult, usersResult] = await Promise.all([
@@ -159,29 +153,58 @@ export default async function ReservationsPage({
       }
     }) || []
 
-  // Apply client-side filters that require joined data
-  if (params.site && params.site !== "all") {
+  // Apply context-based pre-filter
+  if (context.type === "site") {
     transformedBookings = transformedBookings.filter(
-      (b) => b.site_id === params.site
+      (b) => b.site_id === context.siteId
+    )
+  } else if (context.type === "company") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.company_id === context.companyId
     )
   }
-  if (params.company && params.company !== "all") {
+
+  // Apply additional client-side filters from URL params
+  const statusParam = getParam("status")
+  if (statusParam && statusParam !== "all") {
     transformedBookings = transformedBookings.filter(
-      (b) => b.company_id === params.company
+      (b) => b.status === statusParam
     )
   }
-  if (params.type && params.type !== "all") {
+
+  const typeParam = getParam("type")
+  if (typeParam && typeParam !== "all") {
     transformedBookings = transformedBookings.filter(
-      (b) => b.resource_type === params.type
+      (b) => b.resource_type === typeParam
     )
   }
-  if (params.user && params.user !== "all") {
+
+  const userParam = getParam("user")
+  if (userParam && userParam !== "all") {
     transformedBookings = transformedBookings.filter(
-      (b) => b.user_id === params.user
+      (b) => b.user_id === userParam
     )
   }
-  if (params.search) {
-    const searchLower = params.search.toLowerCase()
+
+  // Site filter only applies if not already pre-filtered by site context
+  const siteParam = getParam("site")
+  if (context.type !== "site" && siteParam && siteParam !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.site_id === siteParam
+    )
+  }
+
+  // Company filter only applies if not already pre-filtered by company context
+  const companyParam = getParam("company")
+  if (context.type !== "company" && companyParam && companyParam !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.company_id === companyParam
+    )
+  }
+
+  const searchParam = getParam("search")
+  if (searchParam) {
+    const searchLower = searchParam.toLowerCase()
     transformedBookings = transformedBookings.filter(
       (b) =>
         b.user_first_name?.toLowerCase().includes(searchLower) ||
@@ -189,6 +212,14 @@ export default async function ReservationsPage({
         b.user_email?.toLowerCase().includes(searchLower) ||
         b.resource_name?.toLowerCase().includes(searchLower)
     )
+  }
+
+  // Determine which filters to hide based on context
+  const hiddenFilters: HiddenFilter[] = []
+  if (context.type === "site") {
+    hiddenFilters.push("site")
+  } else if (context.type === "company") {
+    hiddenFilters.push("company")
   }
 
   if (bookingsError) {
@@ -202,43 +233,30 @@ export default async function ReservationsPage({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="type-h2 text-foreground">Reservations</h1>
-          <p className="mt-1 text-muted-foreground">
-            Gerez les reservations de vos espaces
+    <div className="rounded-lg bg-card p-6">
+      {showHeader && (
+        <div className="mb-6">
+          <h2 className="flex items-center gap-2 type-h3 text-foreground">
+            <Calendar className="h-5 w-5" />
+            Reservations
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {transformedBookings.length} reservation
+            {transformedBookings.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button disabled className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nouvelle reservation
-        </Button>
-      </div>
+      )}
 
-      {/* Filters */}
-      <Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}>
-        <ReservationsFilters
+      <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
+        <ReservationsSectionClient
+          bookings={transformedBookings}
           sites={sites}
           companies={companies}
           users={users}
-        />
-      </Suspense>
-
-      {/* Results count */}
-      <p className="text-sm text-muted-foreground">
-        {transformedBookings.length} reservation
-        {transformedBookings.length !== 1 ? "s" : ""} trouvee
-        {transformedBookings.length !== 1 ? "s" : ""}
-      </p>
-
-      {/* Calendar */}
-      <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
-        <ReservationsCalendar
-          bookings={transformedBookings}
           view={view}
           referenceDate={referenceDate.toISOString()}
+          hiddenFilters={hiddenFilters}
+          paramPrefix={paramPrefix}
         />
       </Suspense>
     </div>
