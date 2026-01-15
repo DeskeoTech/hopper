@@ -1,13 +1,246 @@
-import { Calendar } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
+import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
+import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
+import { Button } from "@/components/ui/button"
+import { Plus, Calendar } from "lucide-react"
+import {
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  addDays,
+  parseISO,
+} from "date-fns"
+import type { BookingWithDetails, ResourceType } from "@/lib/types/database"
 
-export default function ReservationsPage() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-sm bg-muted border border-border mb-4">
-        <Calendar className="h-8 w-8 text-muted-foreground" />
+type ViewMode = "week" | "month" | "list"
+
+interface ReservationsPageProps {
+  searchParams: Promise<{
+    view?: string
+    date?: string
+    site?: string
+    company?: string
+    status?: string
+    type?: string
+    user?: string
+    search?: string
+  }>
+}
+
+export default async function ReservationsPage({
+  searchParams,
+}: ReservationsPageProps) {
+  const params = await searchParams
+  const supabase = await createClient()
+
+  // Determine view and reference date
+  const view = (params.view || "week") as ViewMode
+  const referenceDate = params.date ? parseISO(params.date) : new Date()
+
+  // Calculate date range based on view
+  let startDate: Date
+  let endDate: Date
+
+  if (view === "week") {
+    startDate = startOfWeek(referenceDate, { weekStartsOn: 1 })
+    endDate = endOfWeek(referenceDate, { weekStartsOn: 1 })
+  } else if (view === "month") {
+    startDate = startOfMonth(referenceDate)
+    endDate = endOfMonth(referenceDate)
+  } else {
+    startDate = referenceDate
+    endDate = addDays(referenceDate, 30)
+  }
+
+  // Build bookings query with joins
+  let query = supabase
+    .from("bookings")
+    .select(
+      `
+      *,
+      resources!left (
+        id,
+        name,
+        type,
+        site_id,
+        sites!left (id, name)
+      ),
+      users!left (
+        id,
+        first_name,
+        last_name,
+        email,
+        company_id,
+        companies!left (id, name)
+      )
+    `
+    )
+    .gte("start_date", startDate.toISOString())
+    .lte("start_date", endDate.toISOString())
+    .order("start_date")
+
+  // Apply filters
+  if (params.status && params.status !== "all") {
+    query = query.eq("status", params.status)
+  }
+
+  const { data: bookings, error: bookingsError } = await query
+
+  // Fetch filter options
+  const [sitesResult, companiesResult, usersResult] = await Promise.all([
+    supabase.from("sites").select("id, name").order("name"),
+    supabase.from("companies").select("id, name").order("name"),
+    supabase
+      .from("users")
+      .select("id, first_name, last_name, email")
+      .order("last_name"),
+  ])
+
+  const sites = sitesResult.data || []
+  const companies = companiesResult.data || []
+  const users = usersResult.data || []
+
+  // Transform bookings to flat structure with details
+  let transformedBookings: BookingWithDetails[] =
+    bookings?.map((b) => {
+      const resource = b.resources as {
+        id: string
+        name: string
+        type: ResourceType
+        site_id: string
+        sites: { id: string; name: string } | null
+      } | null
+      const user = b.users as {
+        id: string
+        first_name: string | null
+        last_name: string | null
+        email: string | null
+        company_id: string | null
+        companies: { id: string; name: string | null } | null
+      } | null
+
+      return {
+        id: b.id,
+        airtable_id: b.airtable_id,
+        user_id: b.user_id,
+        resource_id: b.resource_id,
+        start_date: b.start_date,
+        end_date: b.end_date,
+        status: b.status,
+        seats_count: b.seats_count,
+        credits_used: b.credits_used,
+        notes: b.notes,
+        hubspot_deal_id: b.hubspot_deal_id,
+        netsuite_invoice_id: b.netsuite_invoice_id,
+        created_at: b.created_at,
+        updated_at: b.updated_at,
+        resource_name: resource?.name || null,
+        resource_type: resource?.type || null,
+        site_id: resource?.site_id || null,
+        site_name: resource?.sites?.name || null,
+        user_first_name: user?.first_name || null,
+        user_last_name: user?.last_name || null,
+        user_email: user?.email || null,
+        company_id: user?.company_id || null,
+        company_name: user?.companies?.name || null,
+      }
+    }) || []
+
+  // Apply client-side filters that require joined data
+  if (params.site && params.site !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.site_id === params.site
+    )
+  }
+  if (params.company && params.company !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.company_id === params.company
+    )
+  }
+  if (params.type && params.type !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.resource_type === params.type
+    )
+  }
+  if (params.user && params.user !== "all") {
+    transformedBookings = transformedBookings.filter(
+      (b) => b.user_id === params.user
+    )
+  }
+  if (params.search) {
+    const searchLower = params.search.toLowerCase()
+    transformedBookings = transformedBookings.filter(
+      (b) =>
+        b.user_first_name?.toLowerCase().includes(searchLower) ||
+        b.user_last_name?.toLowerCase().includes(searchLower) ||
+        b.user_email?.toLowerCase().includes(searchLower) ||
+        b.resource_name?.toLowerCase().includes(searchLower)
+    )
+  }
+
+  if (bookingsError) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <p className="text-destructive">
+          Erreur lors du chargement des reservations: {bookingsError.message}
+        </p>
       </div>
-      <h1 className="type-h2 text-foreground mb-2">Réservations</h1>
-      <p className="text-muted-foreground">Prochainement disponible</p>
+    )
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="type-h2 text-foreground">Reservations</h1>
+          <p className="mt-1 text-muted-foreground">
+            Gerez les reservations de vos espaces
+          </p>
+        </div>
+        <Button disabled className="gap-2">
+          <Plus className="h-4 w-4" />
+          Nouvelle reservation
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <ReservationsFilters
+        sites={sites}
+        companies={companies}
+        users={users}
+      />
+
+      {/* Results count */}
+      <p className="text-sm text-muted-foreground">
+        {transformedBookings.length} reservation
+        {transformedBookings.length !== 1 ? "s" : ""} trouvee
+        {transformedBookings.length !== 1 ? "s" : ""}
+      </p>
+
+      {/* Calendar */}
+      {transformedBookings.length > 0 ? (
+        <ReservationsCalendar
+          bookings={transformedBookings}
+          view={view}
+          referenceDate={referenceDate.toISOString()}
+        />
+      ) : (
+        <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
+          <Calendar className="mb-4 h-12 w-12 text-muted-foreground/50" />
+          <p className="text-muted-foreground">
+            {params.search ||
+            params.site ||
+            params.company ||
+            params.status ||
+            params.type ||
+            params.user
+              ? "Aucune reservation ne correspond a vos criteres"
+              : "Aucune reservation pour cette periode"}
+          </p>
+        </div>
+      )}
     </div>
   )
 }

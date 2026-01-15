@@ -86,6 +86,38 @@ export interface Company {
   updated_at: string
 }
 
+// Booking types
+export type BookingStatus = "confirmed" | "cancelled" | "pending"
+
+export interface Booking {
+  id: string
+  airtable_id: string | null
+  user_id: string | null
+  resource_id: string | null
+  start_date: string
+  end_date: string
+  status: BookingStatus | null
+  seats_count: number | null
+  credits_used: number | null
+  notes: string | null
+  hubspot_deal_id: string | null
+  netsuite_invoice_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface BookingWithDetails extends Booking {
+  resource_name: string | null
+  resource_type: ResourceType | null
+  site_id: string | null
+  site_name: string | null
+  user_first_name: string | null
+  user_last_name: string | null
+  user_email: string | null
+  company_id: string | null
+  company_name: string | null
+}
+
 // User types
 export type UserRole = "admin" | "user"
 export type UserStatus = "active" | "disabled"
