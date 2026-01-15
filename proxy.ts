@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
-import { isEmailAuthorized } from "@/lib/airtable/authorized-emails"
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -45,10 +44,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If user is authenticated but email not in Airtable whitelist, show 404
+  // If user is authenticated, check role in users table
   if (user && request.nextUrl.pathname.startsWith("/admin")) {
-    const authorized = await isEmailAuthorized(user.email || "")
-    if (!authorized) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role")
+      .eq("email", user.email)
+      .single()
+
+    // Only allow admin or deskeo roles
+    if (!userData || (userData.role !== "admin" && userData.role !== "deskeo")) {
       return NextResponse.rewrite(new URL("/not-found", request.url))
     }
   }
