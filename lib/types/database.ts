@@ -64,6 +64,46 @@ export interface SiteContact {
   created_at: string
 }
 
+// Company types
+export type CompanyType = "self_employed" | "multi_employee"
+export type SubscriptionPeriod = "month" | "week"
+
+export interface Company {
+  id: string
+  airtable_id: string | null
+  name: string | null
+  address: string | null
+  phone: string | null
+  contact_email: string | null
+  registration_date: string | null
+  company_type: CompanyType | null
+  id_spacebring: string | null
+  subscription_period: SubscriptionPeriod | null
+  subscription_start_date: string | null
+  subscription_end_date: string | null
+  customer_id_stripe: string | null
+  created_at: string
+  updated_at: string
+}
+
+// User types
+export type UserRole = "admin" | "user"
+export type UserStatus = "active" | "disabled"
+
+export interface User {
+  id: string
+  airtable_id: string | null
+  last_name: string | null
+  first_name: string | null
+  email: string | null
+  phone: string | null
+  role: UserRole | null
+  status: UserStatus | null
+  company_id: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Database {
   public: {
     Tables: {
