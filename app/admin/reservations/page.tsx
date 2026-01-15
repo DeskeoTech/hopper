@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
 import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
 import { Button } from "@/components/ui/button"
-import { Plus, Calendar } from "lucide-react"
+import { Plus } from "lucide-react"
 import {
   startOfWeek,
   endOfWeek,
@@ -220,27 +220,11 @@ export default async function ReservationsPage({
       </p>
 
       {/* Calendar */}
-      {transformedBookings.length > 0 ? (
-        <ReservationsCalendar
-          bookings={transformedBookings}
-          view={view}
-          referenceDate={referenceDate.toISOString()}
-        />
-      ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
-          <Calendar className="mb-4 h-12 w-12 text-muted-foreground/50" />
-          <p className="text-muted-foreground">
-            {params.search ||
-            params.site ||
-            params.company ||
-            params.status ||
-            params.type ||
-            params.user
-              ? "Aucune reservation ne correspond a vos criteres"
-              : "Aucune reservation pour cette periode"}
-          </p>
-        </div>
-      )}
+      <ReservationsCalendar
+        bookings={transformedBookings}
+        view={view}
+        referenceDate={referenceDate.toISOString()}
+      />
     </div>
   )
 }
