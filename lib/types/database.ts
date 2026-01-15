@@ -86,6 +86,30 @@ export interface Company {
   updated_at: string
 }
 
+// Plan types
+export type PlanRecurrence = "daily" | "weekly" | "monthly"
+export type PlanServiceType = "plan" | "credit_purchase" | "coffee_subscription"
+
+export interface Plan {
+  id: string
+  airtable_id: string | null
+  name: string
+  price_per_seat_month: number | null
+  credits_per_month: number | null
+  credits_per_person_month: number | null
+  recurrence: PlanRecurrence | null
+  service_type: PlanServiceType | null
+  notes: string | null
+  archived: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface PlanSite {
+  plan_id: string
+  site_id: string
+}
+
 // User types
 export type UserRole = "admin" | "user"
 export type UserStatus = "active" | "disabled"
