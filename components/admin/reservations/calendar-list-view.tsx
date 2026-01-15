@@ -114,114 +114,122 @@ export function CalendarListView({ bookings }: CalendarListViewProps) {
   }
 
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("date")}
-          >
-            <div className="flex items-center">
-              Date
-              <SortIcon field="date" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("time")}
-          >
-            <div className="flex items-center">
-              Heure
-              <SortIcon field="time" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("resource")}
-          >
-            <div className="flex items-center">
-              Ressource
-              <SortIcon field="resource" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("site")}
-          >
-            <div className="flex items-center">
-              Site
-              <SortIcon field="site" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("user")}
-          >
-            <div className="flex items-center">
-              Utilisateur
-              <SortIcon field="user" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("company")}
-          >
-            <div className="flex items-center">
-              Entreprise
-              <SortIcon field="company" />
-            </div>
-          </TableHead>
-          <TableHead
-            className="cursor-pointer select-none"
-            onClick={() => handleSort("status")}
-          >
-            <div className="flex items-center">
-              Statut
-              <SortIcon field="status" />
-            </div>
-          </TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sortedBookings.map((booking) => {
-          const userName =
-            booking.user_first_name || booking.user_last_name
-              ? `${booking.user_first_name || ""} ${booking.user_last_name || ""}`.trim()
-              : booking.user_email || "-"
+    <div className="overflow-x-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead
+              className="cursor-pointer select-none"
+              onClick={() => handleSort("date")}
+            >
+              <div className="flex items-center">
+                Date
+                <SortIcon field="date" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none sm:table-cell"
+              onClick={() => handleSort("time")}
+            >
+              <div className="flex items-center">
+                Heure
+                <SortIcon field="time" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="cursor-pointer select-none"
+              onClick={() => handleSort("resource")}
+            >
+              <div className="flex items-center">
+                Ressource
+                <SortIcon field="resource" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none md:table-cell"
+              onClick={() => handleSort("site")}
+            >
+              <div className="flex items-center">
+                Site
+                <SortIcon field="site" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none lg:table-cell"
+              onClick={() => handleSort("user")}
+            >
+              <div className="flex items-center">
+                Utilisateur
+                <SortIcon field="user" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none lg:table-cell"
+              onClick={() => handleSort("company")}
+            >
+              <div className="flex items-center">
+                Entreprise
+                <SortIcon field="company" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="cursor-pointer select-none"
+              onClick={() => handleSort("status")}
+            >
+              <div className="flex items-center">
+                Statut
+                <SortIcon field="status" />
+              </div>
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedBookings.map((booking) => {
+            const userName =
+              booking.user_first_name || booking.user_last_name
+                ? `${booking.user_first_name || ""} ${booking.user_last_name || ""}`.trim()
+                : booking.user_email || "-"
 
-          return (
-            <TableRow key={booking.id}>
-              <TableCell>
-                {format(parseISO(booking.start_date), "dd/MM/yyyy", {
-                  locale: fr,
-                })}
-              </TableCell>
-              <TableCell>
-                {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} -{" "}
-                {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
-              </TableCell>
-              <TableCell>
-                <div>
-                  <span className="font-medium">
-                    {booking.resource_name || "-"}
-                  </span>
-                  {booking.resource_type && (
-                    <span className="ml-1 text-xs text-muted-foreground">
-                      ({resourceTypeLabels[booking.resource_type] || booking.resource_type})
+            return (
+              <TableRow key={booking.id}>
+                <TableCell>
+                  <div>
+                    {format(parseISO(booking.start_date), "dd/MM/yyyy", {
+                      locale: fr,
+                    })}
+                    <span className="block text-xs text-muted-foreground sm:hidden">
+                      {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} -{" "}
+                      {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
                     </span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell>{booking.site_name || "-"}</TableCell>
-              <TableCell>{userName}</TableCell>
-              <TableCell>{booking.company_name || "-"}</TableCell>
-              <TableCell>
-                <BookingStatusBadge status={booking.status} />
-              </TableCell>
-            </TableRow>
-          )
-        })}
-      </TableBody>
-    </Table>
+                  </div>
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} -{" "}
+                  {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
+                </TableCell>
+                <TableCell>
+                  <div>
+                    <span className="font-medium">
+                      {booking.resource_name || "-"}
+                    </span>
+                    {booking.resource_type && (
+                      <span className="ml-1 hidden text-xs text-muted-foreground sm:inline">
+                        ({resourceTypeLabels[booking.resource_type] || booking.resource_type})
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="hidden md:table-cell">{booking.site_name || "-"}</TableCell>
+                <TableCell className="hidden lg:table-cell">{userName}</TableCell>
+                <TableCell className="hidden lg:table-cell">{booking.company_name || "-"}</TableCell>
+                <TableCell>
+                  <BookingStatusBadge status={booking.status} />
+                </TableCell>
+              </TableRow>
+            )
+          })}
+        </TableBody>
+      </Table>
+    </div>
   )
 }

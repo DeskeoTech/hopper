@@ -23,6 +23,7 @@ interface CalendarMonthViewProps {
 }
 
 const WEEKDAYS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"]
+const WEEKDAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"]
 
 export function CalendarMonthView({
   bookings,
@@ -84,15 +85,16 @@ export function CalendarMonthView({
   }, [calendarDays])
 
   return (
-    <div className="p-4">
+    <div className="p-2 sm:p-4">
       {/* Weekday headers */}
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {WEEKDAYS.map((day) => (
+        {WEEKDAYS.map((day, index) => (
           <div
             key={day}
-            className="p-2 text-center text-sm font-medium text-muted-foreground"
+            className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-muted-foreground"
           >
-            {day}
+            <span className="hidden sm:inline">{day}</span>
+            <span className="sm:hidden">{WEEKDAYS_SHORT[index]}</span>
           </div>
         ))}
       </div>
@@ -118,14 +120,14 @@ export function CalendarMonthView({
               key={dayKey}
               onClick={() => handleDayClick(day)}
               className={cn(
-                "relative min-h-[100px] rounded-lg border border-border p-2 text-left transition-colors hover:bg-accent/50",
+                "relative min-h-[60px] sm:min-h-[100px] rounded-md sm:rounded-lg border border-border p-1 sm:p-2 text-left transition-colors hover:bg-accent/50",
                 !isCurrentMonth && "bg-muted/30 text-muted-foreground",
                 isToday(day) && "ring-2 ring-primary"
               )}
             >
               <span
                 className={cn(
-                  "text-sm font-medium",
+                  "text-xs sm:text-sm font-medium",
                   isToday(day) && "text-primary"
                 )}
               >
@@ -133,23 +135,26 @@ export function CalendarMonthView({
               </span>
 
               {dayBookings.length > 0 && (
-                <div className="mt-1 space-y-1">
+                <div className="mt-0.5 sm:mt-1 space-y-0.5 sm:space-y-1">
                   {confirmedCount > 0 && (
-                    <div className="flex items-center gap-1 rounded-sm bg-success/10 px-1.5 py-0.5 text-xs text-success">
-                      <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                      {confirmedCount} confirmee{confirmedCount > 1 ? "s" : ""}
+                    <div className="flex items-center gap-0.5 sm:gap-1 rounded-sm bg-success/10 px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs text-success">
+                      <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-success" />
+                      <span className="sm:hidden">{confirmedCount}</span>
+                      <span className="hidden sm:inline">{confirmedCount} confirmee{confirmedCount > 1 ? "s" : ""}</span>
                     </div>
                   )}
                   {pendingCount > 0 && (
-                    <div className="flex items-center gap-1 rounded-sm bg-warning/10 px-1.5 py-0.5 text-xs text-warning">
-                      <span className="h-1.5 w-1.5 rounded-full bg-warning" />
-                      {pendingCount} en attente
+                    <div className="flex items-center gap-0.5 sm:gap-1 rounded-sm bg-warning/10 px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs text-warning">
+                      <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-warning" />
+                      <span className="sm:hidden">{pendingCount}</span>
+                      <span className="hidden sm:inline">{pendingCount} en attente</span>
                     </div>
                   )}
                   {cancelledCount > 0 && (
-                    <div className="flex items-center gap-1 rounded-sm bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive">
-                      <span className="h-1.5 w-1.5 rounded-full bg-destructive" />
-                      {cancelledCount} annulee{cancelledCount > 1 ? "s" : ""}
+                    <div className="flex items-center gap-0.5 sm:gap-1 rounded-sm bg-destructive/10 px-1 sm:px-1.5 py-0.5 text-[10px] sm:text-xs text-destructive">
+                      <span className="h-1 w-1 sm:h-1.5 sm:w-1.5 rounded-full bg-destructive" />
+                      <span className="sm:hidden">{cancelledCount}</span>
+                      <span className="hidden sm:inline">{cancelledCount} annulee{cancelledCount > 1 ? "s" : ""}</span>
                     </div>
                   )}
                 </div>
