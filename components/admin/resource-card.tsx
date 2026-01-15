@@ -20,7 +20,7 @@ const statusLabels = {
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   return (
-    <div className="rounded-sm border border-border bg-muted/50 p-4 transition-colors hover:bg-muted">
+    <div className="rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted">
       <div className="flex items-start justify-between gap-2">
         <h4 className="font-medium text-foreground">{resource.name}</h4>
         <span className={cn("rounded-sm border px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>

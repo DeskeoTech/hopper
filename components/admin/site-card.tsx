@@ -1,18 +1,17 @@
 import Link from "next/link"
-import { MapPin, Users, Wifi, Clock, Building2 } from "lucide-react"
+import { MapPin, Wifi, Clock, Building2 } from "lucide-react"
 import { StatusBadge } from "@/components/admin/status-badge"
 import type { Site } from "@/lib/types/database"
 
 interface SiteCardProps {
   site: Site
-  resourceCount: number
   imageUrl?: string | null
 }
 
-export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
+export function SiteCard({ site, imageUrl }: SiteCardProps) {
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-sm border border-border bg-card transition-all hover:border-foreground/50">
+      <article className="overflow-hidden rounded-lg bg-card transition-all">
         {/* Image */}
         <div className="relative h-44 overflow-hidden bg-muted">
           {imageUrl ? (
@@ -33,7 +32,7 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
 
         {/* Content */}
         <div className="p-4">
-          <h3 className="text-lg font-semibold text-foreground transition-colors">
+          <h3 className="font-header text-lg text-foreground transition-colors">
             {site.name}
           </h3>
 
@@ -43,11 +42,7 @@ export function SiteCard({ site, resourceCount, imageUrl }: SiteCardProps) {
           </div>
 
           {/* Meta info */}
-          <div className="mt-4 flex items-center gap-4 border-t border-border pt-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <Users className="h-3.5 w-3.5" />
-              <span>{resourceCount} ressource(s)</span>
-            </div>
+          <div className="mt-4 flex items-center gap-4 pt-4 text-xs text-muted-foreground">
             {site.wifi_ssid && (
               <div className="flex items-center gap-1.5">
                 <Wifi className="h-3.5 w-3.5" />

@@ -1,9 +1,9 @@
 "use client"
 
-import { usePathname } from "next/navigation"
-import { Bell, Search, User } from "lucide-react"
+import { usePathname, useRouter } from "next/navigation"
+import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import { createClient } from "@/lib/supabase/client"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Dashboard Hopper",
@@ -13,8 +13,13 @@ const pageTitles: Record<string, string> = {
   "/admin/settings": "Paramètres",
 }
 
-export function AdminHeader() {
+interface AdminHeaderProps {
+  userEmail?: string | null
+}
+
+export function AdminHeader({ userEmail }: AdminHeaderProps) {
   const pathname = usePathname()
+  const router = useRouter()
 
   // Get title - check for dynamic routes
   let title = pageTitles[pathname] || "Dashboard"
@@ -22,31 +27,24 @@ export function AdminHeader() {
     title = "Détails du site"
   }
 
+  const handleLogout = async () => {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push("/login")
+    router.refresh()
+  }
+
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-6">
+    <header className="flex h-16 items-center justify-between bg-card px-6">
       <h1 className="type-h3 text-foreground">{title}</h1>
 
       <div className="flex items-center gap-4">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Rechercher..."
-            className="w-64 border-border bg-muted pl-9 placeholder:text-muted-foreground focus-visible:ring-ring"
-          />
-        </div>
-
-        {/* Notifications */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">Notifications</span>
-        </Button>
-
-        {/* User */}
-        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-          <User className="h-5 w-5" />
-          <span className="sr-only">Profil</span>
+        {userEmail && (
+          <span className="type-small text-muted-foreground">{userEmail}</span>
+        )}
+        <Button type="button" variant="ghost" size="sm" onClick={handleLogout}>
+          <LogOut className="size-4" />
+          <span className="sr-only">Déconnexion</span>
         </Button>
       </div>
     </header>
