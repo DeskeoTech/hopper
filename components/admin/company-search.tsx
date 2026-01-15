@@ -1,17 +1,11 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState, useTransition, useMemo } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 
 export function CompanySearch() {
   const router = useRouter()
@@ -51,6 +45,15 @@ export function CompanySearch() {
 
   const hasFilters = search || companyType !== "all"
 
+  const typeOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous les types" },
+      { value: "self_employed", label: "Indépendant" },
+      { value: "multi_employee", label: "Multi-employés" },
+    ],
+    []
+  )
+
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
       <form onSubmit={handleSearchSubmit} className="relative flex-1">
@@ -64,16 +67,14 @@ export function CompanySearch() {
         />
       </form>
 
-      <Select value={companyType} onValueChange={handleTypeChange}>
-        <SelectTrigger className="w-full sm:w-[180px]">
-          <SelectValue placeholder="Type d'entreprise" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tous les types</SelectItem>
-          <SelectItem value="self_employed">Indépendant</SelectItem>
-          <SelectItem value="multi_employee">Multi-employés</SelectItem>
-        </SelectContent>
-      </Select>
+      <SearchableSelect
+        options={typeOptions}
+        value={companyType}
+        onValueChange={handleTypeChange}
+        placeholder="Type d'entreprise"
+        searchPlaceholder="Rechercher un type..."
+        triggerClassName="w-full sm:w-[180px]"
+      />
 
       {hasFilters && (
         <Button

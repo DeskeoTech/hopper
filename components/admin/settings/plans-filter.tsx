@@ -1,15 +1,10 @@
 "use client"
 
+import { useMemo } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 
 interface PlansFilterProps {
   search: string
@@ -31,6 +26,15 @@ export function PlansFilter({
     onStatusFilterChange("all")
   }
 
+  const statusOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous" },
+      { value: "active", label: "Actifs" },
+      { value: "archived", label: "Archivés" },
+    ],
+    []
+  )
+
   return (
     <div className="flex flex-wrap items-center gap-3">
       <div className="relative flex-1 min-w-[200px] max-w-sm">
@@ -42,16 +46,14 @@ export function PlansFilter({
           className="pl-9"
         />
       </div>
-      <Select value={statusFilter} onValueChange={onStatusFilterChange}>
-        <SelectTrigger className="w-[140px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Tous</SelectItem>
-          <SelectItem value="active">Actifs</SelectItem>
-          <SelectItem value="archived">Archivés</SelectItem>
-        </SelectContent>
-      </Select>
+      <SearchableSelect
+        options={statusOptions}
+        value={statusFilter}
+        onValueChange={(value) => onStatusFilterChange(value as "all" | "active" | "archived")}
+        placeholder="Statut"
+        searchPlaceholder="Rechercher un statut..."
+        triggerClassName="w-[140px]"
+      />
       {hasFilters && (
         <Button variant="ghost" size="sm" onClick={handleClear} className="gap-1">
           <X className="h-4 w-4" />

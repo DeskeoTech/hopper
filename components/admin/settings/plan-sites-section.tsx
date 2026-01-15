@@ -1,15 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import {
   Table,
   TableBody,
@@ -82,6 +76,28 @@ export function PlanSitesSection({ plans, sites, planSites }: PlanSitesTableProp
     setDeleteConfirm(null)
   }
 
+  const planOptions = useMemo(
+    () => [
+      { value: "", label: "Sélectionner..." },
+      ...activePlans.map((plan) => ({
+        value: plan.id,
+        label: plan.name || "Sans nom",
+      })),
+    ],
+    [activePlans]
+  )
+
+  const siteOptions = useMemo(
+    () => [
+      { value: "", label: "Sélectionner..." },
+      ...sites.map((site) => ({
+        value: site.id,
+        label: site.name || "Sans nom",
+      })),
+    ],
+    [sites]
+  )
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -94,33 +110,23 @@ export function PlanSitesSection({ plans, sites, planSites }: PlanSitesTableProp
       <div className="flex flex-wrap items-end gap-3">
         <div className="space-y-1.5 min-w-[180px]">
           <label className="text-sm font-medium">Forfait</label>
-          <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner..." />
-            </SelectTrigger>
-            <SelectContent>
-              {activePlans.map((plan) => (
-                <SelectItem key={plan.id} value={plan.id}>
-                  {plan.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={planOptions}
+            value={selectedPlanId}
+            onValueChange={setSelectedPlanId}
+            placeholder="Sélectionner..."
+            searchPlaceholder="Rechercher un forfait..."
+          />
         </div>
         <div className="space-y-1.5 min-w-[180px]">
           <label className="text-sm font-medium">Site</label>
-          <Select value={selectedSiteId} onValueChange={setSelectedSiteId}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner..." />
-            </SelectTrigger>
-            <SelectContent>
-              {sites.map((site) => (
-                <SelectItem key={site.id} value={site.id}>
-                  {site.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SearchableSelect
+            options={siteOptions}
+            value={selectedSiteId}
+            onValueChange={setSelectedSiteId}
+            placeholder="Sélectionner..."
+            searchPlaceholder="Rechercher un site..."
+          />
         </div>
         <Button
           onClick={handleAdd}

@@ -53,6 +53,7 @@ npm run start    # Start production server
 - Data fetching happens in server components via `createClient()` from `lib/supabase/server.ts`
 - Styling uses Tailwind + `cn()` utility from `lib/utils.ts` for conditional classes
 - Import aliases: `@/components`, `@/lib`, `@/hooks`
+- **Dropdown filters must always include a search bar.** Use the `SearchableSelect` component from `@/components/ui/searchable-select` instead of the basic `Select` component for all filter dropdowns.
 
 ## Design System
 
