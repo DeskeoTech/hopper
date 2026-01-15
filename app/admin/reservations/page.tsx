@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
 import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
@@ -206,11 +207,13 @@ export default async function ReservationsPage({
       </div>
 
       {/* Filters */}
-      <ReservationsFilters
-        sites={sites}
-        companies={companies}
-        users={users}
-      />
+      <Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}>
+        <ReservationsFilters
+          sites={sites}
+          companies={companies}
+          users={users}
+        />
+      </Suspense>
 
       {/* Results count */}
       <p className="text-sm text-muted-foreground">
@@ -220,11 +223,13 @@ export default async function ReservationsPage({
       </p>
 
       {/* Calendar */}
-      <ReservationsCalendar
-        bookings={transformedBookings}
-        view={view}
-        referenceDate={referenceDate.toISOString()}
-      />
+      <Suspense fallback={<div className="h-96 animate-pulse rounded-lg bg-muted" />}>
+        <ReservationsCalendar
+          bookings={transformedBookings}
+          view={view}
+          referenceDate={referenceDate.toISOString()}
+        />
+      </Suspense>
     </div>
   )
 }
