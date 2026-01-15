@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { isEmailAuthorized } from "@/lib/airtable/authorized-emails"
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
@@ -42,6 +43,14 @@ export async function proxy(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
+  }
+
+  // If user is authenticated but email not in Airtable whitelist, show 404
+  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+    const authorized = await isEmailAuthorized(user.email || "")
+    if (!authorized) {
+      return NextResponse.rewrite(new URL("/not-found", request.url))
+    }
   }
 
   // If user is authenticated and on login page, redirect to /admin
