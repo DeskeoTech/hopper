@@ -1,4 +1,5 @@
 import { LoginForm } from "@/components/login-form"
+import { UrlVersionFooter } from "@/components/url-version-footer"
 
 export default function LoginPage() {
   return (
@@ -15,6 +16,8 @@ export default function LoginPage() {
           <LoginForm />
         </div>
       </div>
+
+      <UrlVersionFooter />
     </main>
   )
 }
