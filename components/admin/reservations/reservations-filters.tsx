@@ -1,17 +1,11 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState, useTransition } from "react"
+import { useState, useTransition, useMemo } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 
 interface ReservationsFiltersProps {
   sites: Array<{ id: string; name: string | null }>
@@ -94,6 +88,58 @@ export function ReservationsFilters({
     searchParams.get("type") ||
     searchParams.get("user")
 
+  const siteOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous les sites" },
+      ...sites.map((site) => ({
+        value: site.id,
+        label: site.name || "Sans nom",
+      })),
+    ],
+    [sites]
+  )
+
+  const companyOptions = useMemo(
+    () => [
+      { value: "all", label: "Toutes les entreprises" },
+      ...companies.map((company) => ({
+        value: company.id,
+        label: company.name || "Sans nom",
+      })),
+    ],
+    [companies]
+  )
+
+  const statusSelectOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous les statuts" },
+      ...statusOptions,
+    ],
+    []
+  )
+
+  const typeOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous les types" },
+      ...resourceTypes,
+    ],
+    []
+  )
+
+  const userOptions = useMemo(
+    () => [
+      { value: "all", label: "Tous les utilisateurs" },
+      ...users.map((user) => ({
+        value: user.id,
+        label:
+          user.first_name || user.last_name
+            ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+            : user.email || "Sans nom",
+      })),
+    ],
+    [users]
+  )
+
   return (
     <div className="space-y-4">
       {/* First row: Search + Site + Company */}
@@ -109,95 +155,53 @@ export function ReservationsFilters({
           />
         </form>
 
-        <Select
+        <SearchableSelect
+          options={siteOptions}
           value={searchParams.get("site") || "all"}
           onValueChange={(value) => handleFilterChange("site", value)}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Site" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les sites</SelectItem>
-            {sites.map((site) => (
-              <SelectItem key={site.id} value={site.id}>
-                {site.name || "Sans nom"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Site"
+          searchPlaceholder="Rechercher un site..."
+          triggerClassName="w-full sm:w-[180px]"
+        />
 
-        <Select
+        <SearchableSelect
+          options={companyOptions}
           value={searchParams.get("company") || "all"}
           onValueChange={(value) => handleFilterChange("company", value)}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Entreprise" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Toutes les entreprises</SelectItem>
-            {companies.map((company) => (
-              <SelectItem key={company.id} value={company.id}>
-                {company.name || "Sans nom"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Entreprise"
+          searchPlaceholder="Rechercher une entreprise..."
+          triggerClassName="w-full sm:w-[180px]"
+        />
       </div>
 
       {/* Second row: Status + Type + User + Clear */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-        <Select
+        <SearchableSelect
+          options={statusSelectOptions}
           value={searchParams.get("status") || "all"}
           onValueChange={(value) => handleFilterChange("status", value)}
-        >
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="Statut" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les statuts</SelectItem>
-            {statusOptions.map((option) => (
-              <SelectItem key={option.value} value={option.value}>
-                {option.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Statut"
+          searchPlaceholder="Rechercher un statut..."
+          triggerClassName="w-full sm:w-[160px]"
+        />
 
-        <Select
+        <SearchableSelect
+          options={typeOptions}
           value={searchParams.get("type") || "all"}
           onValueChange={(value) => handleFilterChange("type", value)}
-        >
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="Type de ressource" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les types</SelectItem>
-            {resourceTypes.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Type de ressource"
+          searchPlaceholder="Rechercher un type..."
+          triggerClassName="w-full sm:w-[180px]"
+        />
 
-        <Select
+        <SearchableSelect
+          options={userOptions}
           value={searchParams.get("user") || "all"}
           onValueChange={(value) => handleFilterChange("user", value)}
-        >
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="Utilisateur" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les utilisateurs</SelectItem>
-            {users.map((user) => (
-              <SelectItem key={user.id} value={user.id}>
-                {user.first_name || user.last_name
-                  ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
-                  : user.email || "Sans nom"}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          placeholder="Utilisateur"
+          searchPlaceholder="Rechercher un utilisateur..."
+          triggerClassName="w-full sm:w-[200px]"
+        />
 
         {hasFilters && (
           <Button
