@@ -31,7 +31,7 @@ export function BookingCard({ booking, compact = false }: BookingCardProps) {
     return (
       <div
         className={cn(
-          "rounded-md border p-2 text-xs",
+          "h-full rounded-md border p-2 text-xs",
           booking.status === "confirmed" &&
             "border-success/30 bg-success/10 text-success",
           booking.status === "pending" &&

@@ -3,7 +3,6 @@
 import { useMemo } from "react"
 import {
   format,
-  parseISO,
   startOfWeek,
   addDays,
   isSameDay,
@@ -45,7 +44,7 @@ export function CalendarWeekView({
     })
 
     bookings.forEach((booking) => {
-      const bookingDate = parseISO(booking.start_date)
+      const bookingDate = new Date(booking.start_date)
       const dayKey = format(bookingDate, "yyyy-MM-dd")
       if (grouped[dayKey]) {
         grouped[dayKey].push(booking)
@@ -56,8 +55,9 @@ export function CalendarWeekView({
   }, [bookings, weekDays])
 
   const getBookingPosition = (booking: BookingWithDetails) => {
-    const start = parseISO(booking.start_date)
-    const end = parseISO(booking.end_date)
+    // Utiliser new Date() au lieu de parseISO pour mieux gérer le format PostgreSQL
+    const start = new Date(booking.start_date)
+    const end = new Date(booking.end_date)
 
     const startHour = getHours(start) + getMinutes(start) / 60
     const duration = differenceInMinutes(end, start) / 60
@@ -109,7 +109,7 @@ export function CalendarWeekView({
                 className="relative border-b border-border"
                 style={{ height: HOUR_HEIGHT }}
               >
-                <span className="absolute -top-3 right-2 text-xs text-muted-foreground">
+                <span className="absolute top-1 right-2 text-xs text-muted-foreground">
                   {hour.toString().padStart(2, "0")}:00
                 </span>
               </div>
