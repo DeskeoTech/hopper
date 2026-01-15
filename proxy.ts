@@ -54,6 +54,20 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // If user is authenticated, check role in users table
+  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("role")
+      .eq("email", user.email)
+      .single()
+
+    // Only allow admin or deskeo roles
+    if (!userData || (userData.role !== "admin" && userData.role !== "deskeo")) {
+      return NextResponse.rewrite(new URL("/not-found", request.url))
+    }
+  }
+
   // If user is authenticated and on login page, redirect to /admin
   if (user && request.nextUrl.pathname === "/login") {
     const url = request.nextUrl.clone()
