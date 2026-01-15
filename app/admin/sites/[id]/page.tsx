@@ -4,8 +4,13 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Edit, Building2 } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2 } from "lucide-react"
+import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
+import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
+import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
+import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
+import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
+import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
@@ -58,75 +63,46 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
       </Link>
 
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-sm bg-muted">
-            <Building2 className="h-7 w-7 text-foreground" />
+      <div className="flex items-start gap-4">
+        <div className="flex h-14 w-14 items-center justify-center rounded-sm bg-muted">
+          <Building2 className="h-7 w-7 text-foreground" />
+        </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <h1 className="type-h2 text-foreground">{site.name}</h1>
+            <StatusBadge status={site.status} size="md" />
+            <EditHeaderModal
+              siteId={site.id}
+              initialName={site.name}
+              initialStatus={site.status}
+              initialAddress={site.address}
+            />
           </div>
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="type-h2 text-foreground">{site.name}</h1>
-              <StatusBadge status={site.status} size="md" />
-            </div>
-            <div className="mt-1 flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4" />
-              <span>{site.address}</span>
-            </div>
+          <div className="mt-1 flex items-center gap-2 text-muted-foreground">
+            <MapPin className="h-4 w-4" />
+            <span>{site.address}</span>
           </div>
         </div>
-        <Button>
-          <Edit className="mr-2 h-4 w-4" />
-          Modifier
-        </Button>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main Info - Left Column */}
         <div className="space-y-6 lg:col-span-2">
           {/* Site Images */}
-          <div className="overflow-hidden rounded-lg bg-card">
-            {photoUrls.length > 0 ? (
-              <div className="relative">
-                <img
-                  src={photoUrls[0].url}
-                  alt={photoUrls[0].filename || site.name}
-                  className="h-64 w-full object-cover"
-                />
-                {photoUrls.length > 1 && (
-                  <div className="absolute bottom-4 left-4 flex gap-2 overflow-x-auto pb-2">
-                    {photoUrls.slice(1, 5).map((photo, index) => (
-                      <img
-                        key={photo.id}
-                        src={photo.url}
-                        alt={photo.filename || `${site.name} - ${index + 2}`}
-                        className="h-16 w-24 rounded-sm object-cover border-2 border-card"
-                      />
-                    ))}
-                    {photoUrls.length > 5 && (
-                      <div className="flex h-16 w-24 items-center justify-center rounded-sm bg-foreground/60 text-background text-sm font-medium">
-                        +{photoUrls.length - 5}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex h-64 items-center justify-center bg-muted">
-                <div className="text-center text-muted-foreground">
-                  <Building2 className="mx-auto h-12 w-12 mb-2" />
-                  <p>Aucune photo</p>
-                </div>
-              </div>
-            )}
-          </div>
+          <SitePhotoGallery siteId={site.id} photos={photoUrls} siteName={site.name} />
 
           {/* Instructions & Access */}
-          {(site.instructions || site.access) && (
-            <div className="rounded-lg bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                <FileText className="h-5 w-5" />
-                Instructions & Accès
-              </h2>
+          <div className="relative rounded-lg bg-card p-6">
+            <EditInstructionsModal
+              siteId={site.id}
+              initialInstructions={site.instructions}
+              initialAccess={site.access}
+            />
+            <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+              <FileText className="h-5 w-5" />
+              Instructions & Accès
+            </h2>
+            {site.instructions || site.access ? (
               <div className="space-y-4">
                 {site.instructions && (
                   <div>
@@ -141,8 +117,10 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            ) : (
+              <p className="text-muted-foreground text-sm">Non renseigné</p>
+            )}
+          </div>
 
           {/* Resources */}
           <div className="rounded-lg bg-card p-6">
@@ -175,7 +153,12 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
         {/* Sidebar - Right Column */}
         <div className="space-y-6">
           {/* Opening Hours */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-6">
+            <EditHoursModal
+              siteId={site.id}
+              initialHours={site.opening_hours}
+              initialDays={site.opening_days}
+            />
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Clock className="h-5 w-5" />
               Horaires
@@ -206,7 +189,12 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* WiFi */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-6">
+            <EditWifiModal
+              siteId={site.id}
+              initialSsid={site.wifi_ssid}
+              initialPassword={site.wifi_password}
+            />
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Wifi className="h-5 w-5" />
               WiFi
@@ -233,7 +221,11 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
           </div>
 
           {/* Equipments */}
-          <div className="rounded-lg bg-card p-6">
+          <div className="relative rounded-lg bg-card p-6">
+            <EditEquipmentsModal
+              siteId={site.id}
+              initialEquipments={site.equipments}
+            />
             <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
               <Calendar className="h-5 w-5" />
               Équipements
@@ -249,25 +241,6 @@ export default async function SiteDetailsPage({ params }: SiteDetailsPageProps) 
             )}
           </div>
 
-          {/* Coordinates */}
-          {(site.latitude || site.longitude) && (
-            <div className="rounded-lg bg-card p-6">
-              <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                <MapPin className="h-5 w-5" />
-                Coordonnées GPS
-              </h2>
-              <div className="space-y-1 text-sm">
-                <p>
-                  <span className="text-muted-foreground">Latitude:</span>{" "}
-                  <span className="font-mono">{site.latitude}</span>
-                </p>
-                <p>
-                  <span className="text-muted-foreground">Longitude:</span>{" "}
-                  <span className="font-mono">{site.longitude}</span>
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
