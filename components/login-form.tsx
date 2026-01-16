@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { checkEmailExists } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Mail, Loader2, CheckCircle } from "lucide-react"
@@ -18,6 +19,14 @@ export function LoginForm() {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    // Check if email exists in users table before sending magic link
+    const { exists } = await checkEmailExists(email)
+    if (!exists) {
+      setError("Seuls les clients Hopper peuvent accéder à cet espace.")
+      setIsLoading(false)
+      return
+    }
 
     const supabase = createClient()
 

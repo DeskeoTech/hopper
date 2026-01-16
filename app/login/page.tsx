@@ -2,9 +2,15 @@ import { LoginForm } from "@/components/login-form"
 import { UrlVersionFooter } from "@/components/url-version-footer"
 import { UserBar } from "@/components/user-bar"
 import { getUser } from "@/lib/supabase/server"
+import { AlertCircle } from "lucide-react"
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
   const user = await getUser()
+  const { error } = await searchParams
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -17,6 +23,15 @@ export default async function LoginPage() {
               Connectez-vous à votre espace d&apos;administration
             </p>
           </div>
+
+          {error === "no_account" && (
+            <div className="flex items-center gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
+              <AlertCircle className="h-5 w-5 shrink-0" />
+              <p className="type-body-sm">
+                Seuls les clients Hopper peuvent accéder à cet espace.
+              </p>
+            </div>
+          )}
 
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <LoginForm />
