@@ -23,7 +23,7 @@ interface UsersListProps {
 export function UsersList({ companyId, initialUsers }: UsersListProps) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "disabled">("all")
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all")
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user" | "deskeo">("all")
 
   const filteredUsers = useMemo(() => {
     return initialUsers.filter((user) => {
@@ -85,13 +85,14 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
           </SelectContent>
         </Select>
 
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as "all" | "admin" | "user")}>
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as "all" | "admin" | "user" | "deskeo")}>
           <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Rôle" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les rôles</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="deskeo">Deskeo</SelectItem>
             <SelectItem value="user">Utilisateur</SelectItem>
           </SelectContent>
         </Select>
