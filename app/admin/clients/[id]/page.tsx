@@ -21,8 +21,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   const activeTab = resolvedSearchParams.tab || "info"
   const supabase = await createClient()
 
-  // Fetch company data
-  const { data: company, error } = await supabase.from("companies").select("*").eq("id", id).single()
+  // Fetch company data with main site
+  const { data: company, error } = await supabase
+    .from("companies")
+    .select("*, main_site:sites!main_site_id(id, name, address, status)")
+    .eq("id", id)
+    .single()
 
   if (error || !company) {
     notFound()
@@ -35,14 +39,6 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     .eq("company_id", id)
     .order("last_name")
     .order("first_name")
-
-  // Fetch sites for this company (through company_sites junction)
-  const { data: companySites } = await supabase
-    .from("company_sites")
-    .select("site_id, sites(id, name, address, status)")
-    .eq("company_id", id)
-
-  const sites = companySites?.map((cs) => cs.sites).filter(Boolean) || []
 
   // Determine subscription status
   const now = new Date()
@@ -143,37 +139,32 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                 )}
               </div>
 
-              {/* Sites */}
+              {/* Site principal */}
               <div className="rounded-lg bg-card p-4 sm:p-6">
                 <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
                   <Building2 className="h-5 w-5" />
-                  Sites accessibles ({sites.length})
+                  Site principal
                 </h2>
-                {sites.length > 0 ? (
-                  <div className="space-y-2">
-                    {sites.map((site: { id: string; name: string; address: string; status: string }) => (
-                      <Link
-                        key={site.id}
-                        href={`/admin/sites/${site.id}`}
-                        className="flex items-center justify-between rounded-sm border border-border p-3 hover:bg-muted/50 transition-colors"
-                      >
-                        <div>
-                          <p className="font-medium text-foreground">{site.name}</p>
-                          <p className="text-sm text-muted-foreground">{site.address}</p>
-                        </div>
-                        <span
-                          className={cn(
-                            "rounded-sm px-2 py-0.5 text-xs font-medium",
-                            site.status === "open"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-gray-100 text-gray-600"
-                          )}
-                        >
-                          {site.status === "open" ? "Ouvert" : "Fermé"}
-                        </span>
-                      </Link>
-                    ))}
-                  </div>
+                {company.main_site ? (
+                  <Link
+                    href={`/admin/sites/${company.main_site.id}`}
+                    className="flex items-center justify-between rounded-sm border border-border p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <p className="font-medium text-foreground">{company.main_site.name}</p>
+                      <p className="text-sm text-muted-foreground">{company.main_site.address}</p>
+                    </div>
+                    <span
+                      className={cn(
+                        "rounded-sm px-2 py-0.5 text-xs font-medium",
+                        company.main_site.status === "open"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-600"
+                      )}
+                    >
+                      {company.main_site.status === "open" ? "Ouvert" : "Fermé"}
+                    </span>
+                  </Link>
                 ) : (
                   <p className="text-muted-foreground text-sm">Aucun site associé</p>
                 )}

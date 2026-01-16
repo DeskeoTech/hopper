@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2 } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
 import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
 import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
@@ -247,6 +247,46 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-sm">Aucun équipement renseigné</p>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div className="rounded-lg bg-card p-4 sm:p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <User className="h-5 w-5" />
+                  Contact
+                </h2>
+                {site.contact_first_name || site.contact_last_name || site.contact_email || site.contact_phone ? (
+                  <div className="space-y-3">
+                    {(site.contact_first_name || site.contact_last_name) && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Nom</span>
+                        <p className="font-medium text-foreground">
+                          {[site.contact_first_name, site.contact_last_name].filter(Boolean).join(" ")}
+                        </p>
+                      </div>
+                    )}
+                    {site.contact_email && (
+                      <div className="flex items-start gap-2">
+                        <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-sm text-muted-foreground">Email</span>
+                          <p className="text-foreground">{site.contact_email}</p>
+                        </div>
+                      </div>
+                    )}
+                    {site.contact_phone && (
+                      <div className="flex items-start gap-2">
+                        <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-sm text-muted-foreground">Téléphone</span>
+                          <p className="text-foreground">{site.contact_phone}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Non renseigné</p>
                 )}
               </div>
             </div>

@@ -12,8 +12,8 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const { search, type } = await searchParams
   const supabase = await createClient()
 
-  // Build query for companies
-  let query = supabase.from("companies").select("*").order("name")
+  // Build query for companies with main site
+  let query = supabase.from("companies").select("*, main_site:sites!main_site_id(id, name)").order("name")
 
   // Apply search filter
   if (search) {
@@ -38,17 +38,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     if (user.company_id) {
       userCountMap[user.company_id] = (userCountMap[user.company_id] || 0) + 1
     }
-  })
-
-  // Fetch site counts per company
-  const { data: companySites } = await supabase
-    .from("company_sites")
-    .select("company_id")
-
-  // Build site count map
-  const siteCountMap: Record<string, number> = {}
-  companySites?.forEach((cs) => {
-    siteCountMap[cs.company_id] = (siteCountMap[cs.company_id] || 0) + 1
   })
 
   if (error) {
@@ -85,7 +74,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           companies={companies.map((company) => ({
             ...company,
             userCount: userCountMap[company.id] || 0,
-            siteCount: siteCountMap[company.id] || 0,
+            mainSiteName: company.main_site?.name || null,
           }))}
         />
       ) : (

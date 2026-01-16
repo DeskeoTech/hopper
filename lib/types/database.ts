@@ -25,6 +25,10 @@ export interface Site {
   wifi_password: string | null
   access: string | null
   equipments: Equipment[] | null
+  contact_first_name: string | null
+  contact_last_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
   created_at: string
   updated_at: string
 }
@@ -54,16 +58,6 @@ export interface SitePhoto {
   created_at: string
 }
 
-export interface SiteContact {
-  id: string
-  site_id: string
-  name: string
-  role: string | null
-  email: string | null
-  phone: string | null
-  created_at: string
-}
-
 // Company types
 export type CompanyType = "self_employed" | "multi_employee"
 export type SubscriptionPeriod = "month" | "week"
@@ -82,6 +76,8 @@ export interface Company {
   subscription_start_date: string | null
   subscription_end_date: string | null
   customer_id_stripe: string | null
+  main_site_id: string | null
+  logo_storage_path: string | null
   created_at: string
   updated_at: string
 }
@@ -156,6 +152,7 @@ export interface User {
   role: UserRole | null
   status: UserStatus | null
   company_id: string | null
+  photo_storage_path: string | null
   created_at: string
   updated_at: string
 }
@@ -177,11 +174,6 @@ export interface Database {
         Row: SitePhoto
         Insert: Omit<SitePhoto, "id" | "created_at">
         Update: Partial<Omit<SitePhoto, "id" | "created_at">>
-      }
-      site_contacts: {
-        Row: SiteContact
-        Insert: Omit<SiteContact, "id" | "created_at">
-        Update: Partial<Omit<SiteContact, "id" | "created_at">>
       }
     }
   }
