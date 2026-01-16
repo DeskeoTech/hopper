@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { UserBar } from "@/components/user-bar"
-import { UrlVersionFooter } from "@/components/url-version-footer"
 import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { AdminAccessButton } from "./admin-access-button"
@@ -68,8 +67,6 @@ export function ClientHomePage({
             sites={sites}
           />
         </div>
-
-        <UrlVersionFooter />
       </main>
     </div>
   )
