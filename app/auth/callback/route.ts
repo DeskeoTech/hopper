@@ -36,6 +36,16 @@ export async function GET(request: Request) {
               .update({ role: "deskeo" })
               .eq("id", existingUser.id)
           }
+
+          // Redirect based on role
+          const userRole = isCollaborator && existingUser.role !== "admin"
+            ? "deskeo"
+            : existingUser.role
+
+          if (userRole === "user") {
+            return NextResponse.redirect(`${origin}/`)
+          }
+          return NextResponse.redirect(`${origin}${next}`)
         } else {
           // User not in users table - sign them out and redirect to error
           await supabase.auth.signOut()

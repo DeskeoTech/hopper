@@ -46,6 +46,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // If user is not authenticated and trying to access "/" (client home), redirect to login
+  if (!user && request.nextUrl.pathname === "/" && !isPreviewDomain) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    return NextResponse.redirect(url)
+  }
+
   // If user is authenticated, check role in users table
   if (user && request.nextUrl.pathname.startsWith("/admin")) {
     const { data: userData } = await supabase
