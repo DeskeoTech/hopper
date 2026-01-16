@@ -135,6 +135,12 @@ export interface UserCredits {
   period: string
 }
 
+export interface UserPlan {
+  name: string
+  pricePerSeatMonth: number | null
+  creditsPerMonth: number | null
+}
+
 // Booking types
 export type BookingStatus = "confirmed" | "cancelled" | "pending"
 

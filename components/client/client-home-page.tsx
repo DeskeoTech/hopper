@@ -7,14 +7,16 @@ import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { AdminAccessButton } from "./admin-access-button"
 import { UserCreditsCard } from "./user-credits-card"
+import { UserPlanCard } from "./user-plan-card"
 import { BookMeetingRoomModal } from "./book-meeting-room-modal"
-import type { User, BookingWithDetails, UserCredits } from "@/lib/types/database"
+import type { User, BookingWithDetails, UserCredits, UserPlan } from "@/lib/types/database"
 
 interface ClientHomePageProps {
   user: User & { companies: { id: string; name: string | null; main_site_id: string | null } | null }
   bookings: BookingWithDetails[]
   isAdmin: boolean
   credits: UserCredits | null
+  plan: UserPlan | null
   sites: Array<{ id: string; name: string }>
   mainSiteId: string | null
 }
@@ -24,6 +26,7 @@ export function ClientHomePage({
   bookings,
   isAdmin,
   credits,
+  plan,
   sites,
   mainSiteId,
 }: ClientHomePageProps) {
@@ -45,6 +48,8 @@ export function ClientHomePage({
           {isAdmin && <AdminAccessButton />}
 
           <UserProfileCard user={user} />
+
+          <UserPlanCard plan={plan} />
 
           <UserCreditsCard
             credits={credits}
