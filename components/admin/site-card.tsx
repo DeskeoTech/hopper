@@ -42,12 +42,12 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
 
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-2xl">
+      <article className="overflow-hidden rounded-2xl bg-background border border-foreground/10">
         {/* Header with image and capacity badge */}
-        <div className="relative p-4 pb-0">
+        <div className="relative p-3 pb-0">
           {/* Capacity badge - positioned in top right of card padding area */}
           {capacityDisplay && (
-            <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full border-2 border-foreground/80 bg-white px-3 py-1.5">
+            <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">
               <DeskIcon className="h-5 w-5" />
               <span className="font-semibold text-sm tracking-wide">{capacityDisplay}</span>
             </div>
@@ -62,7 +62,7 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-[#e8e3db]">
+              <div className="flex h-full w-full items-center justify-center bg-muted">
                 <Building2 className="h-12 w-12 text-foreground/20" />
               </div>
             )}
@@ -70,16 +70,16 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-5 pt-4">
+        <div className="p-4 pt-3">
           <div className="mb-3">
-            <span className="inline-block rounded-sm bg-[#d9d4cc] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground/70">
+            <span className="inline-block rounded-sm bg-muted px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground/70">
               Bureaux privatifs
             </span>
           </div>
 
-          <h3 className="font-bold text-[22px] text-foreground leading-tight tracking-tight">{site.name}</h3>
+          <h3 className="font-bold text-xl text-foreground leading-tight tracking-tight">{site.name}</h3>
 
-          <p className="mt-2 text-[15px] text-foreground/60">{site.address}</p>
+          <p className="mt-2 text-sm text-foreground/60">{site.address}</p>
         </div>
       </article>
     </Link>
