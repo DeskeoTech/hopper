@@ -77,22 +77,22 @@ Custom Deskeo brand with:
 ### Layout Patterns
 
 **Main content padding:**
-```tsx
+\`\`\`tsx
 <main className="p-4 md:p-6">
-```
+\`\`\`
 
 **Card sections:**
-```tsx
+\`\`\`tsx
 <div className="rounded-lg bg-card p-4 sm:p-6">
-```
+\`\`\`
 
 **Filter rows (stack on mobile, row on tablet+):**
-```tsx
+\`\`\`tsx
 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-```
+\`\`\`
 
 **Grid layouts (responsive columns):**
-```tsx
+\`\`\`tsx
 // Cards grid
 <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
 
@@ -101,53 +101,53 @@ Custom Deskeo brand with:
   <div className="lg:col-span-2">Main content</div>
   <div>Sidebar</div>
 </div>
-```
+\`\`\`
 
 **Page headers (icon + title + badge):**
-```tsx
+\`\`\`tsx
 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
   <div className="flex h-10 w-10 shrink-0 ... sm:h-14 sm:w-14">
     <Icon className="h-5 w-5 sm:h-7 sm:w-7" />
   </div>
   <div className="min-w-0 flex-1">
     <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-```
+\`\`\`
 
 ### Table Responsiveness
 
 **Always wrap tables with overflow:**
-```tsx
+\`\`\`tsx
 <div className="overflow-x-auto">
   <Table>...</Table>
 </div>
-```
+\`\`\`
 
 **Hide secondary columns on mobile:**
-```tsx
+\`\`\`tsx
 // Header
 <TableHead className="hidden md:table-cell">Column</TableHead>
 
 // Cell
 <TableCell className="hidden md:table-cell">Value</TableCell>
-```
+\`\`\`
 
 ### Text & Content
 
 **Truncate long text:**
-```tsx
+\`\`\`tsx
 <span className="truncate max-w-[200px]">{longText}</span>
-```
+\`\`\`
 
 **Break long words:**
-```tsx
+\`\`\`tsx
 <span className="break-words">{address}</span>
-```
+\`\`\`
 
 **Hide text on mobile, show on tablet+:**
-```tsx
+\`\`\`tsx
 <span className="hidden sm:inline">Full label</span>
 <span className="sm:hidden">Short</span>
-```
+\`\`\`
 
 ## Database Types
 
