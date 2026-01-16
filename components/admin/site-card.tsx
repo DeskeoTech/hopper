@@ -8,16 +8,21 @@ function DeskIcon({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.5"
+      strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
     >
-      <rect x="2" y="6" width="20" height="2" rx="0.5" />
-      <line x1="4" y1="8" x2="4" y2="18" />
-      <line x1="20" y1="8" x2="20" y2="18" />
-      <line x1="8" y1="8" x2="8" y2="14" />
-      <line x1="16" y1="8" x2="16" y2="14" />
+      {/* Desk surface */}
+      <rect x="2" y="7" width="20" height="2" rx="0.5" />
+      {/* Desk legs */}
+      <line x1="5" y1="9" x2="5" y2="17" />
+      <line x1="19" y1="9" x2="19" y2="17" />
+      {/* Chair back */}
+      <path d="M9 4 L15 4 L15 7 L9 7 Z" />
+      {/* Chair seat */}
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="9" y1="13" x2="15" y2="13" />
     </svg>
   )
 }
@@ -37,18 +42,19 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
 
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-2xl bg-[#f5f0e8] transition-all">
-        {/* Image container */}
-        <div className="relative">
+      <article className="overflow-hidden rounded-2xl bg-[#f5f0e8]">
+        {/* Header with image and capacity badge */}
+        <div className="relative p-4 pb-0">
+          {/* Capacity badge - positioned in top right of card padding area */}
           {capacityDisplay && (
-            <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full border border-foreground/20 bg-white px-3 py-1.5">
+            <div className="absolute right-4 top-4 z-10 flex items-center gap-2 rounded-full border-2 border-foreground/80 bg-white px-3 py-1.5">
               <DeskIcon className="h-5 w-5" />
-              <span className="font-medium text-sm">{capacityDisplay}</span>
+              <span className="font-semibold text-sm tracking-wide">{capacityDisplay}</span>
             </div>
           )}
 
-          {/* Image */}
-          <div className="relative h-56 overflow-hidden bg-muted">
+          {/* Image with rounded corners */}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
             {imageUrl ? (
               <img
                 src={imageUrl || "/placeholder.svg"}
@@ -64,16 +70,16 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
         </div>
 
         {/* Content */}
-        <div className="p-5">
+        <div className="p-5 pt-4">
           <div className="mb-3">
-            <span className="inline-block rounded-full bg-[#e8e3db] px-4 py-2 text-xs font-semibold uppercase tracking-wider text-foreground/80">
+            <span className="inline-block rounded-sm bg-[#d9d4cc] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground/70">
               Bureaux privatifs
             </span>
           </div>
 
-          <h3 className="font-bold text-xl text-foreground leading-tight">{site.name}</h3>
+          <h3 className="font-bold text-[22px] text-foreground leading-tight tracking-tight">{site.name}</h3>
 
-          <p className="mt-2 text-base text-muted-foreground">{site.address}</p>
+          <p className="mt-2 text-[15px] text-foreground/60">{site.address}</p>
         </div>
       </article>
     </Link>
