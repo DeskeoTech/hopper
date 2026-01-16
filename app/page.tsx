@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientHomePage } from "@/components/client/client-home-page"
-import type { BookingWithDetails, ResourceType, UserCredits } from "@/lib/types/database"
+import type { BookingWithDetails, ResourceType, UserCredits, UserPlan } from "@/lib/types/database"
 
 export default async function HomePage() {
   const authUser = await getUser()
@@ -28,11 +28,13 @@ export default async function HomePage() {
     redirect("/login")
   }
 
-  // Fetch user's credits (via company -> contract -> credits)
+  // Fetch user's credits and plan (via company -> contract -> credits/plan)
   const today = new Date().toISOString().split("T")[0]
   let userCredits: UserCredits | null = null
+  let userPlan: UserPlan | null = null
 
   if (userProfile.company_id) {
+    // Fetch credits
     const { data: creditsData } = await supabase
       .from("credits")
       .select(
@@ -55,6 +57,32 @@ export default async function HomePage() {
         allocated: creditsData.allocated_credits,
         remaining: creditsData.remaining_credits,
         period: creditsData.period,
+      }
+    }
+
+    // Fetch plan from active contract
+    const { data: contractData } = await supabase
+      .from("contracts")
+      .select(
+        `
+        plans (name, price_per_seat_month, credits_per_month)
+      `
+      )
+      .eq("company_id", userProfile.company_id)
+      .eq("status", "active")
+      .single()
+
+    if (contractData?.plans) {
+      // Supabase returns plans as an object (not array) for single foreign key relation
+      const plan = contractData.plans as unknown as {
+        name: string
+        price_per_seat_month: number | null
+        credits_per_month: number | null
+      }
+      userPlan = {
+        name: plan.name,
+        pricePerSeatMonth: plan.price_per_seat_month,
+        creditsPerMonth: plan.credits_per_month,
       }
     }
   }
@@ -132,6 +160,7 @@ export default async function HomePage() {
       bookings={transformedBookings}
       isAdmin={isAdmin}
       credits={userCredits}
+      plan={userPlan}
       sites={sites || []}
       mainSiteId={userProfile.companies?.main_site_id || null}
     />
