@@ -1,5 +1,4 @@
 import { LoginForm } from "@/components/login-form"
-import { UrlVersionFooter } from "@/components/url-version-footer"
 import { UserBar } from "@/components/user-bar"
 import { getUser } from "@/lib/supabase/server"
 import { AlertCircle } from "lucide-react"
@@ -37,8 +36,6 @@ export default async function LoginPage({
             <LoginForm />
           </div>
         </div>
-
-        <UrlVersionFooter />
       </main>
     </div>
   )
