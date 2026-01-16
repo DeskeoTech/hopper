@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "setup": "chmod +x ./conductor-setup.sh && ./conductor-setup.sh",
+        "setup": "./conductor-setup.sh",
         "run": "npm run dev"
     }
 }
