@@ -37,11 +37,9 @@ export async function GET(request: Request) {
               .eq("id", existingUser.id)
           }
         } else {
-          // Create new user with appropriate role
-          await supabase.from("users").insert({
-            email: user.email,
-            role: isCollaborator ? "deskeo" : "user",
-          })
+          // User not in users table - sign them out and redirect to error
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}/login?error=no_account`)
         }
       }
 
