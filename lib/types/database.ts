@@ -33,20 +33,31 @@ export interface Site {
   updated_at: string
 }
 
+export type FloorLevel = "R-1" | "RDJ" | "RDC" | "R+1" | "R+2" | "R+3" | "R+4" | "R+5"
+export type ResourceEquipment = "ecran" | "visio" | "tableau"
+
 export interface Resource {
   id: string
   site_id: string
   name: string
   type: ResourceType
   capacity: number | null
-  floor: number | null
-  amenities: string[] | null
-  hourly_rate: number | null
-  daily_rate: number | null
-  instructions: string | null
-  status: "available" | "maintenance" | "unavailable"
+  floor: FloorLevel | null
+  hourly_credit_rate: number | null
+  equipments: ResourceEquipment[] | null
+  status: "available" | "unavailable"
   created_at: string
   updated_at: string
+}
+
+export interface MeetingRoomResource {
+  id: string
+  name: string
+  capacity: number | null
+  floor: FloorLevel | null
+  hourly_credit_rate: number | null
+  equipments: ResourceEquipment[] | null
+  status: "available" | "unavailable"
 }
 
 export interface SitePhoto {
@@ -104,6 +115,24 @@ export interface Plan {
 export interface PlanSite {
   plan_id: string
   site_id: string
+}
+
+// Credit types
+export interface Credit {
+  id: string
+  airtable_id: string | null
+  contract_id: string | null
+  period: string
+  allocated_credits: number
+  remaining_credits: number
+  created_at: string
+  updated_at: string
+}
+
+export interface UserCredits {
+  allocated: number
+  remaining: number
+  period: string
 }
 
 // Booking types

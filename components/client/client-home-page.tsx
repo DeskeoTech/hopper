@@ -1,21 +1,34 @@
+"use client"
+
+import { useState } from "react"
 import { UserBar } from "@/components/user-bar"
 import { UrlVersionFooter } from "@/components/url-version-footer"
 import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { AdminAccessButton } from "./admin-access-button"
-import type { User, BookingWithDetails } from "@/lib/types/database"
+import { UserCreditsCard } from "./user-credits-card"
+import { BookMeetingRoomModal } from "./book-meeting-room-modal"
+import type { User, BookingWithDetails, UserCredits } from "@/lib/types/database"
 
 interface ClientHomePageProps {
-  user: User & { companies: { id: string; name: string | null } | null }
+  user: User & { companies: { id: string; name: string | null; main_site_id: string | null } | null }
   bookings: BookingWithDetails[]
   isAdmin: boolean
+  credits: UserCredits | null
+  sites: Array<{ id: string; name: string }>
+  mainSiteId: string | null
 }
 
 export function ClientHomePage({
   user,
   bookings,
   isAdmin,
+  credits,
+  sites,
+  mainSiteId,
 }: ClientHomePageProps) {
+  const [bookingModalOpen, setBookingModalOpen] = useState(false)
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <UserBar userEmail={user.email} />
@@ -33,7 +46,22 @@ export function ClientHomePage({
 
           <UserProfileCard user={user} />
 
+          <UserCreditsCard
+            credits={credits}
+            onBookClick={() => setBookingModalOpen(true)}
+          />
+
           <UserBookingsSection bookings={bookings} />
+
+          <BookMeetingRoomModal
+            open={bookingModalOpen}
+            onOpenChange={setBookingModalOpen}
+            userId={user.id}
+            companyId={user.company_id || ""}
+            mainSiteId={mainSiteId}
+            remainingCredits={credits?.remaining || 0}
+            sites={sites}
+          />
         </div>
 
         <UrlVersionFooter />

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientHomePage } from "@/components/client/client-home-page"
-import type { BookingWithDetails, ResourceType } from "@/lib/types/database"
+import type { BookingWithDetails, ResourceType, UserCredits } from "@/lib/types/database"
 
 export default async function HomePage() {
   const authUser = await getUser()
@@ -12,13 +12,13 @@ export default async function HomePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile with company
+  // Fetch user profile with company (including main_site_id)
   const { data: userProfile } = await supabase
     .from("users")
     .select(
       `
       *,
-      companies (id, name)
+      companies (id, name, main_site_id)
     `
     )
     .eq("email", authUser.email)
@@ -27,6 +27,44 @@ export default async function HomePage() {
   if (!userProfile) {
     redirect("/login")
   }
+
+  // Fetch user's credits (via company -> contract -> credits)
+  const today = new Date().toISOString().split("T")[0]
+  let userCredits: UserCredits | null = null
+
+  if (userProfile.company_id) {
+    const { data: creditsData } = await supabase
+      .from("credits")
+      .select(
+        `
+        allocated_credits,
+        remaining_credits,
+        period,
+        contracts!inner (company_id, status)
+      `
+      )
+      .eq("contracts.company_id", userProfile.company_id)
+      .eq("contracts.status", "active")
+      .lte("period", today)
+      .order("period", { ascending: false })
+      .limit(1)
+      .single()
+
+    if (creditsData) {
+      userCredits = {
+        allocated: creditsData.allocated_credits,
+        remaining: creditsData.remaining_credits,
+        period: creditsData.period,
+      }
+    }
+  }
+
+  // Fetch all open sites for booking
+  const { data: sites } = await supabase
+    .from("sites")
+    .select("id, name")
+    .eq("status", "open")
+    .order("name")
 
   // Fetch user's bookings with resource and site details
   const { data: bookings } = await supabase
@@ -93,6 +131,9 @@ export default async function HomePage() {
       user={userProfile}
       bookings={transformedBookings}
       isAdmin={isAdmin}
+      credits={userCredits}
+      sites={sites || []}
+      mainSiteId={userProfile.companies?.main_site_id || null}
     />
   )
 }
