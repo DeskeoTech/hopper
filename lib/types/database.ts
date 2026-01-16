@@ -143,7 +143,7 @@ export interface BookingWithDetails extends Booking {
 }
 
 // User types
-export type UserRole = "admin" | "user"
+export type UserRole = "admin" | "user" | "deskeo"
 export type UserStatus = "active" | "disabled"
 
 export interface User {
