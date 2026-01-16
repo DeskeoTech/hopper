@@ -42,7 +42,7 @@ export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
 
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-2xl bg-[#f5f0e8]">
+      <article className="overflow-hidden rounded-2xl">
         {/* Header with image and capacity badge */}
         <div className="relative p-4 pb-0">
           {/* Capacity badge - positioned in top right of card padding area */}
