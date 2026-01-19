@@ -80,3 +80,32 @@ export async function updateCompanySubscription(
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true }
 }
+
+export async function createCompany(data: {
+  name: string
+  company_type: CompanyType | null
+  contact_email: string | null
+  phone: string | null
+  address: string | null
+}) {
+  const supabase = await createClient()
+
+  const { data: company, error } = await supabase
+    .from("companies")
+    .insert({
+      name: data.name,
+      company_type: data.company_type,
+      contact_email: data.contact_email || null,
+      phone: data.phone || null,
+      address: data.address || null,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/clients")
+  return { success: true, companyId: company.id }
+}
