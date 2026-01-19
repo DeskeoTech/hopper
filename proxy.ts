@@ -46,8 +46,14 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If user is not authenticated and trying to access "/" (client home), redirect to login
-  if (!user && request.nextUrl.pathname === "/" && !isPreviewDomain) {
+  // Protected client routes
+  const protectedClientRoutes = ["/", "/salles", "/postes", "/compte", "/actualites"]
+  const isProtectedClientRoute = protectedClientRoutes.some(
+    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+  )
+
+  // If user is not authenticated and trying to access protected client routes, redirect to login
+  if (!user && isProtectedClientRoute && !isPreviewDomain) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
