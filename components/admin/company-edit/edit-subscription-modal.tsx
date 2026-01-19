@@ -38,6 +38,7 @@ interface EditSubscriptionModalProps {
   initialPeriod: SubscriptionPeriod | null
   initialStartDate: string | null
   initialEndDate: string | null
+  trigger?: React.ReactNode
 }
 
 export function EditSubscriptionModal({
@@ -45,6 +46,7 @@ export function EditSubscriptionModal({
   initialPeriod,
   initialStartDate,
   initialEndDate,
+  trigger,
 }: EditSubscriptionModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -76,9 +78,11 @@ export function EditSubscriptionModal({
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="absolute top-4 right-4">
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {trigger || (
+            <Button variant="ghost" size="sm" className="absolute top-4 right-4">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>
