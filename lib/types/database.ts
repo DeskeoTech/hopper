@@ -141,6 +141,23 @@ export interface UserPlan {
   creditsPerMonth: number | null
 }
 
+// Flex pass types for workspace booking
+export interface FlexPassOffer {
+  id: string
+  name: string
+  pricePerSeatMonth: number | null
+  recurrence: PlanRecurrence | null
+}
+
+export interface FlexDeskAvailability {
+  siteId: string
+  siteName: string
+  totalCapacity: number
+  bookedCount: number
+  availableCount: number
+  photoUrl: string | null
+}
+
 // Booking types
 export type BookingStatus = "confirmed" | "cancelled" | "pending"
 

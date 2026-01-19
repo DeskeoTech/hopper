@@ -8,6 +8,7 @@ import { AdminAccessButton } from "./admin-access-button"
 import { UserCreditsCard } from "./user-credits-card"
 import { UserPlanCard } from "./user-plan-card"
 import { BookMeetingRoomModal } from "./book-meeting-room-modal"
+import { WorkspaceBookingSection } from "./workspace-booking-section"
 import type { User, BookingWithDetails, UserCredits, UserPlan } from "@/lib/types/database"
 
 interface ClientHomePageProps {
@@ -53,6 +54,13 @@ export function ClientHomePage({
           <UserCreditsCard
             credits={credits}
             onBookClick={() => setBookingModalOpen(true)}
+          />
+
+          <WorkspaceBookingSection
+            userId={user.id}
+            companyId={user.company_id || ""}
+            mainSiteId={mainSiteId}
+            sites={sites}
           />
 
           <UserBookingsSection bookings={bookings} />
