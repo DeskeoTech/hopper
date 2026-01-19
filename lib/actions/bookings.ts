@@ -48,6 +48,77 @@ export async function checkAvailability(
   return { bookings: bookings || [] }
 }
 
+export interface RoomBooking {
+  id: string
+  resourceId: string
+  startHour: number
+  endHour: number
+  title: string | null
+  userName: string | null
+}
+
+export async function getRoomBookingsForDate(
+  siteId: string,
+  date: string // YYYY-MM-DD
+): Promise<{ bookings: RoomBooking[]; error?: string }> {
+  const supabase = await createClient()
+
+  const startOfDay = `${date}T00:00:00Z`
+  const endOfDay = `${date}T23:59:59Z`
+
+  // Get all meeting room IDs for this site first
+  const { data: rooms, error: roomsError } = await supabase
+    .from("resources")
+    .select("id")
+    .eq("site_id", siteId)
+    .eq("type", "meeting_room")
+    .eq("status", "available")
+
+  if (roomsError) {
+    return { bookings: [], error: roomsError.message }
+  }
+
+  if (!rooms || rooms.length === 0) {
+    return { bookings: [] }
+  }
+
+  const roomIds = rooms.map((r) => r.id)
+
+  // Get all bookings for these rooms on this date
+  const { data: bookings, error: bookingsError } = await supabase
+    .from("bookings")
+    .select(`
+      id,
+      resource_id,
+      start_date,
+      end_date,
+      notes,
+      users:user_id (first_name, last_name)
+    `)
+    .in("resource_id", roomIds)
+    .eq("status", "confirmed")
+    .gte("start_date", startOfDay)
+    .lte("start_date", endOfDay)
+
+  if (bookingsError) {
+    return { bookings: [], error: bookingsError.message }
+  }
+
+  const result: RoomBooking[] = (bookings || []).map((b) => {
+    const user = b.users as { first_name: string | null; last_name: string | null } | null
+    return {
+      id: b.id,
+      resourceId: b.resource_id,
+      startHour: new Date(b.start_date).getHours(),
+      endHour: new Date(b.end_date).getHours(),
+      title: b.notes,
+      userName: user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || null : null,
+    }
+  })
+
+  return { bookings: result }
+}
+
 export async function createMeetingRoomBooking(data: {
   userId: string
   resourceId: string

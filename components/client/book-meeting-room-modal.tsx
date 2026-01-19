@@ -1,9 +1,19 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format } from "date-fns"
+import { format, addDays, subDays } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ChevronLeft, Loader2, MapPin, Calendar as CalendarIcon, Clock, Coins, Check } from "lucide-react"
+import {
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  MapPin,
+  Calendar as CalendarIcon,
+  Clock,
+  Coins,
+  Check,
+  Building2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -23,12 +33,23 @@ import {
 } from "@/components/ui/alert-dialog"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Calendar } from "@/components/ui/calendar"
-import { MeetingRoomCard } from "./meeting-room-card"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { RoomPlanningGrid } from "./room-planning-grid"
 import { TimeSlotPicker } from "./time-slot-picker"
-import { getMeetingRoomsBySite, checkAvailability, createMeetingRoomBooking } from "@/lib/actions/bookings"
+import {
+  getMeetingRoomsBySite,
+  getRoomBookingsForDate,
+  checkAvailability,
+  createMeetingRoomBooking,
+} from "@/lib/actions/bookings"
 import type { MeetingRoomResource } from "@/lib/types/database"
+import type { RoomBooking } from "@/lib/actions/bookings"
 
-type Step = "site" | "room" | "datetime" | "confirm"
+type View = "planning" | "slots" | "confirm"
 
 interface BookMeetingRoomModalProps {
   open: boolean
@@ -49,39 +70,45 @@ export function BookMeetingRoomModal({
   remainingCredits,
   sites,
 }: BookMeetingRoomModalProps) {
-  const [step, setStep] = useState<Step>("site")
+  const [view, setView] = useState<View>("planning")
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(mainSiteId)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [selectedRoom, setSelectedRoom] = useState<MeetingRoomResource | null>(null)
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined)
+  const [selectedStartHour, setSelectedStartHour] = useState<number | null>(null)
   const [selectedSlots, setSelectedSlots] = useState<string[]>([])
 
   const [rooms, setRooms] = useState<MeetingRoomResource[]>([])
+  const [bookings, setBookings] = useState<RoomBooking[]>([])
   const [unavailableSlots, setUnavailableSlots] = useState<string[]>([])
   const [loadingRooms, setLoadingRooms] = useState(false)
+  const [loadingBookings, setLoadingBookings] = useState(false)
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [calendarOpen, setCalendarOpen] = useState(false)
 
   // Reset state when modal closes
   useEffect(() => {
     if (!open) {
-      setStep("site")
+      setView("planning")
       setSelectedSiteId(mainSiteId)
+      setSelectedDate(new Date())
       setSelectedRoom(null)
-      setSelectedDate(undefined)
+      setSelectedStartHour(null)
       setSelectedSlots([])
       setRooms([])
+      setBookings([])
       setUnavailableSlots([])
       setError(null)
       setSuccess(false)
     }
   }, [open, mainSiteId])
 
-  // Load rooms when site changes
+  // Load rooms when modal opens with a site selected, or when site changes
   useEffect(() => {
-    if (selectedSiteId && step === "room") {
+    if (open && selectedSiteId) {
       setLoadingRooms(true)
       setRooms([])
       getMeetingRoomsBySite(selectedSiteId).then((result) => {
@@ -93,11 +120,28 @@ export function BookMeetingRoomModal({
         }
       })
     }
-  }, [selectedSiteId, step])
+  }, [open, selectedSiteId])
 
-  // Load availability when room and date change
+  // Load bookings when site or date changes
   useEffect(() => {
-    if (selectedRoom && selectedDate && step === "datetime") {
+    if (open && selectedSiteId && selectedDate) {
+      setLoadingBookings(true)
+      setBookings([])
+      const dateStr = format(selectedDate, "yyyy-MM-dd")
+      getRoomBookingsForDate(selectedSiteId, dateStr).then((result) => {
+        setLoadingBookings(false)
+        if (result.error) {
+          setError(result.error)
+        } else {
+          setBookings(result.bookings)
+        }
+      })
+    }
+  }, [open, selectedSiteId, selectedDate])
+
+  // Load availability when room and date change (for slots view)
+  useEffect(() => {
+    if (selectedRoom && selectedDate && view === "slots") {
       setLoadingSlots(true)
       setUnavailableSlots([])
       const dateStr = format(selectedDate, "yyyy-MM-dd")
@@ -119,34 +163,65 @@ export function BookMeetingRoomModal({
         }
       })
     }
-  }, [selectedRoom, selectedDate, step])
+  }, [selectedRoom, selectedDate, view])
+
+  // Pre-select the clicked slot when entering slots view
+  useEffect(() => {
+    if (view === "slots" && selectedStartHour !== null) {
+      setSelectedSlots([`${selectedStartHour.toString().padStart(2, "0")}:00`])
+    }
+  }, [view, selectedStartHour])
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId)
   const creditsNeeded = selectedSlots.length * (selectedRoom?.hourly_credit_rate || 1)
   const hasEnoughCredits = remainingCredits >= creditsNeeded
 
+  // Handle site change - reset selection
+  const handleSiteChange = (newSiteId: string) => {
+    setSelectedSiteId(newSiteId)
+    setSelectedRoom(null)
+    setSelectedStartHour(null)
+    setSelectedSlots([])
+    setView("planning")
+    setError(null)
+  }
+
+  // Handle date change
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date)
+      setSelectedRoom(null)
+      setSelectedStartHour(null)
+      setSelectedSlots([])
+      setCalendarOpen(false)
+    }
+  }
+
+  // Handle slot click from planning grid
+  const handleSlotClick = (room: MeetingRoomResource, hour: number) => {
+    setSelectedRoom(room)
+    setSelectedStartHour(hour)
+    setSelectedSlots([])
+    setView("slots")
+    setError(null)
+  }
+
   const handleNext = () => {
     setError(null)
-    if (step === "site" && selectedSiteId) {
-      setStep("room")
-    } else if (step === "room" && selectedRoom) {
-      setStep("datetime")
-    } else if (step === "datetime" && selectedDate && selectedSlots.length > 0) {
-      setStep("confirm")
+    if (view === "slots" && selectedDate && selectedSlots.length > 0) {
+      setView("confirm")
     }
   }
 
   const handleBack = () => {
     setError(null)
-    if (step === "room") {
-      setStep("site")
+    if (view === "slots") {
+      setView("planning")
       setSelectedRoom(null)
-    } else if (step === "datetime") {
-      setStep("room")
-      setSelectedDate(undefined)
+      setSelectedStartHour(null)
       setSelectedSlots([])
-    } else if (step === "confirm") {
-      setStep("datetime")
+    } else if (view === "confirm") {
+      setView("slots")
     }
   }
 
@@ -189,21 +264,17 @@ export function BookMeetingRoomModal({
   }
 
   const canProceed = () => {
-    if (step === "site") return !!selectedSiteId
-    if (step === "room") return !!selectedRoom
-    if (step === "datetime") return !!selectedDate && selectedSlots.length > 0 && hasEnoughCredits
+    if (view === "slots") return !!selectedDate && selectedSlots.length > 0 && hasEnoughCredits
     return false
   }
 
-  const getStepTitle = () => {
+  const getViewTitle = () => {
     if (success) return "Réservation confirmée"
-    switch (step) {
-      case "site":
-        return "Choisir un site"
-      case "room":
-        return "Choisir une salle"
-      case "datetime":
-        return "Choisir date et heure"
+    switch (view) {
+      case "planning":
+        return "Réserver une salle"
+      case "slots":
+        return "Choisir les créneaux"
       case "confirm":
         return "Confirmer la réservation"
     }
@@ -216,13 +287,16 @@ export function BookMeetingRoomModal({
     return a.name.localeCompare(b.name)
   })
 
+  const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+          <DialogHeader className="space-y-3 shrink-0">
+            {/* Title row with back button */}
             <div className="flex items-center gap-2">
-              {step !== "site" && !success && (
+              {view !== "planning" && !success && (
                 <Button
                   variant="ghost"
                   size="icon"
@@ -232,8 +306,68 @@ export function BookMeetingRoomModal({
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
               )}
-              <DialogTitle>{getStepTitle()}</DialogTitle>
+              <DialogTitle>{getViewTitle()}</DialogTitle>
             </div>
+
+            {/* Site switcher and date picker - visible on planning view */}
+            {!success && view === "planning" && (
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                {/* Site switcher */}
+                <div className="flex items-center gap-2 flex-1">
+                  <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <SearchableSelect
+                    options={sortedSites.map((s) => ({
+                      value: s.id,
+                      label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
+                    }))}
+                    value={selectedSiteId || ""}
+                    onValueChange={handleSiteChange}
+                    placeholder="Sélectionner un site"
+                    searchPlaceholder="Rechercher un site..."
+                    triggerClassName="flex-1 max-w-[250px]"
+                  />
+                </div>
+
+                {/* Date navigation */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                    disabled={isToday}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="min-w-[140px]">
+                        <CalendarIcon className="h-4 w-4 mr-2" />
+                        {isToday ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={handleDateChange}
+                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                      />
+                    </PopoverContent>
+                  </Popover>
+
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogHeader>
 
           {success ? (
@@ -246,33 +380,24 @@ export function BookMeetingRoomModal({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="flex-1 overflow-hidden flex flex-col">
               {error && (
-                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+                <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive mb-4 shrink-0">
                   {error}
                 </div>
               )}
 
-              {/* Step: Site Selection */}
-              {step === "site" && (
-                <div className="space-y-4">
-                  <SearchableSelect
-                    options={sortedSites.map((s) => ({
-                      value: s.id,
-                      label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
-                    }))}
-                    value={selectedSiteId || ""}
-                    onValueChange={setSelectedSiteId}
-                    placeholder="Sélectionner un site"
-                    searchPlaceholder="Rechercher un site..."
-                  />
-                </div>
-              )}
-
-              {/* Step: Room Selection */}
-              {step === "room" && (
-                <div className="space-y-3">
-                  {loadingRooms ? (
+              {/* View: Planning Grid */}
+              {view === "planning" && (
+                <div className="flex-1 overflow-auto">
+                  {!selectedSiteId ? (
+                    <div className="py-8 text-center">
+                      <Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+                      <p className="mt-4 type-body text-muted-foreground">
+                        Sélectionnez un site pour voir les salles disponibles
+                      </p>
+                    </div>
+                  ) : loadingRooms || loadingBookings ? (
                     <div className="flex items-center justify-center py-8">
                       <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -281,70 +406,85 @@ export function BookMeetingRoomModal({
                       Aucune salle disponible sur ce site
                     </p>
                   ) : (
-                    <div className="space-y-2">
-                      {rooms.map((room) => (
-                        <MeetingRoomCard
-                          key={room.id}
-                          room={room}
-                          selected={selectedRoom?.id === room.id}
-                          onSelect={() => setSelectedRoom(room)}
-                        />
-                      ))}
-                    </div>
+                    <RoomPlanningGrid
+                      rooms={rooms}
+                      bookings={bookings}
+                      onSlotClick={handleSlotClick}
+                      remainingCredits={remainingCredits}
+                    />
                   )}
                 </div>
               )}
 
-              {/* Step: Date & Time Selection */}
-              {step === "datetime" && (
-                <div className="space-y-4">
-                  <div>
-                    <label className="type-body-sm font-medium text-foreground mb-2 block">
-                      Date
-                    </label>
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => {
-                        setSelectedDate(date)
-                        setSelectedSlots([])
-                      }}
-                      disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                      className="rounded-lg border"
-                    />
+              {/* View: Time Slot Selection */}
+              {view === "slots" && selectedRoom && (
+                <div className="space-y-4 overflow-auto flex-1">
+                  {/* Compact room summary */}
+                  <div className="rounded-lg border p-3 bg-muted/50">
+                    <div className="flex items-center justify-between">
+                      <div className="min-w-0 flex-1">
+                        <p className="type-body font-medium truncate">{selectedRoom.name}</p>
+                        <div className="flex items-center gap-2 type-body-sm text-muted-foreground">
+                          {selectedRoom.capacity && <span>{selectedRoom.capacity} pers.</span>}
+                          {selectedRoom.hourly_credit_rate && (
+                            <span className="flex items-center gap-1">
+                              <Coins className="h-3 w-3" />
+                              {selectedRoom.hourly_credit_rate} crédit/h
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="type-body-sm text-muted-foreground">
+                          {format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
-                  {selectedDate && (
-                    <div>
-                      <label className="type-body-sm font-medium text-foreground mb-2 block">
-                        Créneaux horaires
-                      </label>
-                      {loadingSlots ? (
-                        <div className="flex items-center justify-center py-4">
-                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                        </div>
-                      ) : (
-                        <TimeSlotPicker
-                          selectedSlots={selectedSlots}
-                          onSlotsChange={setSelectedSlots}
-                          unavailableSlots={unavailableSlots}
-                        />
-                      )}
-                    </div>
-                  )}
+                  <div>
+                    <label className="type-body-sm font-medium text-foreground mb-2 block">
+                      Sélectionnez vos créneaux
+                    </label>
+                    {loadingSlots ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <TimeSlotPicker
+                        selectedSlots={selectedSlots}
+                        onSlotsChange={setSelectedSlots}
+                        unavailableSlots={unavailableSlots}
+                      />
+                    )}
+                  </div>
 
                   {selectedSlots.length > 0 && (
-                    <div className="rounded-lg bg-muted p-3">
+                    <div
+                      className={`rounded-lg p-3 ${!hasEnoughCredits ? "bg-destructive/10 border border-destructive/20" : "bg-muted"}`}
+                    >
                       <div className="flex items-center justify-between">
                         <span className="type-body-sm text-muted-foreground">Coût total</span>
                         <div className="flex items-center gap-1">
-                          <Coins className="h-4 w-4 text-primary" />
-                          <span className="type-body font-semibold">{creditsNeeded} crédits</span>
+                          <Coins
+                            className={`h-4 w-4 ${!hasEnoughCredits ? "text-destructive" : "text-primary"}`}
+                          />
+                          <span
+                            className={`type-body font-semibold ${!hasEnoughCredits ? "text-destructive" : ""}`}
+                          >
+                            {creditsNeeded} crédits
+                          </span>
                         </div>
                       </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="type-body-sm text-muted-foreground">
+                          Crédits disponibles
+                        </span>
+                        <span className="type-body-sm">{remainingCredits}</span>
+                      </div>
                       {!hasEnoughCredits && (
-                        <p className="mt-2 text-sm text-destructive">
-                          Crédits insuffisants ({remainingCredits} disponibles)
+                        <p className="mt-2 text-sm text-destructive font-medium">
+                          Vous n'avez pas assez de crédits pour cette réservation
                         </p>
                       )}
                     </div>
@@ -352,9 +492,9 @@ export function BookMeetingRoomModal({
                 </div>
               )}
 
-              {/* Step: Confirmation */}
-              {step === "confirm" && selectedRoom && selectedDate && (
-                <div className="space-y-4">
+              {/* View: Confirmation */}
+              {view === "confirm" && selectedRoom && selectedDate && (
+                <div className="space-y-4 overflow-auto flex-1">
                   <div className="rounded-lg border p-4 space-y-3">
                     <div className="flex items-start gap-3">
                       <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -377,8 +517,9 @@ export function BookMeetingRoomModal({
                       <div>
                         <p className="type-body-sm text-muted-foreground">Horaire</p>
                         <p className="type-body font-medium">
-                          {selectedSlots.sort()[0].replace(":00", "h")} - {(parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1)}h
-                          ({selectedSlots.length} heure{selectedSlots.length > 1 ? "s" : ""})
+                          {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
+                          {parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1}
+                          h ({selectedSlots.length} heure{selectedSlots.length > 1 ? "s" : ""})
                         </p>
                       </div>
                     </div>
@@ -401,19 +542,20 @@ export function BookMeetingRoomModal({
                       </div>
                     </div>
                     <p className="mt-1 type-body-sm text-muted-foreground">
-                      Il vous restera {remainingCredits - creditsNeeded} crédits après cette réservation
+                      Il vous restera {remainingCredits - creditsNeeded} crédits après cette
+                      réservation
                     </p>
                   </div>
                 </div>
               )}
 
               {/* Navigation buttons */}
-              {!success && (
-                <div className="flex justify-end gap-2 pt-2">
+              {!success && view !== "planning" && (
+                <div className="flex justify-end gap-2 pt-4 shrink-0 border-t mt-4">
                   <Button variant="outline" onClick={() => onOpenChange(false)}>
                     Annuler
                   </Button>
-                  {step === "confirm" ? (
+                  {view === "confirm" ? (
                     <Button onClick={() => setConfirmOpen(true)} disabled={submitting}>
                       {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Confirmer la réservation
@@ -435,7 +577,8 @@ export function BookMeetingRoomModal({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la réservation</AlertDialogTitle>
             <AlertDialogDescription>
-              Voulez-vous vraiment réserver cette salle ? {creditsNeeded} crédit{creditsNeeded > 1 ? "s" : ""} seront débités de votre compte.
+              Voulez-vous vraiment réserver cette salle ? {creditsNeeded} crédit
+              {creditsNeeded > 1 ? "s" : ""} seront débités de votre compte.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
