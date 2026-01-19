@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2 } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
 import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
 import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
@@ -12,6 +12,7 @@ import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
+import { DetailsTabs } from "@/components/admin/details-tabs"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
@@ -21,6 +22,7 @@ interface SiteDetailsPageProps {
 export default async function SiteDetailsPage({ params, searchParams }: SiteDetailsPageProps) {
   const { id } = await params
   const resolvedSearchParams = await searchParams
+  const activeTab = resolvedSearchParams.tab || "info"
   const supabase = await createClient()
 
   // Fetch site data
@@ -88,170 +90,215 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main Info - Left Column */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Site Images */}
-          <SitePhotoGallery siteId={site.id} photos={photoUrls} siteName={site.name} />
+      {/* Tabs */}
+      <DetailsTabs
+        defaultTab={activeTab}
+        infoContent={
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* Main Info - Left Column */}
+            <div className="space-y-6 lg:col-span-2">
+              {/* Site Images */}
+              <SitePhotoGallery siteId={site.id} photos={photoUrls} siteName={site.name} />
 
-          {/* Instructions & Access */}
-          <div className="relative rounded-lg bg-card p-4 sm:p-6">
-            <EditInstructionsModal
-              siteId={site.id}
-              initialInstructions={site.instructions}
-              initialAccess={site.access}
-            />
-            <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-              <FileText className="h-5 w-5" />
-              Instructions & Accès
-            </h2>
-            {site.instructions || site.access ? (
-              <div className="space-y-4">
-                {site.instructions && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Instructions</h3>
-                    <p className="mt-1 text-foreground whitespace-pre-wrap">{site.instructions}</p>
+              {/* Instructions & Access */}
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditInstructionsModal
+                  siteId={site.id}
+                  initialInstructions={site.instructions}
+                  initialAccess={site.access}
+                />
+                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+                  <FileText className="h-5 w-5" />
+                  Instructions & Accès
+                </h2>
+                {site.instructions || site.access ? (
+                  <div className="space-y-4">
+                    {site.instructions && (
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground">Instructions</h3>
+                        <p className="mt-1 text-foreground whitespace-pre-wrap">{site.instructions}</p>
+                      </div>
+                    )}
+                    {site.access && (
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground">Accès</h3>
+                        <p className="mt-1 text-foreground">{site.access}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {site.access && (
-                  <div>
-                    <h3 className="text-sm font-medium text-muted-foreground">Accès</h3>
-                    <p className="mt-1 text-foreground">{site.access}</p>
-                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Non renseigné</p>
                 )}
               </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Non renseigné</p>
-            )}
-          </div>
 
-          {/* Resources */}
-          <div className="rounded-lg bg-card p-4 sm:p-6">
-            <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-              <Building2 className="h-5 w-5" />
-              Ressources ({resources?.length || 0})
-            </h2>
+              {/* Resources */}
+              <div className="rounded-lg bg-card p-4 sm:p-6">
+                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+                  <Building2 className="h-5 w-5" />
+                  Ressources ({resources?.length || 0})
+                </h2>
 
-            {resourcesByType && Object.keys(resourcesByType).length > 0 ? (
-              <div className="space-y-6">
-                {Object.entries(resourcesByType).map(([type, typeResources]) => (
-                  <div key={type}>
-                    <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
-                      {getResourceTypeLabel(type)} ({typeResources?.length})
-                    </h3>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      {typeResources?.map((resource) => (
-                        <ResourceCard key={resource.id} resource={resource} />
-                      ))}
+                {resourcesByType && Object.keys(resourcesByType).length > 0 ? (
+                  <div className="space-y-6">
+                    {Object.entries(resourcesByType).map(([type, typeResources]) => (
+                      <div key={type}>
+                        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-muted-foreground">
+                          {getResourceTypeLabel(type)} ({typeResources?.length})
+                        </h3>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {typeResources?.map((resource) => (
+                            <ResourceCard key={resource.id} resource={resource} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">Aucune ressource pour ce site</p>
+                )}
+              </div>
+            </div>
+
+            {/* Sidebar - Right Column */}
+            <div className="space-y-6">
+              {/* Opening Hours */}
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditHoursModal
+                  siteId={site.id}
+                  initialHours={site.opening_hours}
+                  initialDays={site.opening_days}
+                />
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Clock className="h-5 w-5" />
+                  Horaires
+                </h2>
+                <div className="space-y-3">
+                  {site.opening_hours && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Heures d'ouverture</span>
+                      <p className="font-medium text-foreground">{site.opening_hours}</p>
                     </div>
-                  </div>
-                ))}
+                  )}
+                  {site.opening_days && site.opening_days.length > 0 && (
+                    <div>
+                      <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
+                      <div className="mt-1 flex flex-wrap gap-1.5">
+                        {site.opening_days.map((day) => (
+                          <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                            {day}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!site.opening_hours && (!site.opening_days || site.opening_days.length === 0) && (
+                    <p className="text-muted-foreground text-sm">Non renseigné</p>
+                  )}
+                </div>
               </div>
-            ) : (
-              <p className="text-muted-foreground">Aucune ressource pour ce site</p>
-            )}
-          </div>
 
-          {/* Reservations */}
+              {/* WiFi */}
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditWifiModal
+                  siteId={site.id}
+                  initialSsid={site.wifi_ssid}
+                  initialPassword={site.wifi_password}
+                />
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Wifi className="h-5 w-5" />
+                  WiFi
+                </h2>
+                {site.wifi_ssid ? (
+                  <div className="space-y-3">
+                    <div>
+                      <span className="text-sm text-muted-foreground">SSID</span>
+                      <p className="font-mono font-medium text-foreground">{site.wifi_ssid}</p>
+                    </div>
+                    {site.wifi_password && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Mot de passe</span>
+                        <div className="flex items-center gap-2">
+                          <Key className="h-4 w-4 text-muted-foreground" />
+                          <p className="font-mono font-medium text-foreground">{site.wifi_password}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Non renseigné</p>
+                )}
+              </div>
+
+              {/* Equipments */}
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditEquipmentsModal
+                  siteId={site.id}
+                  initialEquipments={site.equipments}
+                />
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <Calendar className="h-5 w-5" />
+                  Équipements
+                </h2>
+                {site.equipments && site.equipments.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {site.equipments.map((equipment) => (
+                      <EquipmentBadge key={equipment} equipment={equipment} />
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Aucun équipement renseigné</p>
+                )}
+              </div>
+
+              {/* Contact */}
+              <div className="rounded-lg bg-card p-4 sm:p-6">
+                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                  <User className="h-5 w-5" />
+                  Contact
+                </h2>
+                {site.contact_first_name || site.contact_last_name || site.contact_email || site.contact_phone ? (
+                  <div className="space-y-3">
+                    {(site.contact_first_name || site.contact_last_name) && (
+                      <div>
+                        <span className="text-sm text-muted-foreground">Nom</span>
+                        <p className="font-medium text-foreground">
+                          {[site.contact_first_name, site.contact_last_name].filter(Boolean).join(" ")}
+                        </p>
+                      </div>
+                    )}
+                    {site.contact_email && (
+                      <div className="flex items-start gap-2">
+                        <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-sm text-muted-foreground">Email</span>
+                          <p className="text-foreground">{site.contact_email}</p>
+                        </div>
+                      </div>
+                    )}
+                    {site.contact_phone && (
+                      <div className="flex items-start gap-2">
+                        <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                        <div>
+                          <span className="text-sm text-muted-foreground">Téléphone</span>
+                          <p className="text-foreground">{site.contact_phone}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">Non renseigné</p>
+                )}
+              </div>
+            </div>
+          </div>
+        }
+        reservationsContent={
           <ReservationsSection
             context={{ type: "site", siteId: site.id, siteName: site.name }}
             searchParams={resolvedSearchParams}
           />
-        </div>
-
-        {/* Sidebar - Right Column */}
-        <div className="space-y-6">
-          {/* Opening Hours */}
-          <div className="relative rounded-lg bg-card p-4 sm:p-6">
-            <EditHoursModal
-              siteId={site.id}
-              initialHours={site.opening_hours}
-              initialDays={site.opening_days}
-            />
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Clock className="h-5 w-5" />
-              Horaires
-            </h2>
-            <div className="space-y-3">
-              {site.opening_hours && (
-                <div>
-                  <span className="text-sm text-muted-foreground">Heures d'ouverture</span>
-                  <p className="font-medium text-foreground">{site.opening_hours}</p>
-                </div>
-              )}
-              {site.opening_days && site.opening_days.length > 0 && (
-                <div>
-                  <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {site.opening_days.map((day) => (
-                      <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
-                        {day}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
-              {!site.opening_hours && (!site.opening_days || site.opening_days.length === 0) && (
-                <p className="text-muted-foreground text-sm">Non renseigné</p>
-              )}
-            </div>
-          </div>
-
-          {/* WiFi */}
-          <div className="relative rounded-lg bg-card p-4 sm:p-6">
-            <EditWifiModal
-              siteId={site.id}
-              initialSsid={site.wifi_ssid}
-              initialPassword={site.wifi_password}
-            />
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Wifi className="h-5 w-5" />
-              WiFi
-            </h2>
-            {site.wifi_ssid ? (
-              <div className="space-y-3">
-                <div>
-                  <span className="text-sm text-muted-foreground">SSID</span>
-                  <p className="font-mono font-medium text-foreground">{site.wifi_ssid}</p>
-                </div>
-                {site.wifi_password && (
-                  <div>
-                    <span className="text-sm text-muted-foreground">Mot de passe</span>
-                    <div className="flex items-center gap-2">
-                      <Key className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-mono font-medium text-foreground">{site.wifi_password}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Non renseigné</p>
-            )}
-          </div>
-
-          {/* Equipments */}
-          <div className="relative rounded-lg bg-card p-4 sm:p-6">
-            <EditEquipmentsModal
-              siteId={site.id}
-              initialEquipments={site.equipments}
-            />
-            <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-              <Calendar className="h-5 w-5" />
-              Équipements
-            </h2>
-            {site.equipments && site.equipments.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {site.equipments.map((equipment) => (
-                  <EquipmentBadge key={equipment} equipment={equipment} />
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">Aucun équipement renseigné</p>
-            )}
-          </div>
-
-        </div>
-      </div>
+        }
+      />
     </div>
   )
 }

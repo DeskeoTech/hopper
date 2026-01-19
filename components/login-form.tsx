@@ -2,22 +2,58 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { checkEmailExists } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Mail, Loader2, CheckCircle } from "lucide-react"
+import { Mail, Loader2, CheckCircle, Lock } from "lucide-react"
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isV0Preview, setIsV0Preview] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  useEffect(() => {
+    setIsV0Preview(window.location.hostname.endsWith(".vusercontent.net"))
+  }, [])
+
+  // Password login for v0 preview environment
+  const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     setError(null)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      setError(error.message)
+      setIsLoading(false)
+    } else {
+      window.location.href = "/admin"
+    }
+  }
+
+  // Magic link login for production
+  const handleMagicLinkLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    // Check if email exists in users table before sending magic link
+    const { exists } = await checkEmailExists(email)
+    if (!exists) {
+      setError("Seuls les clients Hopper peuvent accéder à cet espace.")
+      setIsLoading(false)
+      return
+    }
 
     const supabase = createClient()
 
@@ -63,8 +99,65 @@ export function LoginForm() {
     )
   }
 
+  // Password login form for v0 preview
+  if (isV0Preview) {
+    return (
+      <form onSubmit={handlePasswordLogin} className="space-y-6">
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            Adresse email
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="vous@exemple.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="password" className="text-sm font-medium text-foreground">
+            Mot de passe
+          </label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Connexion en cours...
+            </>
+          ) : (
+            "Se connecter"
+          )}
+        </Button>
+      </form>
+    )
+  }
+
+  // Magic link form for production
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleMagicLinkLogin} className="space-y-6">
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-medium text-foreground">
           Adresse email

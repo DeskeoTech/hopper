@@ -14,26 +14,20 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
-        },
+  const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll()
       },
-    }
-  )
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
+        supabaseResponse = NextResponse.next({
+          request,
+        })
+        cookiesToSet.forEach(({ name, value, options }) => supabaseResponse.cookies.set(name, value, options))
+      },
+    },
+  })
 
   // Refresh session if needed
   const {
@@ -41,12 +35,25 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Vérifier si on est sur un domaine preview
-  const host = request.headers.get('host') || ''
+  const host = request.headers.get("host") || ""
   const isPreviewDomain = PREVIEW_DOMAIN_PATTERN.test(host)
 
   // If user is not authenticated and trying to access /admin, redirect to login
   // (sauf sur les domaines preview)
   if (!user && request.nextUrl.pathname.startsWith("/admin") && !isPreviewDomain) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    return NextResponse.redirect(url)
+  }
+
+  // Protected client routes
+  const protectedClientRoutes = ["/", "/salles", "/postes", "/compte", "/actualites"]
+  const isProtectedClientRoute = protectedClientRoutes.some(
+    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+  )
+
+  // If user is not authenticated and trying to access protected client routes, redirect to login
+  if (!user && isProtectedClientRoute && !isPreviewDomain) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
@@ -58,7 +65,8 @@ export async function proxy(request: NextRequest) {
       .from("users")
       .select("role")
       .eq("email", user.email)
-      .single()
+      .limit(1)
+      .maybeSingle()
 
     // Only allow admin or deskeo roles
     if (!userData || (userData.role !== "admin" && userData.role !== "deskeo")) {

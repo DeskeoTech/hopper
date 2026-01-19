@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { CompaniesTable } from "@/components/admin/companies-table"
 import { CompanySearch } from "@/components/admin/company-search"
+import { CreateCompanyModal } from "@/components/admin/company-edit/create-company-modal"
 import { Briefcase } from "lucide-react"
 
 interface ClientsPageProps {
@@ -12,8 +13,8 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const { search, type } = await searchParams
   const supabase = await createClient()
 
-  // Build query for companies
-  let query = supabase.from("companies").select("*").order("name")
+  // Build query for companies with main site
+  let query = supabase.from("companies").select("*, main_site:sites!main_site_id(id, name)").order("name")
 
   // Apply search filter
   if (search) {
@@ -40,17 +41,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     }
   })
 
-  // Fetch site counts per company
-  const { data: companySites } = await supabase
-    .from("company_sites")
-    .select("company_id")
-
-  // Build site count map
-  const siteCountMap: Record<string, number> = {}
-  companySites?.forEach((cs) => {
-    siteCountMap[cs.company_id] = (siteCountMap[cs.company_id] || 0) + 1
-  })
-
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -62,9 +52,12 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="type-h2 text-foreground">Clients</h1>
-        <p className="mt-1 text-muted-foreground">Gérez vos entreprises clientes et leurs utilisateurs</p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="type-h2 text-foreground">Clients</h1>
+          <p className="mt-1 text-muted-foreground">Gérez vos entreprises clientes et leurs utilisateurs</p>
+        </div>
+        <CreateCompanyModal />
       </div>
 
       {/* Search & Filters */}
@@ -85,7 +78,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
           companies={companies.map((company) => ({
             ...company,
             userCount: userCountMap[company.id] || 0,
-            siteCount: siteCountMap[company.id] || 0,
+            mainSiteName: company.main_site?.name || null,
           }))}
         />
       ) : (

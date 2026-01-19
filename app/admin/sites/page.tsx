@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server"
 import { SiteCard } from "@/components/admin/site-card"
 import { SitesSearch } from "@/components/admin/sites/sites-search"
 import { Building2 } from "lucide-react"
+import { Suspense } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface SitesPageProps {
   searchParams: Promise<{ search?: string }>
@@ -20,12 +22,26 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     .select("site_id, storage_path")
     .order("created_at", { ascending: true })
 
+  const { data: resources } = await supabase.from("resources").select("site_id, capacity").not("capacity", "is", null)
+
   // Build a map of site_id -> first photo URL
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const siteImageMap: Record<string, string> = {}
   sitePhotos?.forEach((photo) => {
     if (!siteImageMap[photo.site_id]) {
       siteImageMap[photo.site_id] = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+    }
+  })
+
+  const siteCapacityMap: Record<string, { min: number; max: number }> = {}
+  resources?.forEach((resource) => {
+    if (resource.capacity) {
+      if (!siteCapacityMap[resource.site_id]) {
+        siteCapacityMap[resource.site_id] = { min: resource.capacity, max: resource.capacity }
+      } else {
+        siteCapacityMap[resource.site_id].min = Math.min(siteCapacityMap[resource.site_id].min, resource.capacity)
+        siteCapacityMap[resource.site_id].max = Math.max(siteCapacityMap[resource.site_id].max, resource.capacity)
+      }
     }
   })
 
@@ -42,9 +58,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   if (searchQuery) {
     const searchLower = searchQuery.toLowerCase()
     filteredSites = filteredSites.filter(
-      (site) =>
-        site.name?.toLowerCase().includes(searchLower) ||
-        site.address?.toLowerCase().includes(searchLower)
+      (site) => site.name?.toLowerCase().includes(searchLower) || site.address?.toLowerCase().includes(searchLower),
     )
   }
 
@@ -55,7 +69,9 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
         <h2 className="type-h3 text-foreground mb-4">Tous les sites Hopper</h2>
 
         <div className="mb-6">
-          <SitesSearch />
+          <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+            <SitesSearch />
+          </Suspense>
         </div>
 
         {filteredSites.length > 0 ? (
@@ -65,6 +81,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                 key={site.id}
                 site={site}
                 imageUrl={siteImageMap[site.id]}
+                capacityRange={siteCapacityMap[site.id]}
               />
             ))}
           </div>

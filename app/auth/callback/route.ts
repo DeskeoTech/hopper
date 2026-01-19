@@ -36,12 +36,20 @@ export async function GET(request: Request) {
               .update({ role: "deskeo" })
               .eq("id", existingUser.id)
           }
+
+          // Redirect based on role
+          const userRole = isCollaborator && existingUser.role !== "admin"
+            ? "deskeo"
+            : existingUser.role
+
+          if (userRole === "user") {
+            return NextResponse.redirect(`${origin}/`)
+          }
+          return NextResponse.redirect(`${origin}${next}`)
         } else {
-          // Create new user with appropriate role
-          await supabase.from("users").insert({
-            email: user.email,
-            role: isCollaborator ? "deskeo" : "user",
-          })
+          // User not in users table - sign them out and redirect to error
+          await supabase.auth.signOut()
+          return NextResponse.redirect(`${origin}/login?error=no_account`)
         }
       }
 

@@ -14,12 +14,12 @@ import {
 import { cn } from "@/lib/utils"
 import type { Company } from "@/lib/types/database"
 
-type SortField = "name" | "company_type" | "contact_email" | "userCount" | "siteCount" | "status"
+type SortField = "name" | "company_type" | "contact_email" | "userCount" | "mainSiteName" | "status"
 type SortOrder = "asc" | "desc"
 
 interface CompanyWithCounts extends Company {
   userCount: number
-  siteCount: number
+  mainSiteName: string | null
 }
 
 interface CompaniesTableProps {
@@ -62,9 +62,9 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
           aValue = a.userCount
           bValue = b.userCount
           break
-        case "siteCount":
-          aValue = a.siteCount
-          bValue = b.siteCount
+        case "mainSiteName":
+          aValue = (a.mainSiteName || "").toLowerCase()
+          bValue = (b.mainSiteName || "").toLowerCase()
           break
         case "status":
           const now = new Date()
@@ -159,12 +159,12 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               </div>
             </TableHead>
             <TableHead
-              className="cursor-pointer select-none text-center"
-              onClick={() => handleSort("siteCount")}
+              className="hidden cursor-pointer select-none lg:table-cell"
+              onClick={() => handleSort("mainSiteName")}
             >
-              <div className="flex items-center justify-center">
-                Sites
-                <SortIcon field="siteCount" />
+              <div className="flex items-center">
+                Site principal
+                <SortIcon field="mainSiteName" />
               </div>
             </TableHead>
             <TableHead
@@ -197,8 +197,8 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               <TableCell className="text-center">
                 {company.userCount}
               </TableCell>
-              <TableCell className="text-center">
-                {company.siteCount}
+              <TableCell className="hidden text-muted-foreground lg:table-cell">
+                {company.mainSiteName || "-"}
               </TableCell>
               <TableCell>
                 {getStatusBadge(company)}

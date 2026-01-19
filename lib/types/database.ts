@@ -25,9 +25,16 @@ export interface Site {
   wifi_password: string | null
   access: string | null
   equipments: Equipment[] | null
+  contact_first_name: string | null
+  contact_last_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
   created_at: string
   updated_at: string
 }
+
+export type FloorLevel = "R-1" | "RDJ" | "RDC" | "R+1" | "R+2" | "R+3" | "R+4" | "R+5"
+export type ResourceEquipment = "ecran" | "visio" | "tableau"
 
 export interface Resource {
   id: string
@@ -35,14 +42,22 @@ export interface Resource {
   name: string
   type: ResourceType
   capacity: number | null
-  floor: number | null
-  amenities: string[] | null
-  hourly_rate: number | null
-  daily_rate: number | null
-  instructions: string | null
-  status: "available" | "maintenance" | "unavailable"
+  floor: FloorLevel | null
+  hourly_credit_rate: number | null
+  equipments: ResourceEquipment[] | null
+  status: "available" | "unavailable"
   created_at: string
   updated_at: string
+}
+
+export interface MeetingRoomResource {
+  id: string
+  name: string
+  capacity: number | null
+  floor: FloorLevel | null
+  hourly_credit_rate: number | null
+  equipments: ResourceEquipment[] | null
+  status: "available" | "unavailable"
 }
 
 export interface SitePhoto {
@@ -51,16 +66,6 @@ export interface SitePhoto {
   url: string
   alt: string | null
   order: number
-  created_at: string
-}
-
-export interface SiteContact {
-  id: string
-  site_id: string
-  name: string
-  role: string | null
-  email: string | null
-  phone: string | null
   created_at: string
 }
 
@@ -82,6 +87,8 @@ export interface Company {
   subscription_start_date: string | null
   subscription_end_date: string | null
   customer_id_stripe: string | null
+  main_site_id: string | null
+  logo_storage_path: string | null
   created_at: string
   updated_at: string
 }
@@ -108,6 +115,47 @@ export interface Plan {
 export interface PlanSite {
   plan_id: string
   site_id: string
+}
+
+// Credit types
+export interface Credit {
+  id: string
+  airtable_id: string | null
+  contract_id: string | null
+  period: string
+  allocated_credits: number
+  remaining_credits: number
+  created_at: string
+  updated_at: string
+}
+
+export interface UserCredits {
+  allocated: number
+  remaining: number
+  period: string
+}
+
+export interface UserPlan {
+  name: string
+  pricePerSeatMonth: number | null
+  creditsPerMonth: number | null
+}
+
+// Flex pass types for workspace booking
+export interface FlexPassOffer {
+  id: string
+  name: string
+  pricePerSeatMonth: number | null
+  recurrence: PlanRecurrence | null
+}
+
+export interface FlexDeskAvailability {
+  siteId: string
+  siteName: string
+  totalCapacity: number
+  bookedCount: number
+  availableCount: number
+  photoUrl: string | null
 }
 
 // Booking types
@@ -143,7 +191,7 @@ export interface BookingWithDetails extends Booking {
 }
 
 // User types
-export type UserRole = "admin" | "user"
+export type UserRole = "admin" | "user" | "deskeo"
 export type UserStatus = "active" | "disabled"
 
 export interface User {
@@ -156,6 +204,7 @@ export interface User {
   role: UserRole | null
   status: UserStatus | null
   company_id: string | null
+  photo_storage_path: string | null
   created_at: string
   updated_at: string
 }
@@ -177,11 +226,6 @@ export interface Database {
         Row: SitePhoto
         Insert: Omit<SitePhoto, "id" | "created_at">
         Update: Partial<Omit<SitePhoto, "id" | "created_at">>
-      }
-      site_contacts: {
-        Row: SiteContact
-        Insert: Omit<SiteContact, "id" | "created_at">
-        Update: Partial<Omit<SiteContact, "id" | "created_at">>
       }
     }
   }
