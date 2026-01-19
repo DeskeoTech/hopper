@@ -3,40 +3,36 @@
 import { useEffect, useState, useCallback } from "react"
 import { Briefcase, Loader2 } from "lucide-react"
 import { startOfDay } from "date-fns"
-import { DatePickerNavigation } from "./date-picker-navigation"
 import { FlexPassCard } from "./flex-pass-card"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import {
   getFlexPasses,
   getFlexDeskAvailability,
 } from "@/lib/actions/workspaces"
 import type { FlexPassOffer, FlexDeskAvailability } from "@/lib/types/database"
 
-interface WorkspaceBookingSectionProps {
-  userId: string
-  companyId: string
-  mainSiteId: string | null
-  sites: Array<{ id: string; name: string }>
+export interface PassSelectionInfo {
+  pass: FlexPassOffer
+  siteId: string
+  siteName: string
+  totalCapacity: number
 }
 
-const POSTS_COUNT_OPTIONS = Array.from({ length: 10 }, (_, i) => ({
-  value: String(i + 1),
-  label: `${i + 1} poste${i > 0 ? "s" : ""}`,
-}))
+interface WorkspaceBookingSectionProps {
+  siteId: string | null
+  onPassSelect?: (info: PassSelectionInfo) => void
+}
 
 export function WorkspaceBookingSection({
-  userId,
-  companyId,
-  mainSiteId,
-  sites,
+  siteId,
+  onPassSelect,
 }: WorkspaceBookingSectionProps) {
-  const [selectedDate, setSelectedDate] = useState<Date>(() => startOfDay(new Date()))
-  const [selectedSiteId, setSelectedSiteId] = useState<string>(mainSiteId || sites[0]?.id || "")
-  const [postsCount, setPostsCount] = useState("1")
   const [passes, setPasses] = useState<FlexPassOffer[]>([])
   const [availability, setAvailability] = useState<FlexDeskAvailability | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  // Use today's date for availability display
+  const today = startOfDay(new Date())
 
   // Load flex passes on mount
   useEffect(() => {
@@ -51,9 +47,9 @@ export function WorkspaceBookingSection({
     loadPasses()
   }, [])
 
-  // Load availability when date or site changes
+  // Load availability when site changes
   const loadAvailability = useCallback(async () => {
-    if (!selectedSiteId) {
+    if (!siteId) {
       setAvailability(null)
       setLoading(false)
       return
@@ -62,9 +58,9 @@ export function WorkspaceBookingSection({
     setLoading(true)
     setError(null)
 
-    const dateStr = selectedDate.toISOString().split("T")[0]
+    const dateStr = today.toISOString().split("T")[0]
     const { availability: fetchedAvailability, error: availError } =
-      await getFlexDeskAvailability(selectedSiteId, dateStr)
+      await getFlexDeskAvailability(siteId, dateStr)
 
     if (availError) {
       setError(availError)
@@ -74,31 +70,22 @@ export function WorkspaceBookingSection({
     }
 
     setLoading(false)
-  }, [selectedSiteId, selectedDate])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siteId])
 
   useEffect(() => {
     loadAvailability()
   }, [loadAvailability])
 
-  const handlePassSelect = async (pass: FlexPassOffer) => {
-    // Placeholder for Stripe integration
-    alert(
-      `La fonctionnalite de paiement sera bientot disponible.\n\nPass: ${pass.name}\nSite: ${availability?.siteName || "N/A"}\nDate: ${selectedDate.toLocaleDateString("fr-FR")}\nNombre de postes: ${postsCount}`
-    )
-  }
-
-  const siteOptions = sites.map((site) => ({
-    value: site.id,
-    label: site.name,
-  }))
-
-  // Sort to put main site first
-  if (mainSiteId) {
-    siteOptions.sort((a, b) => {
-      if (a.value === mainSiteId) return -1
-      if (b.value === mainSiteId) return 1
-      return a.label.localeCompare(b.label)
-    })
+  const handlePassSelect = (pass: FlexPassOffer) => {
+    if (onPassSelect && siteId) {
+      onPassSelect({
+        pass,
+        siteId,
+        siteName: availability?.siteName || "Site",
+        totalCapacity: availability?.totalCapacity || 0,
+      })
+    }
   }
 
   // Build image URL from storage path
@@ -120,34 +107,6 @@ export function WorkspaceBookingSection({
             Reservez un poste flex a la journee ou par abonnement
           </p>
         </div>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center mb-6">
-        <DatePickerNavigation
-          selectedDate={selectedDate}
-          onDateChange={setSelectedDate}
-        />
-
-        <SearchableSelect
-          options={siteOptions}
-          value={selectedSiteId}
-          onValueChange={setSelectedSiteId}
-          placeholder="Choisir un site"
-          searchPlaceholder="Rechercher un site..."
-          emptyMessage="Aucun site trouve"
-          triggerClassName="w-full sm:w-[200px]"
-        />
-
-        <SearchableSelect
-          options={POSTS_COUNT_OPTIONS}
-          value={postsCount}
-          onValueChange={setPostsCount}
-          placeholder="Nombre de postes"
-          searchPlaceholder="Rechercher..."
-          emptyMessage="Aucune option"
-          triggerClassName="w-full sm:w-[140px]"
-        />
       </div>
 
       {/* Content */}
