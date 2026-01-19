@@ -1,7 +1,6 @@
 "use client"
 
 import { CalendarDays, Calendar, List } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export type ViewMode = "week" | "month" | "list"
@@ -19,23 +18,24 @@ const views: { value: ViewMode; label: string; icon: typeof Calendar }[] = [
 
 export function ViewToggle({ currentView, onViewChange }: ViewToggleProps) {
   return (
-    <div className="inline-flex rounded-lg border border-border bg-muted/50 p-1">
-      {views.map(({ value, label, icon: Icon }) => (
-        <Button
+    <div className="flex items-center overflow-hidden rounded-[20px] border border-border bg-white/20 p-1">
+      {views.map(({ value, label, icon: Icon }, index) => (
+        <button
           key={value}
-          variant="ghost"
-          size="sm"
           onClick={() => onViewChange(value)}
           className={cn(
-            "gap-2 rounded-md px-3",
+            "flex items-center gap-2 rounded-[16px] px-3 py-1.5 text-xs font-bold transition-all sm:px-4",
             currentView === value
-              ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-foreground text-background"
+              : "opacity-60 hover:opacity-100",
+            index === views.length - 1 &&
+              currentView !== value &&
+              "border-l border-border/10"
           )}
         >
           <Icon className="h-4 w-4" />
           <span className="hidden sm:inline">{label}</span>
-        </Button>
+        </button>
       ))}
     </div>
   )
