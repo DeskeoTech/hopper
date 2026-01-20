@@ -21,6 +21,8 @@ import { CalendarWeekView } from "./calendar-week-view"
 import { CalendarMonthView } from "./calendar-month-view"
 import { CalendarListView } from "./calendar-list-view"
 import { BookingEditDialog } from "./booking-edit-dialog"
+import { updateBookingDate } from "@/lib/actions/bookings"
+import { toast } from "sonner"
 import type { BookingWithDetails } from "@/lib/types/database"
 
 interface ReservationsCalendarProps {
@@ -52,6 +54,31 @@ export function ReservationsCalendar({
     setSelectedBooking(booking)
     setIsDialogOpen(true)
   }, [])
+
+  // Handle booking update via drag & drop
+  const handleBookingUpdate = useCallback(
+    async (
+      bookingId: string,
+      startDate: string,
+      endDate: string
+    ): Promise<{ error?: string }> => {
+      const result = await updateBookingDate({
+        bookingId,
+        startDate,
+        endDate,
+      })
+
+      if (result.error) {
+        toast.error(result.error)
+        return { error: result.error }
+      }
+
+      toast.success("Réservation mise à jour")
+      router.refresh()
+      return {}
+    },
+    [router]
+  )
 
   // Helper to get prefixed param key
   const getParamKey = useCallback(
@@ -227,6 +254,7 @@ export function ReservationsCalendar({
             bookings={bookings}
             referenceDate={currentDate}
             onBookingClick={handleBookingClick}
+            onBookingUpdate={handleBookingUpdate}
           />
         )}
         {view === "month" && (

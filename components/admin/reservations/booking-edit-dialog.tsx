@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useTransition, useEffect } from "react"
-import { format, parseISO } from "date-fns"
+import { useState, useTransition, useEffect, useMemo } from "react"
+import { format, parseISO, isPast } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Calendar, Clock, MapPin, User, Building2, Loader2 } from "lucide-react"
 import {
@@ -123,9 +123,16 @@ export function BookingEditDialog({
     })
   }
 
+  // Check if booking is in the past (end date has passed)
+  const isBookingPast = useMemo(() => {
+    if (!booking) return false
+    return isPast(parseISO(booking.end_date))
+  }, [booking])
+
   if (!booking) return null
 
   const isCancelled = booking.status === "cancelled"
+  const isReadOnly = isCancelled || isBookingPast
   const userName = [booking.user_first_name, booking.user_last_name]
     .filter(Boolean)
     .join(" ") || "Utilisateur inconnu"
@@ -142,7 +149,9 @@ export function BookingEditDialog({
             <DialogDescription>
               {isCancelled
                 ? "Cette réservation a été annulée"
-                : "Modifier ou annuler cette réservation"}
+                : isBookingPast
+                  ? "Cette réservation est passée et ne peut plus être modifiée"
+                  : "Modifier ou annuler cette réservation"}
             </DialogDescription>
           </DialogHeader>
 
@@ -183,7 +192,7 @@ export function BookingEditDialog({
             </div>
 
             {/* Date/time modification form */}
-            {!isCancelled && (
+            {!isReadOnly && (
               <div className="space-y-4 border-t border-border/10 pt-4">
                 <p className="text-sm font-bold">Modifier la date et l&apos;heure</p>
 
@@ -244,7 +253,7 @@ export function BookingEditDialog({
           </div>
 
           <DialogFooter className="flex-col gap-2 sm:flex-row">
-            {!isCancelled && (
+            {!isReadOnly && (
               <>
                 <Button
                   variant="destructive"
@@ -270,7 +279,7 @@ export function BookingEditDialog({
                 </Button>
               </>
             )}
-            {isCancelled && (
+            {isReadOnly && (
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
