@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Calendar, Clock, MapPin, User, Building2, Loader2 } from "lucide-react"
@@ -49,39 +49,38 @@ export function BookingEditDialog({
   const [startTime, setStartTime] = useState("")
   const [endTime, setEndTime] = useState("")
 
-  // Reset form when booking changes
-  const resetForm = () => {
-    if (booking) {
+  // Initialize form when dialog opens or booking changes
+  useEffect(() => {
+    if (open && booking) {
       const startDate = parseISO(booking.start_date)
       const endDate = parseISO(booking.end_date)
       setDate(format(startDate, "yyyy-MM-dd"))
       setStartTime(format(startDate, "HH:mm"))
       setEndTime(format(endDate, "HH:mm"))
+      setError(null)
     }
-    setError(null)
-  }
-
-  // Handle dialog open change
-  const handleOpenChange = (newOpen: boolean) => {
-    if (newOpen) {
-      resetForm()
-    }
-    onOpenChange(newOpen)
-  }
+  }, [open, booking])
 
   // Handle date modification
   const handleUpdateDate = () => {
     if (!booking) return
 
     setError(null)
-    const newStartDate = `${date}T${startTime}:00`
-    const newEndDate = `${date}T${endTime}:00`
+
+    // Validate that all fields are filled
+    if (!date || !startTime || !endTime) {
+      setError("Veuillez remplir tous les champs")
+      return
+    }
 
     // Validate times
     if (startTime >= endTime) {
       setError("L'heure de fin doit être après l'heure de début")
       return
     }
+
+    const newStartDate = `${date}T${startTime}:00`
+    const newEndDate = `${date}T${endTime}:00`
 
     startTransition(async () => {
       const result = await updateBookingDate({
@@ -125,7 +124,7 @@ export function BookingEditDialog({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={handleOpenChange}>
+      <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[500px] sm:rounded-[20px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
