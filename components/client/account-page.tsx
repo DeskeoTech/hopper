@@ -35,7 +35,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
         onBookClick={() => setBookingModalOpen(true)}
       />
 
-      <UserBookingsSection bookings={bookings} />
+      <UserBookingsSection bookings={bookings} userId={user.id} />
 
       <BookMeetingRoomModal
         open={bookingModalOpen}
