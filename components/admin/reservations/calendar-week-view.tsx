@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useEffect, useState } from "react"
+import { useMemo, useEffect, useState, useCallback, useRef } from "react"
 import {
   format,
   startOfWeek,
@@ -9,6 +9,10 @@ import {
   getMinutes,
   differenceInMinutes,
   isToday,
+  setHours,
+  setMinutes,
+  setSeconds,
+  setMilliseconds,
 } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -17,6 +21,25 @@ import type { BookingWithDetails } from "@/lib/types/database"
 interface CalendarWeekViewProps {
   bookings: BookingWithDetails[]
   referenceDate: Date
+  onBookingClick?: (booking: BookingWithDetails) => void
+  onBookingUpdate?: (
+    bookingId: string,
+    startDate: string,
+    endDate: string
+  ) => Promise<{ error?: string }>
+}
+
+// Drag state interface
+interface DragState {
+  booking: BookingWithDetails
+  initialMouseY: number
+  initialMouseX: number
+  initialTop: number
+  initialHeight: number
+  currentTop: number
+  currentDayIndex: number
+  originalDayIndex: number
+  gridRect: DOMRect
 }
 
 const HOUR_HEIGHT = 60 // pixels per hour
@@ -27,6 +50,13 @@ const HOURS = Array.from(
   (_, i) => START_HOUR + i
 )
 const TOTAL_HEIGHT = HOURS.length * HOUR_HEIGHT
+
+// Snap configuration (30 minutes)
+const SNAP_MINUTES = 30
+const SNAP_HEIGHT = HOUR_HEIGHT * (SNAP_MINUTES / 60) // 30px for 30 min
+
+// Minimum drag distance to differentiate from click
+const MIN_DRAG_DISTANCE = 5
 
 // More vibrant pastel colors for meeting rooms (same as month view)
 const MEETING_ROOM_COLORS = [
@@ -63,11 +93,19 @@ const DAY_NAMES = ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI"]
 export function CalendarWeekView({
   bookings,
   referenceDate,
+  onBookingClick,
+  onBookingUpdate,
 }: CalendarWeekViewProps) {
   const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 })
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(
     null
   )
+
+  // Drag & drop state
+  const [dragState, setDragState] = useState<DragState | null>(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const gridRef = useRef<HTMLDivElement>(null)
 
   // Only weekdays (Monday to Friday)
   const weekDays = useMemo(() => {
@@ -147,6 +185,221 @@ export function CalendarWeekView({
   // Check if today is in the current week
   const todayIndex = weekDays.findIndex((day) => isToday(day))
 
+  // Snap position to 30-minute grid
+  const snapToGrid = useCallback((top: number): number => {
+    const snapped = Math.round(top / SNAP_HEIGHT) * SNAP_HEIGHT
+    // Clamp to valid range
+    return Math.max(0, Math.min(snapped, TOTAL_HEIGHT - SNAP_HEIGHT))
+  }, [])
+
+  // Calculate day index from mouse X position
+  const getDayIndexFromX = useCallback(
+    (mouseX: number, gridRect: DOMRect): number => {
+      const relativeX = mouseX - gridRect.left
+      const columnWidth = gridRect.width / 5
+      const dayIndex = Math.floor(relativeX / columnWidth)
+      return Math.max(0, Math.min(dayIndex, 4))
+    },
+    []
+  )
+
+  // Handle mouse down on booking
+  const handleMouseDown = useCallback(
+    (
+      e: React.MouseEvent,
+      booking: BookingWithDetails,
+      dayIndex: number
+    ) => {
+      // Don't allow drag for cancelled bookings or if no update handler
+      if (booking.status === "cancelled" || !onBookingUpdate || isUpdating) {
+        return
+      }
+
+      // Only left click
+      if (e.button !== 0) return
+
+      e.preventDefault()
+      e.stopPropagation()
+
+      const grid = gridRef.current
+      if (!grid) return
+
+      const gridRect = grid.getBoundingClientRect()
+      const { top, height } = getBookingPosition(booking)
+
+      setDragState({
+        booking,
+        initialMouseY: e.clientY,
+        initialMouseX: e.clientX,
+        initialTop: top,
+        initialHeight: height,
+        currentTop: top,
+        currentDayIndex: dayIndex,
+        originalDayIndex: dayIndex,
+        gridRect,
+      })
+    },
+    [onBookingUpdate, isUpdating, getBookingPosition]
+  )
+
+  // Handle mouse move during drag
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!dragState) return
+
+      const deltaY = e.clientY - dragState.initialMouseY
+      const deltaX = e.clientX - dragState.initialMouseX
+
+      // Check if we've moved enough to consider it a drag
+      if (
+        !isDragging &&
+        (Math.abs(deltaX) > MIN_DRAG_DISTANCE ||
+          Math.abs(deltaY) > MIN_DRAG_DISTANCE)
+      ) {
+        setIsDragging(true)
+      }
+
+      if (isDragging) {
+        const newTop = Math.max(
+          0,
+          Math.min(
+            dragState.initialTop + deltaY,
+            TOTAL_HEIGHT - dragState.initialHeight
+          )
+        )
+        const newDayIndex = getDayIndexFromX(e.clientX, dragState.gridRect)
+
+        setDragState((prev) =>
+          prev
+            ? {
+                ...prev,
+                currentTop: newTop,
+                currentDayIndex: newDayIndex,
+              }
+            : null
+        )
+      }
+    },
+    [dragState, isDragging, getDayIndexFromX]
+  )
+
+  // Handle mouse up - finalize drag
+  const handleMouseUp = useCallback(async () => {
+    if (!dragState) return
+
+    // If we didn't drag, trigger click instead
+    if (!isDragging) {
+      setDragState(null)
+      onBookingClick?.(dragState.booking)
+      return
+    }
+
+    const snappedTop = snapToGrid(dragState.currentTop)
+    const newDayIndex = dragState.currentDayIndex
+
+    // Calculate new start time
+    const hoursFromTop = snappedTop / HOUR_HEIGHT
+    const newStartHour = Math.floor(START_HOUR + hoursFromTop)
+    const newStartMinutes = Math.round((hoursFromTop % 1) * 60)
+
+    // Calculate duration from original booking
+    const originalStart = new Date(dragState.booking.start_date)
+    const originalEnd = new Date(dragState.booking.end_date)
+    const durationMinutes = differenceInMinutes(originalEnd, originalStart)
+
+    // Build new dates
+    const newDay = weekDays[newDayIndex]
+    let newStartDate = setMilliseconds(
+      setSeconds(
+        setMinutes(setHours(newDay, newStartHour), newStartMinutes),
+        0
+      ),
+      0
+    )
+    let newEndDate = new Date(newStartDate.getTime() + durationMinutes * 60000)
+
+    // Check if anything actually changed
+    const originalStartHour =
+      getHours(originalStart) + getMinutes(originalStart) / 60
+    const originalTop = (originalStartHour - START_HOUR) * HOUR_HEIGHT
+    const originalDayKey = format(originalStart, "yyyy-MM-dd")
+    const newDayKey = format(newDay, "yyyy-MM-dd")
+
+    if (
+      Math.abs(snappedTop - originalTop) < 1 &&
+      originalDayKey === newDayKey
+    ) {
+      // No change, just reset
+      setDragState(null)
+      setIsDragging(false)
+      return
+    }
+
+    // Call update handler
+    setIsUpdating(true)
+    try {
+      const result = await onBookingUpdate?.(
+        dragState.booking.id,
+        newStartDate.toISOString(),
+        newEndDate.toISOString()
+      )
+
+      if (result?.error) {
+        // Show error - the parent should handle toast notifications
+        console.error("Booking update failed:", result.error)
+      }
+    } catch (error) {
+      console.error("Booking update error:", error)
+    } finally {
+      setIsUpdating(false)
+      setDragState(null)
+      setIsDragging(false)
+    }
+  }, [
+    dragState,
+    isDragging,
+    snapToGrid,
+    weekDays,
+    onBookingClick,
+    onBookingUpdate,
+  ])
+
+  // Handle escape key to cancel drag
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Escape" && dragState) {
+        setDragState(null)
+        setIsDragging(false)
+      }
+    },
+    [dragState]
+  )
+
+  // Add/remove global event listeners for drag
+  useEffect(() => {
+    if (dragState) {
+      window.addEventListener("mousemove", handleMouseMove)
+      window.addEventListener("mouseup", handleMouseUp)
+      window.addEventListener("keydown", handleKeyDown)
+
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove)
+        window.removeEventListener("mouseup", handleMouseUp)
+        window.removeEventListener("keydown", handleKeyDown)
+      }
+    }
+  }, [dragState, handleMouseMove, handleMouseUp, handleKeyDown])
+
+  // Format time from top position for ghost preview
+  const formatTimeFromTop = useCallback((top: number, durationMinutes: number) => {
+    const snappedTop = snapToGrid(top)
+    const hoursFromTop = snappedTop / HOUR_HEIGHT
+    const startHour = Math.floor(START_HOUR + hoursFromTop)
+    const startMinutes = Math.round((hoursFromTop % 1) * 60)
+    const endDate = new Date(2000, 0, 1, startHour, startMinutes + durationMinutes)
+    return `${startHour.toString().padStart(2, "0")}:${startMinutes.toString().padStart(2, "0")} - ${format(endDate, "HH:mm")}`
+  }, [snapToGrid])
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden rounded-[20px] border border-border/10 bg-card">
       {/* Header with day names */}
@@ -198,7 +451,11 @@ export function CalendarWeekView({
         </div>
 
         {/* Grid content area */}
-        <div className="relative flex-1" style={{ minHeight: TOTAL_HEIGHT }}>
+        <div
+          ref={gridRef}
+          className="relative flex-1"
+          style={{ minHeight: TOTAL_HEIGHT }}
+        >
           {/* Horizontal grid lines */}
           <div className="pointer-events-none absolute inset-0 flex flex-col">
             {HOURS.map((hour) => (
@@ -225,7 +482,7 @@ export function CalendarWeekView({
 
           {/* Bookings layer */}
           <div className="absolute inset-0 grid grid-cols-5">
-            {weekDays.map((day) => {
+            {weekDays.map((day, dayIndex) => {
               const dayKey = format(day, "yyyy-MM-dd")
               const dayBookings = bookingsByDay[dayKey] || []
 
@@ -233,22 +490,32 @@ export function CalendarWeekView({
                 <div key={day.toISOString()} className="relative h-full">
                   {dayBookings.map((booking) => {
                     const { top, height } = getBookingPosition(booking)
-                    const isMeetingRoom = booking.resource_type === "meeting_room"
+                    const isBeingDragged =
+                      isDragging && dragState?.booking.id === booking.id
+                    const canDrag =
+                      booking.status !== "cancelled" &&
+                      !!onBookingUpdate &&
+                      !isUpdating
 
                     return (
                       <div
                         key={booking.id}
                         className={cn(
-                          "absolute left-1 right-1 z-[2] cursor-pointer overflow-hidden rounded-[16px] border border-border/10 p-2 transition-all hover:shadow-md sm:rounded-[20px] sm:p-3",
-                          getBookingColor(booking)
+                          "absolute left-1 right-1 z-[2] overflow-hidden rounded-[16px] border border-border/10 p-2 transition-shadow hover:shadow-md sm:rounded-[20px] sm:p-3",
+                          getBookingColor(booking),
+                          canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
+                          isBeingDragged && "opacity-40"
                         )}
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
                           minHeight: "40px",
                         }}
+                        onMouseDown={(e) =>
+                          handleMouseDown(e, booking, dayIndex)
+                        }
                       >
-                        <div className="flex h-full flex-col justify-between">
+                        <div className="flex h-full flex-col justify-between select-none">
                           <div className="min-w-0">
                             <p className="truncate text-[9px] font-bold uppercase opacity-60">
                               {formatTimeRange(booking)}
@@ -270,6 +537,56 @@ export function CalendarWeekView({
               )
             })}
           </div>
+
+          {/* Drag ghost element */}
+          {isDragging && dragState && (
+            <div
+              className="pointer-events-none absolute inset-0 grid grid-cols-5"
+              style={{ zIndex: 10 }}
+            >
+              {weekDays.map((_, dayIndex) => (
+                <div key={dayIndex} className="relative h-full">
+                  {dayIndex === dragState.currentDayIndex && (
+                    <div
+                      className={cn(
+                        "absolute left-1 right-1 overflow-hidden rounded-[16px] border-2 border-primary p-2 shadow-lg sm:rounded-[20px] sm:p-3",
+                        getBookingColor(dragState.booking)
+                      )}
+                      style={{
+                        top: `${snapToGrid(dragState.currentTop)}px`,
+                        height: `${dragState.initialHeight}px`,
+                        minHeight: "40px",
+                      }}
+                    >
+                      <div className="flex h-full flex-col justify-between select-none">
+                        <div className="min-w-0">
+                          <p className="truncate text-[9px] font-bold uppercase opacity-60">
+                            {formatTimeFromTop(
+                              dragState.currentTop,
+                              differenceInMinutes(
+                                new Date(dragState.booking.end_date),
+                                new Date(dragState.booking.start_date)
+                              )
+                            )}
+                          </p>
+                          <p className="mt-0.5 truncate text-[10px] font-black uppercase leading-tight sm:text-xs">
+                            {dragState.booking.resource_name || "Ressource"}
+                          </p>
+                        </div>
+                        {dragState.initialHeight >= 60 && (
+                          <p className="truncate text-[9px] font-medium opacity-50">
+                            {dragState.booking.site_name ||
+                              dragState.booking.company_name ||
+                              ""}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Current time indicator */}
           {currentTimePosition !== null && todayIndex >= 0 && (
