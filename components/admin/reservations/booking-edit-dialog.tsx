@@ -75,7 +75,7 @@ export function BookingEditDialog({
 
     // Validate times
     if (startTime >= endTime) {
-      setError("L'heure de fin doit etre apres l'heure de debut")
+      setError("L'heure de fin doit être après l'heure de début")
       return
     }
 
@@ -143,15 +143,15 @@ export function BookingEditDialog({
         <DialogContent className="sm:max-w-[500px] sm:rounded-[20px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-3">
-              <span>Details de la reservation</span>
+              <span>Détails de la réservation</span>
               <BookingStatusBadge status={booking.status} />
             </DialogTitle>
             <DialogDescription>
               {isCancelled
-                ? "Cette reservation a ete annulee"
+                ? "Cette réservation a été annulée"
                 : isBookingPast
-                  ? "Cette reservation est passee et ne peut plus etre modifiee"
-                  : "Modifier ou annuler cette reservation"}
+                  ? "Cette réservation est passée et ne peut plus être modifiée"
+                  : "Modifier ou annuler cette réservation"}
             </DialogDescription>
           </DialogHeader>
 
@@ -164,7 +164,7 @@ export function BookingEditDialog({
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
                 {booking.resource_type === "meeting_room"
-                  ? "Salle de reunion"
+                  ? "Salle de réunion"
                   : booking.resource_type === "bench"
                     ? "Poste"
                     : booking.resource_type === "flex_desk"
@@ -216,7 +216,7 @@ export function BookingEditDialog({
                     <div className="space-y-2">
                       <Label htmlFor="startTime" className="flex items-center gap-2">
                         <Clock className="h-4 w-4" />
-                        Debut
+                        Début
                       </Label>
                       <Input
                         id="startTime"
@@ -261,7 +261,7 @@ export function BookingEditDialog({
                   disabled={isPending}
                   className="w-full rounded-[12px] sm:w-auto"
                 >
-                  Annuler la reservation
+                  Annuler la réservation
                 </Button>
                 <Button
                   onClick={handleUpdateDate}
@@ -296,9 +296,9 @@ export function BookingEditDialog({
       <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
         <AlertDialogContent className="sm:rounded-[20px]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Annuler cette reservation ?</AlertDialogTitle>
+            <AlertDialogTitle>Annuler cette réservation ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irreversible. La reservation de{" "}
+              Cette action est irréversible. La réservation de{" "}
               <strong>{booking.resource_name}</strong> pour{" "}
               <strong>{userName}</strong> le{" "}
               <strong>
@@ -306,7 +306,7 @@ export function BookingEditDialog({
                   locale: fr,
                 })}
               </strong>{" "}
-              sera definitivement annulee.
+              sera définitivement annulée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

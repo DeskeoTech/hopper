@@ -30,26 +30,22 @@ function DeskIcon({ className }: { className?: string }) {
 interface SiteCardProps {
   site: Site
   imageUrl?: string | null
-  capacityRange?: { min: number; max: number } | null
+  flexAvailability?: { available: number; total: number } | null
 }
 
-export function SiteCard({ site, imageUrl, capacityRange }: SiteCardProps) {
-  const capacityDisplay = capacityRange
-    ? capacityRange.min === capacityRange.max
-      ? `${capacityRange.min}`
-      : `${capacityRange.min} - ${capacityRange.max}`
-    : null
+export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
+  const availabilityDisplay = flexAvailability ? `${flexAvailability.available}/${flexAvailability.total}` : null
 
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
       <article className="overflow-hidden rounded-2xl bg-background border border-foreground/10">
         {/* Header with image and capacity badge */}
         <div className="relative p-3 pb-0">
-          {/* Capacity badge - positioned in top right of card padding area */}
-          {capacityDisplay && (
+          {/* Flex desk availability badge - positioned in top right of card padding area */}
+          {availabilityDisplay && (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">
               <DeskIcon className="h-5 w-5" />
-              <span className="font-semibold text-sm tracking-wide">{capacityDisplay}</span>
+              <span className="font-semibold text-sm tracking-wide">{availabilityDisplay}</span>
             </div>
           )}
 

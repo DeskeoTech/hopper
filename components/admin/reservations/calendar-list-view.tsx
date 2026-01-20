@@ -194,7 +194,7 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
             return (
               <TableRow
                 key={booking.id}
-                className="cursor-pointer hover:bg-muted/50"
+                className="cursor-pointer transition-colors hover:bg-muted/50"
                 onClick={() => onBookingClick?.(booking)}
               >
                 <TableCell>

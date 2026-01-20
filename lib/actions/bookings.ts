@@ -135,11 +135,11 @@ export async function updateBookingDate(data: {
     .single()
 
   if (fetchError || !existingBooking) {
-    return { error: "Reservation introuvable" }
+    return { error: "Réservation introuvable" }
   }
 
   if (existingBooking.status === "cancelled") {
-    return { error: "Impossible de modifier une reservation annulee" }
+    return { error: "Impossible de modifier une réservation annulée" }
   }
 
   // Check for conflicts (overlapping bookings excluding current one)
@@ -157,7 +157,7 @@ export async function updateBookingDate(data: {
   }
 
   if (conflicts && conflicts.length > 0) {
-    return { error: "Ce creneau est deja reserve" }
+    return { error: "Ce créneau est déjà réservé" }
   }
 
   // Update the booking
@@ -276,17 +276,17 @@ export async function cancelBooking(
     .single()
 
   if (fetchError || !booking) {
-    return { error: "Reservation introuvable" }
+    return { error: "Réservation introuvable" }
   }
 
   // Verify the user owns this booking (only if userId is provided - client use)
   if (userId && booking.user_id !== userId) {
-    return { error: "Vous n'etes pas autorise a annuler cette reservation" }
+    return { error: "Vous n'êtes pas autorisé à annuler cette réservation" }
   }
 
   // Check if already cancelled
   if (booking.status === "cancelled") {
-    return { error: "Cette reservation est deja annulee" }
+    return { error: "Cette réservation est déjà annulée" }
   }
 
   // Update booking status to cancelled

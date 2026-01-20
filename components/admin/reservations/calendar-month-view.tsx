@@ -56,6 +56,7 @@ export function CalendarMonthView({
   bookings,
   referenceDate,
   onDayNavigate,
+  onBookingClick: _onBookingClick, // Reserved for future use - month view uses day navigation
 }: CalendarMonthViewProps) {
   const monthStart = startOfMonth(referenceDate)
   const monthEnd = endOfMonth(referenceDate)

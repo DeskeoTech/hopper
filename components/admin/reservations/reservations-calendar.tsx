@@ -73,7 +73,7 @@ export function ReservationsCalendar({
         return { error: result.error }
       }
 
-      toast.success("Reservation mise a jour")
+      toast.success("Réservation mise à jour")
       router.refresh()
       return {}
     },
