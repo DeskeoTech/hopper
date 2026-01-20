@@ -17,6 +17,7 @@ import type { BookingWithDetails } from "@/lib/types/database"
 interface CalendarWeekViewProps {
   bookings: BookingWithDetails[]
   referenceDate: Date
+  onBookingClick?: (booking: BookingWithDetails) => void
 }
 
 const HOUR_HEIGHT = 60 // pixels per hour
@@ -63,6 +64,7 @@ const DAY_NAMES = ["LUNDI", "MARDI", "MERCREDI", "JEUDI", "VENDREDI"]
 export function CalendarWeekView({
   bookings,
   referenceDate,
+  onBookingClick,
 }: CalendarWeekViewProps) {
   const weekStart = startOfWeek(referenceDate, { weekStartsOn: 1 })
   const [currentTimePosition, setCurrentTimePosition] = useState<number | null>(
@@ -247,6 +249,7 @@ export function CalendarWeekView({
                           height: `${height}px`,
                           minHeight: "40px",
                         }}
+                        onClick={() => onBookingClick?.(booking)}
                       >
                         <div className="flex h-full flex-col justify-between">
                           <div className="min-w-0">
