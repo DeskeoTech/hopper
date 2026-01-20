@@ -27,6 +27,7 @@ export function AdminSidebar() {
         <div className="text-xs text-brand-foreground/40">
           <p>Hopper Coworking</p>
           <p>© 2026 Deskeo</p>
+          <p className="mt-1">v0.1.0</p>
         </div>
       </div>
     </aside>

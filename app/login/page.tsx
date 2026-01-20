@@ -37,6 +37,8 @@ export default async function LoginPage({
           </div>
         </div>
       </main>
+
+      <p className="fixed bottom-4 right-4 text-xs text-muted-foreground">v0.1.0</p>
     </div>
   )
 }

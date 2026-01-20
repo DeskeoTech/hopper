@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useTransition, useMemo, useCallback } from "react"
+import { useTransition, useMemo, useCallback, useState } from "react"
 import {
   format,
   parseISO,
@@ -15,12 +15,14 @@ import {
 import { fr } from "date-fns/locale"
 import type { DateRange } from "react-day-picker"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { DateRangePicker } from "@/components/ui/date-range-picker"
 import { ViewToggle, type ViewMode } from "./view-toggle"
 import { CalendarWeekView } from "./calendar-week-view"
 import { CalendarMonthView } from "./calendar-month-view"
 import { CalendarListView } from "./calendar-list-view"
+import { BookingEditDialog } from "./booking-edit-dialog"
+import { updateBookingDate } from "@/lib/actions/bookings"
+import { toast } from "sonner"
 import type { BookingWithDetails } from "@/lib/types/database"
 
 interface ReservationsCalendarProps {
@@ -42,6 +44,41 @@ export function ReservationsCalendar({
   const [isPending, startTransition] = useTransition()
 
   const currentDate = parseISO(referenceDate)
+
+  // State for booking edit dialog
+  const [selectedBooking, setSelectedBooking] = useState<BookingWithDetails | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+
+  // Handle booking click
+  const handleBookingClick = useCallback((booking: BookingWithDetails) => {
+    setSelectedBooking(booking)
+    setIsDialogOpen(true)
+  }, [])
+
+  // Handle booking update via drag & drop
+  const handleBookingUpdate = useCallback(
+    async (
+      bookingId: string,
+      startDate: string,
+      endDate: string
+    ): Promise<{ error?: string }> => {
+      const result = await updateBookingDate({
+        bookingId,
+        startDate,
+        endDate,
+      })
+
+      if (result.error) {
+        toast.error(result.error)
+        return { error: result.error }
+      }
+
+      toast.success("Réservation mise à jour")
+      router.refresh()
+      return {}
+    },
+    [router]
+  )
 
   // Helper to get prefixed param key
   const getParamKey = useCallback(
@@ -159,36 +196,38 @@ export function ReservationsCalendar({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4">
       {/* Navigation header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {view !== "list" ? (
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handlePrevious}
-              disabled={isPending}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleToday}
-              disabled={isPending}
-            >
-              Aujourd&apos;hui
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleNext}
-              disabled={isPending}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <h2 className="ml-2 text-lg font-semibold capitalize">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handlePrevious}
+                disabled={isPending}
+                className="flex h-9 w-9 items-center justify-center rounded-[20px] border border-border transition-opacity hover:opacity-70 disabled:opacity-50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={handleToday}
+                disabled={isPending}
+                className="rounded-[20px] border border-border px-4 py-2 text-sm font-bold transition-opacity hover:opacity-70 disabled:opacity-50"
+              >
+                Aujourd&apos;hui
+              </button>
+              <button
+                onClick={handleNext}
+                disabled={isPending}
+                className="flex h-9 w-9 items-center justify-center rounded-[20px] border border-border transition-opacity hover:opacity-70 disabled:opacity-50"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Period title */}
+            <h2 className="text-lg font-black uppercase tracking-tight sm:ml-2 sm:text-xl">
               {getPeriodTitle()}
             </h2>
           </div>
@@ -209,19 +248,37 @@ export function ReservationsCalendar({
       )}
 
       {/* Calendar view */}
-      <div className="rounded-lg border border-border bg-card">
+      <div className="min-h-[500px]">
         {view === "week" && (
-          <CalendarWeekView bookings={bookings} referenceDate={currentDate} />
+          <CalendarWeekView
+            bookings={bookings}
+            referenceDate={currentDate}
+            onBookingClick={handleBookingClick}
+            onBookingUpdate={handleBookingUpdate}
+          />
         )}
         {view === "month" && (
           <CalendarMonthView
             bookings={bookings}
             referenceDate={currentDate}
             onDayNavigate={handleDayNavigate}
+            onBookingClick={handleBookingClick}
           />
         )}
-        {view === "list" && <CalendarListView bookings={bookings} />}
+        {view === "list" && (
+          <CalendarListView
+            bookings={bookings}
+            onBookingClick={handleBookingClick}
+          />
+        )}
       </div>
+
+      {/* Booking edit dialog */}
+      <BookingEditDialog
+        booking={selectedBooking}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
     </div>
   )
 }

@@ -78,5 +78,86 @@ export async function updateCompanySubscription(
   }
 
   revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/abonnements")
   return { success: true }
+}
+
+export async function cancelCompanySubscription(companyId: string, endDate: string) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      subscription_end_date: endDate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/abonnements")
+  revalidatePath("/admin/clients")
+  return { success: true }
+}
+
+export async function createCompanySubscription(
+  companyId: string,
+  data: {
+    subscription_period: SubscriptionPeriod
+    subscription_start_date: string
+    subscription_end_date?: string | null
+  }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      subscription_period: data.subscription_period,
+      subscription_start_date: data.subscription_start_date,
+      subscription_end_date: data.subscription_end_date || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/abonnements")
+  revalidatePath("/admin/clients")
+  return { success: true }
+}
+
+export async function createCompany(data: {
+  name: string
+  company_type: CompanyType | null
+  contact_email: string | null
+  phone: string | null
+  address: string | null
+}) {
+  const supabase = await createClient()
+
+  const { data: company, error } = await supabase
+    .from("companies")
+    .insert({
+      name: data.name,
+      company_type: data.company_type,
+      contact_email: data.contact_email || null,
+      phone: data.phone || null,
+      address: data.address || null,
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/clients")
+  return { success: true, companyId: company.id }
 }

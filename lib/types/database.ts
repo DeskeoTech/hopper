@@ -89,6 +89,7 @@ export interface Company {
   customer_id_stripe: string | null
   main_site_id: string | null
   logo_storage_path: string | null
+  kbis_storage_path: string | null
   created_at: string
   updated_at: string
 }
@@ -139,6 +140,23 @@ export interface UserPlan {
   name: string
   pricePerSeatMonth: number | null
   creditsPerMonth: number | null
+}
+
+// Flex pass types for workspace booking
+export interface FlexPassOffer {
+  id: string
+  name: string
+  pricePerSeatMonth: number | null
+  recurrence: PlanRecurrence | null
+}
+
+export interface FlexDeskAvailability {
+  siteId: string
+  siteName: string
+  totalCapacity: number
+  bookedCount: number
+  availableCount: number
+  photoUrl: string | null
 }
 
 // Booking types

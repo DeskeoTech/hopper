@@ -119,6 +119,65 @@ export async function getRoomBookingsForDate(
   return { bookings: result }
 }
 
+// Admin function for updating booking date (drag & drop)
+export async function updateBookingDate(data: {
+  bookingId: string
+  startDate: string // ISO timestamp
+  endDate: string // ISO timestamp
+}): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  // Get the existing booking
+  const { data: existingBooking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("resource_id, status")
+    .eq("id", data.bookingId)
+    .single()
+
+  if (fetchError || !existingBooking) {
+    return { error: "Réservation introuvable" }
+  }
+
+  if (existingBooking.status === "cancelled") {
+    return { error: "Impossible de modifier une réservation annulée" }
+  }
+
+  // Check for conflicts (overlapping bookings excluding current one)
+  const { data: conflicts, error: conflictError } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("resource_id", existingBooking.resource_id)
+    .eq("status", "confirmed")
+    .neq("id", data.bookingId)
+    .lt("start_date", data.endDate)
+    .gt("end_date", data.startDate)
+
+  if (conflictError) {
+    return { error: conflictError.message }
+  }
+
+  if (conflicts && conflicts.length > 0) {
+    return { error: "Ce créneau est déjà réservé" }
+  }
+
+  // Update the booking
+  const { error: updateError } = await supabase
+    .from("bookings")
+    .update({
+      start_date: data.startDate,
+      end_date: data.endDate,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.bookingId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  revalidatePath("/admin/reservations")
+  return { success: true }
+}
+
 export async function createMeetingRoomBooking(data: {
   userId: string
   resourceId: string
@@ -201,4 +260,124 @@ export async function createMeetingRoomBooking(data: {
 
   revalidatePath("/")
   return { success: true, bookingId: booking.id }
+}
+
+export async function cancelBooking(
+  bookingId: string,
+  userId?: string // Optional - when not provided (admin use), skip ownership check
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  // Get the booking to verify ownership and get credits info
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("id, user_id, status, credits_used, resource_id")
+    .eq("id", bookingId)
+    .single()
+
+  if (fetchError || !booking) {
+    return { error: "Réservation introuvable" }
+  }
+
+  // Verify the user owns this booking (only if userId is provided - client use)
+  if (userId && booking.user_id !== userId) {
+    return { error: "Vous n'êtes pas autorisé à annuler cette réservation" }
+  }
+
+  // Check if already cancelled
+  if (booking.status === "cancelled") {
+    return { error: "Cette réservation est déjà annulée" }
+  }
+
+  // Update booking status to cancelled
+  const { error: updateError } = await supabase
+    .from("bookings")
+    .update({
+      status: "cancelled",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", bookingId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  // Note: Credits are not refunded for cancelled bookings
+  // If credits should be refunded, uncomment the following code:
+  /*
+  if (booking.credits_used && booking.credits_used > 0) {
+    // Refund credits logic would go here
+  }
+  */
+
+  revalidatePath("/")
+  revalidatePath("/admin/reservations")
+  return { success: true }
+}
+
+export async function updateBooking(data: {
+  bookingId: string
+  userId: string
+  startDate: string // ISO timestamp
+  endDate: string // ISO timestamp
+  resourceId: string
+}): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  // Get the existing booking
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("id, user_id, status, credits_used, resource_id, start_date, end_date")
+    .eq("id", data.bookingId)
+    .single()
+
+  if (fetchError || !booking) {
+    return { error: "Réservation introuvable" }
+  }
+
+  // Verify the user owns this booking
+  if (booking.user_id !== data.userId) {
+    return { error: "Vous n'êtes pas autorisé à modifier cette réservation" }
+  }
+
+  // Check if cancelled
+  if (booking.status === "cancelled") {
+    return { error: "Impossible de modifier une réservation annulée" }
+  }
+
+  // Check for conflicts (overlapping bookings), excluding current booking
+  const { data: conflicts, error: conflictError } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("resource_id", data.resourceId)
+    .eq("status", "confirmed")
+    .neq("id", data.bookingId)
+    .lt("start_date", data.endDate)
+    .gt("end_date", data.startDate)
+
+  if (conflictError) {
+    return { error: conflictError.message }
+  }
+
+  if (conflicts && conflicts.length > 0) {
+    return { error: "Ce créneau est déjà réservé" }
+  }
+
+  // Update the booking
+  const { error: updateError } = await supabase
+    .from("bookings")
+    .update({
+      start_date: data.startDate,
+      end_date: data.endDate,
+      resource_id: data.resourceId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.bookingId)
+
+  if (updateError) {
+    return { error: updateError.message }
+  }
+
+  revalidatePath("/")
+  return { success: true }
 }

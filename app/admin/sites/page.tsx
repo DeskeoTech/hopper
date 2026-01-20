@@ -22,7 +22,29 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     .select("site_id, storage_path")
     .order("created_at", { ascending: true })
 
-  const { data: resources } = await supabase.from("resources").select("site_id, capacity").not("capacity", "is", null)
+  // Get flex desk resources only (available status)
+  const { data: flexResources } = await supabase
+    .from("resources")
+    .select("id, site_id, capacity")
+    .eq("type", "flex_desk")
+    .eq("status", "available")
+    .not("capacity", "is", null)
+
+  // Get today's confirmed bookings for flex resources
+  const today = new Date().toISOString().split("T")[0]
+  const startOfDay = `${today}T00:00:00Z`
+  const endOfDay = `${today}T23:59:59Z`
+
+  const flexResourceIds = flexResources?.map((r) => r.id) || []
+  const { data: todayBookings } = flexResourceIds.length > 0
+    ? await supabase
+        .from("bookings")
+        .select("resource_id, seats_count")
+        .in("resource_id", flexResourceIds)
+        .eq("status", "confirmed")
+        .gte("start_date", startOfDay)
+        .lte("start_date", endOfDay)
+    : { data: [] }
 
   // Build a map of site_id -> first photo URL
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -33,16 +55,25 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     }
   })
 
-  const siteCapacityMap: Record<string, { min: number; max: number }> = {}
-  resources?.forEach((resource) => {
-    if (resource.capacity) {
-      if (!siteCapacityMap[resource.site_id]) {
-        siteCapacityMap[resource.site_id] = { min: resource.capacity, max: resource.capacity }
-      } else {
-        siteCapacityMap[resource.site_id].min = Math.min(siteCapacityMap[resource.site_id].min, resource.capacity)
-        siteCapacityMap[resource.site_id].max = Math.max(siteCapacityMap[resource.site_id].max, resource.capacity)
-      }
+  // Build map of resource_id -> booked seats for today
+  const resourceBookedMap: Record<string, number> = {}
+  todayBookings?.forEach((booking) => {
+    const resourceId = booking.resource_id
+    resourceBookedMap[resourceId] = (resourceBookedMap[resourceId] || 0) + (booking.seats_count || 1)
+  })
+
+  // Build map of site_id -> {available, total} for flex desks
+  const siteFlexAvailabilityMap: Record<string, { available: number; total: number }> = {}
+  flexResources?.forEach((resource) => {
+    const siteId = resource.site_id
+    const capacity = resource.capacity || 0
+    const booked = resourceBookedMap[resource.id] || 0
+
+    if (!siteFlexAvailabilityMap[siteId]) {
+      siteFlexAvailabilityMap[siteId] = { available: 0, total: 0 }
     }
+    siteFlexAvailabilityMap[siteId].total += capacity
+    siteFlexAvailabilityMap[siteId].available += Math.max(0, capacity - booked)
   })
 
   if (error) {
@@ -81,7 +112,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                 key={site.id}
                 site={site}
                 imageUrl={siteImageMap[site.id]}
-                capacityRange={siteCapacityMap[site.id]}
+                flexAvailability={siteFlexAvailabilityMap[site.id]}
               />
             ))}
           </div>
