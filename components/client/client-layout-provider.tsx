@@ -2,11 +2,27 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { User, UserCredits, UserPlan } from "@/lib/types/database"
+import type { User, UserCredits, UserPlan, Equipment } from "@/lib/types/database"
 
 interface Site {
   id: string
   name: string
+}
+
+export interface SiteWithDetails {
+  id: string
+  name: string
+  address: string
+  imageUrl: string | null
+  photoUrls: string[]
+  capacityRange: { min: number; max: number } | null
+  openingHours: string | null
+  openingDays: string[] | null
+  wifiSsid: string | null
+  wifiPassword: string | null
+  equipments: Equipment[] | null
+  instructions: string | null
+  access: string | null
 }
 
 interface ClientLayoutContextValue {
@@ -14,10 +30,14 @@ interface ClientLayoutContextValue {
   credits: UserCredits | null
   plan: UserPlan | null
   sites: Site[]
+  sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   selectedSite: Site | null
+  selectedSiteWithDetails: SiteWithDetails | null
   setSelectedSiteId: (siteId: string) => void
   isAdmin: boolean
+  isNomad: boolean
+  mainSiteId: string | null
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
@@ -28,6 +48,7 @@ interface ClientLayoutProviderProps {
   credits: UserCredits | null
   plan: UserPlan | null
   sites: Site[]
+  sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   isAdmin: boolean
 }
@@ -38,6 +59,7 @@ export function ClientLayoutProvider({
   credits,
   plan,
   sites,
+  sitesWithDetails,
   selectedSiteId,
   isAdmin,
 }: ClientLayoutProviderProps) {
@@ -45,6 +67,9 @@ export function ClientLayoutProvider({
   const searchParams = useSearchParams()
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || null
+  const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === selectedSiteId) || null
+  const isNomad = plan?.name?.toUpperCase().includes("NOMAD") ?? false
+  const mainSiteId = user.companies?.main_site_id || null
 
   const setSelectedSiteId = (siteId: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -59,10 +84,14 @@ export function ClientLayoutProvider({
         credits,
         plan,
         sites,
+        sitesWithDetails,
         selectedSiteId,
         selectedSite,
+        selectedSiteWithDetails,
         setSelectedSiteId,
         isAdmin,
+        isNomad,
+        mainSiteId,
       }}
     >
       {children}

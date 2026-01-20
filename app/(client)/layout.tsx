@@ -99,17 +99,91 @@ export default async function ClientLayout({
     }
   }
 
-  // Fetch all open sites for booking
-  const { data: sites } = await supabase
+  // Determine main site ID early (needed for site filtering)
+  const mainSiteId = userProfile.companies?.main_site_id || null
+
+  // Fetch sites: nomad sites + main site only
+  const sitesQuery = supabase
     .from("sites")
-    .select("id, name")
+    .select(`
+      id, name, address, is_nomad,
+      opening_hours, opening_days,
+      wifi_ssid, wifi_password,
+      equipments, instructions, access
+    `)
     .eq("status", "open")
-    .order("name")
+
+  // Filter: nomad sites OR main site
+  if (mainSiteId) {
+    sitesQuery.or(`is_nomad.eq.true,id.eq.${mainSiteId}`)
+  } else {
+    sitesQuery.eq("is_nomad", true)
+  }
+
+  const { data: sites } = await sitesQuery.order("name")
+
+  // Fetch site photos for site switcher modal
+  const { data: sitePhotos } = await supabase
+    .from("site_photos")
+    .select("site_id, storage_path")
+    .order("created_at", { ascending: true })
+
+  // Fetch resource capacities for site switcher modal
+  const { data: resources } = await supabase
+    .from("resources")
+    .select("site_id, capacity")
+
+  // Build site photos map (all photos per site)
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const sitePhotosMap: Record<string, string[]> = {}
+  sitePhotos?.forEach((photo) => {
+    const url = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+    if (!sitePhotosMap[photo.site_id]) {
+      sitePhotosMap[photo.site_id] = [url]
+    } else {
+      sitePhotosMap[photo.site_id].push(url)
+    }
+  })
+
+  // Build site capacity map (min/max from resources)
+  const siteCapacityMap: Record<string, { min: number; max: number }> = {}
+  resources?.forEach((resource) => {
+    if (resource.capacity) {
+      const existing = siteCapacityMap[resource.site_id]
+      if (!existing) {
+        siteCapacityMap[resource.site_id] = {
+          min: resource.capacity,
+          max: resource.capacity,
+        }
+      } else {
+        siteCapacityMap[resource.site_id] = {
+          min: Math.min(existing.min, resource.capacity),
+          max: Math.max(existing.max, resource.capacity),
+        }
+      }
+    }
+  })
+
+  // Build sitesWithDetails for the site switcher modal
+  const sitesWithDetails = (sites || []).map((site) => ({
+    id: site.id,
+    name: site.name,
+    address: site.address || "",
+    imageUrl: sitePhotosMap[site.id]?.[0] || null,
+    photoUrls: sitePhotosMap[site.id] || [],
+    capacityRange: siteCapacityMap[site.id] || null,
+    openingHours: site.opening_hours,
+    openingDays: site.opening_days,
+    wifiSsid: site.wifi_ssid,
+    wifiPassword: site.wifi_password,
+    equipments: site.equipments,
+    instructions: site.instructions,
+    access: site.access,
+  }))
 
   const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
 
   // Determine selected site: URL param > main_site_id > first site
-  const mainSiteId = userProfile.companies?.main_site_id || null
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
   return (
@@ -118,6 +192,7 @@ export default async function ClientLayout({
       credits={userCredits}
       plan={userPlan}
       sites={sites || []}
+      sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
     >
