@@ -1,0 +1,50 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-01-19T10:00:00Z",
+    "completed": "2026-01-19T10:45:00Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "exhaustive",
+  "status": "completed",
+  "project_root": "/Users/hugofaye/workspace/deskeo/hopper/hopper",
+  "output_folder": "/Users/hugofaye/workspace/deskeo/hopper/hopper/docs",
+  "findings": {
+    "project_classification": {
+      "repository_type": "monolith",
+      "parts_count": 1,
+      "primary_tech": "Next.js 16 + React 19 + TypeScript + Supabase",
+      "constraints": ["v0 compatibility required", "Linear MCP integration planned"]
+    },
+    "existing_docs": {
+      "count": 2,
+      "files": ["README.md", "CLAUDE.md"]
+    },
+    "technology_stack": {
+      "framework": "Next.js 16",
+      "ui_library": "React 19",
+      "language": "TypeScript",
+      "database": "Supabase (PostgreSQL)",
+      "auth": "Supabase Auth (magic link OTP)",
+      "css": "Tailwind CSS 4",
+      "components": "shadcn/ui (New York style)",
+      "icons": "Lucide React",
+      "forms": "React Hook Form + Zod",
+      "analytics": "Vercel Analytics",
+      "external_integrations": ["Airtable"]
+    }
+  },
+  "project_types": [
+    {
+      "part_id": "main",
+      "project_type_id": "web",
+      "display_name": "Next.js Web Application"
+    }
+  ],
+  "outputs_generated": [
+    "docs/index.md",
+    "docs/architecture.md",
+    "docs/components.md",
+    "docs/project-scan-report.json"
+  ]
+}
