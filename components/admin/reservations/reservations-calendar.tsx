@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useTransition, useMemo, useCallback, useState } from "react"
+import { useTransition, useMemo, useCallback } from "react"
 import {
   format,
   parseISO,
@@ -20,9 +20,6 @@ import { ViewToggle, type ViewMode } from "./view-toggle"
 import { CalendarWeekView } from "./calendar-week-view"
 import { CalendarMonthView } from "./calendar-month-view"
 import { CalendarListView } from "./calendar-list-view"
-import { BookingEditDialog } from "./booking-edit-dialog"
-import { updateBookingDate } from "@/lib/actions/bookings"
-import { toast } from "sonner"
 import type { BookingWithDetails } from "@/lib/types/database"
 
 interface ReservationsCalendarProps {
@@ -44,41 +41,6 @@ export function ReservationsCalendar({
   const [isPending, startTransition] = useTransition()
 
   const currentDate = parseISO(referenceDate)
-
-  // State for booking edit dialog
-  const [selectedBooking, setSelectedBooking] = useState<BookingWithDetails | null>(null)
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-
-  // Handle booking click
-  const handleBookingClick = useCallback((booking: BookingWithDetails) => {
-    setSelectedBooking(booking)
-    setIsDialogOpen(true)
-  }, [])
-
-  // Handle booking update via drag & drop
-  const handleBookingUpdate = useCallback(
-    async (
-      bookingId: string,
-      startDate: string,
-      endDate: string
-    ): Promise<{ error?: string }> => {
-      const result = await updateBookingDate({
-        bookingId,
-        startDate,
-        endDate,
-      })
-
-      if (result.error) {
-        toast.error(result.error)
-        return { error: result.error }
-      }
-
-      toast.success("Réservation mise à jour")
-      router.refresh()
-      return {}
-    },
-    [router]
-  )
 
   // Helper to get prefixed param key
   const getParamKey = useCallback(
@@ -250,35 +212,17 @@ export function ReservationsCalendar({
       {/* Calendar view */}
       <div className="min-h-[500px]">
         {view === "week" && (
-          <CalendarWeekView
-            bookings={bookings}
-            referenceDate={currentDate}
-            onBookingClick={handleBookingClick}
-            onBookingUpdate={handleBookingUpdate}
-          />
+          <CalendarWeekView bookings={bookings} referenceDate={currentDate} />
         )}
         {view === "month" && (
           <CalendarMonthView
             bookings={bookings}
             referenceDate={currentDate}
             onDayNavigate={handleDayNavigate}
-            onBookingClick={handleBookingClick}
           />
         )}
-        {view === "list" && (
-          <CalendarListView
-            bookings={bookings}
-            onBookingClick={handleBookingClick}
-          />
-        )}
+        {view === "list" && <CalendarListView bookings={bookings} />}
       </div>
-
-      {/* Booking edit dialog */}
-      <BookingEditDialog
-        booking={selectedBooking}
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-      />
     </div>
   )
 }

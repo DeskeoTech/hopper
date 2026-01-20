@@ -254,18 +254,9 @@ export function RoomBookingPage() {
     <div className="space-y-4">
       {/* Date navigation */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-            <span className="type-body font-medium">{selectedSite?.name}</span>
-          </div>
-
-          {/* Credits badge */}
-          <div className="flex items-center gap-1.5 rounded-lg bg-primary/10 px-3 py-1.5">
-            <Coins className="h-4 w-4 text-primary" />
-            <span className="type-body font-medium">{remainingCredits}</span>
-            <span className="type-body-sm text-muted-foreground">crédits</span>
-          </div>
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-muted-foreground" />
+          <span className="type-body font-medium">{selectedSite?.name}</span>
         </div>
 
         <div className="flex items-center gap-1">
