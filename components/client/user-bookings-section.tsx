@@ -4,9 +4,10 @@ import type { BookingWithDetails } from "@/lib/types/database"
 
 interface UserBookingsSectionProps {
   bookings: BookingWithDetails[]
+  userId?: string
 }
 
-export function UserBookingsSection({ bookings }: UserBookingsSectionProps) {
+export function UserBookingsSection({ bookings, userId }: UserBookingsSectionProps) {
   const now = new Date()
   const upcomingBookings = bookings.filter(
     (b) => new Date(b.start_date) >= now && b.status !== "cancelled"
@@ -29,7 +30,7 @@ export function UserBookingsSection({ bookings }: UserBookingsSectionProps) {
           </h3>
           <div className="space-y-3">
             {upcomingBookings.map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} />
+              <UserBookingCard key={booking.id} booking={booking} userId={userId} />
             ))}
           </div>
         </div>
@@ -42,7 +43,7 @@ export function UserBookingsSection({ bookings }: UserBookingsSectionProps) {
           </h3>
           <div className="space-y-3 opacity-75">
             {pastBookings.slice(0, 10).map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} />
+              <UserBookingCard key={booking.id} booking={booking} userId={userId} />
             ))}
           </div>
         </div>

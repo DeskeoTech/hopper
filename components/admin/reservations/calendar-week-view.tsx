@@ -9,6 +9,7 @@ import {
   getMinutes,
   differenceInMinutes,
   isToday,
+  isPast,
   setHours,
   setMinutes,
   setSeconds,
@@ -203,6 +204,11 @@ export function CalendarWeekView({
     []
   )
 
+  // Check if a booking is in the past (end date has passed)
+  const isBookingPast = useCallback((booking: BookingWithDetails): boolean => {
+    return isPast(new Date(booking.end_date))
+  }, [])
+
   // Handle mouse down on booking
   const handleMouseDown = useCallback(
     (
@@ -210,8 +216,8 @@ export function CalendarWeekView({
       booking: BookingWithDetails,
       dayIndex: number
     ) => {
-      // Don't allow drag for cancelled bookings or if no update handler
-      if (booking.status === "cancelled" || !onBookingUpdate || isUpdating) {
+      // Don't allow drag for cancelled or past bookings, or if no update handler
+      if (booking.status === "cancelled" || isBookingPast(booking) || !onBookingUpdate || isUpdating) {
         return
       }
 
@@ -239,7 +245,7 @@ export function CalendarWeekView({
         gridRect,
       })
     },
-    [onBookingUpdate, isUpdating, getBookingPosition]
+    [onBookingUpdate, isUpdating, getBookingPosition, isBookingPast]
   )
 
   // Handle mouse move during drag
@@ -494,6 +500,7 @@ export function CalendarWeekView({
                       isDragging && dragState?.booking.id === booking.id
                     const canDrag =
                       booking.status !== "cancelled" &&
+                      !isBookingPast(booking) &&
                       !!onBookingUpdate &&
                       !isUpdating
 
