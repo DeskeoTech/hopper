@@ -62,27 +62,28 @@ workflow_status:
     name: "Planning"
     workflows:
       - id: prd
-        status: required
+        status: "_bmad-output/planning-artifacts/prd.md"
         agent: pm
         command: "/bmad:bmm:workflows:prd"
         output: "Product Requirements Document"
       - id: create-ux-design
-        status: conditional
+        status: "_bmad-output/planning-artifacts/ux-design-specification.md"
         condition: "if_has_ui"
         agent: ux-designer
         command: "/bmad:bmm:workflows:create-ux-design"
+        completed: "2026-01-20"
 
   # Phase 3: Solutioning
   - phase: 3
     name: "Solutioning"
     workflows:
       - id: create-architecture
-        status: required
+        status: "_bmad-output/planning-artifacts/architecture.md"
         agent: architect
         command: "/bmad:bmm:workflows:create-architecture"
         output: "System architecture document"
       - id: create-epics-and-stories
-        status: required
+        status: "_bmad-output/planning-artifacts/epics.md"
         agent: pm
         command: "/bmad:bmm:workflows:create-epics-and-stories"
         output: "Epics and stories"

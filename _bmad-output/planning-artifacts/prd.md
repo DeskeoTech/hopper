@@ -370,6 +370,13 @@ Tous les utilisateurs d'une entreprise voient le même solde de crédits restant
 - **FR8:** Office Manager peut modifier les informations de son site
 - **FR9:** Office Manager peut consulter les entreprises présentes sur son site
 
+### Gestion des Ressources
+
+- **FR47:** Sales Deskeo peut créer une ressource sur un site (salle de réunion, bench, flex desk)
+- **FR48:** Sales Deskeo peut modifier une ressource
+- **FR49:** Sales Deskeo peut supprimer une ressource
+- **FR50:** Sales Deskeo peut consulter les ressources d'un site
+
 ### Gestion des Entreprises
 
 - **FR10:** Sales Deskeo peut créer une entreprise (multi-utilisateurs ou individuelle)
@@ -436,6 +443,11 @@ Tous les utilisateurs d'une entreprise voient le même solde de crédits restant
 - **FR44:** Utilisateur Client peut consulter son profil
 - **FR45:** Utilisateur Client peut consulter les informations de son entreprise
 - **FR46:** Utilisateur Flex nomade peut consulter la liste des sites nomad disponibles
+
+### Dashboard Admin
+
+- **FR51:** Sales Deskeo peut consulter un tableau de bord avec les métriques clés (nombre de sites, entreprises, réservations)
+- **FR52:** Sales Deskeo peut voir les alertes d'abonnements arrivant à expiration
 
 ## Non-Functional Requirements
 

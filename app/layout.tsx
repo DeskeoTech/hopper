@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from 'sonner'
 import './globals.css'
 
 // Font Header - ProgramNarOT Black for titles (H1/H2/H3)
@@ -76,6 +77,7 @@ export default function RootLayout({
         className={`${headerFont.variable} ${bodyFont.variable} ${editorialFont.variable} font-sans antialiased`}
       >
         {children}
+        <Toaster richColors position="top-right" />
         <Analytics />
       </body>
     </html>
