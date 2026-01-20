@@ -35,10 +35,10 @@ export default async function LoginPage({
           <div className="rounded-lg border bg-card p-6 shadow-sm">
             <LoginForm />
           </div>
-
-          <p className="text-center text-xs text-muted-foreground">v0.1.0</p>
         </div>
       </main>
+
+      <p className="fixed bottom-4 right-4 text-xs text-muted-foreground">v0.1.0</p>
     </div>
   )
 }
