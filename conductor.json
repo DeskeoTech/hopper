@@ -1,6 +1,6 @@
 {
     "scripts": {
-        "setup": "./conductor-setup.sh",
-        "run": "./conductor-run.sh"
+        "setup": "chmod +x ./conductor-setup.sh && ./conductor-setup.sh",
+        "run": "chmod +x ./conductor-run.sh && ./conductor-run.sh"
     }
 }
