@@ -3,7 +3,9 @@ import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientSidebar } from "@/components/client/client-sidebar"
 import { ClientMobileNav } from "@/components/client/client-mobile-nav"
-import type { UserCredits, UserPlan } from "@/lib/types/database"
+import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
+import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
+import type { UserCredits, UserPlan, Company } from "@/lib/types/database"
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -25,13 +27,13 @@ export default async function ClientLayout({
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const siteParam = resolvedSearchParams.site
 
-  // Fetch user profile with company (including main_site_id)
+  // Fetch user profile with full company data
   const { data: userProfile } = await supabase
     .from("users")
     .select(
       `
       *,
-      companies (id, name, main_site_id)
+      companies (*)
     `
     )
     .eq("email", authUser.email)
@@ -112,6 +114,13 @@ export default async function ClientLayout({
   const mainSiteId = userProfile.companies?.main_site_id || null
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
+  // Check if user needs to complete their profile (only for 'user' role with a company)
+  const needsProfileCompletion =
+    userProfile.role === "user" &&
+    userProfile.company_id &&
+    userProfile.companies &&
+    !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
+
   return (
     <ClientLayoutProvider
       user={userProfile}
@@ -121,6 +130,12 @@ export default async function ClientLayout({
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
     >
+      {needsProfileCompletion && (
+        <CompleteProfileModal
+          user={userProfile}
+          company={userProfile.companies as Company}
+        />
+      )}
       <div className="flex min-h-screen bg-background">
         <ClientSidebar />
         <div className="flex flex-1 flex-col">
