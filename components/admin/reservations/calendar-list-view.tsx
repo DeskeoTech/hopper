@@ -17,6 +17,7 @@ import type { BookingWithDetails } from "@/lib/types/database"
 
 interface CalendarListViewProps {
   bookings: BookingWithDetails[]
+  onBookingClick?: (booking: BookingWithDetails) => void
 }
 
 type SortField =
@@ -36,7 +37,7 @@ const resourceTypeLabels: Record<string, string> = {
   fixed_desk: "Bureau fixe",
 }
 
-export function CalendarListView({ bookings }: CalendarListViewProps) {
+export function CalendarListView({ bookings, onBookingClick }: CalendarListViewProps) {
   const [sortField, setSortField] = useState<SortField>("date")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
 
@@ -191,7 +192,11 @@ export function CalendarListView({ bookings }: CalendarListViewProps) {
                 : booking.user_email || "-"
 
             return (
-              <TableRow key={booking.id}>
+              <TableRow
+                key={booking.id}
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => onBookingClick?.(booking)}
+              >
                 <TableCell>
                   <div>
                     {format(parseISO(booking.start_date), "dd/MM/yyyy", {

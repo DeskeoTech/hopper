@@ -20,6 +20,7 @@ interface CalendarMonthViewProps {
   bookings: BookingWithDetails[]
   referenceDate: Date
   onDayNavigate?: (day: Date) => void
+  onBookingClick?: (booking: BookingWithDetails) => void
 }
 
 // Day names in French
