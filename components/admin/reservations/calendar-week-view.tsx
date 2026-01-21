@@ -9,6 +9,7 @@ import {
   getMinutes,
   differenceInMinutes,
   isToday,
+  isBefore,
   setHours,
   setMinutes,
   setSeconds,
@@ -74,6 +75,9 @@ const MEETING_ROOM_COLORS = [
 
 // Neutral color for non-meeting room bookings
 const DEFAULT_BOOKING_COLOR = "bg-muted/60"
+
+// Gray color for past or cancelled bookings
+const INACTIVE_BOOKING_COLOR = "bg-muted/50"
 
 // Generate a consistent color index for a meeting room based on its ID or name
 function getMeetingRoomColorIndex(resourceId: string | null, resourceName: string | null): number {
@@ -166,8 +170,19 @@ export function CalendarWeekView({
     return { top, height }
   }
 
-  // Get color for a booking - only meeting rooms get colors
+  // Check if a booking is past (end date is before now)
+  const isBookingPast = (booking: BookingWithDetails) => {
+    const endDate = new Date(booking.end_date)
+    return isBefore(endDate, new Date())
+  }
+
+  // Get color for a booking - gray for past/cancelled, colored for active
   const getBookingColor = (booking: BookingWithDetails) => {
+    // Past or cancelled bookings are grayed out
+    if (booking.status === "cancelled" || isBookingPast(booking)) {
+      return INACTIVE_BOOKING_COLOR
+    }
+    // Only active meeting rooms get vibrant colors
     if (booking.resource_type === "meeting_room") {
       const colorIndex = getMeetingRoomColorIndex(booking.resource_id, booking.resource_name)
       return MEETING_ROOM_COLORS[colorIndex]
