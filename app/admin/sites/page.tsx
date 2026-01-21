@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { SiteCard } from "@/components/admin/site-card"
 import { SitesSearch } from "@/components/admin/sites/sites-search"
+import { CreateSiteModal } from "@/components/admin/sites/create-site-modal"
 import { Building2 } from "lucide-react"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -99,10 +100,13 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
       <section>
         <h2 className="type-h3 text-foreground mb-4">Tous les sites Hopper</h2>
 
-        <div className="mb-6">
-          <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-            <SitesSearch />
-          </Suspense>
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1">
+            <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+              <SitesSearch />
+            </Suspense>
+          </div>
+          <CreateSiteModal />
         </div>
 
         {filteredSites.length > 0 ? (

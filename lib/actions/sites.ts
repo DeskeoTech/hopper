@@ -190,3 +190,24 @@ export async function deleteSitePhoto(siteId: string, photoId: string, storagePa
   revalidatePath(`/admin/sites/${siteId}`)
   return { success: true }
 }
+
+export async function createSite(data: { name: string; address: string; status?: SiteStatus }) {
+  const supabase = await createClient()
+
+  const { data: site, error } = await supabase
+    .from("sites")
+    .insert({
+      name: data.name,
+      address: data.address,
+      status: data.status || "open",
+    })
+    .select("id")
+    .single()
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/sites")
+  return { success: true, siteId: site.id }
+}

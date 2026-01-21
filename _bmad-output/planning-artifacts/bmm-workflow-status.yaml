@@ -23,6 +23,7 @@ research_requested: false
 selected_track: "method"
 field_type: "brownfield"
 workflow_path: "method-brownfield"
+execution_mode: "kanban"  # No sprints - work directly on stories
 
 # ============================================
 # WORKFLOW STATUS
@@ -92,16 +93,17 @@ workflow_status:
         agent: tea
         command: "/bmad:bmm:workflows:testarch-test-design"
       - id: implementation-readiness
-        status: required
+        status: "_bmad-output/planning-artifacts/implementation-readiness-report-2026-01-20.md"
         agent: architect
         command: "/bmad:bmm:workflows:check-implementation-readiness"
+        completed: "2026-01-20"
 
   # Phase 4: Implementation
   - phase: 4
     name: "Implementation"
     workflows:
       - id: sprint-planning
-        status: required
+        status: skipped
         agent: sm
         command: "/bmad:bmm:workflows:sprint-planning"
-        note: "Creates sprint plan - subsequent work tracked in sprint-status.yaml"
+        note: "Skipped - using Kanban mode without sprints"
