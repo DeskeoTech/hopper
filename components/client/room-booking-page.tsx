@@ -252,6 +252,34 @@ export function RoomBookingPage() {
 
   return (
     <div className="space-y-4">
+      {/* Credits indicator */}
+      <div className="flex items-center justify-between rounded-lg border bg-card p-3 sm:p-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <Coins className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="type-body-sm text-muted-foreground">Mes crédits disponibles</p>
+            <p className="type-h4 text-foreground">
+              {remainingCredits} crédit{remainingCredits > 1 ? "s" : ""}
+            </p>
+          </div>
+        </div>
+        {credits && credits.allocated > 0 && (
+          <div className="hidden sm:block">
+            <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full rounded-full bg-primary transition-all duration-300"
+                style={{ width: `${Math.round((remainingCredits / credits.allocated) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-1 type-body-sm text-muted-foreground text-right">
+              sur {credits.allocated}
+            </p>
+          </div>
+        )}
+      </div>
+
       {/* Date navigation */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
