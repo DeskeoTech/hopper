@@ -315,6 +315,78 @@ export async function cancelBooking(
   return { success: true }
 }
 
+// Admin function for creating a new booking (no credit check)
+export async function createBookingFromAdmin(data: {
+  userId: string
+  resourceId: string
+  startDate: string // ISO timestamp
+  endDate: string // ISO timestamp
+  status: "confirmed" | "pending"
+  notes?: string
+}): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
+  const supabase = await createClient()
+
+  // Check for conflicts (overlapping bookings) only for confirmed bookings
+  if (data.status === "confirmed") {
+    const { data: conflicts, error: conflictError } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("resource_id", data.resourceId)
+      .eq("status", "confirmed")
+      .lt("start_date", data.endDate)
+      .gt("end_date", data.startDate)
+
+    if (conflictError) {
+      return { error: conflictError.message }
+    }
+
+    if (conflicts && conflicts.length > 0) {
+      return { error: "Ce créneau est déjà réservé pour cette ressource" }
+    }
+  }
+
+  // Create booking
+  const { data: booking, error: bookingError } = await supabase
+    .from("bookings")
+    .insert({
+      user_id: data.userId,
+      resource_id: data.resourceId,
+      start_date: data.startDate,
+      end_date: data.endDate,
+      status: data.status,
+      notes: data.notes || null,
+    })
+    .select("id")
+    .single()
+
+  if (bookingError) {
+    return { error: bookingError.message }
+  }
+
+  revalidatePath("/admin/reservations")
+  return { success: true, bookingId: booking.id }
+}
+
+// Fetch resources for a given site (used in admin create booking)
+export async function getResourcesBySite(
+  siteId: string
+): Promise<{ resources: Array<{ id: string; name: string; type: string }>; error?: string }> {
+  const supabase = await createClient()
+
+  const { data: resources, error } = await supabase
+    .from("resources")
+    .select("id, name, type")
+    .eq("site_id", siteId)
+    .eq("status", "available")
+    .order("name")
+
+  if (error) {
+    return { resources: [], error: error.message }
+  }
+
+  return { resources: resources || [] }
+}
+
 export async function updateBooking(data: {
   bookingId: string
   userId: string
