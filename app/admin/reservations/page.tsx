@@ -2,8 +2,7 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
 import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
-import { Button } from "@/components/ui/button"
-import { Plus } from "lucide-react"
+import { ReservationsHeader } from "@/components/admin/reservations/reservations-header"
 import {
   startOfWeek,
   endOfWeek,
@@ -204,18 +203,7 @@ export default async function ReservationsPage({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="type-h2 text-foreground">Reservations</h1>
-          <p className="mt-1 text-muted-foreground">
-            Gerez les reservations de vos espaces
-          </p>
-        </div>
-        <Button disabled className="gap-2">
-          <Plus className="h-4 w-4" />
-          Nouvelle reservation
-        </Button>
-      </div>
+      <ReservationsHeader sites={sites} users={users} />
 
       {/* Filters */}
       <Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}>
