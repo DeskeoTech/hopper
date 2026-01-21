@@ -603,14 +603,18 @@ export function CalendarWeekView({
             </div>
           )}
 
-          {/* Current time indicator */}
+          {/* Current time indicator - only in today's column */}
           {currentTimePosition !== null && todayIndex >= 0 && (
             <div
-              className="pointer-events-none absolute left-0 right-0 z-[5] flex items-center"
-              style={{ top: `${currentTimePosition}px` }}
+              className="pointer-events-none absolute z-[5] flex items-center"
+              style={{
+                top: `${currentTimePosition}px`,
+                left: `${(todayIndex / 5) * 100}%`,
+                width: `${100 / 5}%`
+              }}
             >
-              <div className="h-[1.5px] w-full bg-red-400" />
               <div className="absolute left-0 h-2 w-2 -translate-x-1/2 rounded-full bg-red-400 ring-2 ring-card" />
+              <div className="h-[1.5px] w-full bg-red-400" />
             </div>
           )}
         </div>
