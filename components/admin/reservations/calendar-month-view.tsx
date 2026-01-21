@@ -20,6 +20,7 @@ interface CalendarMonthViewProps {
   bookings: BookingWithDetails[]
   referenceDate: Date
   onDayNavigate?: (day: Date) => void
+  onBookingClick?: (booking: BookingWithDetails) => void
 }
 
 // Day names in French
@@ -55,6 +56,7 @@ export function CalendarMonthView({
   bookings,
   referenceDate,
   onDayNavigate,
+  onBookingClick: _onBookingClick, // Reserved for future use - month view uses day navigation
 }: CalendarMonthViewProps) {
   const monthStart = startOfMonth(referenceDate)
   const monthEnd = endOfMonth(referenceDate)
