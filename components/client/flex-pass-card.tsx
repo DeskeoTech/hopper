@@ -79,16 +79,6 @@ export function FlexPassCard({
           </div>
         )}
 
-        {/* Availability badge */}
-        <div
-          className={cn(
-            "absolute right-2 top-2 rounded-full px-2.5 py-1 type-body-sm font-medium",
-            "bg-[#F0E8DC] text-foreground"
-          )}
-        >
-          {availability.available}/{availability.total} disponible
-          {availability.available > 1 ? "s" : ""}
-        </div>
       </div>
 
       {/* Content section */}
