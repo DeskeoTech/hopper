@@ -50,7 +50,7 @@ export function SearchableSelect({
   const selectedOption = options.find((option) => option.value === value)
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -68,10 +68,26 @@ export function SearchableSelect({
           <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className={cn("p-0", className)} align="start">
+      <PopoverContent
+        className={cn("p-0", className)}
+        align="start"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onWheel={(e) => e.stopPropagation()}
+      >
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandList>
+          <CommandList
+            onWheel={(e) => {
+              e.stopPropagation()
+              const target = e.currentTarget
+              if (
+                (e.deltaY > 0 && target.scrollTop < target.scrollHeight - target.clientHeight) ||
+                (e.deltaY < 0 && target.scrollTop > 0)
+              ) {
+                // Allow native scroll
+              }
+            }}
+          >
             <CommandEmpty>{emptyMessage}</CommandEmpty>
             <CommandGroup>
               {options.map((option) => (
