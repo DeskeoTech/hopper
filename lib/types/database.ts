@@ -136,6 +136,18 @@ export interface UserCredits {
   period: string
 }
 
+// Credit movement types for history display
+export type CreditMovementType = "reservation" | "cancellation" | "adjustment"
+
+export interface CreditMovement {
+  id: string
+  date: string
+  type: CreditMovementType
+  amount: number // positive for credit, negative for debit
+  description: string
+  balance_after: number
+}
+
 export interface UserPlan {
   name: string
   pricePerSeatMonth: number | null

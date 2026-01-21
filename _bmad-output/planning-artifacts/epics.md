@@ -281,9 +281,9 @@ Le système envoie des notifications email et des webhooks vers n8n pour les aut
 | 4 - Utilisateurs | 3 | 0 | 3 | 6 |
 | 5 - Client Profil | 3 | 1 | 0 | 4 |
 | 6 - Réservation Client | 4 | 2 | 0 | 6 |
-| 7 - Admin Réservations & Dashboard | 3 | 2 | 5 | 10 |
+| 7 - Admin Réservations & Dashboard | 4 | 1 | 5 | 10 |
 | 8 - Notifications | 0 | 0 | 2 | 2 |
-| **Total** | **21** | **10** | **19** | **50** |
+| **Total** | **22** | **9** | **19** | **50** |
 
 ### Priorités de Développement
 
@@ -1275,7 +1275,7 @@ So that **je puisse gérer les imprévus**.
 
 ---
 
-### Story 7.7: Sales - Consulter les Crédits d'une Entreprise ⚠️ [PARTIAL]
+### Story 7.7: Sales - Consulter les Crédits d'une Entreprise ✅ [DONE]
 
 As a **Sales Deskeo**,
 I want **consulter le solde de crédits d'une entreprise**,
@@ -1287,6 +1287,12 @@ So that **je puisse informer le client de sa situation**.
 **When** je consulte la section crédits
 **Then** je vois le solde actuel de crédits
 **And** je vois l'historique des mouvements (réservations, ajustements)
+
+**Implementation Notes (2026-01-21):**
+- Section Crédits ajoutée sur `/admin/clients/[id]`
+- Composants: `CreditsSection`, `CreditsHistoryTable`
+- Filtrage par type (Réservation, Annulation, Ajustement)
+- Design responsive intégré
 
 ---
 

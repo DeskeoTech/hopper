@@ -8,7 +8,9 @@ import { EditSubscriptionModal } from "@/components/admin/company-edit/edit-subs
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
+import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { cn } from "@/lib/utils"
+import type { CreditMovement, CreditMovementType } from "@/lib/types/database"
 
 interface CompanyDetailsPageProps {
   params: Promise<{ id: string }>
@@ -39,6 +41,81 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     .eq("company_id", id)
     .order("last_name")
     .order("first_name")
+
+  // Fetch credits via contracts
+  const { data: contracts } = await supabase
+    .from("contracts")
+    .select("id")
+    .eq("company_id", id)
+
+  const contractIds = contracts?.map((c) => c.id) || []
+
+  // Fetch current credits (sum of remaining credits)
+  let totalCredits = 0
+  if (contractIds.length > 0) {
+    const { data: credits } = await supabase
+      .from("credits")
+      .select("remaining_credits")
+      .in("contract_id", contractIds)
+
+    totalCredits = credits?.reduce((sum, c) => sum + (c.remaining_credits || 0), 0) || 0
+  }
+
+  // Fetch credit movements from bookings
+  const userIds = users?.map((u) => u.id) || []
+  let movements: CreditMovement[] = []
+
+  if (userIds.length > 0) {
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select(`
+        id,
+        start_date,
+        status,
+        credits_used,
+        notes,
+        resource:resources(name)
+      `)
+      .in("user_id", userIds)
+      .not("credits_used", "is", null)
+      .order("start_date", { ascending: false })
+      .limit(50)
+
+    // Transform bookings to credit movements
+    let runningBalance = totalCredits
+    movements = (bookings || []).map((booking) => {
+      const isConfirmed = booking.status === "confirmed"
+      const isCancelled = booking.status === "cancelled"
+      const creditsUsed = booking.credits_used || 0
+
+      let type: CreditMovementType = "reservation"
+      let amount = -creditsUsed
+
+      if (isCancelled) {
+        type = "cancellation"
+        amount = creditsUsed // Credits restored
+      }
+
+      const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
+      const description = isCancelled
+        ? `Annulation - ${resourceName}`
+        : `Réservation - ${resourceName}`
+
+      const movement: CreditMovement = {
+        id: booking.id,
+        date: booking.start_date,
+        type,
+        amount,
+        description,
+        balance_after: runningBalance,
+      }
+
+      // Adjust running balance for display (reverse chronological)
+      runningBalance = runningBalance - amount
+
+      return movement
+    })
+  }
 
   // Determine subscription status
   const now = new Date()
@@ -172,6 +249,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
               {/* Users */}
               <UsersList companyId={company.id} initialUsers={users || []} />
+
+              {/* Credits */}
+              <CreditsSection
+                companyId={company.id}
+                totalCredits={totalCredits}
+                movements={movements}
+              />
             </div>
 
             {/* Sidebar - Right Column */}
