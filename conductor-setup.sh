@@ -6,6 +6,3 @@ npm install
 
 # Copy .env file
 cp $CONDUCTOR_ROOT_PATH/.env.local .env.local
-
-# Verify Claude Code is available
-claude --version
