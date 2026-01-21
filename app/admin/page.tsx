@@ -10,7 +10,7 @@ import {
   ArrowRight,
   AlertCircle,
 } from "lucide-react"
-import { addDays, differenceInDays, format } from "date-fns"
+import { addDays, differenceInDays, format, startOfWeek, endOfWeek } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
@@ -26,12 +26,12 @@ export default async function AccueilPage() {
       // Nombre de companies
       supabase.from("companies").select("*", { count: "exact", head: true }),
 
-      // Réservations des 7 prochains jours (confirmées)
+      // Réservations de la semaine courante (passées, présentes et futures)
       supabase
         .from("bookings")
         .select("*", { count: "exact", head: true })
-        .gte("start_date", new Date().toISOString())
-        .lte("start_date", addDays(new Date(), 7).toISOString())
+        .gte("start_date", startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
+        .lte("start_date", endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
         .eq("status", "confirmed"),
 
       // Abonnements expirant dans 30 jours
