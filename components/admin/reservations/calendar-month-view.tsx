@@ -40,6 +40,9 @@ const MEETING_ROOM_COLORS = [
   "bg-[#A5C8E1]", // vibrant periwinkle
 ]
 
+// Gray color for past or cancelled bookings
+const INACTIVE_BOOKING_COLOR = "bg-muted/50"
+
 // Generate a consistent color index for a meeting room based on its ID or name
 function getMeetingRoomColorIndex(resourceId: string | null, resourceName: string | null): number {
   const identifier = resourceId || resourceName || "default"
@@ -50,6 +53,13 @@ function getMeetingRoomColorIndex(resourceId: string | null, resourceName: strin
     hash = hash & hash // Convert to 32bit integer
   }
   return Math.abs(hash) % MEETING_ROOM_COLORS.length
+}
+
+// Check if a booking is past or cancelled
+function isBookingInactive(booking: BookingWithDetails): boolean {
+  if (booking.status === "cancelled") return true
+  const endDate = new Date(booking.end_date)
+  return isBefore(endDate, new Date())
 }
 
 export function CalendarMonthView({
@@ -202,12 +212,16 @@ export function CalendarMonthView({
                         roomData.resourceId,
                         roomData.resourceName
                       )
+                      // Check if all bookings for this room on this day are inactive
+                      const allInactive = roomData.bookings.every(isBookingInactive)
                       return (
                         <div
                           key={roomKey}
                           className={cn(
                             "h-2 rounded-full sm:h-2.5",
-                            MEETING_ROOM_COLORS[colorIndex]
+                            allInactive
+                              ? INACTIVE_BOOKING_COLOR
+                              : MEETING_ROOM_COLORS[colorIndex]
                           )}
                           style={{
                             // Width based on number of bookings (min 40%, max 100%)
