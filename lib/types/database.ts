@@ -89,6 +89,7 @@ export interface Company {
   customer_id_stripe: string | null
   main_site_id: string | null
   logo_storage_path: string | null
+  kbis_storage_path: string | null
   created_at: string
   updated_at: string
 }

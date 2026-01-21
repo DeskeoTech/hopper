@@ -9,7 +9,7 @@ import {
   getMinutes,
   differenceInMinutes,
   isToday,
-  isBefore,
+  isPast,
   setHours,
   setMinutes,
   setSeconds,
@@ -170,11 +170,10 @@ export function CalendarWeekView({
     return { top, height }
   }
 
-  // Check if a booking is past (end date is before now)
-  const isBookingPast = (booking: BookingWithDetails) => {
-    const endDate = new Date(booking.end_date)
-    return isBefore(endDate, new Date())
-  }
+  // Check if a booking is in the past (end date has passed)
+  const isBookingPast = useCallback((booking: BookingWithDetails): boolean => {
+    return isPast(new Date(booking.end_date))
+  }, [])
 
   // Get color for a booking - gray for past/cancelled, colored for active
   const getBookingColor = (booking: BookingWithDetails) => {
@@ -225,8 +224,8 @@ export function CalendarWeekView({
       booking: BookingWithDetails,
       dayIndex: number
     ) => {
-      // Don't allow drag for cancelled bookings or if no update handler
-      if (booking.status === "cancelled" || !onBookingUpdate || isUpdating) {
+      // Don't allow drag for cancelled or past bookings, or if no update handler
+      if (booking.status === "cancelled" || isBookingPast(booking) || !onBookingUpdate || isUpdating) {
         return
       }
 
@@ -254,7 +253,7 @@ export function CalendarWeekView({
         gridRect,
       })
     },
-    [onBookingUpdate, isUpdating, getBookingPosition]
+    [onBookingUpdate, isUpdating, getBookingPosition, isBookingPast]
   )
 
   // Handle mouse move during drag
@@ -509,6 +508,7 @@ export function CalendarWeekView({
                       isDragging && dragState?.booking.id === booking.id
                     const canDrag =
                       booking.status !== "cancelled" &&
+                      !isBookingPast(booking) &&
                       !!onBookingUpdate &&
                       !isUpdating
 

@@ -63,7 +63,7 @@ export function ClientHomePage({
             sites={sites}
           />
 
-          <UserBookingsSection bookings={bookings} />
+          <UserBookingsSection bookings={bookings} userId={user.id} />
 
           <BookMeetingRoomModal
             open={bookingModalOpen}
