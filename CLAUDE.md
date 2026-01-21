@@ -155,3 +155,30 @@ Key types from `lib/types/database.ts`:
 - `SiteStatus`: "open" | "closed"
 - `ResourceType`: "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
 - `Equipment`: "barista" | "stationnement_velo" | "impression" | "douches" | "salle_sport" | "terrasse" | "rooftop"
+
+## Linear Integration
+
+**Toujours synchroniser les stories avec Linear via le MCP Linear.**
+
+Quand une story est créée (workflow `create-story`) :
+1. **D'abord vérifier** si une issue existe déjà dans Linear (rechercher par titre "Story X.Y")
+2. Si elle existe : utiliser l'issue existante et mettre à jour le fichier story avec son ID/URL
+3. Sinon : créer une issue Linear dans le projet **Hopper Back Office** (équipe Deskeo)
+4. Statut initial : **Backlog** (ne pas mettre In Progress)
+5. Inclure dans la description : user story, acceptance criteria, tasks
+6. Ajouter un lien vers le fichier story local dans les références
+7. Mettre à jour le fichier story avec l'ID/URL de l'issue Linear
+
+Quand une story est commencée (workflow `dev-story`) :
+1. Mettre à jour le statut de l'issue Linear → **In Progress**
+
+Quand une story est implémentée (workflow `dev-story` terminé) :
+1. Mettre à jour le statut de l'issue Linear → **In Review** (équivalent "To Test")
+2. Ajouter dans le fichier story ET dans Linear :
+   - **Page à tester:** `/path/to/page` (la page principale concernée par la story)
+   - Liste des tests fonctionnels simples (5 max)
+3. La story est prête pour être testée/validée
+
+Quand une story est validée (après tests + `code-review`) :
+1. Mettre à jour le statut de l'issue Linear → **Done**
+2. Ajouter les notes de complétion en commentaire si pertinent
