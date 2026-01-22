@@ -69,7 +69,7 @@ export function RoomPlanningGrid({
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="flex-1 min-w-[100px] text-center"
+                className="flex-1 min-w-[100px] text-center pt-4"
               >
                 {/* Room icon/placeholder */}
                 <div className="mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg bg-muted/60 flex items-center justify-center mb-2">
