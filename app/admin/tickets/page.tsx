@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { TicketsTable } from "@/components/admin/tickets/tickets-table"
 import { TicketsSearch } from "@/components/admin/tickets/tickets-search"
+import { CreateTicketModal } from "@/components/admin/tickets/create-ticket-modal"
 import { Headphones } from "lucide-react"
 import type { SupportTicketWithDetails } from "@/lib/types/database"
 
@@ -96,6 +97,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
             <p className="mt-1 text-muted-foreground">Gérez les demandes de vos utilisateurs</p>
           </div>
         </div>
+        <CreateTicketModal />
       </div>
 
       {/* Statistics Cards */}
