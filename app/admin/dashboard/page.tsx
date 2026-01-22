@@ -698,10 +698,10 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Sites moins occupés */}
+        {/* Site le moins occupé */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
           <h2 className="font-header text-sm uppercase tracking-wide mb-4">
-            Sites les moins occupés
+            Site le moins occupé
           </h2>
           <div className="space-y-4">
             {/* Aujourd'hui */}
