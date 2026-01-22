@@ -222,6 +222,30 @@ export interface User {
   updated_at: string
 }
 
+// Support ticket types
+export type TicketStatus = "todo" | "in_progress" | "done"
+export type TicketRequestType = "account_billing" | "issue" | "callback" | "other"
+
+export interface SupportTicket {
+  id: string
+  airtable_id: string | null
+  user_id: string | null
+  request_type: TicketRequestType | null
+  comment: string | null
+  status: TicketStatus | null
+  freshdesk_ticket_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface SupportTicketWithDetails extends SupportTicket {
+  user_first_name: string | null
+  user_last_name: string | null
+  user_email: string | null
+  company_id: string | null
+  company_name: string | null
+}
+
 export interface Database {
   public: {
     Tables: {

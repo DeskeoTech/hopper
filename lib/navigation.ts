@@ -9,6 +9,7 @@ import {
   User,
   Newspaper,
   CreditCard,
+  Headphones,
   type LucideIcon,
 } from "lucide-react"
 
@@ -24,6 +25,7 @@ export const adminNavigation: NavItem[] = [
   { name: "Sites", href: "/admin/sites", icon: Building2 },
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Clients", href: "/admin/clients", icon: Briefcase },
+  { name: "Tickets", href: "/admin/tickets", icon: Headphones },
   { name: "Abonnements", href: "/admin/abonnements", icon: CreditCard },
 ]
 
