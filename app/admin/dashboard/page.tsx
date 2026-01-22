@@ -448,8 +448,12 @@ export default async function DashboardPage() {
   const monthlyOccupancies = calculateOccupancyBySite(bookingsMonth, 22) // ~22 jours ouvrés
   const dailyOccupancies = calculateOccupancyBySite(bookingsToday, 1)
 
-  // Top 3 et moins occupé
-  const top3Sites = weeklyOccupancies.slice(0, 3)
+  // Site le plus occupé par période
+  const mostOccupiedDay = dailyOccupancies.length > 0 ? dailyOccupancies[0] : null
+  const mostOccupiedWeek = weeklyOccupancies.length > 0 ? weeklyOccupancies[0] : null
+  const mostOccupiedMonth = monthlyOccupancies.length > 0 ? monthlyOccupancies[0] : null
+
+  // Site le moins occupé par période
   const leastOccupiedWeek = weeklyOccupancies.length > 0 ? weeklyOccupancies[weeklyOccupancies.length - 1] : null
   const leastOccupiedMonth = monthlyOccupancies.length > 0 ? monthlyOccupancies[monthlyOccupancies.length - 1] : null
   const leastOccupiedDay = dailyOccupancies.length > 0 ? dailyOccupancies[dailyOccupancies.length - 1] : null
@@ -640,26 +644,58 @@ export default async function DashboardPage() {
 
       {/* Section Sites : Top 3 + Moins occupé */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Top 3 Sites */}
+        {/* Site le plus occupé */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
           <h2 className="font-header text-sm uppercase tracking-wide mb-4">
-            Top 3 Sites les plus occupés
+            Site le plus occupé
           </h2>
-          <p className="text-[10px] text-muted-foreground mb-3">Cette semaine</p>
-          {top3Sites.length > 0 ? (
+          <div className="space-y-4">
+            {/* Aujourd'hui */}
             <div>
-              {top3Sites.map((site, index) => (
+              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
+              {mostOccupiedDay ? (
                 <SiteOccupancyItem
-                  key={site.siteId}
-                  name={site.name}
-                  occupancy={site.occupancy}
-                  rank={index + 1}
+                  name={mostOccupiedDay.name}
+                  occupancy={mostOccupiedDay.occupancy}
+                  rank={1}
                 />
-              ))}
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+              )}
             </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">Aucune donnée disponible</p>
-          )}
+
+            <div className="h-px bg-border" />
+
+            {/* Cette semaine */}
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
+              {mostOccupiedWeek ? (
+                <SiteOccupancyItem
+                  name={mostOccupiedWeek.name}
+                  occupancy={mostOccupiedWeek.occupancy}
+                  rank={1}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+              )}
+            </div>
+
+            <div className="h-px bg-border" />
+
+            {/* Ce mois */}
+            <div>
+              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
+              {mostOccupiedMonth ? (
+                <SiteOccupancyItem
+                  name={mostOccupiedMonth.name}
+                  occupancy={mostOccupiedMonth.occupancy}
+                  rank={1}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Sites moins occupés */}
