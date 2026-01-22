@@ -657,7 +657,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={mostOccupiedDay.name}
                   occupancy={mostOccupiedDay.occupancy}
-                  rank={1}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
@@ -673,7 +672,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={mostOccupiedWeek.name}
                   occupancy={mostOccupiedWeek.occupancy}
-                  rank={1}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
@@ -689,7 +687,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={mostOccupiedMonth.name}
                   occupancy={mostOccupiedMonth.occupancy}
-                  rank={1}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
@@ -711,7 +708,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={leastOccupiedDay.name}
                   occupancy={leastOccupiedDay.occupancy}
-                  isLeast
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
@@ -727,7 +723,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={leastOccupiedWeek.name}
                   occupancy={leastOccupiedWeek.occupancy}
-                  isLeast
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
@@ -743,7 +738,6 @@ export default async function DashboardPage() {
                 <SiteOccupancyItem
                   name={leastOccupiedMonth.name}
                   occupancy={leastOccupiedMonth.occupancy}
-                  isLeast
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Aucune donnée</p>
