@@ -21,7 +21,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
   return (
-    <div className="relative">
+    <div className="relative pt-6">
       {isDeskeoEmployee && (
         <div className="absolute right-0 top-0">
           <Button asChild size="sm">
@@ -35,9 +35,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
 
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <div className="text-center pt-2">
-          <h1 className="font-header text-4xl font-bold uppercase tracking-tight text-foreground">
-            Mon espace
-          </h1>
+          <h1 className="type-h2 text-foreground">Mon espace</h1>
           <p className="mt-2 type-body text-muted-foreground">
             Bienvenue sur votre espace client Hopper
           </p>
