@@ -33,7 +33,8 @@ export function UserBookingCard({ booking, userId }: UserBookingCardProps) {
   const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: fr })
 
   const isCancelled = booking.status === "cancelled"
-  const canModify = !isCancelled && userId
+  const isPast = new Date(booking.start_date) < new Date()
+  const canModify = !isCancelled && !isPast && userId
 
   return (
     <>
