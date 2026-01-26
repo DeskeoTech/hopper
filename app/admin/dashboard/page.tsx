@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building2, Calendar, CreditCard, Headphones, Armchair, DoorOpen, MapPin } from "lucide-react"
+import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building2, Headphones, Armchair, DoorOpen, MapPin } from "lucide-react"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -144,8 +144,8 @@ function CircularGauge({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="font-header text-lg">{Math.round(percentage)}%</span>
-        <span className="text-[8px] text-muted-foreground uppercase">{label}</span>
+        <span className="font-header text-[22px]">{Math.round(percentage)}%</span>
+        <span className="text-xs text-muted-foreground uppercase">{label}</span>
       </div>
     </div>
   )
@@ -222,10 +222,10 @@ function SiteOccupancyItem({
             <TrendingDown className="h-3 w-3" />
           </span>
         )}
-        <span className="text-sm font-medium truncate max-w-[150px]">{name}</span>
+        <span className="text-lg font-medium truncate max-w-[150px] md:max-w-none md:whitespace-normal md:overflow-visible">{name}</span>
       </div>
       <span className={cn(
-        "text-sm font-bold",
+        "text-lg font-bold",
         occupancy >= 80 && "text-green-600",
         occupancy >= 50 && occupancy < 80 && "text-orange-500",
         occupancy < 50 && "text-red-500"
@@ -264,9 +264,6 @@ export default async function DashboardPage() {
     // Support tickets
     openTicketsResult,
     resolvedTicketsResult,
-
-    // Crédits
-    creditsResult,
 
     // Données pour occupation des sites
     resourcesResult,
@@ -316,9 +313,6 @@ export default async function DashboardPage() {
       .from("support_tickets")
       .select("*", { count: "exact", head: true })
       .eq("status", "done"),
-
-    // Crédits
-    supabase.from("credits").select("allocated_credits, remaining_credits"),
 
     // Ressources par site
     supabase.from("resources").select("id, site_id, type, capacity, site:sites!inner(id, name, status)").eq("sites.status", "open"),
@@ -374,13 +368,6 @@ export default async function DashboardPage() {
   const resolvedTickets = resolvedTicketsResult.count || 0
   const totalTickets = openTickets + resolvedTickets
   const ticketResolutionRate = totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0
-
-  // Calcul du taux d'utilisation des crédits
-  const credits = creditsResult.data || []
-  const totalAllocated = credits.reduce((sum, c) => sum + (c.allocated_credits || 0), 0)
-  const totalRemaining = credits.reduce((sum, c) => sum + (c.remaining_credits || 0), 0)
-  const totalUsed = totalAllocated - totalRemaining
-  const creditUsageRate = totalAllocated > 0 ? Math.round((totalUsed / totalAllocated) * 100) : 0
 
   // Croissance abonnements
   const newCompaniesThisMonth = companiesThisMonthResult.count || 0
@@ -491,18 +478,18 @@ export default async function DashboardPage() {
         <div className="lg:col-span-2 rounded-lg bg-card p-5 sm:p-6 border border-border/50">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
-              <h2 className="font-header text-lg uppercase tracking-wide">Occupation</h2>
-              <p className="text-xs text-muted-foreground mt-0.5">Taux de présence cette semaine</p>
+              <h2 className="font-header text-[22px] uppercase tracking-wide">Occupation</h2>
+              <p className="text-base text-muted-foreground mt-0.5">Taux de présence cette semaine</p>
               <div className="flex items-baseline gap-2 mt-3">
-                <span className="font-header text-4xl sm:text-5xl">{globalOccupancyRate}%</span>
+                <span className="font-header text-[40px] sm:text-[52px]">{globalOccupancyRate}%</span>
                 {globalOccupancyRate > 0 && (
-                  <span className="text-green-600 text-sm font-medium flex items-center">
+                  <span className="text-green-600 text-lg font-medium flex items-center">
                     <TrendingUp className="h-4 w-4 mr-0.5" />
                     actif
                   </span>
                 )}
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-base text-muted-foreground mt-2">
                 {totalBookingsWeek} réservations / {totalCapacity * 5} places disponibles
               </p>
             </div>
@@ -512,16 +499,16 @@ export default async function DashboardPage() {
 
         {/* Carte Clients */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
-          <h2 className="font-header text-sm uppercase tracking-wide mb-4">Clients</h2>
+          <h2 className="font-header text-lg uppercase tracking-wide mb-4">Clients</h2>
           <div className="space-y-4">
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Membres Actifs</p>
-              <p className="font-header text-2xl">{activeUsersCount.toLocaleString("fr-FR")}</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Membres Actifs</p>
+              <p className="font-header text-[28px]">{activeUsersCount.toLocaleString("fr-FR")}</p>
             </div>
             <div className="h-px bg-border" />
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Entreprises</p>
-              <p className="font-header text-2xl">{companiesCount}</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Entreprises</p>
+              <p className="font-header text-[28px]">{companiesCount}</p>
             </div>
           </div>
         </div>
@@ -530,61 +517,42 @@ export default async function DashboardPage() {
       {/* Section Réservations temps réel */}
       <div className="rounded-lg bg-card p-5 border border-border/50">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-header text-sm uppercase tracking-wide">Réservations</h2>
-          <span className="text-[10px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
+          <h2 className="font-header text-lg uppercase tracking-wide">Réservations</h2>
+          <span className="text-[14px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
             TEMPS RÉEL
           </span>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <div className="bg-muted/50 p-4 rounded-lg text-center">
             <Armchair className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-xl">{todayBenchBookings}</p>
-            <p className="text-[9px] text-muted-foreground uppercase font-medium">Benchs</p>
+            <p className="font-header text-2xl">{todayBenchBookings}</p>
+            <p className="text-[13px] text-muted-foreground uppercase font-medium">Benchs</p>
           </div>
           <div className="bg-muted/50 p-4 rounded-lg text-center">
             <DoorOpen className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-xl">{todayMeetingRoomBookings}</p>
-            <p className="text-[9px] text-muted-foreground uppercase font-medium">Salles</p>
-          </div>
-          <div className="bg-muted/50 p-4 rounded-lg text-center">
-            <Calendar className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-xl">{todayBenchBookings + todayMeetingRoomBookings}</p>
-            <p className="text-[9px] text-muted-foreground uppercase font-medium">Total Jour</p>
+            <p className="font-header text-2xl">{todayMeetingRoomBookings}</p>
+            <p className="text-[13px] text-muted-foreground uppercase font-medium">Salles</p>
           </div>
           <div className="bg-muted/50 p-4 rounded-lg text-center">
             <Building2 className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-xl">{sitesCount}</p>
-            <p className="text-[9px] text-muted-foreground uppercase font-medium">Sites Actifs</p>
+            <p className="font-header text-2xl">{sitesCount}</p>
+            <p className="text-[13px] text-muted-foreground uppercase font-medium">Sites Actifs</p>
           </div>
         </div>
       </div>
 
       {/* Grille métriques secondaires */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Crédits */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
-          <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-sm uppercase tracking-wide">Crédits</h2>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Usage Global</p>
-          <p className="font-header text-2xl mb-3">{creditUsageRate}%</p>
-          <ProgressBar value={creditUsageRate} color="default" showValue={false} />
-          <p className="text-[9px] text-muted-foreground mt-2">
-            {totalUsed.toLocaleString("fr-FR")} / {totalAllocated.toLocaleString("fr-FR")} crédits utilisés
-          </p>
-        </div>
-
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {/* Support */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
           <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-sm uppercase tracking-wide">Support</h2>
+            <h2 className="font-header text-lg uppercase tracking-wide">Support</h2>
             <Headphones className="h-4 w-4 text-muted-foreground" />
           </div>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] uppercase font-medium">Ouverts</span>
-              <span className="font-header text-lg text-orange-500">{openTickets}</span>
+              <span className="text-[14px] uppercase font-medium">Ouverts</span>
+              <span className="font-header text-[22px] text-orange-500">{openTickets}</span>
             </div>
             <ProgressBar
               value={openTickets}
@@ -593,8 +561,8 @@ export default async function DashboardPage() {
               showValue={false}
             />
             <div className="flex justify-between items-center">
-              <span className="text-[10px] uppercase font-medium">Résolus</span>
-              <span className="font-header text-lg text-green-600">{resolvedTickets}</span>
+              <span className="text-[14px] uppercase font-medium">Résolus</span>
+              <span className="font-header text-[22px] text-green-600">{resolvedTickets}</span>
             </div>
             <ProgressBar
               value={resolvedTickets}
@@ -608,19 +576,19 @@ export default async function DashboardPage() {
         {/* Croissance Abonnements */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
           <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-sm uppercase tracking-wide">Croissance</h2>
+            <h2 className="font-header text-lg uppercase tracking-wide">Croissance</h2>
             <Users className="h-4 w-4 text-muted-foreground" />
           </div>
-          <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Abonnements</p>
+          <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Abonnements</p>
           <div className="flex items-baseline gap-2">
-            <span className="font-header text-2xl">{subscriptionGrowth > 0 ? "+" : ""}{subscriptionGrowth}%</span>
+            <span className="font-header text-[28px]">{subscriptionGrowth > 0 ? "+" : ""}{subscriptionGrowth}%</span>
             {subscriptionGrowth > 0 ? (
               <TrendingUp className="h-4 w-4 text-green-600" />
             ) : subscriptionGrowth < 0 ? (
               <TrendingDown className="h-4 w-4 text-red-500" />
             ) : null}
           </div>
-          <p className="text-[9px] text-muted-foreground mt-2">
+          <p className="text-[13px] text-muted-foreground mt-2">
             {newCompaniesThisMonth} nouvelle{newCompaniesThisMonth !== 1 ? "s" : ""} entreprise{newCompaniesThisMonth !== 1 ? "s" : ""} ce mois
           </p>
         </div>
@@ -628,14 +596,14 @@ export default async function DashboardPage() {
         {/* Sites Actifs */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
           <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-sm uppercase tracking-wide">Sites</h2>
+            <h2 className="font-header text-lg uppercase tracking-wide">Sites</h2>
             <MapPin className="h-4 w-4 text-muted-foreground" />
           </div>
-          <p className="text-[10px] text-muted-foreground uppercase font-medium mb-1">Actifs</p>
-          <p className="font-header text-2xl mb-2">{sitesCount}</p>
+          <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Actifs</p>
+          <p className="font-header text-[28px] mb-2">{sitesCount}</p>
           <Link
             href="/admin/sites"
-            className="text-xs text-brand hover:underline"
+            className="text-base text-brand hover:underline"
           >
             Voir tous les sites →
           </Link>
@@ -646,20 +614,20 @@ export default async function DashboardPage() {
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Site le plus occupé */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
-          <h2 className="font-header text-sm uppercase tracking-wide mb-4">
+          <h2 className="font-header text-lg uppercase tracking-wide mb-4">
             Site le plus occupé
           </h2>
           <div className="space-y-4">
             {/* Aujourd'hui */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
               {mostOccupiedDay ? (
                 <SiteOccupancyItem
                   name={mostOccupiedDay.name}
                   occupancy={mostOccupiedDay.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
 
@@ -667,14 +635,14 @@ export default async function DashboardPage() {
 
             {/* Cette semaine */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
               {mostOccupiedWeek ? (
                 <SiteOccupancyItem
                   name={mostOccupiedWeek.name}
                   occupancy={mostOccupiedWeek.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
 
@@ -682,14 +650,14 @@ export default async function DashboardPage() {
 
             {/* Ce mois */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
               {mostOccupiedMonth ? (
                 <SiteOccupancyItem
                   name={mostOccupiedMonth.name}
                   occupancy={mostOccupiedMonth.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
           </div>
@@ -697,20 +665,20 @@ export default async function DashboardPage() {
 
         {/* Site le moins occupé */}
         <div className="rounded-lg bg-card p-5 border border-border/50">
-          <h2 className="font-header text-sm uppercase tracking-wide mb-4">
+          <h2 className="font-header text-lg uppercase tracking-wide mb-4">
             Site le moins occupé
           </h2>
           <div className="space-y-4">
             {/* Aujourd'hui */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
               {leastOccupiedDay ? (
                 <SiteOccupancyItem
                   name={leastOccupiedDay.name}
                   occupancy={leastOccupiedDay.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
 
@@ -718,14 +686,14 @@ export default async function DashboardPage() {
 
             {/* Cette semaine */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
               {leastOccupiedWeek ? (
                 <SiteOccupancyItem
                   name={leastOccupiedWeek.name}
                   occupancy={leastOccupiedWeek.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
 
@@ -733,14 +701,14 @@ export default async function DashboardPage() {
 
             {/* Ce mois */}
             <div>
-              <p className="text-[10px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
+              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
               {leastOccupiedMonth ? (
                 <SiteOccupancyItem
                   name={leastOccupiedMonth.name}
                   occupancy={leastOccupiedMonth.occupancy}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground">Aucune donnée</p>
+                <p className="text-lg text-muted-foreground">Aucune donnée</p>
               )}
             </div>
           </div>
