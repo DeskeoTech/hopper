@@ -36,6 +36,7 @@ interface ClientLayoutContextValue {
   selectedSiteWithDetails: SiteWithDetails | null
   setSelectedSiteId: (siteId: string) => void
   isAdmin: boolean
+  isDeskeoEmployee: boolean
   isNomad: boolean
   mainSiteId: string | null
 }
@@ -51,6 +52,7 @@ interface ClientLayoutProviderProps {
   sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   isAdmin: boolean
+  isDeskeoEmployee: boolean
 }
 
 export function ClientLayoutProvider({
@@ -62,6 +64,7 @@ export function ClientLayoutProvider({
   sitesWithDetails,
   selectedSiteId,
   isAdmin,
+  isDeskeoEmployee,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -90,6 +93,7 @@ export function ClientLayoutProvider({
         selectedSiteWithDetails,
         setSelectedSiteId,
         isAdmin,
+        isDeskeoEmployee,
         isNomad,
         mainSiteId,
       }}
