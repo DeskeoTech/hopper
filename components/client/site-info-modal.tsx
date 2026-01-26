@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { useClientLayout } from "./client-layout-provider"
 import { cn } from "@/lib/utils"
@@ -51,7 +50,7 @@ export function SiteInfoModal({ open, onOpenChange }: SiteInfoModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 py-4">
+        <DialogHeader className="px-6 py-4">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Building2 className="h-5 w-5" />
             {site.name}
@@ -213,16 +212,6 @@ export function SiteInfoModal({ open, onOpenChange }: SiteInfoModalProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t p-4">
-          <Button
-            onClick={() => onOpenChange(false)}
-            variant="outline"
-            className="w-full"
-          >
-            Fermer
-          </Button>
-        </div>
       </DialogContent>
     </Dialog>
   )
