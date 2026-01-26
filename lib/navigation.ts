@@ -31,7 +31,7 @@ export const adminNavigation: NavItem[] = [
 
 export const clientNavigation: NavItem[] = [
   { name: "Mon compte", href: "/compte", icon: User },
+  { name: "Fil d'actualité", href: "/actualites", icon: Newspaper },
   { name: "Salles", href: "/salles", icon: DoorOpen },
   { name: "Postes de travail", href: "/postes", icon: Monitor },
-  { name: "Fil d'actualité", href: "/actualites", icon: Newspaper },
 ]
