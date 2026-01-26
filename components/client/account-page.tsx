@@ -24,10 +24,10 @@ export function AccountPage({ bookings }: AccountPageProps) {
     <div className="mx-auto w-full max-w-3xl space-y-6">
       {isDeskeoEmployee && (
         <div className="flex justify-end">
-          <Button asChild variant="outline" size="sm">
+          <Button asChild size="sm">
             <Link href="/admin">
               <Settings className="mr-2 size-4" />
-              Dashboard Admin
+              Dashboard Deskeo
             </Link>
           </Button>
         </div>

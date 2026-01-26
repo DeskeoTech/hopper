@@ -9,6 +9,7 @@ import {
   Plus,
   ArrowRight,
   AlertCircle,
+  User,
 } from "lucide-react"
 import { addDays, differenceInDays, format, startOfWeek, endOfWeek } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -62,6 +63,12 @@ export default async function AccueilPage() {
             Gérez vos espaces de coworking et vos réservations
           </p>
         </div>
+        <Button asChild size="sm" className="shrink-0 self-start">
+          <Link href="/compte">
+            <User className="mr-2 size-4" />
+            Dashboard Utilisateur
+          </Link>
+        </Button>
       </div>
 
       {/* CTA Créer une réservation */}
