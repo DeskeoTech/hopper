@@ -18,16 +18,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
-import { useClientLayout } from "./client-layout-provider"
+import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
 import { cn } from "@/lib/utils"
 
 interface SiteInfoModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  site?: SiteWithDetails | null
 }
 
-export function SiteInfoModal({ open, onOpenChange }: SiteInfoModalProps) {
-  const { selectedSiteWithDetails: site } = useClientLayout()
+export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoModalProps) {
+  const { selectedSiteWithDetails } = useClientLayout()
+  const site = siteProp ?? selectedSiteWithDetails
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
 
   if (!site) {
