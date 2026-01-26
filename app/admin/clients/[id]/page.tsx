@@ -249,13 +249,6 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
               {/* Users */}
               <UsersList companyId={company.id} initialUsers={users || []} />
-
-              {/* Credits */}
-              <CreditsSection
-                companyId={company.id}
-                totalCredits={totalCredits}
-                movements={movements}
-              />
             </div>
 
             {/* Sidebar - Right Column */}
@@ -343,6 +336,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   </div>
                 </div>
               </div>
+
+              {/* Credits */}
+              <CreditsSection
+                companyId={company.id}
+                totalCredits={totalCredits}
+                movements={movements}
+              />
             </div>
           </div>
         }
