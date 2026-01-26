@@ -21,9 +21,9 @@ export function AccountPage({ bookings }: AccountPageProps) {
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
+    <div className="relative">
       {isDeskeoEmployee && (
-        <div className="flex justify-end">
+        <div className="absolute right-0 top-0">
           <Button asChild size="sm">
             <Link href="/admin">
               <Settings className="mr-2 size-4" />
@@ -33,33 +33,39 @@ export function AccountPage({ bookings }: AccountPageProps) {
         </div>
       )}
 
-      <div className="text-center">
-        <h2 className="type-h2 text-foreground">Mon espace</h2>
-        <p className="mt-2 type-body text-muted-foreground">
-          Bienvenue sur votre espace client Hopper
-        </p>
+      <div className="mx-auto w-full max-w-3xl space-y-6">
+        <div className="text-center pt-2">
+          <h1 className="font-header text-4xl font-bold uppercase tracking-tight text-foreground">
+            Mon espace
+          </h1>
+          <p className="mt-2 type-body text-muted-foreground">
+            Bienvenue sur votre espace client Hopper
+          </p>
+        </div>
+
+        <UserProfileCard user={user} />
+
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <UserPlanCard plan={plan} />
+          <UserCreditsCard credits={credits} />
+        </div>
+
+        <UserBookingsSection
+          bookings={bookings}
+          userId={user.id}
+          onBookClick={() => setBookingModalOpen(true)}
+        />
+
+        <BookMeetingRoomModal
+          open={bookingModalOpen}
+          onOpenChange={setBookingModalOpen}
+          userId={user.id}
+          companyId={user.company_id || ""}
+          mainSiteId={selectedSiteId}
+          remainingCredits={credits?.remaining || 0}
+          sites={sites}
+        />
       </div>
-
-      <UserProfileCard user={user} />
-
-      <UserPlanCard plan={plan} />
-
-      <UserCreditsCard
-        credits={credits}
-        onBookClick={() => setBookingModalOpen(true)}
-      />
-
-      <UserBookingsSection bookings={bookings} userId={user.id} />
-
-      <BookMeetingRoomModal
-        open={bookingModalOpen}
-        onOpenChange={setBookingModalOpen}
-        userId={user.id}
-        companyId={user.company_id || ""}
-        mainSiteId={selectedSiteId}
-        remainingCredits={credits?.remaining || 0}
-        sites={sites}
-      />
     </div>
   )
 }
