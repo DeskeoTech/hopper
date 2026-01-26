@@ -184,6 +184,8 @@ export default async function ClientLayout({
   }))
 
   const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
+  const isDeskeoEmployee =
+    authUser.email.endsWith("@deskeo.fr") || authUser.email.endsWith("@deskeo.com")
 
   // Determine selected site: URL param > main_site_id > first site
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
@@ -204,6 +206,7 @@ export default async function ClientLayout({
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
+      isDeskeoEmployee={isDeskeoEmployee}
     >
       {needsProfileCompletion && (
         <CompleteProfileModal

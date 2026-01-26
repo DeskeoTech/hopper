@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { Settings } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { UserCreditsCard } from "./user-credits-card"
@@ -14,11 +17,22 @@ interface AccountPageProps {
 }
 
 export function AccountPage({ bookings }: AccountPageProps) {
-  const { user, credits, plan, sites, selectedSiteId } = useClientLayout()
+  const { user, credits, plan, sites, selectedSiteId, isDeskeoEmployee } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
+      {isDeskeoEmployee && (
+        <div className="flex justify-end">
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin">
+              <Settings className="mr-2 size-4" />
+              Dashboard Admin
+            </Link>
+          </Button>
+        </div>
+      )}
+
       <div className="text-center">
         <h2 className="type-h2 text-foreground">Mon espace</h2>
         <p className="mt-2 type-body text-muted-foreground">
