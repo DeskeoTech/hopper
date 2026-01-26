@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ClientSiteCard } from "./client-site-card"
-import { NomadSubscriptionModal } from "./nomad-subscription-modal"
+import { SiteInfoModal } from "./site-info-modal"
 import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
 
 interface SiteSwitcherModalProps {
@@ -20,31 +20,24 @@ export function SiteSwitcherModal({ open, onOpenChange }: SiteSwitcherModalProps
   const {
     sitesWithDetails,
     selectedSiteId,
-    setSelectedSiteId,
     isNomad,
     mainSiteId,
   } = useClientLayout()
 
-  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false)
-  const [selectedSiteForSubscription, setSelectedSiteForSubscription] =
+  const [siteInfoModalOpen, setSiteInfoModalOpen] = useState(false)
+  const [selectedSiteForInfo, setSelectedSiteForInfo] =
     useState<SiteWithDetails | null>(null)
 
   const handleSiteClick = (site: SiteWithDetails) => {
-    // Direct switch if user is nomad or clicking on main site
-    if (isNomad || site.id === mainSiteId) {
-      setSelectedSiteId(site.id)
-      onOpenChange(false)
-    } else {
-      // Non-nomad user clicking on non-main site -> show subscription modal
-      setSelectedSiteForSubscription(site)
-      setSubscriptionModalOpen(true)
-    }
+    // Open site info modal when clicking on a site
+    setSelectedSiteForInfo(site)
+    setSiteInfoModalOpen(true)
   }
 
-  const handleSubscriptionModalClose = (isOpen: boolean) => {
-    setSubscriptionModalOpen(isOpen)
+  const handleSiteInfoModalClose = (isOpen: boolean) => {
+    setSiteInfoModalOpen(isOpen)
     if (!isOpen) {
-      setSelectedSiteForSubscription(null)
+      setSelectedSiteForInfo(null)
     }
   }
 
@@ -76,13 +69,11 @@ export function SiteSwitcherModal({ open, onOpenChange }: SiteSwitcherModalProps
         </DialogContent>
       </Dialog>
 
-      {selectedSiteForSubscription && (
-        <NomadSubscriptionModal
-          open={subscriptionModalOpen}
-          onOpenChange={handleSubscriptionModalClose}
-          site={selectedSiteForSubscription}
-        />
-      )}
+      <SiteInfoModal
+        open={siteInfoModalOpen}
+        onOpenChange={handleSiteInfoModalClose}
+        site={selectedSiteForInfo}
+      />
     </>
   )
 }
