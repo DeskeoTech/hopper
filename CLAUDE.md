@@ -163,26 +163,26 @@ Key types from `lib/types/database.ts`:
 Quand l'utilisateur demande de créer une PR (ou clique sur "create pr") :
 
 1. **D'abord, pousser la branche locale vers origin :**
-   ```bash
+   \`\`\`bash
    git push -u origin <nom-de-la-branche>
-   ```
+   \`\`\`
    Exemple : `git push -u origin buba-hub/meeting-room-icons-padding`
 
 2. **Ensuite, créer la PR avec `gh pr create`**
 
 Cette étape est **impérative** car la branche doit exister sur le remote avant de pouvoir créer une PR. Sans cela, l'erreur suivante apparaît :
-```
+\`\`\`
 fatal : argument 'origin/<branch>...HEAD' ambigu : révision inconnue ou chemin inexistant
-```
+\`\`\`
 
 **Workflow complet :**
-```bash
+\`\`\`bash
 # 1. Pousser la branche vers origin
 git push -u origin <nom-de-la-branche>
 
 # 2. Créer la PR
 gh pr create --title "..." --body "..."
-```
+\`\`\`
 
 ## Linear Integration
 

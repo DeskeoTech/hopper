@@ -128,7 +128,7 @@ Ces composants proviennent de shadcn/ui (style New York) et sont personnalisés 
 
 ### Utiliser SearchableSelect pour les filtres
 
-```tsx
+\`\`\`tsx
 import { SearchableSelect } from "@/components/ui/searchable-select"
 
 <SearchableSelect
@@ -138,11 +138,11 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
   placeholder="Sélectionner un site"
   searchPlaceholder="Rechercher..."
 />
-```
+\`\`\`
 
 ### Créer un modal d'édition
 
-```tsx
+\`\`\`tsx
 "use client"
 
 import { useState } from "react"
@@ -169,11 +169,11 @@ export function EditModal({ entityId, initialData }) {
     </Dialog>
   )
 }
-```
+\`\`\`
 
 ### Structure de page responsive
 
-```tsx
+\`\`\`tsx
 export default function Page() {
   return (
     <div className="space-y-6">
@@ -196,4 +196,4 @@ export default function Page() {
     </div>
   )
 }
-```
+\`\`\`

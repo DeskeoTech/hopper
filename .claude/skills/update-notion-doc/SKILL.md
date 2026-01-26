@@ -25,9 +25,9 @@ Analyser le code actuel et mettre à jour la documentation Notion.
 
 ### Étape 2 : Récupérer la doc existante
 
-```
+\`\`\`
 mcp__notion__notion-fetch avec id: 2ee643a0940480e4b4a8c7abc0804048
-```
+\`\`\`
 
 ### Étape 3 : Comparer et identifier les mises à jour
 
@@ -53,12 +53,12 @@ Utiliser `mcp__notion__notion-update-page` avec :
 - `command: "replace_content_range"` pour modifier une section existante
 
 Format des toggles Notion :
-```
+\`\`\`
 ▶ **Titre de la section**
 	Contenu indenté avec tab
 	- Liste à puces
 	**Sous-titre en gras**
-```
+\`\`\`
 
 ### Étape 5 : Rapport final
 

@@ -25,7 +25,7 @@
 
 ### Installation
 
-```bash
+\`\`\`bash
 # Cloner le repo
 git clone <repo-url>
 cd hopper
@@ -39,7 +39,7 @@ cp .env.example .env.local
 
 # Lancer le serveur de développement
 npm run dev
-```
+\`\`\`
 
 ### Variables d'environnement requises
 
@@ -51,16 +51,16 @@ npm run dev
 
 ### Commandes disponibles
 
-```bash
+\`\`\`bash
 npm run dev      # Serveur de développement (port 3000)
 npm run build    # Build de production
 npm run lint     # Vérification ESLint
 npm run start    # Serveur de production
-```
+\`\`\`
 
 ## Architecture résumée
 
-```
+\`\`\`
 hopper/
 ├── app/                 # Pages Next.js (App Router)
 │   ├── admin/          # Routes admin protégées
@@ -74,7 +74,7 @@ hopper/
 │   ├── actions/        # Server Actions
 │   └── types/          # Types TypeScript
 └── public/              # Assets statiques
-```
+\`\`\`
 
 ## Technologies clés
 

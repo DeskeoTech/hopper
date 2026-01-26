@@ -59,14 +59,14 @@ Charger le fichier `_bmad-output/planning-artifacts/epics.md` et extraire :
 ### 4. Créer les Epics (issues parentes)
 
 Pour chaque Epic (1 à 8) :
-```
+\`\`\`
 mcp__linear__create_issue(
   team: "Deskeo",
   project: "Hopper",
   title: "Epic X: {nom}",
   description: "{description}\n\n**FRs couverts:** {liste FRs}"
 )
-```
+\`\`\`
 
 Stocker les IDs des Epics créés pour les utiliser comme `parentId`.
 
@@ -74,7 +74,7 @@ Stocker les IDs des Epics créés pour les utiliser comme `parentId`.
 
 Pour chaque Story, charger le mapping des scopes depuis [mapping.md](mapping.md), puis :
 
-```
+\`\`\`
 mcp__linear__create_issue(
   team: "Deskeo",
   project: "Hopper",
@@ -84,7 +84,7 @@ mcp__linear__create_issue(
   labels: ["{scopes selon mapping}"],
   state: "{Done|In Progress|Backlog selon statut}"
 )
-```
+\`\`\`
 
 ### 6. Mapping des statuts
 

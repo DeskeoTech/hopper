@@ -62,7 +62,7 @@
 
 ### Structure des dossiers
 
-```
+\`\`\`
 hopper/
 ├── app/                          # Next.js App Router
 │   ├── layout.tsx               # Layout racine avec fonts
@@ -138,11 +138,11 @@ hopper/
 ├── package.json
 ├── tsconfig.json
 └── next.config.mjs
-```
+\`\`\`
 
 ### Flux d'authentification
 
-```
+\`\`\`
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   /login    │────>│  Supabase   │────>│ /auth/      │
 │  (email)    │     │  Magic Link │     │  callback   │
@@ -161,7 +161,7 @@ hopper/
               │ No account      │ │ role = user     │ │ role = admin    │
               │ → /login?error  │ │ → / (client)    │ │ → /admin        │
               └─────────────────┘ └─────────────────┘ └─────────────────┘
-```
+\`\`\`
 
 ### Rôles utilisateur
 
@@ -177,7 +177,7 @@ hopper/
 
 ### Schéma des entités principales
 
-```
+\`\`\`
 ┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
 │     sites       │       │   companies     │       │     users       │
 ├─────────────────┤       ├─────────────────┤       ├─────────────────┤
@@ -216,7 +216,7 @@ hopper/
 │ status          │
 │ credits_used    │
 └─────────────────┘
-```
+\`\`\`
 
 ### Tables détaillées
 
@@ -362,14 +362,14 @@ Les mutations de données utilisent les Server Actions Next.js (`"use server"`).
 
 ### Classes utilitaires
 
-```css
+\`\`\`css
 .type-h1 { /* Titre principal */ }
 .type-h2 { /* Titre de section */ }
 .type-h3 { /* Sous-titre */ }
 .type-body { /* Texte courant */ }
 .font-header { /* Police header uppercase */ }
 .font-editorial { /* Police italique */ }
-```
+\`\`\`
 
 ### Radius (signature Deskeo)
 
@@ -385,7 +385,7 @@ Les mutations de données utilisent les Server Actions Next.js (`"use server"`).
 
 ### Server Components (par défaut)
 
-```tsx
+\`\`\`tsx
 // app/admin/sites/page.tsx
 export default async function SitesPage() {
   const supabase = await createClient()
@@ -393,11 +393,11 @@ export default async function SitesPage() {
 
   return <SiteList sites={sites} />
 }
-```
+\`\`\`
 
 ### Client Components (quand nécessaire)
 
-```tsx
+\`\`\`tsx
 // components/admin/site-card.tsx
 "use client"
 
@@ -407,11 +407,11 @@ export function SiteCard({ site }) {
   const [isOpen, setIsOpen] = useState(false)
   // ...
 }
-```
+\`\`\`
 
 ### Server Actions
 
-```tsx
+\`\`\`tsx
 // lib/actions/sites.ts
 "use server"
 
@@ -424,7 +424,7 @@ export async function updateSite(id: string, data: UpdateData) {
   revalidatePath(`/admin/sites/${id}`)
   return { success: true }
 }
-```
+\`\`\`
 
 ### Règles importantes
 
