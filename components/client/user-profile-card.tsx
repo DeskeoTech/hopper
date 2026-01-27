@@ -1,8 +1,20 @@
-import { User, Mail } from "lucide-react"
-import type { User as UserType } from "@/lib/types/database"
+import { User, Mail, Shield, UserCircle, Building2 } from "lucide-react"
+import type { User as UserType, UserRole } from "@/lib/types/database"
 
 interface UserProfileCardProps {
   user: UserType & { companies: { id: string; name: string | null } | null }
+}
+
+function getRoleDisplay(role: UserRole | null): { label: string; icon: React.ReactNode } {
+  switch (role) {
+    case "admin":
+      return { label: "Administrateur", icon: <Shield className="h-3.5 w-3.5" /> }
+    case "deskeo":
+      return { label: "Deskeo", icon: <Building2 className="h-3.5 w-3.5" /> }
+    case "user":
+    default:
+      return { label: "Utilisateur", icon: <UserCircle className="h-3.5 w-3.5" /> }
+  }
 }
 
 export function UserProfileCard({ user }: UserProfileCardProps) {
@@ -26,6 +38,12 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
               <span className="type-body-sm">{user.email}</span>
             </div>
           )}
+          <div className="mt-2 flex items-center justify-center gap-1.5 sm:justify-start">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+              {getRoleDisplay(user.role).icon}
+              {getRoleDisplay(user.role).label}
+            </span>
+          </div>
         </div>
       </div>
     </div>
