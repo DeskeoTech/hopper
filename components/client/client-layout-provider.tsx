@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { User, UserCredits, UserPlan, Equipment } from "@/lib/types/database"
+import type { User, UserCredits, UserPlan, Equipment, CompanyType } from "@/lib/types/database"
 
 interface Site {
   id: string
@@ -26,7 +26,7 @@ export interface SiteWithDetails {
 }
 
 interface ClientLayoutContextValue {
-  user: User & { companies: { id: string; name: string | null; main_site_id: string | null } | null }
+  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
   credits: UserCredits | null
   plan: UserPlan | null
   sites: Site[]
@@ -39,13 +39,14 @@ interface ClientLayoutContextValue {
   isDeskeoEmployee: boolean
   isNomad: boolean
   mainSiteId: string | null
+  canManageCompany: boolean
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
 
 interface ClientLayoutProviderProps {
   children: ReactNode
-  user: User & { companies: { id: string; name: string | null; main_site_id: string | null } | null }
+  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
   credits: UserCredits | null
   plan: UserPlan | null
   sites: Site[]
@@ -73,6 +74,7 @@ export function ClientLayoutProvider({
   const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === selectedSiteId) || null
   const isNomad = plan?.name?.toUpperCase().includes("NOMAD") ?? false
   const mainSiteId = user.companies?.main_site_id || null
+  const canManageCompany = user.role === "admin" && user.companies?.company_type === "multi_employee"
 
   const setSelectedSiteId = (siteId: string) => {
     const params = new URLSearchParams(searchParams.toString())
@@ -96,6 +98,7 @@ export function ClientLayoutProvider({
         isDeskeoEmployee,
         isNomad,
         mainSiteId,
+        canManageCompany,
       }}
     >
       {children}
