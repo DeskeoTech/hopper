@@ -49,6 +49,7 @@ export async function updateUserProfile(userId: string, data: UserInfoFormData) 
 
   revalidatePath("/")
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   return { success: true }
 }
 

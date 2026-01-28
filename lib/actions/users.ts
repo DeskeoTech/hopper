@@ -78,6 +78,7 @@ export async function updateUserRoleByAdmin(
   }
 
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true, error: null }
 }
@@ -123,6 +124,7 @@ export async function deactivateUserByAdmin(
   }
 
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true, error: null }
 }
@@ -319,6 +321,7 @@ export async function createUserByAdmin(
   }
 
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true, error: null }
 }
