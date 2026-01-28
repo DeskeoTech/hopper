@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -11,15 +11,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { cn } from "@/lib/utils"
-import type { Company } from "@/lib/types/database"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { SubscriptionStatusBadge, getSubscriptionStatus, type SubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
+import { CancelSubscriptionModal } from "@/components/admin/abonnements/cancel-subscription-modal"
+import type { Company, SubscriptionPeriod } from "@/lib/types/database"
 
-type SortField = "name" | "company_type" | "contact_email" | "userCount" | "mainSiteName" | "status"
+type SortField = "name" | "userCount" | "mainSiteName" | "period" | "startDate" | "endDate" | "status"
 type SortOrder = "asc" | "desc"
 
 interface CompanyWithCounts extends Company {
   userCount: number
   mainSiteName: string | null
+  subscriptionStatus: SubscriptionStatus
 }
 
 interface CompaniesTableProps {
@@ -50,14 +59,6 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
           aValue = (a.name || "").toLowerCase()
           bValue = (b.name || "").toLowerCase()
           break
-        case "company_type":
-          aValue = a.company_type || ""
-          bValue = b.company_type || ""
-          break
-        case "contact_email":
-          aValue = (a.contact_email || "").toLowerCase()
-          bValue = (b.contact_email || "").toLowerCase()
-          break
         case "userCount":
           aValue = a.userCount
           bValue = b.userCount
@@ -66,12 +67,22 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
           aValue = (a.mainSiteName || "").toLowerCase()
           bValue = (b.mainSiteName || "").toLowerCase()
           break
+        case "period":
+          aValue = a.subscription_period || ""
+          bValue = b.subscription_period || ""
+          break
+        case "startDate":
+          aValue = a.subscription_start_date || ""
+          bValue = b.subscription_start_date || ""
+          break
+        case "endDate":
+          aValue = a.subscription_end_date || "9999-99-99"
+          bValue = b.subscription_end_date || "9999-99-99"
+          break
         case "status":
-          const now = new Date()
-          const aEndDate = a.subscription_end_date ? new Date(a.subscription_end_date) : null
-          const bEndDate = b.subscription_end_date ? new Date(b.subscription_end_date) : null
-          aValue = !aEndDate || aEndDate > now ? 1 : 0
-          bValue = !bEndDate || bEndDate > now ? 1 : 0
+          const statusOrder = { actif: 0, expirant: 1, inactif: 2 }
+          aValue = statusOrder[a.subscriptionStatus]
+          bValue = statusOrder[b.subscriptionStatus]
           break
         default:
           return 0
@@ -94,26 +105,18 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
     )
   }
 
-  const getCompanyTypeLabel = (type: string | null) => {
-    if (!type) return "-"
-    return type === "self_employed" ? "Indépendant" : "Multi-employés"
+  const formatPeriod = (period: SubscriptionPeriod | null) => {
+    if (!period) return "-"
+    return period === "month" ? "Mensuel" : "Hebdomadaire"
   }
 
-  const getStatusBadge = (company: Company) => {
-    const now = new Date()
-    const endDate = company.subscription_end_date ? new Date(company.subscription_end_date) : null
-    const isActive = !endDate || endDate > now
-
-    return (
-      <span
-        className={cn(
-          "inline-flex rounded-sm px-2 py-0.5 text-xs font-medium",
-          isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-        )}
-      >
-        {isActive ? "Actif" : "Inactif"}
-      </span>
-    )
+  const formatDate = (date: string | null) => {
+    if (!date) return "-"
+    return new Date(date).toLocaleDateString("fr-FR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
   }
 
   return (
@@ -131,24 +134,6 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               </div>
             </TableHead>
             <TableHead
-              className="hidden cursor-pointer select-none md:table-cell"
-              onClick={() => handleSort("company_type")}
-            >
-              <div className="flex items-center">
-                Type
-                <SortIcon field="company_type" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="hidden cursor-pointer select-none lg:table-cell"
-              onClick={() => handleSort("contact_email")}
-            >
-              <div className="flex items-center">
-                Email
-                <SortIcon field="contact_email" />
-              </div>
-            </TableHead>
-            <TableHead
               className="cursor-pointer select-none text-center"
               onClick={() => handleSort("userCount")}
             >
@@ -163,8 +148,35 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               onClick={() => handleSort("mainSiteName")}
             >
               <div className="flex items-center">
-                Site principal
+                Site
                 <SortIcon field="mainSiteName" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none md:table-cell"
+              onClick={() => handleSort("period")}
+            >
+              <div className="flex items-center">
+                Période
+                <SortIcon field="period" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="hidden cursor-pointer select-none md:table-cell"
+              onClick={() => handleSort("startDate")}
+            >
+              <div className="flex items-center">
+                Début
+                <SortIcon field="startDate" />
+              </div>
+            </TableHead>
+            <TableHead
+              className="cursor-pointer select-none"
+              onClick={() => handleSort("endDate")}
+            >
+              <div className="flex items-center">
+                Fin
+                <SortIcon field="endDate" />
               </div>
             </TableHead>
             <TableHead
@@ -175,6 +187,9 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 Statut
                 <SortIcon field="status" />
               </div>
+            </TableHead>
+            <TableHead className="w-[70px]">
+              <span className="sr-only">Actions</span>
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -188,20 +203,51 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
               <TableCell className="font-medium">
                 {company.name || "Sans nom"}
               </TableCell>
-              <TableCell className="hidden text-muted-foreground md:table-cell">
-                {getCompanyTypeLabel(company.company_type)}
-              </TableCell>
-              <TableCell className="hidden text-muted-foreground lg:table-cell">
-                {company.contact_email || "-"}
-              </TableCell>
               <TableCell className="text-center">
                 {company.userCount}
               </TableCell>
               <TableCell className="hidden text-muted-foreground lg:table-cell">
                 {company.mainSiteName || "-"}
               </TableCell>
+              <TableCell className="hidden text-muted-foreground md:table-cell">
+                {formatPeriod(company.subscription_period)}
+              </TableCell>
+              <TableCell className="hidden text-muted-foreground md:table-cell">
+                {formatDate(company.subscription_start_date)}
+              </TableCell>
+              <TableCell className="text-muted-foreground">
+                {formatDate(company.subscription_end_date)}
+              </TableCell>
               <TableCell>
-                {getStatusBadge(company)}
+                <SubscriptionStatusBadge status={company.subscriptionStatus} />
+              </TableCell>
+              <TableCell onClick={(e) => e.stopPropagation()}>
+                {company.subscriptionStatus !== "inactif" && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <CancelSubscriptionModal
+                        companyId={company.id}
+                        companyName={company.name}
+                        currentEndDate={company.subscription_end_date}
+                        trigger={
+                          <DropdownMenuItem
+                            onSelect={(e) => e.preventDefault()}
+                            className="text-destructive focus:text-destructive"
+                          >
+                            <XCircle className="mr-2 h-4 w-4" />
+                            Résilier
+                          </DropdownMenuItem>
+                        }
+                      />
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </TableCell>
             </TableRow>
           ))}
