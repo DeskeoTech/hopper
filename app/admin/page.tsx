@@ -90,10 +90,10 @@ export default async function AccueilPage() {
                   <Building2 className="h-6 w-6 text-foreground/60" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
                     Sites
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     {sitesCount} site{sitesCount !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -110,10 +110,10 @@ export default async function AccueilPage() {
                   <Calendar className="h-6 w-6 text-foreground/60" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
                     Réservations
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     {bookingsCount} cette semaine
                   </p>
                 </div>
@@ -130,10 +130,10 @@ export default async function AccueilPage() {
                   <Briefcase className="h-6 w-6 text-foreground/60" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
                     Clients
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     {companiesCount} entreprise{companiesCount !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -155,11 +155,11 @@ export default async function AccueilPage() {
                   <Coffee className="h-6 w-6 text-foreground/60" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
-                    App Client Hopper Café
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
+                    Hopper Café
                   </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Accès à l'application client
+                  <p className="text-base text-muted-foreground">
+                    Accès à l'application Hopper Café
                   </p>
                 </div>
                 <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -180,10 +180,10 @@ export default async function AccueilPage() {
                   <Package className="h-6 w-6 text-foreground/60" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
                     Réception des commandes
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-base text-muted-foreground">
                     Gestion des achats Deskeo
                   </p>
                 </div>
