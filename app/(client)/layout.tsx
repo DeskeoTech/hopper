@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientSidebar } from "@/components/client/client-sidebar"
-import { ClientMobileNav } from "@/components/client/client-mobile-nav"
+import { ClientHeader } from "@/components/client/client-header"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
@@ -270,9 +270,7 @@ export default async function ClientLayout({
       <div className="flex min-h-screen bg-background">
         <ClientSidebar />
         <div className="flex flex-1 flex-col">
-          <div className="flex h-14 items-center px-4 md:hidden">
-            <ClientMobileNav />
-          </div>
+          <ClientHeader />
           <main className="flex-1 p-4 md:p-6">{children}</main>
         </div>
       </div>

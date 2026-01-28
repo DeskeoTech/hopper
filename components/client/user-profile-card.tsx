@@ -1,4 +1,4 @@
-import { User, Mail, Shield, UserCircle, Building2 } from "lucide-react"
+import { Users, Shield, UserCircle, Building2 } from "lucide-react"
 import type { User as UserType, UserRole } from "@/lib/types/database"
 
 interface UserProfileCardProps {
@@ -22,10 +22,10 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
     [user.first_name, user.last_name].filter(Boolean).join(" ") || "Utilisateur"
 
   return (
-    <div className="rounded-[20px] bg-card p-6 sm:p-8">
+    <div className="rounded-[16px] bg-card p-6 shadow-sm">
       <div className="flex flex-col items-center gap-4 sm:flex-row sm:items-center">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-muted sm:h-24 sm:w-24">
-          <User className="h-10 w-10 text-muted-foreground sm:h-12 sm:w-12" />
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#F1E8DC]">
+          <Users className="h-7 w-7 text-foreground/70" />
         </div>
 
         <div className="text-center sm:text-left">
@@ -33,13 +33,10 @@ export function UserProfileCard({ user }: UserProfileCardProps) {
             {fullName}
           </h2>
           {user.email && (
-            <div className="mt-1 flex items-center justify-center gap-2 text-muted-foreground sm:justify-start">
-              <Mail className="h-4 w-4" />
-              <span className="type-body-sm">{user.email}</span>
-            </div>
+            <p className="mt-1 text-sm text-foreground/50">{user.email}</p>
           )}
           <div className="mt-2 flex items-center justify-center gap-1.5 sm:justify-start">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-foreground/20 px-3 py-1 text-sm font-medium text-foreground">
               {getRoleDisplay(user.role).icon}
               {getRoleDisplay(user.role).label}
             </span>

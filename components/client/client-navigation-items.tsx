@@ -33,10 +33,10 @@ export function ClientNavigationItems({ onItemClick, className }: ClientNavigati
             href={getHref(item.href)}
             onClick={onItemClick}
             className={cn(
-              "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-all duration-200",
               isActive
-                ? "bg-brand-accent text-brand-accent-foreground"
-                : "text-brand-foreground/70 hover:bg-brand-foreground/10 hover:text-brand-foreground"
+                ? "bg-foreground text-primary-foreground"
+                : "text-brand-foreground/70 hover:bg-brand-foreground/5 hover:text-brand-foreground"
             )}
           >
             <item.icon className="h-5 w-5" />

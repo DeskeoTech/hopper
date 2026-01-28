@@ -1,4 +1,4 @@
-import { CreditCard } from "lucide-react"
+import { CreditCard, ChevronRight } from "lucide-react"
 import type { UserPlan } from "@/lib/types/database"
 
 interface UserPlanCardProps {
@@ -7,20 +7,17 @@ interface UserPlanCardProps {
 
 export function UserPlanCard({ plan }: UserPlanCardProps) {
   return (
-    <div className="rounded-[20px] bg-card p-4 sm:p-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-12 sm:w-12">
-          <CreditCard className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-        </div>
-        <div>
-          <h3 className="text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
-            Mon forfait
-          </h3>
-          <p className="type-body-sm text-muted-foreground">
-            {plan ? plan.name : "Aucun forfait actif"}
-          </p>
-        </div>
+    <div className="group relative rounded-[16px] bg-card p-5 shadow-sm transition-all duration-200 hover:shadow-md">
+      <div className="mb-3">
+        <CreditCard className="h-6 w-6 text-foreground/30" />
       </div>
+      <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
+        Mon forfait
+      </p>
+      <p className="mt-1 font-medium text-foreground">
+        {plan ? plan.name : "Aucun forfait actif"}
+      </p>
+      <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/30 transition-transform duration-200 group-hover:translate-x-1" />
     </div>
   )
 }
