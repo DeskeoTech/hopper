@@ -279,7 +279,7 @@ export default async function ClientLayout({
       <div className="min-h-screen bg-background">
         <ClientSidebar />
         <div className="flex min-h-screen flex-col md:ml-64">
-          <ClientHeader userEmail={authUser.email} />
+          <ClientHeader />
           <main className="flex-1 pb-20 md:pb-0">{children}</main>
           <ClientBottomTabs />
         </div>

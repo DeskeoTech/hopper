@@ -39,12 +39,8 @@ const filterOptions = [
 ]
 
 export function MesCreditsTab() {
-  const { credits, creditMovements, user, plan } = useClientLayout()
+  const { credits, creditMovements, user } = useClientLayout()
   const [typeFilter, setTypeFilter] = useState("all")
-
-  const isUserDisabled = user.status === "disabled"
-  const hasActiveContract = plan !== null
-  const canBuyCredits = !isUserDisabled && hasActiveContract
 
   const filteredMovements = useMemo(() => {
     if (typeFilter === "all") return creditMovements
@@ -75,9 +71,7 @@ export function MesCreditsTab() {
       <Button
         className="w-full"
         size="lg"
-        disabled={!canBuyCredits}
         onClick={() => {
-          if (!canBuyCredits) return
           const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
           window.open(stripeUrl, "_blank")
         }}
