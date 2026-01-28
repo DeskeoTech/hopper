@@ -93,6 +93,7 @@ export interface Company {
   main_site_id: string | null
   logo_storage_path: string | null
   kbis_storage_path: string | null
+  onboarding_done: boolean | null
   created_at: string
   updated_at: string
 }

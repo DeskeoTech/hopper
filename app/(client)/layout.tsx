@@ -4,6 +4,7 @@ import { ClientLayoutProvider } from "@/components/client/client-layout-provider
 import { ClientSidebar } from "@/components/client/client-sidebar"
 import { ClientHeader } from "@/components/client/client-header"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
+import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
 
@@ -233,9 +234,19 @@ export default async function ClientLayout({
   // Determine selected site: URL param > main_site_id > first site
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
-  // Check if user needs to complete their profile (only for 'user' role with a company)
+  // Check if user needs onboarding (no company or onboarding not done)
+  // Applies to both "user" and "admin" roles (but not "deskeo" employees)
+  const needsOnboarding =
+    (userProfile.role === "user" || userProfile.role === "admin") &&
+    !isDeskeoEmployee &&
+    (!userProfile.company_id ||
+      !(userProfile.companies as Company | null)?.onboarding_done)
+
+  // Check if user needs to complete their profile (only for 'user' or 'admin' role with a company, after onboarding)
   const needsProfileCompletion =
-    userProfile.role === "user" &&
+    !needsOnboarding &&
+    (userProfile.role === "user" || userProfile.role === "admin") &&
+    !isDeskeoEmployee &&
     userProfile.company_id &&
     userProfile.companies &&
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
@@ -252,6 +263,12 @@ export default async function ClientLayout({
       isAdmin={isAdmin}
       isDeskeoEmployee={isDeskeoEmployee}
     >
+      {needsOnboarding && (
+        <OnboardingModal
+          userId={userProfile.id}
+          existingCompany={userProfile.companies as Company | null}
+        />
+      )}
       {needsProfileCompletion && (
         <CompleteProfileModal
           user={userProfile}
