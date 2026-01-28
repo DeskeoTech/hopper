@@ -92,13 +92,6 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
         <ClientsFilters sites={sites || []} />
       </Suspense>
 
-      {/* Results count */}
-      {transformedCompanies && (
-        <p className="text-sm text-muted-foreground">
-          {transformedCompanies.length} client{transformedCompanies.length !== 1 ? "s" : ""} trouvé{transformedCompanies.length !== 1 ? "s" : ""}
-        </p>
-      )}
-
       {/* Companies Table */}
       {transformedCompanies && transformedCompanies.length > 0 ? (
         <CompaniesTable companies={transformedCompanies} />

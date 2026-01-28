@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle } from "lucide-react"
 import {
@@ -18,12 +18,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { SubscriptionStatusBadge, getSubscriptionStatus, type SubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
 import { CancelSubscriptionModal } from "@/components/admin/abonnements/cancel-subscription-modal"
 import type { Company, SubscriptionPeriod } from "@/lib/types/database"
 
 type SortField = "name" | "userCount" | "mainSiteName" | "period" | "startDate" | "endDate" | "status"
 type SortOrder = "asc" | "desc"
+
+const PAGE_SIZE = 15
 
 interface CompanyWithCounts extends Company {
   userCount: number
@@ -39,6 +42,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
   const router = useRouter()
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
+  const [currentPage, setCurrentPage] = useState(1)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -47,6 +51,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
       setSortField(field)
       setSortOrder("asc")
     }
+    setCurrentPage(1)
   }
 
   const sortedCompanies = useMemo(() => {
@@ -94,6 +99,18 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
     })
   }, [companies, sortField, sortOrder])
 
+  // Pagination
+  const totalPages = Math.ceil(sortedCompanies.length / PAGE_SIZE)
+  const paginatedCompanies = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE
+    return sortedCompanies.slice(start, start + PAGE_SIZE)
+  }, [sortedCompanies, currentPage])
+
+  // Reset page when companies change (e.g., filters applied)
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [companies.length])
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
       return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />
@@ -120,139 +137,157 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead
-              className="cursor-pointer select-none"
-              onClick={() => handleSort("name")}
-            >
-              <div className="flex items-center">
-                Nom
-                <SortIcon field="name" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none text-center"
-              onClick={() => handleSort("userCount")}
-            >
-              <div className="flex items-center justify-center">
-                <span className="hidden sm:inline">Utilisateurs</span>
-                <span className="sm:hidden">Users</span>
-                <SortIcon field="userCount" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="hidden cursor-pointer select-none lg:table-cell"
-              onClick={() => handleSort("mainSiteName")}
-            >
-              <div className="flex items-center">
-                Site
-                <SortIcon field="mainSiteName" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="hidden cursor-pointer select-none md:table-cell"
-              onClick={() => handleSort("period")}
-            >
-              <div className="flex items-center">
-                Période
-                <SortIcon field="period" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="hidden cursor-pointer select-none md:table-cell"
-              onClick={() => handleSort("startDate")}
-            >
-              <div className="flex items-center">
-                Début
-                <SortIcon field="startDate" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none"
-              onClick={() => handleSort("endDate")}
-            >
-              <div className="flex items-center">
-                Fin
-                <SortIcon field="endDate" />
-              </div>
-            </TableHead>
-            <TableHead
-              className="cursor-pointer select-none"
-              onClick={() => handleSort("status")}
-            >
-              <div className="flex items-center">
-                Statut
-                <SortIcon field="status" />
-              </div>
-            </TableHead>
-            <TableHead className="w-[70px]">
-              <span className="sr-only">Actions</span>
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sortedCompanies.map((company) => (
-            <TableRow
-              key={company.id}
-              className="cursor-pointer"
-              onClick={() => router.push(`/admin/clients/${company.id}`)}
-            >
-              <TableCell className="font-medium">
-                {company.name || "Sans nom"}
-              </TableCell>
-              <TableCell className="text-center">
-                {company.userCount}
-              </TableCell>
-              <TableCell className="hidden text-muted-foreground lg:table-cell">
-                {company.mainSiteName || "-"}
-              </TableCell>
-              <TableCell className="hidden text-muted-foreground md:table-cell">
-                {formatPeriod(company.subscription_period)}
-              </TableCell>
-              <TableCell className="hidden text-muted-foreground md:table-cell">
-                {formatDate(company.subscription_start_date)}
-              </TableCell>
-              <TableCell className="text-muted-foreground">
-                {formatDate(company.subscription_end_date)}
-              </TableCell>
-              <TableCell>
-                <SubscriptionStatusBadge status={company.subscriptionStatus} />
-              </TableCell>
-              <TableCell onClick={(e) => e.stopPropagation()}>
-                {company.subscriptionStatus !== "inactif" && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Actions</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <CancelSubscriptionModal
-                        companyId={company.id}
-                        companyName={company.name}
-                        currentEndDate={company.subscription_end_date}
-                        trigger={
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            className="text-destructive focus:text-destructive"
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Résilier
-                          </DropdownMenuItem>
-                        }
-                      />
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </TableCell>
+    <div className="space-y-4">
+      <div className="overflow-x-auto rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort("name")}
+              >
+                <div className="flex items-center">
+                  Nom
+                  <SortIcon field="name" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none text-center"
+                onClick={() => handleSort("userCount")}
+              >
+                <div className="flex items-center justify-center">
+                  <span className="hidden sm:inline">Utilisateurs</span>
+                  <span className="sm:hidden">Users</span>
+                  <SortIcon field="userCount" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="hidden cursor-pointer select-none lg:table-cell"
+                onClick={() => handleSort("mainSiteName")}
+              >
+                <div className="flex items-center">
+                  Site
+                  <SortIcon field="mainSiteName" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="hidden cursor-pointer select-none md:table-cell"
+                onClick={() => handleSort("period")}
+              >
+                <div className="flex items-center">
+                  Période
+                  <SortIcon field="period" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="hidden cursor-pointer select-none md:table-cell"
+                onClick={() => handleSort("startDate")}
+              >
+                <div className="flex items-center">
+                  Début
+                  <SortIcon field="startDate" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort("endDate")}
+              >
+                <div className="flex items-center">
+                  Fin
+                  <SortIcon field="endDate" />
+                </div>
+              </TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => handleSort("status")}
+              >
+                <div className="flex items-center">
+                  Statut
+                  <SortIcon field="status" />
+                </div>
+              </TableHead>
+              <TableHead className="w-[70px]">
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {paginatedCompanies.map((company) => (
+              <TableRow
+                key={company.id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/admin/clients/${company.id}`)}
+              >
+                <TableCell className="font-medium">
+                  {company.name || "Sans nom"}
+                </TableCell>
+                <TableCell className="text-center">
+                  {company.userCount}
+                </TableCell>
+                <TableCell className="hidden text-muted-foreground lg:table-cell">
+                  {company.mainSiteName || "-"}
+                </TableCell>
+                <TableCell className="hidden text-muted-foreground md:table-cell">
+                  {formatPeriod(company.subscription_period)}
+                </TableCell>
+                <TableCell className="hidden text-muted-foreground md:table-cell">
+                  {formatDate(company.subscription_start_date)}
+                </TableCell>
+                <TableCell className="text-muted-foreground">
+                  {formatDate(company.subscription_end_date)}
+                </TableCell>
+                <TableCell>
+                  <SubscriptionStatusBadge status={company.subscriptionStatus} />
+                </TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  {company.subscriptionStatus !== "inactif" && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Actions</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <CancelSubscriptionModal
+                          companyId={company.id}
+                          companyName={company.name}
+                          currentEndDate={company.subscription_end_date}
+                          trigger={
+                            <DropdownMenuItem
+                              onSelect={(e) => e.preventDefault()}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Résilier
+                            </DropdownMenuItem>
+                          }
+                        />
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <PaginationInfo
+            currentPage={currentPage}
+            pageSize={PAGE_SIZE}
+            totalItems={sortedCompanies.length}
+          />
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
+        </div>
+      )}
     </div>
   )
 }
