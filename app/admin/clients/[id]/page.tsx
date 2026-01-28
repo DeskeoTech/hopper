@@ -1,10 +1,15 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2 } from "lucide-react"
+import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2, Info } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
-import { EditSubscriptionModal } from "@/components/admin/company-edit/edit-subscription-modal"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -255,12 +260,21 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
             <div className="space-y-6">
               {/* Subscription */}
               <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                <EditSubscriptionModal
-                  companyId={company.id}
-                  initialPeriod={company.subscription_period}
-                  initialStartDate={company.subscription_start_date}
-                  initialEndDate={company.subscription_end_date}
-                />
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        <Info className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left" className="max-w-[250px]">
+                      <p>Le client doit se rendre sur son espace facturation pour modifier son abonnement ou ses informations de facturation.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                   <Calendar className="h-5 w-5" />
                   Abonnement
