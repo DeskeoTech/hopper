@@ -6,7 +6,7 @@ import { CreditsHistoryModal } from "./credits-history-modal"
 import { useClientLayout } from "./client-layout-provider"
 
 export function UserCreditsCard() {
-  const { credits, creditMovements } = useClientLayout()
+  const { credits, creditMovements, user } = useClientLayout()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   const displayValue = credits
@@ -35,6 +35,7 @@ export function UserCreditsCard() {
         onOpenChange={setIsModalOpen}
         credits={credits}
         movements={creditMovements}
+        userEmail={user.email}
       />
     </>
   )

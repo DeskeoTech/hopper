@@ -26,6 +26,7 @@ interface CreditsHistoryModalProps {
   onOpenChange: (open: boolean) => void
   credits: UserCredits | null
   movements: CreditMovement[]
+  userEmail: string | null
 }
 
 const typeLabels: Record<CreditMovementType | "purchase", string> = {
@@ -55,6 +56,7 @@ export function CreditsHistoryModal({
   onOpenChange,
   credits,
   movements,
+  userEmail,
 }: CreditsHistoryModalProps) {
   const [typeFilter, setTypeFilter] = useState("all")
 
@@ -97,12 +99,14 @@ export function CreditsHistoryModal({
               </div>
             </div>
 
-            {/* Buy Credits Button - Disabled for now */}
+            {/* Buy Credits Button */}
             <Button
               className="w-full"
               size="lg"
-              disabled
-              title="Configuration du paiement à venir"
+              onClick={() => {
+                const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(userEmail || "")}`
+                window.open(stripeUrl, "_blank")
+              }}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
               Acheter des Crédits supplémentaires
