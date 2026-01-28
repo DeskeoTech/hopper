@@ -143,6 +143,14 @@ export function BookingCreateDialog({
       return
     }
 
+    // Check that the reservation is not in the past
+    const now = new Date()
+    const selectedDateTime = new Date(`${date}T${startTime}:00`)
+    if (selectedDateTime < now) {
+      setError("Impossible de créer une réservation dans le passé")
+      return
+    }
+
     const startDate = `${date}T${startTime}:00`
     const endDate = `${date}T${endTime}:00`
 
@@ -267,6 +275,7 @@ export function BookingCreateDialog({
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
                 disabled={isPending}
+                min={format(new Date(), "yyyy-MM-dd")}
                 className="rounded-[12px]"
               />
             </div>
