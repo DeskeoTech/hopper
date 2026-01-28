@@ -128,7 +128,7 @@ export interface Credit {
   contract_id: string | null
   period: string
   allocated_credits: number
-  remaining_credits: number
+  extras_credit: boolean | null
   created_at: string
   updated_at: string
 }

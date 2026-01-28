@@ -36,7 +36,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
               Gérer mon entreprise
             </p>
             <p className="mt-1 font-medium text-foreground">
-              Gérer les utilisateurs et les rôles
+              {user.companies?.name || "Gérer les utilisateurs et les rôles"}
             </p>
             <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/30 transition-transform duration-200 group-hover:translate-x-1" />
           </button>

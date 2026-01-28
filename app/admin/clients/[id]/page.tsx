@@ -47,24 +47,14 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     .order("last_name")
     .order("first_name")
 
-  // Fetch credits via contracts
-  const { data: contracts } = await supabase
-    .from("contracts")
-    .select("id")
-    .eq("company_id", id)
+  // Fetch valid credits using the SQL function
+  // Credits are valid if:
+  // - extras_credit = true: permanent credits (always valid)
+  // - extras_credit = false/null: valid for 1 month from created_at
+  const { data: creditsResult } = await supabase
+    .rpc("get_company_valid_credits", { p_company_id: id })
 
-  const contractIds = contracts?.map((c) => c.id) || []
-
-  // Fetch current credits (sum of remaining credits)
-  let totalCredits = 0
-  if (contractIds.length > 0) {
-    const { data: credits } = await supabase
-      .from("credits")
-      .select("remaining_credits")
-      .in("contract_id", contractIds)
-
-    totalCredits = credits?.reduce((sum, c) => sum + (c.remaining_credits || 0), 0) || 0
-  }
+  const totalCredits = creditsResult ?? 0
 
   // Fetch credit movements from bookings
   const userIds = users?.map((u) => u.id) || []

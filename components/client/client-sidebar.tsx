@@ -9,7 +9,7 @@ export function ClientSidebar() {
   const { isDeskeoEmployee } = useClientLayout()
 
   return (
-    <aside className="hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
       {/* Logo Header */}
       <div className="flex flex-col gap-0.5 border-b border-brand-foreground/10 px-6 py-5">
         <span className="font-header text-xl font-bold uppercase tracking-tight text-brand-foreground">
