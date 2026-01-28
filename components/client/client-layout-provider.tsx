@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import type { User, UserCredits, UserPlan, Equipment, CompanyType } from "@/lib/types/database"
+import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement } from "@/lib/types/database"
 
 interface Site {
   id: string
@@ -28,6 +28,7 @@ export interface SiteWithDetails {
 interface ClientLayoutContextValue {
   user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
   credits: UserCredits | null
+  creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
   sitesWithDetails: SiteWithDetails[]
@@ -48,6 +49,7 @@ interface ClientLayoutProviderProps {
   children: ReactNode
   user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
   credits: UserCredits | null
+  creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
   sitesWithDetails: SiteWithDetails[]
@@ -60,6 +62,7 @@ export function ClientLayoutProvider({
   children,
   user,
   credits,
+  creditMovements,
   plan,
   sites,
   sitesWithDetails,
@@ -87,6 +90,7 @@ export function ClientLayoutProvider({
       value={{
         user,
         credits,
+        creditMovements,
         plan,
         sites,
         sitesWithDetails,
