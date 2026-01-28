@@ -95,7 +95,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto max-w-[1325px] space-y-8 px-2 lg:px-3">
       {/* Sites List */}
       <section>
         <h2 className="type-h3 text-foreground mb-4">Tous les sites Hopper</h2>
