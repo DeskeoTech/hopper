@@ -1,25 +1,29 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Building2,
   MapPin,
   Clock,
   Wifi,
-  Key,
-  FileText,
   ChevronLeft,
   ChevronRight,
+  X,
+  Users,
+  Coins,
+  DoorOpen,
+  Loader2,
+  ExternalLink,
+  ImageIcon,
 } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
+import { ResourceEquipmentBadge } from "@/components/admin/resource-equipment-badge"
 import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
+import { BookMeetingRoomModal } from "./book-meeting-room-modal"
 import { cn } from "@/lib/utils"
+import { getMeetingRoomsBySite } from "@/lib/actions/bookings"
+import type { MeetingRoomResource } from "@/lib/types/database"
 
 interface SiteInfoModalProps {
   open: boolean
@@ -28,11 +32,32 @@ interface SiteInfoModalProps {
 }
 
 export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoModalProps) {
-  const { selectedSiteWithDetails } = useClientLayout()
+  const { selectedSiteWithDetails, user, credits, sites, selectedSiteId } = useClientLayout()
   const site = siteProp ?? selectedSiteWithDetails
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [meetingRooms, setMeetingRooms] = useState<MeetingRoomResource[]>([])
+  const [loadingRooms, setLoadingRooms] = useState(false)
+  const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
-  if (!site) {
+  // Reset photo index when site changes
+  useEffect(() => {
+    setCurrentPhotoIndex(0)
+  }, [site?.id])
+
+  // Fetch meeting rooms when modal opens
+  useEffect(() => {
+    if (open && site?.id) {
+      setLoadingRooms(true)
+      getMeetingRoomsBySite(site.id).then((result) => {
+        setLoadingRooms(false)
+        if (!result.error) {
+          setMeetingRooms(result.rooms)
+        }
+      })
+    }
+  }, [open, site?.id])
+
+  if (!open || !site) {
     return null
   }
 
@@ -49,17 +74,33 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
     )
   }
 
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-hidden p-0">
-        <DialogHeader className="px-6 py-4">
-          <DialogTitle className="flex items-center gap-2 text-xl">
-            <Building2 className="h-5 w-5" />
-            {site.name}
-          </DialogTitle>
-        </DialogHeader>
+  const handleRoomClick = () => {
+    setBookingModalOpen(true)
+  }
 
-        <div className="max-h-[calc(90vh-140px)] overflow-y-auto">
+  // Generate Google Maps URL from address
+  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
+
+  return (
+    <>
+      <div className="fixed inset-0 z-50 bg-background">
+        {/* Header */}
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
+          <h1 className="font-heading text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
+            {site.name}
+          </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onOpenChange(false)}
+            className="h-9 w-9"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Content */}
+        <div className="h-[calc(100vh-57px)] overflow-y-auto overscroll-contain">
           {/* Photo gallery */}
           <div className="relative aspect-[16/9] bg-muted">
             {hasPhotos ? (
@@ -110,111 +151,151 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
             )}
           </div>
 
-          <div className="space-y-6 p-6">
-            {/* Address */}
-            <div className="flex items-start gap-3">
-              <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
-              <p className="text-foreground">{site.address}</p>
+          <div className="space-y-4 p-4 pb-12">
+            {/* Address - Clickable to Google Maps */}
+            <a
+              href={googleMapsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3 transition-colors hover:bg-muted"
+            >
+              <MapPin className="h-5 w-5 shrink-0 text-primary" />
+              <span className="flex-1 text-sm">{site.address}</span>
+              <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </a>
+
+            {/* Practical Info - Simplified */}
+            <div className="space-y-2">
+              {/* Hours */}
+              {(site.openingHours || (site.openingDays && site.openingDays.length > 0)) && (
+                <div className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3">
+                  <Clock className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    {site.openingHours && (
+                      <p className="text-sm font-medium">{site.openingHours}</p>
+                    )}
+                    {site.openingDays && site.openingDays.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {site.openingDays.join(", ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* WiFi */}
+              {site.wifiSsid && (
+                <div className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3">
+                  <Wifi className="h-5 w-5 shrink-0 text-primary" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium font-mono">{site.wifiSsid}</p>
+                    {site.wifiPassword && (
+                      <p className="text-xs text-muted-foreground font-mono">{site.wifiPassword}</p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Access */}
+              {site.access && (
+                <div className="rounded-[12px] bg-muted/50 p-3">
+                  <p className="text-sm">{site.access}</p>
+                </div>
+              )}
+
+              {/* Instructions */}
+              {site.instructions && (
+                <div className="rounded-[12px] bg-muted/50 p-3">
+                  <p className="text-sm whitespace-pre-wrap">{site.instructions}</p>
+                </div>
+              )}
             </div>
 
-            {/* Opening hours */}
-            {(site.openingHours ||
-              (site.openingDays && site.openingDays.length > 0)) && (
-              <div className="rounded-lg bg-muted/50 p-4">
-                <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                  <Clock className="h-4 w-4" />
-                  Horaires
-                </h3>
-                <div className="space-y-2">
-                  {site.openingHours && (
-                    <p className="text-sm text-foreground">{site.openingHours}</p>
-                  )}
-                  {site.openingDays && site.openingDays.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5">
-                      {site.openingDays.map((day) => (
-                        <span
-                          key={day}
-                          className="rounded-sm border border-border bg-background px-2 py-1 text-xs font-medium"
-                        >
-                          {day}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* WiFi */}
-            {site.wifiSsid && (
-              <div className="rounded-lg bg-muted/50 p-4">
-                <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                  <Wifi className="h-4 w-4" />
-                  WiFi
-                </h3>
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-xs text-muted-foreground">SSID</span>
-                    <p className="font-mono text-sm">{site.wifiSsid}</p>
-                  </div>
-                  {site.wifiPassword && (
-                    <div className="flex items-center gap-2">
-                      <Key className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <span className="text-xs text-muted-foreground">
-                          Mot de passe
-                        </span>
-                        <p className="font-mono text-sm">{site.wifiPassword}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Equipments */}
+            {/* Equipments - Simplified */}
             {site.equipments && site.equipments.length > 0 && (
-              <div>
-                <h3 className="mb-3 font-semibold">Equipements</h3>
-                <div className="flex flex-wrap gap-2">
-                  {site.equipments.map((equipment) => (
-                    <EquipmentBadge key={equipment} equipment={equipment} />
-                  ))}
-                </div>
+              <div className="flex flex-wrap gap-2">
+                {site.equipments.map((equipment) => (
+                  <EquipmentBadge key={equipment} equipment={equipment} />
+                ))}
               </div>
             )}
 
-            {/* Instructions & Access */}
-            {(site.instructions || site.access) && (
-              <div className="rounded-lg bg-muted/50 p-4">
-                <h3 className="mb-3 flex items-center gap-2 font-semibold">
-                  <FileText className="h-4 w-4" />
-                  Instructions & Acces
-                </h3>
-                <div className="space-y-3 text-sm">
-                  {site.instructions && (
-                    <div>
-                      <span className="text-xs text-muted-foreground">
-                        Instructions
-                      </span>
-                      <p className="mt-1 whitespace-pre-wrap">
-                        {site.instructions}
-                      </p>
-                    </div>
-                  )}
-                  {site.access && (
-                    <div>
-                      <span className="text-xs text-muted-foreground">Acces</span>
-                      <p className="mt-1">{site.access}</p>
-                    </div>
-                  )}
+            {/* Meeting Rooms Section - At the bottom, horizontal scroll cards */}
+            <div className="pt-2">
+              <h2 className="mb-3 flex items-center gap-2 font-heading text-xl font-bold">
+                <DoorOpen className="h-5 w-5 text-primary" />
+                Salles de réunion
+              </h2>
+
+              {loadingRooms ? (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
-              </div>
-            )}
+              ) : meetingRooms.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  Aucune salle disponible
+                </p>
+              ) : (
+                <div className="-mx-4 px-4">
+                  <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide">
+                    {meetingRooms.map((room) => (
+                      <button
+                        key={room.id}
+                        type="button"
+                        onClick={handleRoomClick}
+                        className="w-[180px] shrink-0 overflow-hidden rounded-[16px] border bg-card text-left transition-all hover:shadow-md hover:border-primary/20 active:scale-[0.98]"
+                      >
+                        {/* Room photo placeholder */}
+                        <div className="relative aspect-[4/3] bg-muted">
+                          <div className="flex h-full w-full items-center justify-center">
+                            <ImageIcon className="h-10 w-10 text-foreground/20" />
+                          </div>
+                        </div>
+                        {/* Room info */}
+                        <div className="p-3">
+                          <p className="font-medium text-sm truncate">{room.name}</p>
+                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
+                            {room.capacity && (
+                              <span className="flex items-center gap-1">
+                                <Users className="h-3 w-3" />
+                                {room.capacity}
+                              </span>
+                            )}
+                            {room.hourly_credit_rate && (
+                              <span className="flex items-center gap-1">
+                                <Coins className="h-3 w-3" />
+                                {room.hourly_credit_rate}/h
+                              </span>
+                            )}
+                          </div>
+                          {room.equipments && room.equipments.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1">
+                              {room.equipments.map((eq) => (
+                                <ResourceEquipmentBadge key={eq} equipment={eq} size="sm" />
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
+      </div>
 
-      </DialogContent>
-    </Dialog>
+      {/* Booking Modal */}
+      <BookMeetingRoomModal
+        open={bookingModalOpen}
+        onOpenChange={setBookingModalOpen}
+        userId={user.id}
+        companyId={user.company_id || ""}
+        mainSiteId={selectedSiteId}
+        remainingCredits={credits?.remaining || 0}
+        sites={sites}
+      />
+    </>
   )
 }

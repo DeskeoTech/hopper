@@ -158,8 +158,9 @@
      TYPOGRAPHY UTILITIES
      ======================================== */
 
-  /* Font Header - Brand font for titles */
-  .font-header {
+  /* Font Header/Heading - Brand font for titles (Program Narrow) */
+  .font-header,
+  .font-heading {
     font-family: var(--font-header);
     text-transform: uppercase;
     font-weight: 900;
