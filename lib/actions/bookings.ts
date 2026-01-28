@@ -315,7 +315,39 @@ export async function cancelBooking(
   return { success: true }
 }
 
-// Admin function for creating a new booking (no credit check)
+// Get the valid credit balance for a user (via their company)
+export async function getUserCreditBalance(
+  userId: string
+): Promise<{ credits: number; companyId: string | null; error?: string }> {
+  const supabase = await createClient()
+
+  // Get user's company_id
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("company_id")
+    .eq("id", userId)
+    .single()
+
+  if (userError || !user) {
+    return { credits: 0, companyId: null, error: "Utilisateur introuvable" }
+  }
+
+  if (!user.company_id) {
+    return { credits: 0, companyId: null, error: "Utilisateur sans entreprise associée" }
+  }
+
+  // Get valid credits using the SQL function
+  const { data: creditsResult, error: creditsError } = await supabase
+    .rpc("get_company_valid_credits", { p_company_id: user.company_id })
+
+  if (creditsError) {
+    return { credits: 0, companyId: user.company_id, error: creditsError.message }
+  }
+
+  return { credits: creditsResult ?? 0, companyId: user.company_id }
+}
+
+// Admin function for creating a new booking (with credit check)
 export async function createBookingFromAdmin(data: {
   userId: string
   resourceId: string
@@ -345,6 +377,57 @@ export async function createBookingFromAdmin(data: {
     }
   }
 
+  // Get resource hourly credit rate
+  const { data: resource, error: resourceError } = await supabase
+    .from("resources")
+    .select("hourly_credit_rate")
+    .eq("id", data.resourceId)
+    .single()
+
+  if (resourceError || !resource) {
+    return { error: "Ressource introuvable" }
+  }
+
+  // Calculate credits needed
+  const startDate = new Date(data.startDate)
+  const endDate = new Date(data.endDate)
+  const durationHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+  const hourlyRate = resource.hourly_credit_rate || 1
+  const creditsNeeded = Math.ceil(durationHours * hourlyRate)
+
+  // Check user's credit balance
+  const { credits: availableCredits, companyId, error: creditError } = await getUserCreditBalance(data.userId)
+
+  if (creditError) {
+    return { error: creditError }
+  }
+
+  if (!companyId) {
+    return { error: "Le solde de crédit de cet utilisateur est insuffisant (pas d'entreprise associée)" }
+  }
+
+  if (availableCredits < creditsNeeded) {
+    return {
+      error: `Le solde de crédit de cet utilisateur est insuffisant (${availableCredits} crédit${availableCredits !== 1 ? 's' : ''} disponible${availableCredits !== 1 ? 's' : ''}, ${creditsNeeded} requis)`
+    }
+  }
+
+  // Find the credit record to deduct from
+  const today = new Date().toISOString().split("T")[0]
+  const { data: creditRecord, error: creditRecordError } = await supabase
+    .from("credits")
+    .select("id, remaining_credits, contracts!inner(company_id, status)")
+    .eq("contracts.company_id", companyId)
+    .eq("contracts.status", "active")
+    .lte("period", today)
+    .order("period", { ascending: false })
+    .limit(1)
+    .single()
+
+  if (creditRecordError || !creditRecord) {
+    return { error: "Aucun crédit disponible pour cette période" }
+  }
+
   // Create booking
   const { data: booking, error: bookingError } = await supabase
     .from("bookings")
@@ -355,12 +438,28 @@ export async function createBookingFromAdmin(data: {
       end_date: data.endDate,
       status: data.status,
       notes: data.notes || null,
+      credits_used: creditsNeeded,
     })
     .select("id")
     .single()
 
   if (bookingError) {
     return { error: bookingError.message }
+  }
+
+  // Deduct credits
+  const { error: creditUpdateError } = await supabase
+    .from("credits")
+    .update({
+      remaining_credits: creditRecord.remaining_credits - creditsNeeded,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", creditRecord.id)
+
+  if (creditUpdateError) {
+    // Rollback booking if credit deduction fails
+    await supabase.from("bookings").delete().eq("id", booking.id)
+    return { error: "Erreur lors de la déduction des crédits" }
   }
 
   revalidatePath("/admin/reservations")
