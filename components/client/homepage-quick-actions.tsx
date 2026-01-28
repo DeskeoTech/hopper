@@ -23,14 +23,14 @@ export function HomepageQuickActions() {
           type="button"
           onClick={() => setBookingModalOpen(true)}
           className={cn(
-            "flex flex-col items-center gap-1.5 sm:gap-2 rounded-[16px] border border-border bg-card p-3 sm:p-4 shadow-sm transition-all",
-            "hover:shadow-md hover:border-primary/20 active:scale-[0.98]"
+            "flex flex-col items-center gap-1.5 sm:gap-2 rounded-[16px] bg-card p-3 sm:p-4 transition-all",
+            "hover:bg-card/80 active:scale-[0.98]"
           )}
         >
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-blue-50 text-blue-500">
             <CalendarPlus className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <span className="text-center text-[11px] sm:text-xs font-medium text-foreground leading-tight">
+          <span className="text-center text-[11px] sm:text-xs font-medium text-foreground/70 leading-tight">
             Réserver une salle
           </span>
         </button>
@@ -40,14 +40,14 @@ export function HomepageQuickActions() {
           type="button"
           onClick={() => setSiteInfoModalOpen(true)}
           className={cn(
-            "flex flex-col items-center gap-1.5 sm:gap-2 rounded-[16px] border border-border bg-card p-3 sm:p-4 shadow-sm transition-all",
-            "hover:shadow-md hover:border-primary/20 active:scale-[0.98]"
+            "flex flex-col items-center gap-1.5 sm:gap-2 rounded-[16px] bg-card p-3 sm:p-4 transition-all",
+            "hover:bg-card/80 active:scale-[0.98]"
           )}
         >
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-orange-100 text-orange-600">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-orange-50 text-orange-500">
             <Building2 className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
-          <span className="text-center text-[11px] sm:text-xs font-medium text-foreground leading-tight line-clamp-2">
+          <span className="text-center text-[11px] sm:text-xs font-medium text-foreground/70 leading-tight line-clamp-2">
             À propos de {siteName}
           </span>
         </button>

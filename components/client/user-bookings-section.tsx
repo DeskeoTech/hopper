@@ -1,3 +1,6 @@
+"use client"
+
+import { useMemo } from "react"
 import { CalendarX2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserBookingCard } from "./user-booking-card"
@@ -14,13 +17,18 @@ export function UserBookingsSection({
   userId,
   onBookClick,
 }: UserBookingsSectionProps) {
-  const now = new Date()
-  const upcomingBookings = bookings.filter(
-    (b) => new Date(b.start_date) >= now && b.status !== "cancelled"
-  )
-  const pastBookings = bookings.filter(
-    (b) => new Date(b.start_date) < now || b.status === "cancelled"
-  )
+  // Memoize filtered bookings to avoid recalculating on every render
+  const { upcomingBookings, pastBookings } = useMemo(() => {
+    const now = new Date()
+    return {
+      upcomingBookings: bookings.filter(
+        (b) => new Date(b.start_date) >= now && b.status !== "cancelled"
+      ),
+      pastBookings: bookings.filter(
+        (b) => new Date(b.start_date) < now || b.status === "cancelled"
+      ),
+    }
+  }, [bookings])
 
   return (
     <div className="space-y-6">
@@ -42,10 +50,12 @@ export function UserBookingsSection({
           <h3 className="text-xs font-medium uppercase tracking-wide text-foreground/50">
             À venir ({upcomingBookings.length})
           </h3>
-          <div className="space-y-3">
-            {upcomingBookings.map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={false} />
-            ))}
+          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 pb-2">
+              {upcomingBookings.map((booking) => (
+                <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={false} />
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -55,10 +65,12 @@ export function UserBookingsSection({
           <h3 className="text-xs font-medium uppercase tracking-wide text-foreground/50">
             Passées ({pastBookings.length})
           </h3>
-          <div className="space-y-3">
-            {pastBookings.slice(0, 10).map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={true} />
-            ))}
+          <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+            <div className="flex gap-3 pb-2">
+              {pastBookings.slice(0, 10).map((booking) => (
+                <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={true} />
+              ))}
+            </div>
           </div>
         </div>
       )}

@@ -49,34 +49,34 @@ export function HomepageSiteSelector() {
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex w-full items-center gap-2.5 sm:gap-3 rounded-[16px] border border-border bg-card px-3 sm:px-4 py-2.5 sm:py-3 text-left shadow-sm transition-all",
-          open && "ring-2 ring-primary/20"
+          "flex w-full items-center gap-2.5 sm:gap-3 rounded-[16px] bg-card px-3 sm:px-4 py-2.5 sm:py-3 text-left transition-all",
+          open && "ring-1 ring-foreground/10"
         )}
       >
-        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+          <MapPin className="h-4 w-4 sm:h-5 sm:w-5 text-foreground/50" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-header text-sm sm:text-base font-semibold text-foreground">
+          <p className="truncate font-header text-sm sm:text-base font-medium text-foreground">
             {selectedSite?.name || "Sélectionner un espace"}
           </p>
           {selectedSite?.address && (
-            <p className="truncate text-xs sm:text-sm text-muted-foreground">
+            <p className="truncate text-xs sm:text-sm text-foreground/50">
               {selectedSite.address}
             </p>
           )}
         </div>
         <ChevronDown className={cn(
-          "h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-muted-foreground transition-transform",
+          "h-4 w-4 sm:h-5 sm:w-5 shrink-0 text-foreground/30 transition-transform",
           open && "rotate-180"
         )} />
       </button>
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-[16px] border border-border bg-card shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-[16px] bg-card shadow-lg">
           {/* Search input */}
-          <div className="border-b border-border p-3">
+          <div className="border-b border-foreground/5 p-3">
             <div className="flex items-center gap-2 rounded-[12px] bg-muted px-3 py-2">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input

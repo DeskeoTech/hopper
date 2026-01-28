@@ -47,7 +47,6 @@ export async function updateUserProfile(userId: string, data: UserInfoFormData) 
     return { error: error.message }
   }
 
-  revalidatePath("/")
   revalidatePath("/compte")
   revalidatePath("/mon-compte")
   return { success: true }
@@ -94,8 +93,8 @@ export async function updateCompanyProfile(
     return { error: error.message }
   }
 
-  revalidatePath("/")
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   return { success: true }
 }
 
@@ -151,8 +150,8 @@ export async function uploadCompanyKbis(companyId: string, formData: FormData) {
     return { error: dbError.message }
   }
 
-  revalidatePath("/")
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   return { success: true, storagePath: fileName }
 }
 
@@ -188,7 +187,7 @@ export async function completeUserCompanyProfile(
     }
   }
 
-  revalidatePath("/")
   revalidatePath("/compte")
+  revalidatePath("/mon-compte")
   return { success: true }
 }
