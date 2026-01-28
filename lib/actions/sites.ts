@@ -191,7 +191,28 @@ export async function deleteSitePhoto(siteId: string, photoId: string, storagePa
   return { success: true }
 }
 
-export async function createSite(data: { name: string; address: string; status?: SiteStatus }) {
+export interface CreateSiteData {
+  // Step 1: Basic info
+  name: string
+  address: string
+  status: SiteStatus
+  access: string | null
+  instructions: string | null
+  wifi_ssid: string | null
+  wifi_password: string | null
+  is_nomad: boolean
+  // Step 2: Hours & Equipment
+  opening_days: string[] | null
+  opening_hours: string | null
+  equipments: Equipment[] | null
+  // Step 3: Contact
+  contact_first_name: string | null
+  contact_last_name: string | null
+  contact_email: string | null
+  contact_phone: string | null
+}
+
+export async function createSite(data: CreateSiteData) {
   const supabase = await createClient()
 
   const { data: site, error } = await supabase
@@ -200,6 +221,18 @@ export async function createSite(data: { name: string; address: string; status?:
       name: data.name,
       address: data.address,
       status: data.status || "open",
+      access: data.access || null,
+      instructions: data.instructions || null,
+      wifi_ssid: data.wifi_ssid || null,
+      wifi_password: data.wifi_password || null,
+      is_nomad: data.is_nomad,
+      opening_days: data.opening_days && data.opening_days.length > 0 ? data.opening_days : null,
+      opening_hours: data.opening_hours || null,
+      equipments: data.equipments && data.equipments.length > 0 ? data.equipments : null,
+      contact_first_name: data.contact_first_name || null,
+      contact_last_name: data.contact_last_name || null,
+      contact_email: data.contact_email || null,
+      contact_phone: data.contact_phone || null,
     })
     .select("id")
     .single()

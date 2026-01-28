@@ -11,6 +11,8 @@ export type Equipment =
   | "terrasse"
   | "rooftop"
 
+export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
+
 export interface Site {
   id: string
   name: string
@@ -19,7 +21,7 @@ export interface Site {
   longitude: number | null
   latitude: number | null
   instructions: string | null
-  opening_days: string[] | null
+  opening_days: DayOfWeek[] | null
   opening_hours: string | null
   wifi_ssid: string | null
   wifi_password: string | null
@@ -29,6 +31,7 @@ export interface Site {
   contact_last_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  is_nomad: boolean
   created_at: string
   updated_at: string
 }
