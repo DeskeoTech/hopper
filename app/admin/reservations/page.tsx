@@ -201,7 +201,7 @@ export default async function ReservationsPage({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
       <ReservationsHeader sites={sites} users={users} />
 
