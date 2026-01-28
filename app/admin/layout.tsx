@@ -13,9 +13,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await getUser()
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
       <AdminSidebar />
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-screen flex-col md:ml-64">
         <AdminHeader userEmail={user?.email} />
         <main className="flex-1 p-4 md:p-6">{children}</main>
       </div>

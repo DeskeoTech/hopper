@@ -5,7 +5,7 @@ import { SiteSelector } from "./site-selector"
 
 export function ClientSidebar() {
   return (
-    <aside className="hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
       {/* Site Selector Header */}
       <div className="flex h-16 items-center border-b border-brand-foreground/10 px-6">
         <SiteSelector />

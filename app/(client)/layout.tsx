@@ -258,9 +258,9 @@ export default async function ClientLayout({
           company={userProfile.companies as Company}
         />
       )}
-      <div className="flex min-h-screen bg-background">
+      <div className="min-h-screen bg-background">
         <ClientSidebar />
-        <div className="flex flex-1 flex-col">
+        <div className="flex min-h-screen flex-col md:ml-64">
           <div className="flex h-14 items-center px-4 md:hidden">
             <ClientMobileNav />
           </div>
