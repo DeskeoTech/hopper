@@ -6,8 +6,12 @@ import { CreditsHistoryModal } from "./credits-history-modal"
 import { useClientLayout } from "./client-layout-provider"
 
 export function UserCreditsCard() {
-  const { credits, creditMovements, user } = useClientLayout()
+  const { credits, creditMovements, user, plan } = useClientLayout()
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
+  const canBuyCredits = !isUserDisabled && hasActiveContract
 
   const displayValue = credits
     ? `${credits.remaining} crédit${credits.remaining > 1 ? "s" : ""} restant${credits.remaining > 1 ? "s" : ""}`
@@ -36,6 +40,7 @@ export function UserCreditsCard() {
         credits={credits}
         movements={creditMovements}
         userEmail={user.email}
+        canBuyCredits={canBuyCredits}
       />
     </>
   )

@@ -14,6 +14,10 @@ export function UserProfileCard() {
   const planName = plan?.name || null
   const remainingCredits = credits?.remaining ?? 0
 
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
+  const canBuyCredits = !isUserDisabled && hasActiveContract
+
   return (
     <>
       <div className="rounded-[16px] bg-card p-6 shadow-sm">
@@ -55,6 +59,7 @@ export function UserProfileCard() {
         credits={credits}
         movements={creditMovements}
         userEmail={user.email}
+        canBuyCredits={canBuyCredits}
       />
     </>
   )

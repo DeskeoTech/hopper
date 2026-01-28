@@ -103,8 +103,9 @@ const cafePlans: CafePlan[] = [
   },
 ]
 
-function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
+function PlanCard({ plan, userEmail, disabled }: { plan: CafePlan; userEmail: string; disabled?: boolean }) {
   const handleSubscribe = () => {
+    if (disabled) return
     const stripeUrl = `https://buy.stripe.com/${plan.priceId}?prefilled_email=${encodeURIComponent(userEmail)}`
     window.open(stripeUrl, "_blank")
   }
@@ -151,7 +152,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
         </div>
       </div>
 
-      <Button className="mt-4 w-full" onClick={handleSubscribe}>
+      <Button className="mt-4 w-full" onClick={handleSubscribe} disabled={disabled}>
         Souscrire
       </Button>
     </div>
@@ -159,10 +160,13 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
 }
 
 export function HopperCafePlans() {
-  const { user } = useClientLayout()
+  const { user, plan } = useClientLayout()
   const [frequency, setFrequency] = useState<"3days" | "5days">("5days")
 
-  const filteredPlans = cafePlans.filter((plan) => plan.frequency === frequency)
+  const filteredPlans = cafePlans.filter((p) => p.frequency === frequency)
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
+  const isRestricted = isUserDisabled || !hasActiveContract
 
   return (
     <div className="space-y-6">
@@ -185,16 +189,16 @@ export function HopperCafePlans() {
 
         <TabsContent value="3days" className="mt-0">
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
+            {filteredPlans.map((cafePlan) => (
+              <PlanCard key={cafePlan.id} plan={cafePlan} userEmail={user.email || ""} disabled={isRestricted} />
             ))}
           </div>
         </TabsContent>
 
         <TabsContent value="5days" className="mt-0">
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
+            {filteredPlans.map((cafePlan) => (
+              <PlanCard key={cafePlan.id} plan={cafePlan} userEmail={user.email || ""} disabled={isRestricted} />
             ))}
           </div>
         </TabsContent>

@@ -188,6 +188,21 @@ export async function createMeetingRoomBooking(data: {
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
+  // 0. Check user is not disabled
+  const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("status")
+    .eq("id", data.userId)
+    .single()
+
+  if (userError || !user) {
+    return { error: "Utilisateur introuvable" }
+  }
+
+  if (user.status === "disabled") {
+    return { error: "Votre compte est désactivé. Vous ne pouvez pas créer de réservation." }
+  }
+
   // 1. Check for conflicts (overlapping bookings)
   const { data: conflicts, error: conflictError } = await supabase
     .from("bookings")
@@ -357,6 +372,21 @@ export async function createBookingFromAdmin(data: {
   notes?: string
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
+
+  // Check user is not disabled
+  const { data: targetUser, error: userError } = await supabase
+    .from("users")
+    .select("status")
+    .eq("id", data.userId)
+    .single()
+
+  if (userError || !targetUser) {
+    return { error: "Utilisateur introuvable" }
+  }
+
+  if (targetUser.status === "disabled") {
+    return { error: "Cet utilisateur est désactivé. Impossible de créer une réservation pour ce compte." }
+  }
 
   // Check for conflicts (overlapping bookings) only for confirmed bookings
   if (data.status === "confirmed") {

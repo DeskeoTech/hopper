@@ -27,6 +27,7 @@ interface CreditsHistoryModalProps {
   credits: UserCredits | null
   movements: CreditMovement[]
   userEmail: string | null
+  canBuyCredits?: boolean
 }
 
 const typeLabels: Record<CreditMovementType | "purchase", string> = {
@@ -57,6 +58,7 @@ export function CreditsHistoryModal({
   credits,
   movements,
   userEmail,
+  canBuyCredits = true,
 }: CreditsHistoryModalProps) {
   const [typeFilter, setTypeFilter] = useState("all")
 
@@ -103,7 +105,9 @@ export function CreditsHistoryModal({
             <Button
               className="w-full"
               size="lg"
+              disabled={!canBuyCredits}
               onClick={() => {
+                if (!canBuyCredits) return
                 const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(userEmail || "")}`
                 window.open(stripeUrl, "_blank")
               }}

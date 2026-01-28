@@ -13,6 +13,7 @@ import {
   Coins,
   Check,
   X,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -47,8 +48,12 @@ import type { RoomBooking } from "@/lib/actions/bookings"
 type View = "planning" | "slots" | "confirm"
 
 export function RoomBookingPage() {
-  const { user, credits, selectedSiteId, selectedSite } = useClientLayout()
+  const { user, credits, selectedSiteId, selectedSite, plan } = useClientLayout()
   const remainingCredits = credits?.remaining || 0
+
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
+  const canBook = !isUserDisabled && hasActiveContract
 
   const [view, setView] = useState<View>("planning")
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -151,6 +156,7 @@ export function RoomBookingPage() {
 
   // Handle slot click from planning grid
   const handleSlotClick = (room: MeetingRoomResource, hour: number) => {
+    if (!canBook) return
     setSelectedRoom(room)
     setSelectedStartHour(hour)
     setSelectedSlots([])
@@ -331,6 +337,18 @@ export function RoomBookingPage() {
           </Button>
         </div>
       </div>
+
+      {/* Restriction Alert */}
+      {!canBook && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <p className="text-sm text-destructive">
+            {isUserDisabled
+              ? "Votre compte est désactivé. Vous ne pouvez pas créer de réservation."
+              : "Votre entreprise n'a pas de contrat actif. Contactez votre administrateur pour activer votre accès."}
+          </p>
+        </div>
+      )}
 
       {error && (
         <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">

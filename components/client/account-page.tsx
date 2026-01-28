@@ -17,6 +17,10 @@ export function AccountPage({ bookings }: AccountPageProps) {
   const { user, credits, sites, selectedSiteId, plan } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
+  const canBook = !isUserDisabled && hasActiveContract
+
   const handleBookCoworking = () => {
     const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(user.email || "")}`
     window.open(url, "_blank")
@@ -27,7 +31,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
       <UserProfileCard />
 
       {/* CTA for users without active contract */}
-      {!plan && (
+      {!hasActiveContract && !isUserDisabled && (
         <div className="rounded-[16px] bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <div className="flex-1 text-center sm:text-left">
@@ -50,7 +54,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
       <UserBookingsSection
         bookings={bookings}
         userId={user.id}
-        onBookClick={() => setBookingModalOpen(true)}
+        onBookClick={canBook ? () => setBookingModalOpen(true) : undefined}
       />
 
       <BookMeetingRoomModal

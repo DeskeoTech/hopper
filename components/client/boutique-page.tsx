@@ -1,14 +1,18 @@
 "use client"
 
-import { ShoppingCart, Coins, Building2, Coffee, ExternalLink } from "lucide-react"
+import { ShoppingCart, Coins, Building2, Coffee, ExternalLink, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useClientLayout } from "./client-layout-provider"
 import { HopperCafePlans } from "./hopper-cafe-plans"
 
 export function BoutiquePage() {
-  const { user } = useClientLayout()
+  const { user, plan } = useClientLayout()
+
+  const isUserDisabled = user.status === "disabled"
+  const hasActiveContract = plan !== null
 
   const handleBuyCredits = () => {
+    if (isUserDisabled || !hasActiveContract) return
     const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
     window.open(stripeUrl, "_blank")
   }
@@ -17,6 +21,12 @@ export function BoutiquePage() {
     const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(user.email || "")}`
     window.open(url, "_blank")
   }
+
+  // Show restriction message if user is disabled or has no active contract
+  const showRestriction = isUserDisabled || !hasActiveContract
+  const restrictionMessage = isUserDisabled
+    ? "Votre compte est désactivé. Vous ne pouvez pas effectuer d'achats."
+    : "Votre entreprise n'a pas de contrat actif. Contactez votre administrateur pour activer votre accès."
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 pt-6">
@@ -35,6 +45,14 @@ export function BoutiquePage() {
         </div>
       </div>
 
+      {/* Restriction Alert */}
+      {showRestriction && (
+        <div className="flex items-start gap-3 rounded-lg border border-destructive/20 bg-destructive/5 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-destructive" />
+          <p className="text-sm text-destructive">{restrictionMessage}</p>
+        </div>
+      )}
+
       {/* Credits and Coworking Section */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* Buy Credits Card */}
@@ -51,7 +69,11 @@ export function BoutiquePage() {
                 Achetez des crédits supplémentaires pour réserver des salles de
                 réunion
               </p>
-              <Button className="mt-4" onClick={handleBuyCredits}>
+              <Button
+                className="mt-4"
+                onClick={handleBuyCredits}
+                disabled={showRestriction}
+              >
                 <ShoppingCart className="mr-2 h-4 w-4" />
                 Acheter des Crédits
               </Button>
