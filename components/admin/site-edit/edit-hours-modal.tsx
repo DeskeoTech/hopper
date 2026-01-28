@@ -27,13 +27,13 @@ import {
 import { updateSiteHours } from "@/lib/actions/sites"
 
 const DAYS_OF_WEEK = [
-  { id: "Lundi", label: "Lundi" },
-  { id: "Mardi", label: "Mardi" },
-  { id: "Mercredi", label: "Mercredi" },
-  { id: "Jeudi", label: "Jeudi" },
-  { id: "Vendredi", label: "Vendredi" },
-  { id: "Samedi", label: "Samedi" },
-  { id: "Dimanche", label: "Dimanche" },
+  { id: "lundi", label: "Lundi" },
+  { id: "mardi", label: "Mardi" },
+  { id: "mercredi", label: "Mercredi" },
+  { id: "jeudi", label: "Jeudi" },
+  { id: "vendredi", label: "Vendredi" },
+  { id: "samedi", label: "Samedi" },
+  { id: "dimanche", label: "Dimanche" },
 ]
 
 interface EditHoursModalProps {
