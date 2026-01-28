@@ -9,6 +9,9 @@ import {
   Plus,
   ArrowRight,
   User,
+  Coffee,
+  Package,
+  ExternalLink,
 } from "lucide-react"
 import { startOfWeek, endOfWeek } from "date-fns"
 
@@ -138,6 +141,56 @@ export default async function AccueilPage() {
               </div>
             </article>
           </Link>
+
+          {/* App Client Hopper Café */}
+          <a
+            href="https://hopper-cafe.softr.app/login"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block"
+          >
+            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
+                  <Coffee className="h-6 w-6 text-foreground/60" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                    App Client Hopper Café
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Accès à l'application client
+                  </p>
+                </div>
+                <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </article>
+          </a>
+
+          {/* Réception des commandes */}
+          <a
+            href="https://achats-deskeo.softr.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block"
+          >
+            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
+                  <Package className="h-6 w-6 text-foreground/60" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-header text-lg text-foreground group-hover:text-primary transition-colors">
+                    Réception des commandes
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Gestion des achats Deskeo
+                  </p>
+                </div>
+                <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </article>
+          </a>
         </div>
       </section>
 
