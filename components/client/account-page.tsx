@@ -72,7 +72,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
                   Gérer mon entreprise
                 </h3>
                 <p className="type-body-sm text-muted-foreground">
-                  Gérer les utilisateurs et les rôles
+                  {user.companies?.name || "Gérer les utilisateurs et les rôles"}
                 </p>
               </div>
             </div>

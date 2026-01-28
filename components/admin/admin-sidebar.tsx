@@ -15,7 +15,7 @@ export function AdminSidebar() {
     router.refresh()
   }
   return (
-    <aside className="hidden md:flex w-64 flex-col bg-brand text-brand-foreground">
+    <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
       {/* Logo */}
       <div className="flex h-16 items-center gap-3 border-b border-brand-foreground/10 px-6">
         <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand-accent">
