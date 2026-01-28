@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation"
 import { LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
-import { ClientMobileNav } from "./client-mobile-nav"
 
 interface ClientHeaderProps {
   userEmail?: string | null
@@ -22,13 +21,9 @@ export function ClientHeader({ userEmail }: ClientHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center justify-between bg-[#F1E8DC] px-4 md:h-20">
-      {/* Mobile Nav - Left */}
-      <div className="md:hidden">
-        <ClientMobileNav />
-      </div>
-      {/* Spacer for desktop */}
-      <div className="hidden md:block md:w-[200px]" />
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-[#F1E8DC] px-4 md:h-20">
+      {/* Spacer for left side */}
+      <div className="w-[100px] md:w-[200px]" />
 
       {/* Centered Logo */}
       <div className="absolute left-1/2 -translate-x-1/2">
@@ -37,7 +32,7 @@ export function ClientHeader({ userEmail }: ClientHeaderProps) {
           alt="Hopper Logo"
           width={400}
           height={160}
-          className="h-8 w-auto md:h-16"
+          className="h-8 w-auto md:h-12"
           priority
         />
       </div>

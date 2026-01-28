@@ -12,18 +12,10 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile
+  // Fetch only user ID (user profile is already in layout context)
   const { data: userProfile } = await supabase
     .from("users")
-    .select(
-      `
-      id,
-      first_name,
-      last_name,
-      company_id,
-      companies (name)
-    `
-    )
+    .select("id")
     .eq("email", authUser.email)
     .single()
 
@@ -52,6 +44,7 @@ export default async function ComptePage() {
     .limit(50)
 
   // Transform bookings to flat structure with details
+  // Note: user fields are not used in client booking cards (only in admin views)
   const transformedBookings: BookingWithDetails[] =
     bookings?.map((b) => {
       const resource = b.resources as {
@@ -83,11 +76,11 @@ export default async function ComptePage() {
         resource_capacity: resource?.capacity || null,
         site_id: resource?.site_id || null,
         site_name: resource?.sites?.name || null,
-        user_first_name: userProfile.first_name,
-        user_last_name: userProfile.last_name,
-        user_email: authUser.email,
-        company_id: userProfile.company_id,
-        company_name: userProfile.companies?.name || null,
+        user_first_name: null,
+        user_last_name: null,
+        user_email: null,
+        company_id: null,
+        company_name: null,
       }
     }) || []
 

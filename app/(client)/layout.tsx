@@ -3,6 +3,7 @@ import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientSidebar } from "@/components/client/client-sidebar"
 import { ClientHeader } from "@/components/client/client-header"
+import { ClientBottomTabs } from "@/components/client/client-bottom-tabs"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
@@ -279,7 +280,8 @@ export default async function ClientLayout({
         <ClientSidebar />
         <div className="flex min-h-screen flex-col md:ml-64">
           <ClientHeader userEmail={authUser.email} />
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className="flex-1 pb-20 md:pb-0">{children}</main>
+          <ClientBottomTabs />
         </div>
       </div>
     </ClientLayoutProvider>

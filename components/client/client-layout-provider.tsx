@@ -1,7 +1,7 @@
 "use client"
 
-import { createContext, useContext, type ReactNode } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { createContext, useContext, useState, type ReactNode } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement } from "@/lib/types/database"
 
 interface Site {
@@ -66,23 +66,30 @@ export function ClientLayoutProvider({
   plan,
   sites,
   sitesWithDetails,
-  selectedSiteId,
+  selectedSiteId: initialSelectedSiteId,
   isAdmin,
   isDeskeoEmployee,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
-  const selectedSite = sites.find((s) => s.id === selectedSiteId) || null
-  const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === selectedSiteId) || null
+  // Use local state for selectedSiteId to update immediately on selection
+  const [currentSelectedSiteId, setCurrentSelectedSiteId] = useState(initialSelectedSiteId)
+
+  const selectedSite = sites.find((s) => s.id === currentSelectedSiteId) || null
+  const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === currentSelectedSiteId) || null
   const isNomad = plan?.name?.toUpperCase().includes("NOMAD") ?? false
   const mainSiteId = user.companies?.main_site_id || null
   const canManageCompany = user.role === "admin" && user.companies?.company_type === "multi_employee"
 
   const setSelectedSiteId = (siteId: string) => {
+    // Update local state immediately for instant UI feedback
+    setCurrentSelectedSiteId(siteId)
+    // Also update URL for bookmarking/sharing
     const params = new URLSearchParams(searchParams.toString())
     params.set("site", siteId)
-    router.push(`?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   return (
@@ -94,7 +101,7 @@ export function ClientLayoutProvider({
         plan,
         sites,
         sitesWithDetails,
-        selectedSiteId,
+        selectedSiteId: currentSelectedSiteId,
         selectedSite,
         selectedSiteWithDetails,
         setSelectedSiteId,

@@ -29,17 +29,17 @@ export function BoutiquePage() {
     : "Votre entreprise n'a pas de contrat actif. Contactez votre administrateur pour activer votre accès."
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 pt-6">
+    <div className="mx-auto w-full max-w-5xl space-y-5 px-4 pt-4 md:px-0 md:pt-6">
       {/* Page Header */}
-      <div className="flex items-center gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <ShoppingCart className="h-7 w-7 text-primary" />
+      <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <ShoppingCart className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
         </div>
         <div>
-          <h1 className="font-header text-2xl font-bold text-foreground">
+          <h1 className="font-header text-xl sm:text-2xl font-bold text-foreground">
             Boutique
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Achetez des crédits et abonnez-vous à nos services
           </p>
         </div>
@@ -56,21 +56,22 @@ export function BoutiquePage() {
       {/* Credits and Coworking Section */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* Buy Credits Card */}
-        <div className="rounded-[16px] border bg-card p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-100">
-              <Coins className="h-6 w-6 text-amber-600" />
+        <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-amber-100">
+              <Coins className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-header text-lg font-bold text-foreground">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-header text-base sm:text-lg font-bold text-foreground">
                 Crédits
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                 Achetez des crédits supplémentaires pour réserver des salles de
                 réunion
               </p>
               <Button
-                className="mt-4"
+                className="mt-3 sm:mt-4 w-full sm:w-auto"
+                size="sm"
                 onClick={handleBuyCredits}
                 disabled={showRestriction}
               >
@@ -82,19 +83,19 @@ export function BoutiquePage() {
         </div>
 
         {/* Book Coworking Card */}
-        <div className="rounded-[16px] border bg-card p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-100">
-              <Building2 className="h-6 w-6 text-blue-600" />
+        <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-blue-100">
+              <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
             </div>
-            <div className="flex-1">
-              <h2 className="font-header text-lg font-bold text-foreground">
+            <div className="flex-1 min-w-0">
+              <h2 className="font-header text-base sm:text-lg font-bold text-foreground">
                 Hopper Coworking
               </h2>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                 Réservez un espace de coworking dans nos différents sites
               </p>
-              <Button className="mt-4" variant="outline" onClick={handleBookCoworking}>
+              <Button className="mt-3 sm:mt-4 w-full sm:w-auto" size="sm" variant="outline" onClick={handleBookCoworking}>
                 <ExternalLink className="mr-2 h-4 w-4" />
                 Réserver maintenant
               </Button>
@@ -104,16 +105,16 @@ export function BoutiquePage() {
       </div>
 
       {/* Hopper Café Section */}
-      <div className="rounded-[16px] border bg-card p-6 shadow-sm">
-        <div className="flex items-start gap-4 mb-6">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-orange-100">
-            <Coffee className="h-6 w-6 text-orange-600" />
+      <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+        <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-orange-100">
+            <Coffee className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
           </div>
           <div>
-            <h2 className="font-header text-lg font-bold text-foreground">
+            <h2 className="font-header text-base sm:text-lg font-bold text-foreground">
               Hopper Café
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Abonnez-vous à nos formules boissons et profitez de vos cafés et
               jus préférés chaque jour
             </p>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Loader2, Users, Mail, Phone, Shield, UserCircle, Plus } from "lucide-react"
+import { Loader2, Users, Shield, UserCircle, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,14 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import {
   getCompanyUsers,
   getCompanySeatsInfo,
@@ -162,13 +154,13 @@ export function MonEntrepriseTab() {
   const getStatusBadge = (status: string | null) => {
     if (status === "disabled") {
       return (
-        <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
+        <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/50">
           Désactivé
         </span>
       )
     }
     return (
-      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-600">
         Actif
       </span>
     )
@@ -191,11 +183,11 @@ export function MonEntrepriseTab() {
     <>
       <div className="space-y-6">
         {/* Header with company name and seats */}
-        <div className="rounded-[16px] bg-card p-6 shadow-sm">
+        <div className="rounded-[16px] bg-card p-4 sm:p-6">
           <div className="mb-4 flex items-center gap-2">
-            <Users className="h-5 w-5 text-foreground/50" />
-            <h2 className="text-lg font-semibold">
-              {companyName ? `Gérer ${companyName}` : "Gérer mon entreprise"}
+            <Users className="h-4 w-4 text-foreground/40" />
+            <h2 className="text-sm font-medium text-foreground/70">
+              {companyName || "Mon entreprise"}
             </h2>
           </div>
 
@@ -203,19 +195,20 @@ export function MonEntrepriseTab() {
           {seatsInfo && seatsInfo.maxSeats > 0 && (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 max-w-md">
-                <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Sièges utilisés</span>
-                  <span className="font-medium">{seatsInfo.activeUsers} / {seatsInfo.maxSeats}</span>
+                <div className="flex items-center justify-between text-xs mb-1.5">
+                  <span className="text-foreground/50">Sièges utilisés</span>
+                  <span className="font-medium text-foreground/70">{seatsInfo.activeUsers} / {seatsInfo.maxSeats}</span>
                 </div>
-                <Progress value={progressValue} className="h-2" />
+                <Progress value={progressValue} className="h-1.5" />
               </div>
               <Button
                 disabled={!canAddUser}
                 onClick={() => setAddUserOpen(true)}
+                size="sm"
                 className="shrink-0"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Ajouter un utilisateur
+                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                Ajouter
               </Button>
             </div>
           )}
@@ -227,119 +220,100 @@ export function MonEntrepriseTab() {
           </div>
         )}
 
-        {/* Users table */}
-        <div className="rounded-[16px] bg-card p-6 shadow-sm">
-          <h3 className="mb-4 text-lg font-semibold">Utilisateurs</h3>
+        {/* Users list */}
+        <div className="rounded-[16px] bg-card p-4 sm:p-6">
+          <h3 className="mb-4 text-sm font-medium text-foreground/70">Utilisateurs</h3>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-foreground/30" />
             </div>
           ) : users.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
+            <div className="py-8 text-center text-sm text-foreground/50">
               Aucun utilisateur trouvé
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead className="hidden sm:table-cell">Email</TableHead>
-                    <TableHead className="hidden md:table-cell">Téléphone</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {users.map((user, index) => {
-                    const isCurrentUser = user.id === currentUser.id
-                    const isDisabled = user.status === "disabled"
-                    const isUpdating = updatingUserId === user.id
+            <div className="space-y-2">
+              {users.map((user) => {
+                const isCurrentUser = user.id === currentUser.id
+                const isDisabled = user.status === "disabled"
+                const isUpdating = updatingUserId === user.id
+                const userName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"
 
-                    return (
-                      <TableRow
-                        key={user.id}
-                        className={index % 2 === 1 ? "bg-[#D9D0C3]" : ""}
-                      >
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {user.role === "admin" ? (
-                              <Shield className="h-4 w-4 text-muted-foreground shrink-0" />
-                            ) : (
-                              <UserCircle className="h-4 w-4 text-muted-foreground shrink-0" />
-                            )}
-                            <span className="font-medium whitespace-nowrap">
-                              {[user.first_name, user.last_name]
-                                .filter(Boolean)
-                                .join(" ") || "—"}
-                              {isCurrentUser && (
-                                <span className="ml-2 text-xs text-muted-foreground">
-                                  (vous)
-                                </span>
-                              )}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Mail className="h-3.5 w-3.5 shrink-0" />
-                            <span className="whitespace-nowrap">{user.email || "—"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Phone className="h-3.5 w-3.5 shrink-0" />
-                            <span className="whitespace-nowrap">{user.phone || "—"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {isCurrentUser || isDisabled ? (
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">
-                              {getRoleLabel(user.role)}
-                            </span>
+                return (
+                  <div
+                    key={user.id}
+                    className="flex items-center gap-3 rounded-[12px] bg-background/50 p-3"
+                  >
+                    {/* Avatar/Icon */}
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                      {user.role === "admin" ? (
+                        <Shield className="h-4 w-4 text-foreground/40" />
+                      ) : (
+                        <UserCircle className="h-4 w-4 text-foreground/40" />
+                      )}
+                    </div>
+
+                    {/* User info */}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-medium text-foreground">
+                          {userName}
+                        </span>
+                        {isCurrentUser && (
+                          <span className="text-[10px] text-foreground/40">(vous)</span>
+                        )}
+                        {getStatusBadge(user.status)}
+                      </div>
+                      <p className="truncate text-xs text-foreground/50">
+                        {user.email || "—"}
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex shrink-0 items-center gap-2">
+                      {/* Role selector - only on larger screens or if editable */}
+                      {!isCurrentUser && !isDisabled ? (
+                        <Select
+                          value={user.role || "user"}
+                          onValueChange={(value: "admin" | "user") =>
+                            handleRoleChange(user.id, value)
+                          }
+                          disabled={isUpdating}
+                        >
+                          <SelectTrigger className="h-7 w-auto gap-1 border-0 bg-foreground/5 px-2 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="user">Utilisateur</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <span className="text-xs text-foreground/40">
+                          {getRoleLabel(user.role)}
+                        </span>
+                      )}
+
+                      {/* Deactivate button */}
+                      {!isCurrentUser && !isDisabled && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeactivate(user.id)}
+                          disabled={isUpdating}
+                          className="rounded-full bg-foreground/5 px-2 py-1 text-[10px] text-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            <Select
-                              value={user.role || "user"}
-                              onValueChange={(value: "admin" | "user") =>
-                                handleRoleChange(user.id, value)
-                              }
-                              disabled={isUpdating}
-                            >
-                              <SelectTrigger className="h-8 w-[130px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="user">Utilisateur</SelectItem>
-                                <SelectItem value="admin">Administrateur</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            "Désactiver"
                           )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(user.status)}</TableCell>
-                        <TableCell className="text-right">
-                          {!isCurrentUser && !isDisabled && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeactivate(user.id)}
-                              disabled={isUpdating}
-                              className="text-destructive hover:bg-destructive hover:text-destructive-foreground whitespace-nowrap"
-                            >
-                              {isUpdating ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
-                              ) : (
-                                "Désactiver"
-                              )}
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>

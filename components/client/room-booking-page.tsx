@@ -249,9 +249,9 @@ export function RoomBookingPage() {
 
   if (!selectedSiteId) {
     return (
-      <div className="flex flex-col items-center justify-center py-12">
+      <div className="flex flex-col items-center justify-center py-12 px-4">
         <MapPin className="h-12 w-12 text-muted-foreground/50" />
-        <p className="mt-4 type-body text-muted-foreground">
+        <p className="mt-4 text-sm text-muted-foreground text-center">
           Sélectionnez un site dans le menu pour voir les salles disponibles
         </p>
       </div>
@@ -259,9 +259,9 @@ export function RoomBookingPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 px-4 pt-4 md:px-0 md:pt-6">
       {/* Credits indicator */}
-      <div className="flex items-center justify-between rounded-lg border bg-card p-3 sm:p-4">
+      <div className="flex items-center justify-between rounded-[16px] border bg-card p-3 sm:p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
             <Coins className="h-5 w-5 text-primary" />
@@ -351,32 +351,32 @@ export function RoomBookingPage() {
       )}
 
       {error && (
-        <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
+        <div className="rounded-[12px] bg-destructive/10 p-3 text-sm text-destructive">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="rounded-lg bg-green-100 p-4 text-center">
+        <div className="rounded-[16px] bg-green-100 p-4 text-center">
           <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-green-500">
             <Check className="h-5 w-5 text-white" />
           </div>
-          <p className="type-body font-medium text-green-800">
+          <p className="text-sm font-medium text-green-800">
             Votre salle a été réservée avec succès !
           </p>
         </div>
       )}
 
       {/* Main content */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
         {/* Planning Grid */}
-        <div className={`rounded-lg bg-card p-4 sm:p-6 ${view === "planning" ? "lg:col-span-3" : "lg:col-span-2"}`}>
+        <div className={`rounded-[16px] bg-card p-3 sm:p-4 md:p-6 ${view === "planning" ? "lg:col-span-3" : "lg:col-span-2"}`}>
           {loadingRooms || loadingBookings ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : rooms.length === 0 ? (
-            <p className="py-8 text-center type-body text-muted-foreground">
+            <p className="py-8 text-center text-sm text-muted-foreground">
               Aucune salle disponible sur ce site
             </p>
           ) : (
@@ -391,7 +391,7 @@ export function RoomBookingPage() {
 
         {/* Side panel for slots/confirm */}
         {view !== "planning" && selectedRoom && (
-          <div className="rounded-lg bg-card p-4 sm:p-6 lg:col-span-1">
+          <div className="rounded-[16px] bg-card p-3 sm:p-4 md:p-6 lg:col-span-1">
             {/* Panel header */}
             <div className="flex items-center justify-between mb-4">
               <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8">

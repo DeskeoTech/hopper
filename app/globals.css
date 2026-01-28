@@ -158,12 +158,13 @@
      TYPOGRAPHY UTILITIES
      ======================================== */
 
-  /* Font Header - Brand font for titles */
-  .font-header {
+  /* Font Header/Heading - Brand font for titles (Program Narrow) */
+  .font-header,
+  .font-heading {
     font-family: var(--font-header);
     text-transform: uppercase;
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -181,7 +182,7 @@
     font-size: clamp(36px, 4vw, 64px);
     text-transform: uppercase;
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }
@@ -191,7 +192,7 @@
     font-size: clamp(28px, 3vw, 44px);
     text-transform: uppercase;
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }
@@ -201,7 +202,7 @@
     font-size: 24px;
     text-transform: uppercase;
     font-weight: 900;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.05em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }
