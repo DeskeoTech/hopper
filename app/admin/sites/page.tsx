@@ -95,19 +95,28 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
   }
 
   return (
-    <div className="mx-auto max-w-[1325px] space-y-8 px-2 lg:px-3">
+    <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
+            <Building2 className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h1 className="type-h2 text-foreground">Sites</h1>
+            <p className="mt-1 text-muted-foreground">Gérez vos espaces de coworking</p>
+          </div>
+        </div>
+        <CreateSiteModal />
+      </div>
+
+      {/* Search */}
+      <Suspense fallback={<Skeleton className="h-10 w-full" />}>
+        <SitesSearch />
+      </Suspense>
+
       {/* Sites List */}
       <section>
-        <h2 className="type-h3 text-foreground mb-4">Tous les sites Hopper</h2>
-
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
-            <Suspense fallback={<Skeleton className="h-10 w-full" />}>
-              <SitesSearch />
-            </Suspense>
-          </div>
-          <CreateSiteModal />
-        </div>
 
         {filteredSites.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
