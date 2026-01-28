@@ -121,13 +121,6 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         <TicketsSearch />
       </Suspense>
 
-      {/* Results count */}
-      {ticketsWithDetails && (
-        <p className="text-sm text-muted-foreground">
-          {ticketsWithDetails.length} ticket{ticketsWithDetails.length !== 1 ? "s" : ""} trouvé{ticketsWithDetails.length !== 1 ? "s" : ""}
-        </p>
-      )}
-
       {/* Tickets Table */}
       {ticketsWithDetails && ticketsWithDetails.length > 0 ? (
         <TicketsTable tickets={ticketsWithDetails} />
