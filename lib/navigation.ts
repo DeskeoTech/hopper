@@ -5,10 +5,10 @@ import {
   LayoutDashboard,
   Home,
   DoorOpen,
-  Monitor,
   User,
   Newspaper,
   Headphones,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react"
 
@@ -29,8 +29,8 @@ export const adminNavigation: NavItem[] = [
 
 export const clientNavigation: NavItem[] = [
   { name: "Accueil", href: "/compte", icon: Home },
-  { name: "Mon Compte", href: "/mon-compte", icon: User },
   { name: "Fil d'actualité", href: "/actualites", icon: Newspaper },
   { name: "Salles", href: "/salles", icon: DoorOpen },
-  { name: "Postes de travail", href: "/postes", icon: Monitor },
+  { name: "Boutique", href: "/boutique", icon: ShoppingCart },
+  { name: "Mon Compte", href: "/mon-compte", icon: User },
 ]
