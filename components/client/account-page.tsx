@@ -1,10 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { Settings, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Users, ChevronRight } from "lucide-react"
 import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { UserCreditsCard } from "./user-credits-card"
@@ -19,63 +16,29 @@ interface AccountPageProps {
 }
 
 export function AccountPage({ bookings }: AccountPageProps) {
-  const { user, credits, plan, sites, selectedSiteId, isDeskeoEmployee, canManageCompany } = useClientLayout()
+  const { user, credits, plan, sites, selectedSiteId, canManageCompany } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [manageCompanyModalOpen, setManageCompanyModalOpen] = useState(false)
 
   return (
-    <div className="relative pt-6">
-      {isDeskeoEmployee && (
-        <div className="absolute right-0 top-0">
-          <Button asChild size="sm">
-            <Link href="/admin">
-              <Settings className="mr-2 size-4" />
-              Dashboard Deskeo
-            </Link>
-          </Button>
-        </div>
-      )}
-
-      {/* Logo Hopper */}
-      <div className="flex justify-center mb-6">
-        <Image
-          src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
-          alt="Hopper Logo"
-          width={200}
-          height={80}
-          className="h-12 w-auto sm:h-16 md:h-20"
-          priority
-        />
-      </div>
-
-      <div className="mx-auto w-full max-w-3xl space-y-6">
-        <div className="text-center pt-2">
-          <h1 className="type-h2 text-foreground">Mon espace</h1>
-          <p className="mt-2 type-body text-muted-foreground">
-            Bienvenue sur votre espace client Hopper
-          </p>
-        </div>
-
+    <div className="mx-auto w-full max-w-3xl space-y-6 pt-6">
         <UserProfileCard user={user} />
 
         {canManageCompany && (
           <button
             onClick={() => setManageCompanyModalOpen(true)}
-            className="w-full rounded-[20px] bg-card p-4 sm:p-6 text-left transition-colors hover:bg-muted/50"
+            className="group relative w-full rounded-[16px] bg-card p-5 text-left shadow-sm transition-all duration-200 hover:shadow-md"
           >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-12 sm:w-12">
-                <Users className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-              </div>
-              <div>
-                <h3 className="text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
-                  Gérer mon entreprise
-                </h3>
-                <p className="type-body-sm text-muted-foreground">
-                  {user.companies?.name || "Gérer les utilisateurs et les rôles"}
-                </p>
-              </div>
+            <div className="mb-3">
+              <Users className="h-6 w-6 text-foreground/30" />
             </div>
+            <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
+              Gérer mon entreprise
+            </p>
+            <p className="mt-1 font-medium text-foreground">
+              {user.companies?.name || "Gérer les utilisateurs et les rôles"}
+            </p>
+            <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/30 transition-transform duration-200 group-hover:translate-x-1" />
           </button>
         )}
 
@@ -109,7 +72,6 @@ export function AccountPage({ bookings }: AccountPageProps) {
             currentUserId={user.id}
           />
         )}
-      </div>
     </div>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Ticket } from "lucide-react"
+import { Ticket, ChevronRight } from "lucide-react"
 import { CreditsHistoryModal } from "./credits-history-modal"
 import { useClientLayout } from "./client-layout-provider"
 
@@ -18,19 +18,16 @@ export function UserCreditsCard() {
       <button
         type="button"
         onClick={() => setIsModalOpen(true)}
-        className="w-full rounded-[20px] bg-card p-4 text-left transition-colors hover:bg-muted/50 sm:p-6"
+        className="group relative w-full rounded-[16px] bg-card p-5 text-left shadow-sm transition-all duration-200 hover:shadow-md"
       >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted sm:h-12 sm:w-12">
-            <Ticket className="h-5 w-5 text-foreground sm:h-6 sm:w-6" />
-          </div>
-          <div>
-            <h3 className="text-xs font-bold uppercase tracking-wide text-foreground sm:text-sm">
-              Mes crédits
-            </h3>
-            <p className="type-body-sm text-muted-foreground">{displayValue}</p>
-          </div>
+        <div className="mb-3">
+          <Ticket className="h-6 w-6 text-foreground/30" />
         </div>
+        <p className="text-xs font-medium uppercase tracking-wide text-foreground/60">
+          Mes crédits
+        </p>
+        <p className="mt-1 font-medium text-foreground">{displayValue}</p>
+        <ChevronRight className="absolute right-4 top-1/2 h-5 w-5 -translate-y-1/2 text-foreground/30 transition-transform duration-200 group-hover:translate-x-1" />
       </button>
 
       <CreditsHistoryModal

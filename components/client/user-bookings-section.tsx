@@ -1,4 +1,4 @@
-import { Calendar, CalendarX2 } from "lucide-react"
+import { CalendarX2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { UserBookingCard } from "./user-booking-card"
 import type { BookingWithDetails } from "@/lib/types/database"
@@ -24,21 +24,27 @@ export function UserBookingsSection({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2">
-        <Calendar className="h-5 w-5" />
-        <h2 className="text-base font-bold uppercase tracking-wide text-foreground sm:text-lg">
-          Mes réservations
-        </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="font-header text-xl text-foreground">Salles de réunion</h2>
+        {onBookClick && (
+          <Button
+            variant="outline"
+            onClick={onBookClick}
+            className="rounded-full border-foreground/20 transition-all duration-200 hover:bg-foreground hover:text-primary-foreground"
+          >
+            Réserver
+          </Button>
+        )}
       </div>
 
       {upcomingBookings.length > 0 && (
         <div className="space-y-3">
-          <h3 className="type-small font-medium uppercase tracking-wide text-muted-foreground">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-foreground/50">
             À venir ({upcomingBookings.length})
           </h3>
           <div className="space-y-3">
             {upcomingBookings.map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} userId={userId} />
+              <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={false} />
             ))}
           </div>
         </div>
@@ -46,27 +52,31 @@ export function UserBookingsSection({
 
       {pastBookings.length > 0 && (
         <div className="space-y-3">
-          <h3 className="type-small font-medium uppercase tracking-wide text-muted-foreground">
+          <h3 className="text-xs font-medium uppercase tracking-wide text-foreground/50">
             Passées ({pastBookings.length})
           </h3>
-          <div className="space-y-3 opacity-75">
+          <div className="space-y-3">
             {pastBookings.slice(0, 10).map((booking) => (
-              <UserBookingCard key={booking.id} booking={booking} userId={userId} />
+              <UserBookingCard key={booking.id} booking={booking} userId={userId} isPast={true} />
             ))}
           </div>
         </div>
       )}
 
       {bookings.length === 0 && (
-        <div className="rounded-[20px] bg-card p-8 text-center sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-            <CalendarX2 className="h-8 w-8 text-muted-foreground" />
+        <div className="rounded-[16px] bg-card p-8 text-center shadow-sm sm:p-12">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F1E8DC]">
+            <CalendarX2 className="h-8 w-8 text-foreground/50" />
           </div>
-          <p className="mt-6 type-body text-muted-foreground">
+          <p className="mt-6 text-foreground/70">
             Vous n&apos;avez pas encore de réservations
           </p>
           {onBookClick && (
-            <Button onClick={onBookClick} className="mt-6 uppercase" size="lg">
+            <Button
+              onClick={onBookClick}
+              className="mt-6 rounded-full bg-foreground text-primary-foreground hover:bg-foreground/90"
+              size="lg"
+            >
               Faire une réservation
             </Button>
           )}
