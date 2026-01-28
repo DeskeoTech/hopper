@@ -1,19 +1,10 @@
 "use client"
 
-import { LogOut, MapPin } from "lucide-react"
-import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { MapPin, User } from "lucide-react"
 import { NavigationItems } from "./navigation-items"
-import { createClient } from "@/lib/supabase/client"
 
 export function AdminSidebar() {
-  const router = useRouter()
-
-  const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    router.push("/login")
-    router.refresh()
-  }
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-brand text-brand-foreground md:flex">
       {/* Logo */}
@@ -34,13 +25,13 @@ export function AdminSidebar() {
 
       {/* Footer */}
       <div className="border-t border-brand-foreground/10 p-4">
-        <button
-          onClick={handleLogout}
-          className="mb-3 flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand-foreground/50 transition-colors hover:bg-brand-foreground/5 hover:text-brand-foreground/70"
+        <Link
+          href="/compte"
+          className="mb-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand-foreground/50 transition-colors hover:bg-brand-foreground/5 hover:text-brand-foreground/70"
         >
-          <LogOut className="h-3.5 w-3.5" />
-          <span>Déconnexion</span>
-        </button>
+          <User className="h-3.5 w-3.5" />
+          Dashboard Utilisateur
+        </Link>
         <div className="text-xs text-brand-foreground/40">
           <p>Hopper Coworking</p>
           <p>© 2026 Deskeo</p>
