@@ -41,6 +41,7 @@ export default async function ComptePage() {
         id,
         name,
         type,
+        capacity,
         site_id,
         sites!left (id, name)
       )
@@ -57,6 +58,7 @@ export default async function ComptePage() {
         id: string
         name: string
         type: ResourceType
+        capacity: number | null
         site_id: string
         sites: { id: string; name: string } | null
       } | null
@@ -78,6 +80,7 @@ export default async function ComptePage() {
         updated_at: b.updated_at,
         resource_name: resource?.name || null,
         resource_type: resource?.type || null,
+        resource_capacity: resource?.capacity || null,
         site_id: resource?.site_id || null,
         site_name: resource?.sites?.name || null,
         user_first_name: userProfile.first_name,

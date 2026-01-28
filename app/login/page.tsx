@@ -1,3 +1,4 @@
+import Image from "next/image"
 import { LoginForm } from "@/components/login-form"
 import { UserBar } from "@/components/user-bar"
 import { getUser } from "@/lib/supabase/server"
@@ -16,9 +17,16 @@ export default async function LoginPage({
       <UserBar userEmail={user?.email} />
       <main className="flex flex-1 items-center justify-center p-4">
         <div className="w-full max-w-md space-y-8">
-          <div className="text-center">
-            <h1 className="type-h2 text-foreground">Hopper</h1>
-            <p className="mt-2 type-body text-muted-foreground">
+          <div className="flex flex-col items-center text-center">
+            <Image
+              src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
+              alt="Hopper Logo"
+              width={200}
+              height={80}
+              className="h-12 w-auto"
+              priority
+            />
+            <p className="mt-4 type-body text-muted-foreground">
               Connectez-vous à votre espace d&apos;administration
             </p>
           </div>

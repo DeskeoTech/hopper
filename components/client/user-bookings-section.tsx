@@ -25,7 +25,7 @@ export function UserBookingsSection({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="font-header text-xl text-foreground">Salles de réunion</h2>
+        <h2 className="font-header text-xl text-foreground">Mes réservations</h2>
         {onBookClick && (
           <Button
             variant="outline"

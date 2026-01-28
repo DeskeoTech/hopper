@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, addDays, subDays } from "date-fns"
+import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
   ChevronLeft,
@@ -46,6 +46,7 @@ import {
   checkAvailability,
   createMeetingRoomBooking,
 } from "@/lib/actions/bookings"
+import { disabledDateMatcher, getNextBusinessDay, getPreviousBusinessDay, isToday } from "@/lib/dates"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -287,7 +288,8 @@ export function BookMeetingRoomModal({
     return a.name.localeCompare(b.name)
   })
 
-  const isToday = format(selectedDate, "yyyy-MM-dd") === format(new Date(), "yyyy-MM-dd")
+  const isTodaySelected = isToday(selectedDate)
+  const previousBusinessDay = getPreviousBusinessDay(selectedDate)
 
   return (
     <>
@@ -334,8 +336,12 @@ export function BookMeetingRoomModal({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => setSelectedDate(subDays(selectedDate, 1))}
-                    disabled={isToday}
+                    onClick={() => {
+                      if (previousBusinessDay) {
+                        setSelectedDate(previousBusinessDay)
+                      }
+                    }}
+                    disabled={!previousBusinessDay}
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
@@ -344,7 +350,7 @@ export function BookMeetingRoomModal({
                     <PopoverTrigger asChild>
                       <Button variant="outline" className="min-w-[140px]">
                         <CalendarIcon className="h-4 w-4 mr-2" />
-                        {isToday ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
+                        {isTodaySelected ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="center">
@@ -352,7 +358,7 @@ export function BookMeetingRoomModal({
                         mode="single"
                         selected={selectedDate}
                         onSelect={handleDateChange}
-                        disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                        disabled={disabledDateMatcher}
                       />
                     </PopoverContent>
                   </Popover>
@@ -361,7 +367,7 @@ export function BookMeetingRoomModal({
                     variant="outline"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                    onClick={() => setSelectedDate(getNextBusinessDay(selectedDate))}
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>

@@ -197,6 +197,7 @@ export interface Booking {
 export interface BookingWithDetails extends Booking {
   resource_name: string | null
   resource_type: ResourceType | null
+  resource_capacity: number | null
   site_id: string | null
   site_name: string | null
   user_first_name: string | null
