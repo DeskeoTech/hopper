@@ -50,29 +50,20 @@ export default async function ClientLayout({
   let creditMovements: CreditMovement[] = []
 
   if (userProfile.company_id) {
-    // Fetch credits
-    const { data: creditsData } = await supabase
-      .from("credits")
-      .select(
-        `
-        allocated_credits,
-        remaining_credits,
-        period,
-        contracts!inner (company_id, status)
-      `
-      )
-      .eq("contracts.company_id", userProfile.company_id)
-      .eq("contracts.status", "active")
-      .lte("period", today)
-      .order("period", { ascending: false })
-      .limit(1)
-      .single()
+    // Fetch valid credits using the SQL function
+    // Credits are valid if:
+    // - extras_credit = true: permanent credits (always valid)
+    // - extras_credit = false/null: valid for 1 month from created_at
+    const { data: creditsResult } = await supabase
+      .rpc("get_company_valid_credits", { p_company_id: userProfile.company_id })
 
-    if (creditsData) {
+    const validCredits = creditsResult ?? 0
+
+    if (validCredits > 0) {
       userCredits = {
-        allocated: creditsData.allocated_credits,
-        remaining: creditsData.remaining_credits,
-        period: creditsData.period,
+        allocated: validCredits,
+        remaining: validCredits,
+        period: today,
       }
     }
 
