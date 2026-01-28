@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
 import { TicketsTable } from "@/components/admin/tickets/tickets-table"
 import { TicketsSearch } from "@/components/admin/tickets/tickets-search"
-import { CreateTicketModal } from "@/components/admin/tickets/create-ticket-modal"
 import { Headphones } from "lucide-react"
 import type { SupportTicketWithDetails } from "@/lib/types/database"
 
@@ -87,17 +86,14 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
-            <Headphones className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="type-h2 text-foreground">Support Tickets</h1>
-            <p className="mt-1 text-muted-foreground">Gérez les demandes de vos utilisateurs</p>
-          </div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
+          <Headphones className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
         </div>
-        <CreateTicketModal />
+        <div className="min-w-0 flex-1">
+          <h1 className="type-h2 text-foreground">Support Tickets</h1>
+          <p className="mt-1 text-muted-foreground">Gérez les demandes de vos utilisateurs</p>
+        </div>
       </div>
 
       {/* Statistics Cards */}
