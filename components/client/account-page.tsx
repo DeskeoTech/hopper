@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { Settings, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,18 @@ export function AccountPage({ bookings }: AccountPageProps) {
           </Button>
         </div>
       )}
+
+      {/* Logo Hopper */}
+      <div className="flex justify-center mb-6">
+        <Image
+          src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
+          alt="Hopper Logo"
+          width={200}
+          height={80}
+          className="h-12 w-auto sm:h-16 md:h-20"
+          priority
+        />
+      </div>
 
       <div className="mx-auto w-full max-w-3xl space-y-6">
         <div className="text-center pt-2">
