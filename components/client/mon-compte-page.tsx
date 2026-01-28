@@ -23,25 +23,28 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
       </h1>
 
       <Tabs defaultValue="coordonnees" className="w-full">
-        <TabsList className="grid w-full h-auto gap-1 p-1 grid-cols-2 sm:grid-cols-5">
-          <TabsTrigger value="coordonnees" className="text-xs sm:text-sm px-2">
-            Mes coordonnées
-          </TabsTrigger>
-          <TabsTrigger value="forfait" className="text-xs sm:text-sm px-2">
-            Mon forfait
-          </TabsTrigger>
-          <TabsTrigger value="credits" className="text-xs sm:text-sm px-2">
-            Mes crédits
-          </TabsTrigger>
-          {canManageCompany && (
-            <TabsTrigger value="entreprise" className="text-xs sm:text-sm px-2">
-              Mon entreprise
+        {/* Mobile: horizontal scroll, Desktop: flex row */}
+        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide sm:mx-0 sm:px-0 sm:overflow-visible">
+          <TabsList className="inline-flex h-auto w-max gap-1 p-1 sm:w-full sm:justify-start">
+            <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Mes coordonnées
             </TabsTrigger>
-          )}
-          <TabsTrigger value="facturation" className="text-xs sm:text-sm px-2">
-            Facturation
-          </TabsTrigger>
-        </TabsList>
+            <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Mon forfait
+            </TabsTrigger>
+            <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Mes crédits
+            </TabsTrigger>
+            {canManageCompany && (
+              <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+                Mon entreprise
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Facturation
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="coordonnees" className="mt-6">
           <MesCoordonneesTab />
