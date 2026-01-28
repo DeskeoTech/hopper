@@ -21,23 +21,20 @@ export function ClientSidebar() {
       {/* Navigation */}
       <div className="flex-1 p-4">
         <ClientNavigationItems />
-
-        {/* Admin Link for Deskeo Employees */}
-        {isDeskeoEmployee && (
-          <div className="mt-4 border-t border-brand-foreground/10 pt-4">
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-medium text-brand-foreground/70 transition-all duration-200 hover:bg-brand-foreground/5 hover:text-brand-foreground"
-            >
-              <Settings className="h-5 w-5" />
-              Espace Admin Deskeo
-            </Link>
-          </div>
-        )}
       </div>
 
       {/* Footer */}
       <div className="border-t border-brand-foreground/10 p-4">
+        {/* Admin Link for Deskeo Employees */}
+        {isDeskeoEmployee && (
+          <Link
+            href="/admin"
+            className="mb-3 flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand-foreground/50 transition-colors hover:bg-brand-foreground/5 hover:text-brand-foreground/70"
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Espace Admin Deskeo
+          </Link>
+        )}
         <div className="text-xs text-brand-foreground/40">
           <p>Hopper Coworking</p>
           <p>&copy; 2026 Deskeo</p>

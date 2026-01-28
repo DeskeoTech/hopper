@@ -8,7 +8,6 @@ import {
   Briefcase,
   Plus,
   ArrowRight,
-  User,
   Coffee,
   Package,
   ExternalLink,
@@ -52,12 +51,6 @@ export default async function AccueilPage() {
             Gérez vos espaces de coworking et vos réservations
           </p>
         </div>
-        <Button asChild size="sm" className="shrink-0 self-start">
-          <Link href="/compte">
-            <User className="mr-2 size-4" />
-            Dashboard Utilisateur
-          </Link>
-        </Button>
       </div>
 
       {/* CTA Créer une réservation */}
