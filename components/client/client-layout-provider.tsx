@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, type ReactNode } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement } from "@/lib/types/database"
 
 interface Site {
@@ -72,6 +72,7 @@ export function ClientLayoutProvider({
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pathname = usePathname()
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId) || null
   const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === selectedSiteId) || null
@@ -82,7 +83,7 @@ export function ClientLayoutProvider({
   const setSelectedSiteId = (siteId: string) => {
     const params = new URLSearchParams(searchParams.toString())
     params.set("site", siteId)
-    router.push(`?${params.toString()}`)
+    router.push(`${pathname}?${params.toString()}`)
   }
 
   return (

@@ -112,7 +112,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
   return (
     <div
       className={cn(
-        "relative rounded-[16px] border bg-card p-5 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md",
+        "relative rounded-[16px] border bg-card p-4 sm:p-5 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md",
         plan.isPopular && "border-primary/30 ring-1 ring-primary/20"
       )}
     >
@@ -123,35 +123,35 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
         </div>
       )}
 
-      <h4 className="font-header text-lg font-bold text-foreground mt-1">
+      <h4 className="font-header text-base sm:text-lg font-bold text-foreground mt-1">
         {plan.name}
       </h4>
 
-      <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>
+      <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{plan.description}</p>
 
-      <div className="mt-4 flex items-baseline gap-1">
-        <span className="text-3xl font-bold text-foreground">
+      <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
+        <span className="text-2xl sm:text-3xl font-bold text-foreground">
           {plan.price.toFixed(2).replace(".", ",")}
         </span>
-        <span className="text-sm text-muted-foreground">€/mois</span>
+        <span className="text-xs sm:text-sm text-muted-foreground">€/mois</span>
       </div>
 
-      <div className="mt-3 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-          <Coffee className="h-4 w-4 text-primary" />
+      <div className="mt-2 sm:mt-3 flex items-center gap-2">
+        <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Coffee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
         </div>
-        <div className="text-sm">
+        <div className="text-xs sm:text-sm">
           <span className="font-semibold text-foreground">{plan.perDay}</span>{" "}
           <span className="text-muted-foreground">
             boisson{plan.perDay > 1 ? "s" : ""}/jour
           </span>
           <span className="text-muted-foreground"> · </span>
           <span className="font-semibold text-foreground">{plan.perWeek}</span>{" "}
-          <span className="text-muted-foreground">/semaine</span>
+          <span className="text-muted-foreground">/sem.</span>
         </div>
       </div>
 
-      <Button className="mt-4 w-full" onClick={handleSubscribe}>
+      <Button className="mt-3 sm:mt-4 w-full" size="sm" onClick={handleSubscribe}>
         Souscrire
       </Button>
     </div>
@@ -165,19 +165,19 @@ export function HopperCafePlans() {
   const filteredPlans = cafePlans.filter((plan) => plan.frequency === frequency)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Tabs
         value={frequency}
         onValueChange={(v) => setFrequency(v as "3days" | "5days")}
         className="w-full"
       >
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-6">
-          <TabsTrigger value="3days" className="text-sm">
-            3 jours / semaine
+        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4 sm:mb-6">
+          <TabsTrigger value="3days" className="text-xs sm:text-sm">
+            3 jours / sem.
           </TabsTrigger>
-          <TabsTrigger value="5days" className="text-sm">
-            5 jours / semaine
-            <span className="ml-2 hidden sm:inline rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
+          <TabsTrigger value="5days" className="text-xs sm:text-sm">
+            5 jours / sem.
+            <span className="ml-1 sm:ml-2 hidden sm:inline rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
               + de choix
             </span>
           </TabsTrigger>
