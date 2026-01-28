@@ -3,8 +3,7 @@
 import { useState } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MapPin, Clock, Pencil, X, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { MapPin } from "lucide-react"
 import { CancelBookingDialog } from "./cancel-booking-dialog"
 import { EditBookingDialog } from "./edit-booking-dialog"
 import { cn } from "@/lib/utils"
@@ -16,44 +15,17 @@ interface UserBookingCardProps {
   isPast?: boolean
 }
 
-const resourceTypeLabels: Record<string, string> = {
-  bench: "Bench",
-  meeting_room: "Salle de réunion",
-  flex_desk: "Flex desk",
-  fixed_desk: "Bureau fixe",
-}
-
-function getStatusBadge(status: string, isPast: boolean) {
-  if (status === "cancelled") {
-    return (
-      <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium text-foreground/70">
-        Annulée
-      </span>
-    )
-  }
-  if (isPast) {
-    return (
-      <span className="rounded-full bg-foreground/10 px-3 py-1 text-xs font-medium text-foreground/70">
-        Terminée
-      </span>
-    )
-  }
-  return (
-    <span className="rounded-full bg-foreground px-3 py-1 text-xs font-medium text-primary-foreground">
-      Confirmée
-    </span>
-  )
-}
-
 export function UserBookingCard({ booking, userId, isPast = false }: UserBookingCardProps) {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [editDialogOpen, setEditDialogOpen] = useState(false)
 
-  const date = format(parseISO(booking.start_date), "EEEE d MMMM yyyy", {
-    locale: fr,
-  })
-  const startTime = format(parseISO(booking.start_date), "HH:mm", { locale: fr })
+  const parsedDate = parseISO(booking.start_date)
+  const dayName = format(parsedDate, "EEEE", { locale: fr }).toUpperCase()
+  const dayNumber = format(parsedDate, "d", { locale: fr })
+  const monthName = format(parsedDate, "MMMM", { locale: fr })
+  const startTime = format(parsedDate, "HH:mm", { locale: fr })
   const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: fr })
+  const fullDate = format(parsedDate, "EEEE d MMMM yyyy", { locale: fr })
 
   const isCancelled = booking.status === "cancelled"
   const isActuallyPast = new Date(booking.start_date) < new Date()
@@ -63,67 +35,63 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
     <>
       <div
         className={cn(
-          "rounded-[16px] p-6 shadow-sm transition-all duration-200",
-          isPast ? "bg-card/60" : "bg-card"
+          "flex-shrink-0 w-[160px] rounded-[16px] bg-card p-4 transition-all duration-200",
+          isPast && "opacity-50"
         )}
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className={cn("min-w-0 flex-1 space-y-2", isPast && "opacity-70")}>
-            <p className="text-base font-medium capitalize text-foreground">
-              {date}
-            </p>
+        <div className="flex flex-col items-center text-center">
+          {/* Day name */}
+          <p className="font-header text-[10px] font-medium tracking-wide text-foreground/40">
+            {dayName}
+          </p>
 
-            <div className="flex items-center gap-2 text-sm text-foreground/60">
-              <Clock className="h-4 w-4 flex-shrink-0" />
-              <span>
-                {startTime} - {endTime}
-              </span>
-            </div>
-
-            <h3 className="text-lg font-semibold text-foreground">
-              {booking.resource_name || "Ressource inconnue"}
-            </h3>
-
-            <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/60">
-              {booking.resource_capacity && (
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  <span>{booking.resource_capacity} pers.</span>
-                </div>
-              )}
-              {booking.site_name && (
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{booking.site_name}</span>
-                </div>
-              )}
-            </div>
-
-            {canModify && (
-              <div className="flex items-center gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setEditDialogOpen(true)}
-                  className="h-8 rounded-[12px] border-foreground/20 text-xs transition-all duration-200 hover:bg-foreground hover:text-primary-foreground"
-                >
-                  <Pencil className="mr-1 h-3 w-3" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCancelDialogOpen(true)}
-                  className="h-8 rounded-[12px] border-foreground/20 text-xs transition-all duration-200 hover:bg-foreground hover:text-primary-foreground"
-                >
-                  <X className="mr-1 h-3 w-3" />
-                  Annuler
-                </Button>
-              </div>
-            )}
+          {/* Day number + month */}
+          <div className="mt-1 flex items-baseline gap-1">
+            <span className="font-header text-2xl font-semibold text-foreground">
+              {dayNumber}
+            </span>
+            <span className="text-xs text-foreground/50">{monthName}</span>
           </div>
 
-          {getStatusBadge(booking.status, isPast)}
+          {/* Time */}
+          <p className="mt-2 text-xs text-foreground/70">
+            {startTime} - {endTime}
+          </p>
+
+          {/* Site name */}
+          {booking.site_name && (
+            <div className="mt-1.5 flex items-center gap-1 text-[10px] text-foreground/40">
+              <MapPin className="h-2.5 w-2.5" />
+              <span className="truncate max-w-[110px]">{booking.site_name}</span>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {canModify && (
+            <div className="mt-3 flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setEditDialogOpen(true)}
+                className="rounded-full bg-foreground/5 px-2.5 py-0.5 text-[10px] text-foreground/70 transition-colors hover:bg-foreground/10"
+              >
+                Modifier
+              </button>
+              <button
+                type="button"
+                onClick={() => setCancelDialogOpen(true)}
+                className="rounded-full bg-foreground/5 px-2.5 py-0.5 text-[10px] text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+              >
+                Annuler
+              </button>
+            </div>
+          )}
+
+          {/* Status badge for past/cancelled */}
+          {(isPast || isCancelled) && (
+            <span className="mt-2.5 rounded-full bg-foreground/5 px-2.5 py-0.5 text-[10px] text-foreground/50">
+              {isCancelled ? "Annulée" : "Terminée"}
+            </span>
+          )}
         </div>
       </div>
 
@@ -132,7 +100,7 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
           <CancelBookingDialog
             bookingId={booking.id}
             userId={userId}
-            bookingDate={date}
+            bookingDate={fullDate}
             open={cancelDialogOpen}
             onOpenChange={setCancelDialogOpen}
           />

@@ -11,13 +11,10 @@ export default async function MonComptePageRoute() {
 
   const supabase = await createClient()
 
-  // Fetch user profile
+  // Fetch only company_id (full user profile is already in layout context)
   const { data: userProfile } = await supabase
     .from("users")
-    .select(`
-      *,
-      companies (*)
-    `)
+    .select("company_id")
     .eq("email", authUser.email)
     .single()
 
