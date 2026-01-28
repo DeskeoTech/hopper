@@ -71,7 +71,7 @@ export function AccountPage({ bookings }: AccountPageProps) {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <UserPlanCard plan={plan} />
-          <UserCreditsCard credits={credits} />
+          <UserCreditsCard />
         </div>
 
         <UserBookingsSection

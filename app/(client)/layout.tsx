@@ -5,7 +5,7 @@ import { ClientSidebar } from "@/components/client/client-sidebar"
 import { ClientMobileNav } from "@/components/client/client-mobile-nav"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
-import type { UserCredits, UserPlan, Company } from "@/lib/types/database"
+import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -47,6 +47,7 @@ export default async function ClientLayout({
   const today = new Date().toISOString().split("T")[0]
   let userCredits: UserCredits | null = null
   let userPlan: UserPlan | null = null
+  let creditMovements: CreditMovement[] = []
 
   if (userProfile.company_id) {
     // Fetch credits
@@ -99,6 +100,57 @@ export default async function ClientLayout({
         creditsPerMonth: plan.credits_per_month,
       }
     }
+
+    // Fetch credit movements from user's bookings
+    const { data: bookings } = await supabase
+      .from("bookings")
+      .select(`
+        id,
+        start_date,
+        status,
+        credits_used,
+        notes,
+        resource:resources(name)
+      `)
+      .eq("user_id", userProfile.id)
+      .not("credits_used", "is", null)
+      .order("start_date", { ascending: false })
+      .limit(50)
+
+    // Transform bookings to credit movements
+    const totalCredits = userCredits?.remaining ?? 0
+    let runningBalance = totalCredits
+    creditMovements = (bookings || []).map((booking) => {
+      const isCancelled = booking.status === "cancelled"
+      const creditsUsed = booking.credits_used || 0
+
+      let type: CreditMovementType = "reservation"
+      let amount = -creditsUsed
+
+      if (isCancelled) {
+        type = "cancellation"
+        amount = creditsUsed // Credits restored
+      }
+
+      const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
+      const description = isCancelled
+        ? `Annulation - ${resourceName}`
+        : `Réservation - ${resourceName}`
+
+      const movement: CreditMovement = {
+        id: booking.id,
+        date: booking.start_date,
+        type,
+        amount,
+        description,
+        balance_after: runningBalance,
+      }
+
+      // Adjust running balance for display (reverse chronological)
+      runningBalance = runningBalance - amount
+
+      return movement
+    })
   }
 
   // Determine main site ID early (needed for site filtering)
@@ -201,6 +253,7 @@ export default async function ClientLayout({
     <ClientLayoutProvider
       user={userProfile}
       credits={userCredits}
+      creditMovements={creditMovements}
       plan={userPlan}
       sites={sites || []}
       sitesWithDetails={sitesWithDetails}

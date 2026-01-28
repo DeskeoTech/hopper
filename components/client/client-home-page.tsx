@@ -51,10 +51,7 @@ export function ClientHomePage({
 
           <UserPlanCard plan={plan} />
 
-          <UserCreditsCard
-            credits={credits}
-            onBookClick={() => setBookingModalOpen(true)}
-          />
+          <UserCreditsCard />
 
           <WorkspaceBookingSection
             userId={user.id}
