@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MapPin, Clock, Pencil, X } from "lucide-react"
+import { MapPin, Clock, Pencil, X, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CancelBookingDialog } from "./cancel-booking-dialog"
 import { EditBookingDialog } from "./edit-booking-dialog"
@@ -80,21 +80,24 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
               </span>
             </div>
 
-            <h3 className="text-base font-semibold text-foreground">
+            <h3 className="text-lg font-semibold text-foreground">
               {booking.resource_name || "Ressource inconnue"}
-              {booking.resource_type && (
-                <span className="ml-2 text-sm font-normal text-foreground/60">
-                  ({resourceTypeLabels[booking.resource_type] || booking.resource_type})
-                </span>
-              )}
             </h3>
 
-            {booking.site_name && (
-              <div className="flex items-center gap-1 text-sm text-foreground/60">
-                <MapPin className="h-4 w-4" />
-                <span>{booking.site_name}</span>
-              </div>
-            )}
+            <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/60">
+              {booking.resource_capacity && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span>{booking.resource_capacity} pers.</span>
+                </div>
+              )}
+              {booking.site_name && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  <span>{booking.site_name}</span>
+                </div>
+              )}
+            </div>
 
             {canModify && (
               <div className="flex items-center gap-2 pt-2">

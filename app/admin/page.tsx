@@ -2,7 +2,6 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import {
-  Home,
   Building2,
   Calendar,
   Briefcase,
@@ -40,19 +39,6 @@ export default async function AccueilPage() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
-          <Home className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h1 className="type-h2 text-foreground">Bienvenue sur Hopper</h1>
-          <p className="mt-1 text-muted-foreground">
-            Gérez vos espaces de coworking et vos réservations
-          </p>
-        </div>
-      </div>
-
       {/* CTA Créer une réservation */}
       <div className="rounded-lg bg-card p-4 sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

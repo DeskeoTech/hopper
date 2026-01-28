@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { format, addDays, subDays, isToday, isBefore, startOfDay } from "date-fns"
+import { format, isBefore, startOfDay } from "date-fns"
 import { fr } from "date-fns/locale"
 import { CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+  disabledDateMatcher,
+  getNextBusinessDay,
+  getPreviousBusinessDay,
+  isToday as isTodayDate,
+} from "@/lib/dates"
 
 interface DatePickerNavigationProps {
   selectedDate: Date
@@ -26,14 +32,14 @@ export function DatePickerNavigation({
   const [calendarOpen, setCalendarOpen] = useState(false)
 
   const handlePreviousDay = () => {
-    const prevDay = subDays(selectedDate, 1)
-    if (!isBefore(prevDay, startOfDay(minDate))) {
+    const prevDay = getPreviousBusinessDay(selectedDate)
+    if (prevDay && !isBefore(prevDay, startOfDay(minDate))) {
       onDateChange(prevDay)
     }
   }
 
   const handleNextDay = () => {
-    onDateChange(addDays(selectedDate, 1))
+    onDateChange(getNextBusinessDay(selectedDate))
   }
 
   const handleToday = () => {
@@ -47,8 +53,9 @@ export function DatePickerNavigation({
     }
   }
 
-  const canGoPrevious = !isBefore(subDays(selectedDate, 1), startOfDay(minDate))
-  const showTodayButton = !isToday(selectedDate)
+  const previousBusinessDay = getPreviousBusinessDay(selectedDate)
+  const canGoPrevious = previousBusinessDay && !isBefore(previousBusinessDay, startOfDay(minDate))
+  const showTodayButton = !isTodayDate(selectedDate)
 
   return (
     <div className="flex items-center gap-1">
@@ -100,7 +107,7 @@ export function DatePickerNavigation({
             mode="single"
             selected={selectedDate}
             onSelect={handleCalendarSelect}
-            disabled={(date) => isBefore(date, startOfDay(minDate))}
+            disabled={disabledDateMatcher}
             initialFocus
           />
         </PopoverContent>
