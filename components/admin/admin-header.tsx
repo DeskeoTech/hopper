@@ -36,7 +36,7 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
   }
 
   return (
-    <header className="relative flex h-16 items-center justify-between bg-card px-4 md:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-[#F1E8DC] px-4 md:h-20 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav />
         <h1 className="type-h3 text-foreground">{title}</h1>
@@ -47,9 +47,9 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
         <Image
           src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
           alt="Hopper Logo"
-          width={200}
-          height={80}
-          className="h-8 w-auto md:h-10"
+          width={400}
+          height={160}
+          className="h-8 w-auto md:h-16"
           priority
         />
       </div>
