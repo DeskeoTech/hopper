@@ -21,6 +21,24 @@ interface BookMeetingRoomModalProps {
   hasActivePlan?: boolean
 }
 
+function ExpiredPassBanner({ userEmail }: { userEmail: string }) {
+  const handleClick = () => {
+    const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`
+    window.open(url, "_blank")
+  }
+
+  return (
+    <div
+      onClick={handleClick}
+      className="cursor-pointer bg-primary py-2 text-center transition-opacity hover:opacity-90 -mx-6 -mt-6 mb-4 rounded-t-lg"
+    >
+      <p className="whitespace-nowrap px-4 text-[10px] font-semibold text-primary-foreground sm:text-[14px]">
+        VOTRE PASS HOPPER A EXPIRÉ, SOUSCRIVEZ-EN UN NOUVEAU ICI
+      </p>
+    </div>
+  )
+}
+
 export function BookMeetingRoomModal({
   open,
   onOpenChange,
@@ -45,6 +63,7 @@ export function BookMeetingRoomModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        {!hasActivePlan && <ExpiredPassBanner userEmail={userEmail} />}
         <DialogHeader className="shrink-0">
           <DialogTitle>Réserver une salle</DialogTitle>
         </DialogHeader>

@@ -640,42 +640,23 @@ export function RoomBookingContent({
       {isModal ? (
         // Modal layout
         <div className="flex-1 overflow-hidden flex flex-col">
-          {/* Warning banner for modal when user can't book */}
-          {view === "planning" && (!hasActivePlan || remainingCredits === 0) && (
+          {/* Warning banner for modal when user has no credits (pass expired is shown in modal header) */}
+          {view === "planning" && hasActivePlan && remainingCredits === 0 && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3 shrink-0">
               <div className="flex items-start gap-2">
                 <Coins className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  {!hasActivePlan ? (
-                    <>
-                      <p className="text-sm font-medium text-amber-800">
-                        Votre pass Hopper a expiré
-                      </p>
-                      <a
-                        href={`https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
-                      >
-                        Souscrire un pass
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-medium text-amber-800">
-                        Vous n&apos;avez plus de crédits
-                      </p>
-                      <Link
-                        href="/boutique?tab=credits"
-                        onClick={onClose}
-                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
-                      >
-                        Acheter des crédits
-                        <ExternalLink className="h-3 w-3" />
-                      </Link>
-                    </>
-                  )}
+                  <p className="text-sm font-medium text-amber-800">
+                    Vous n&apos;avez plus de crédits
+                  </p>
+                  <Link
+                    href="/boutique?tab=credits"
+                    onClick={onClose}
+                    className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+                  >
+                    Acheter des crédits
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
                 </div>
               </div>
             </div>
