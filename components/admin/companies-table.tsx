@@ -138,12 +138,12 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="overflow-x-auto rounded-[20px] bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b border-border/50 hover:bg-transparent">
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("name")}
               >
                 <div className="flex items-center">
@@ -152,7 +152,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none text-center"
+                className="cursor-pointer select-none text-center text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("userCount")}
               >
                 <div className="flex items-center justify-center">
@@ -162,7 +162,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="hidden cursor-pointer select-none lg:table-cell"
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide lg:table-cell"
                 onClick={() => handleSort("mainSiteName")}
               >
                 <div className="flex items-center">
@@ -171,7 +171,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="hidden cursor-pointer select-none md:table-cell"
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide md:table-cell"
                 onClick={() => handleSort("period")}
               >
                 <div className="flex items-center">
@@ -180,7 +180,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="hidden cursor-pointer select-none md:table-cell"
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide md:table-cell"
                 onClick={() => handleSort("startDate")}
               >
                 <div className="flex items-center">
@@ -189,7 +189,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("endDate")}
               >
                 <div className="flex items-center">
@@ -198,7 +198,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("status")}
               >
                 <div className="flex items-center">
@@ -206,7 +206,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                   <SortIcon field="status" />
                 </div>
               </TableHead>
-              <TableHead className="w-[70px]">
+              <TableHead className="w-[50px]">
                 <span className="sr-only">Actions</span>
               </TableHead>
             </TableRow>
@@ -215,40 +215,40 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
             {paginatedCompanies.map((company) => (
               <TableRow
                 key={company.id}
-                className="cursor-pointer"
+                className="cursor-pointer border-b border-border/30 hover:bg-muted/30"
                 onClick={() => router.push(`/admin/clients/${company.id}`)}
               >
-                <TableCell className="font-medium">
+                <TableCell className="font-semibold uppercase">
                   {company.name || "Sans nom"}
                 </TableCell>
                 <TableCell className="text-center">
                   {company.userCount}
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground lg:table-cell">
+                <TableCell className="hidden font-semibold uppercase lg:table-cell">
                   {company.mainSiteName || "-"}
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground md:table-cell">
+                <TableCell className="hidden md:table-cell">
                   {formatPeriod(company.subscription_period)}
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground md:table-cell">
+                <TableCell className="hidden md:table-cell">
                   {formatDate(company.subscription_start_date)}
                 </TableCell>
-                <TableCell className="text-muted-foreground">
+                <TableCell>
                   {formatDate(company.subscription_end_date)}
                 </TableCell>
                 <TableCell>
                   <SubscriptionStatusBadge status={company.subscriptionStatus} />
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  {company.subscriptionStatus !== "inactif" && (
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Actions</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {company.subscriptionStatus !== "inactif" && (
                         <CancelSubscriptionModal
                           companyId={company.id}
                           companyName={company.name}
@@ -263,9 +263,14 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                             </DropdownMenuItem>
                           }
                         />
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  )}
+                      )}
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/clients/${company.id}`)}
+                      >
+                        Voir détails
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

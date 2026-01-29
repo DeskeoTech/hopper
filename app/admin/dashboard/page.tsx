@@ -31,7 +31,7 @@ function MetricCard({
   return (
     <div
       className={cn(
-        "rounded-lg bg-card p-4 sm:p-5 border border-border/50",
+        "rounded-[20px] bg-card p-4 sm:p-5",
         variant === "large" && "col-span-2",
         variant === "accent" && "bg-brand text-brand-foreground",
         className
@@ -475,7 +475,7 @@ export default async function DashboardPage() {
       {/* Section principale : Occupation + Clients */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         {/* Carte Occupation - grande */}
-        <div className="lg:col-span-2 rounded-lg bg-card p-5 sm:p-6 border border-border/50">
+        <div className="lg:col-span-2 rounded-[20px] bg-card p-5 sm:p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex-1">
               <h2 className="font-header text-[22px] uppercase tracking-wide">Occupation</h2>
@@ -498,7 +498,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Carte Clients */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <h2 className="font-header text-lg uppercase tracking-wide mb-4">Clients</h2>
           <div className="space-y-4">
             <div>
@@ -515,7 +515,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Section Réservations temps réel */}
-      <div className="rounded-lg bg-card p-5 border border-border/50">
+      <div className="rounded-[20px] bg-card p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-header text-lg uppercase tracking-wide">Réservations</h2>
           <span className="text-[14px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
@@ -544,7 +544,7 @@ export default async function DashboardPage() {
       {/* Grille métriques secondaires */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
         {/* Support */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-start justify-between mb-3">
             <h2 className="font-header text-lg uppercase tracking-wide">Support</h2>
             <Headphones className="h-4 w-4 text-muted-foreground" />
@@ -574,7 +574,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Croissance Abonnements */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-start justify-between mb-3">
             <h2 className="font-header text-lg uppercase tracking-wide">Croissance</h2>
             <Users className="h-4 w-4 text-muted-foreground" />
@@ -594,7 +594,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Sites Actifs */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-start justify-between mb-3">
             <h2 className="font-header text-lg uppercase tracking-wide">Sites</h2>
             <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -613,7 +613,7 @@ export default async function DashboardPage() {
       {/* Section Sites : Top 3 + Moins occupé */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
         {/* Site le plus occupé */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <h2 className="font-header text-lg uppercase tracking-wide mb-4">
             Site le plus occupé
           </h2>
@@ -664,7 +664,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Site le moins occupé */}
-        <div className="rounded-lg bg-card p-5 border border-border/50">
+        <div className="rounded-[20px] bg-card p-5">
           <h2 className="font-header text-lg uppercase tracking-wide mb-4">
             Site le moins occupé
           </h2>
