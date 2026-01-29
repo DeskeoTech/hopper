@@ -40,56 +40,51 @@ export function UserBookingsSection({
     const now = new Date()
 
     // Transform bookings to reservation items
-    const bookingItems: ReservationItem[] = bookings.map((b) => {
-      // Past = end_date has passed (both date AND time)
-      const isPast = new Date(b.end_date) < now || b.status === "cancelled"
-      return {
-        id: b.id,
-        type: "meeting_room" as ReservationItemType,
-        start_date: b.start_date,
-        end_date: b.end_date,
-        site_name: b.site_name,
-        status: b.status || "confirmed",
-        booking: b,
-      }
-    })
+    const bookingItems: ReservationItem[] = bookings.map((b) => ({
+      id: b.id,
+      type: "meeting_room" as ReservationItemType,
+      start_date: b.start_date,
+      end_date: b.end_date,
+      site_name: b.site_name,
+      status: b.status || "confirmed",
+      booking: b,
+    }))
 
     // Transform contracts to reservation items
-    const contractItems: ReservationItem[] = contracts.map((c) => {
-      // Past = end_date has passed OR status is terminated
-      const endDate = c.end_date ? new Date(c.end_date) : null
-      const isPast = c.status === "terminated" || (endDate && endDate < now)
-      return {
-        id: c.id,
-        type: getPassType(c.plan_recurrence),
-        start_date: c.start_date || "",
-        end_date: c.end_date || "",
-        site_name: c.site_name,
-        status: c.status,
-        contract: c,
-      }
-    })
+    const contractItems: ReservationItem[] = contracts.map((c) => ({
+      id: c.id,
+      type: getPassType(c.plan_recurrence),
+      start_date: c.start_date || "",
+      end_date: c.end_date || "",
+      site_name: c.site_name,
+      status: c.status,
+      contract: c,
+    }))
 
     // Combine all items
     const allItems = [...bookingItems, ...contractItems]
 
     // Filter and sort by start_date descending (most recent first)
+    // For bookings: use start_date to determine upcoming/past (once started = past)
+    // For contracts: use end_date (active until terminated or ended)
     const upcoming = allItems
       .filter((item) => {
         if (item.booking) {
-          return new Date(item.end_date) >= now && item.status !== "cancelled"
+          // Booking is upcoming if it hasn't started yet
+          return new Date(item.start_date) > now && item.status !== "cancelled"
         }
         if (item.contract) {
           return item.status !== "terminated" && (!item.end_date || new Date(item.end_date) >= now)
         }
         return false
       })
-      .sort((a, b) => new Date(b.start_date).getTime() - new Date(a.start_date).getTime())
+      .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
 
     const past = allItems
       .filter((item) => {
         if (item.booking) {
-          return new Date(item.end_date) < now || item.status === "cancelled"
+          // Booking is past if it has started or is cancelled
+          return new Date(item.start_date) <= now || item.status === "cancelled"
         }
         if (item.contract) {
           return item.status === "terminated" || (item.end_date && new Date(item.end_date) < now)
