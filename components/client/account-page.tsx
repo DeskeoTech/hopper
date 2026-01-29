@@ -8,23 +8,19 @@ import { HomepageHero } from "./homepage-hero"
 import { HomepageSiteSelector } from "./homepage-site-selector"
 import { HomepageQuickActions } from "./homepage-quick-actions"
 import { useClientLayout } from "./client-layout-provider"
-import type { BookingWithDetails } from "@/lib/types/database"
+import type { BookingWithDetails, ContractForDisplay } from "@/lib/types/database"
 
 interface AccountPageProps {
   bookings: BookingWithDetails[]
+  contracts: ContractForDisplay[]
 }
 
-export function AccountPage({ bookings }: AccountPageProps) {
+export function AccountPage({ bookings, contracts }: AccountPageProps) {
   const { user, credits, sites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
   // Only allow booking if user has an active plan
   const canBook = !!plan
-
-  const handleBookCoworking = () => {
-    const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(user.email || "")}`
-    window.open(url, "_blank")
-  }
 
   // Get the first image of the selected site
   const siteImageUrl = selectedSiteWithDetails?.imageUrl || selectedSiteWithDetails?.photoUrls?.[0] || null
@@ -82,24 +78,9 @@ export function AccountPage({ bookings }: AccountPageProps) {
           <UserProfileCard />
         </div>
 
-        {/* Banner for users without active contract */}
-        {!plan && (
-          <div className="rounded-[20px] bg-foreground px-4 py-3 text-center">
-            <p className="text-sm font-light uppercase tracking-wide text-primary-foreground">
-              CONTRAT HOPPER TERMINÉ, SOUSCRIVEZ UN NOUVEAU PASS{" "}
-              <button
-                type="button"
-                onClick={handleBookCoworking}
-                className="underline underline-offset-2 hover:no-underline"
-              >
-                ICI
-              </button>
-            </p>
-          </div>
-        )}
-
         <UserBookingsSection
           bookings={bookings}
+          contracts={contracts}
           userId={user.id}
           onBookClick={canBook ? () => setBookingModalOpen(true) : undefined}
           canBook={canBook}

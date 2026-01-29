@@ -6,6 +6,7 @@ import { ClientHeader } from "@/components/client/client-header"
 import { ClientBottomTabs } from "@/components/client/client-bottom-tabs"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
+import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
 
@@ -276,6 +277,7 @@ export default async function ClientLayout({
           company={userProfile.companies as Company}
         />
       )}
+      <ExpiredContractBanner />
       <div className="min-h-screen bg-background">
         <ClientSidebar />
         <div className="flex min-h-screen flex-col md:ml-64">

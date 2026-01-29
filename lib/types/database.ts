@@ -199,6 +199,7 @@ export interface BookingWithDetails extends Booking {
   resource_name: string | null
   resource_type: ResourceType | null
   resource_capacity: number | null
+  resource_floor: FloorLevel | null
   site_id: string | null
   site_name: string | null
   user_first_name: string | null
@@ -206,6 +207,35 @@ export interface BookingWithDetails extends Booking {
   user_email: string | null
   company_id: string | null
   company_name: string | null
+}
+
+// Contract/Pass types for reservations display
+export type ContractStatus = "active" | "suspended" | "terminated"
+
+export interface ContractForDisplay {
+  id: string
+  status: ContractStatus
+  start_date: string | null
+  end_date: string | null
+  plan_name: string
+  plan_recurrence: PlanRecurrence | null
+  site_name: string | null
+}
+
+// Unified reservation item (booking or contract)
+export type ReservationItemType = "meeting_room" | "pass_day" | "pass_week" | "pass_month"
+
+export interface ReservationItem {
+  id: string
+  type: ReservationItemType
+  start_date: string
+  end_date: string
+  site_name: string | null
+  status: string
+  // For bookings only
+  booking?: BookingWithDetails
+  // For contracts only
+  contract?: ContractForDisplay
 }
 
 // User types
