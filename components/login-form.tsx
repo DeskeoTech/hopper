@@ -7,19 +7,37 @@ import { createClient } from "@/lib/supabase/client"
 import { checkEmailExists } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Mail, Loader2, CheckCircle, Lock } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Mail, Loader2, CheckCircle, Lock, ExternalLink } from "lucide-react"
 
-export function LoginForm() {
+interface LoginFormProps {
+  initialError?: string
+}
+
+export function LoginForm({ initialError }: LoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isV0Preview, setIsV0Preview] = useState(false)
+  const [showNoAccountModal, setShowNoAccountModal] = useState(false)
 
   useEffect(() => {
     setIsV0Preview(window.location.hostname.endsWith(".vusercontent.net"))
   }, [])
+
+  useEffect(() => {
+    if (initialError === "no_account") {
+      setShowNoAccountModal(true)
+    }
+  }, [initialError])
 
   // Password login for v0 preview environment
   const handlePasswordLogin = async (e: React.FormEvent) => {
@@ -50,7 +68,7 @@ export function LoginForm() {
     // Check if email exists in users table before sending magic link
     const { exists } = await checkEmailExists(email)
     if (!exists) {
-      setError("Seuls les clients Hopper peuvent accéder à cet espace.")
+      setShowNoAccountModal(true)
       setIsLoading(false)
       return
     }
@@ -102,7 +120,67 @@ export function LoginForm() {
   // Password login form for v0 preview
   if (isV0Preview) {
     return (
-      <form onSubmit={handlePasswordLogin} className="space-y-6">
+      <>
+        <form onSubmit={handlePasswordLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-foreground">
+              Adresse email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="vous@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="password" className="text-sm font-medium text-foreground">
+              Mot de passe
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Connexion en cours...
+              </>
+            ) : (
+              "Se connecter"
+            )}
+          </Button>
+        </form>
+
+        <NoAccountModal open={showNoAccountModal} onOpenChange={setShowNoAccountModal} />
+      </>
+    )
+  }
+
+  // Magic link form for production
+  return (
+    <>
+      <form onSubmit={handleMagicLinkLogin} className="space-y-6">
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-foreground">
             Adresse email
@@ -121,73 +199,68 @@ export function LoginForm() {
           </div>
         </div>
 
-        <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium text-foreground">
-            Mot de passe
-          </label>
-          <div className="relative">
-            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10"
-              required
-            />
-          </div>
-        </div>
-
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connexion en cours...
+              Envoi en cours...
             </>
           ) : (
-            "Se connecter"
+            "Envoyer le lien magique"
           )}
         </Button>
       </form>
-    )
-  }
 
-  // Magic link form for production
+      <NoAccountModal open={showNoAccountModal} onOpenChange={setShowNoAccountModal} />
+    </>
+  )
+}
+
+function NoAccountModal({
+  open,
+  onOpenChange,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+}) {
   return (
-    <form onSubmit={handleMagicLinkLogin} className="space-y-6">
-      <div className="space-y-2">
-        <label htmlFor="email" className="text-sm font-medium text-foreground">
-          Adresse email
-        </label>
-        <div className="relative">
-          <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            id="email"
-            type="email"
-            placeholder="vous@exemple.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="pl-10"
-            required
-          />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-center font-header text-xl">
+            Aucun compte trouvé
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            Seuls les clients Hopper peuvent accéder à cet espace.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col items-center gap-4 py-4">
+          <p className="text-center text-sm text-muted-foreground">
+            Pas encore de réservation ?
+          </p>
+          <Button asChild className="w-full">
+            <a
+              href="https://hopper-coworking.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-2"
+            >
+              Découvrez l&apos;expérience Hopper
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            className="w-full"
+          >
+            Réessayer avec une autre adresse
+          </Button>
         </div>
-      </div>
-
-      {error && <p className="text-sm text-destructive">{error}</p>}
-
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Envoi en cours...
-          </>
-        ) : (
-          "Envoyer le lien magique"
-        )}
-      </Button>
-    </form>
+      </DialogContent>
+    </Dialog>
   )
 }
