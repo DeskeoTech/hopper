@@ -10,12 +10,14 @@ interface UserBookingsSectionProps {
   bookings: BookingWithDetails[]
   userId?: string
   onBookClick?: () => void
+  canBook?: boolean
 }
 
 export function UserBookingsSection({
   bookings,
   userId,
   onBookClick,
+  canBook = true,
 }: UserBookingsSectionProps) {
   // Memoize filtered bookings to avoid recalculating on every render
   const { upcomingBookings, pastBookings } = useMemo(() => {
@@ -77,13 +79,15 @@ export function UserBookingsSection({
 
       {bookings.length === 0 && (
         <div className="rounded-[16px] bg-card p-8 text-center shadow-sm sm:p-12">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#F1E8DC]">
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-background">
             <CalendarX2 className="h-8 w-8 text-foreground/50" />
           </div>
           <p className="mt-6 text-foreground/70">
-            Vous n&apos;avez pas encore de réservations
+            {canBook
+              ? "Vous n'avez pas encore de réservations"
+              : "Vous n'avez pas de contrat actif pour réserver une salle"}
           </p>
-          {onBookClick && (
+          {onBookClick && canBook && (
             <Button
               onClick={onBookClick}
               className="mt-6 rounded-full bg-foreground text-primary-foreground hover:bg-foreground/90"

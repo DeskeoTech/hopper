@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { ExternalLink } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { BookMeetingRoomModal } from "./book-meeting-room-modal"
@@ -20,6 +18,9 @@ export function AccountPage({ bookings }: AccountPageProps) {
   const { user, credits, sites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
 
+  // Only allow booking if user has an active plan
+  const canBook = !!plan
+
   const handleBookCoworking = () => {
     const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(user.email || "")}`
     window.open(url, "_blank")
@@ -30,20 +31,43 @@ export function AccountPage({ bookings }: AccountPageProps) {
 
   return (
     <div className="flex flex-col">
-      {/* Hero Section - Full bleed on mobile */}
-      <div className="-mx-4 -mt-4 md:mx-0 md:mt-0 md:hidden">
-        <HomepageHero
-          imageUrl={siteImageUrl}
-          siteName={selectedSiteWithDetails?.name}
-        />
+      {/* Hero Section - Full bleed on mobile, contained on desktop */}
+      <div className="-mx-4 -mt-4 md:mx-0 md:mt-0">
+        {/* Mobile: full bleed hero */}
+        <div className="md:hidden">
+          <HomepageHero
+            imageUrl={siteImageUrl}
+            siteName={selectedSiteWithDetails?.name}
+          />
+        </div>
+        {/* Desktop: contained hero with rounded corners and blur effects */}
+        <div className="hidden md:block">
+          <div className="relative h-48 w-full overflow-hidden rounded-[20px] lg:h-56">
+            {siteImageUrl ? (
+              <img
+                src={siteImageUrl}
+                alt={selectedSiteWithDetails?.name ? `Espace ${selectedSiteWithDetails.name}` : "Espace Hopper"}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <span className="text-muted-foreground">Aucune image</span>
+              </div>
+            )}
+            {/* Top gradient + blur effect (header transition) */}
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent rounded-t-[20px]" />
+            {/* Bottom gradient + blur effect (selector transition) */}
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/50 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-background to-transparent rounded-b-[20px]" />
+          </div>
+        </div>
       </div>
 
       {/* Content - overlaps hero slightly for smooth transition */}
-      <div className="relative z-10 mx-auto w-full max-w-3xl space-y-5 px-4 md:px-0 md:pt-6 -mt-8 md:mt-0">
-        {/* Site Selector - Mobile only */}
-        <div className="md:hidden">
-          <HomepageSiteSelector />
-        </div>
+      <div className="relative z-10 mx-auto w-full max-w-3xl space-y-5 px-4 md:px-0 -mt-8 md:-mt-12">
+        {/* Site Selector - shown on both mobile and desktop */}
+        <HomepageSiteSelector />
 
         {/* Quick Actions - Mobile only */}
         <div className="md:hidden">
@@ -53,36 +77,32 @@ export function AccountPage({ bookings }: AccountPageProps) {
           <HomepageQuickActions />
         </div>
 
-        {/* User Profile Card - Desktop */}
+        {/* User Profile Card - Desktop only */}
         <div className="hidden md:block">
           <UserProfileCard />
         </div>
 
-        {/* CTA for users without active contract */}
+        {/* Banner for users without active contract */}
         {!plan && (
-          <div className="rounded-[16px] bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 p-4 sm:p-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex-1 text-center sm:text-left">
-                <h2 className="font-header text-base sm:text-lg font-bold text-foreground">
-                  Découvrez Hopper Coworking
-                </h2>
-                <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
-                  Votre entreprise n&apos;a pas de contrat actif. Réservez un espace de
-                  coworking dès maintenant.
-                </p>
-              </div>
-              <Button size="default" className="w-full sm:w-auto" onClick={handleBookCoworking}>
-                <ExternalLink className="mr-2 h-4 w-4" />
-                Réserver
-              </Button>
-            </div>
+          <div className="rounded-[20px] bg-foreground px-4 py-3 text-center">
+            <p className="text-sm font-light uppercase tracking-wide text-primary-foreground">
+              CONTRAT HOPPER TERMINÉ, SOUSCRIVEZ UN NOUVEAU PASS{" "}
+              <button
+                type="button"
+                onClick={handleBookCoworking}
+                className="underline underline-offset-2 hover:no-underline"
+              >
+                ICI
+              </button>
+            </p>
           </div>
         )}
 
         <UserBookingsSection
           bookings={bookings}
           userId={user.id}
-          onBookClick={() => setBookingModalOpen(true)}
+          onBookClick={canBook ? () => setBookingModalOpen(true) : undefined}
+          canBook={canBook}
         />
 
         <BookMeetingRoomModal
