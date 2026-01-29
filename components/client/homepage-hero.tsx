@@ -27,11 +27,11 @@ export function HomepageHero({ imageUrl, siteName }: HomepageHeroProps) {
         </div>
       )}
 
-      {/* Gradient overlay with blur effect at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+      {/* Gradient overlay with blur effect at bottom - lighter on mobile for better image visibility */}
+      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent sm:via-background/40" />
 
       {/* Additional blur layer at the very bottom for smooth transition */}
-      <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-background to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-background to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
     </div>
   )
 }
