@@ -61,6 +61,7 @@ export interface MeetingRoomResource {
   hourly_credit_rate: number | null
   equipments: ResourceEquipment[] | null
   status: "available" | "unavailable"
+  photoUrls?: string[]
 }
 
 export interface SitePhoto {

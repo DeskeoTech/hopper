@@ -94,6 +94,8 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
           mainSiteId={selectedSiteId}
           remainingCredits={credits?.remaining || 0}
           sites={sites}
+          userEmail={user.email || ""}
+          hasActivePlan={!!plan}
         />
       </div>
     </div>

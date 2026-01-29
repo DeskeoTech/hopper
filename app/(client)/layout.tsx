@@ -278,11 +278,11 @@ export default async function ClientLayout({
         />
       )}
       <ExpiredContractBanner />
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background overflow-x-hidden">
         <ClientSidebar />
-        <div className="flex min-h-screen flex-col md:ml-64">
+        <div className="flex min-h-screen flex-col md:ml-64 overflow-x-hidden">
           <ClientHeader />
-          <main className="flex-1 pb-20 md:pb-0">{children}</main>
+          <main className="flex-1 pb-20 md:pb-0 overflow-x-hidden">{children}</main>
           <ClientBottomTabs />
         </div>
       </div>

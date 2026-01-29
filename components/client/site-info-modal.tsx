@@ -15,6 +15,7 @@ import {
   Loader2,
   ExternalLink,
   ImageIcon,
+  Train,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
@@ -32,7 +33,10 @@ interface SiteInfoModalProps {
 }
 
 export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoModalProps) {
-  const { selectedSiteWithDetails, user, credits, sites, selectedSiteId } = useClientLayout()
+  const { selectedSiteWithDetails, user, credits, sites, selectedSiteId, plan, isDeskeoEmployee } = useClientLayout()
+
+  // Check if expired contract banner is visible
+  const showBanner = !isDeskeoEmployee && !plan
   const site = siteProp ?? selectedSiteWithDetails
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [meetingRooms, setMeetingRooms] = useState<MeetingRoomResource[]>([])
@@ -83,7 +87,10 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-background">
+      <div className={cn(
+        "fixed inset-0 z-50 bg-background",
+        showBanner && "top-[56px] sm:top-[58px]"
+      )}>
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
           <h1 className="font-heading text-base sm:text-lg md:text-xl lg:text-2xl font-bold">
@@ -100,7 +107,10 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
         </div>
 
         {/* Content */}
-        <div className="h-[calc(100vh-57px)] overflow-y-auto overscroll-contain">
+        <div className={cn(
+          "overflow-y-auto overscroll-contain",
+          showBanner ? "h-[calc(100vh-57px-56px)] sm:h-[calc(100vh-57px-58px)]" : "h-[calc(100vh-57px)]"
+        )}>
           {/* Photo gallery */}
           <div className="relative aspect-[16/9] bg-muted">
             {hasPhotos ? (
@@ -164,21 +174,31 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
               <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
             </a>
 
-            {/* Practical Info - Simplified */}
+            {/* Metro/Access - Right below address */}
+            {site.access && (
+              <div className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3">
+                <Train className="h-5 w-5 shrink-0 text-primary" />
+                <span className="text-sm">{site.access}</span>
+              </div>
+            )}
+
+            {/* Practical Info */}
             <div className="space-y-2">
-              {/* Hours */}
+              {/* Opening Hours - One line per day */}
               {(site.openingHours || (site.openingDays && site.openingDays.length > 0)) && (
-                <div className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3">
-                  <Clock className="h-5 w-5 shrink-0 text-primary" />
-                  <div className="min-w-0 flex-1">
-                    {site.openingHours && (
+                <div className="flex items-start gap-3 rounded-[12px] bg-muted/50 p-3">
+                  <Clock className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+                  <div className="min-w-0 flex-1 space-y-1">
+                    {site.openingDays && site.openingDays.length > 0 ? (
+                      site.openingDays.map((day) => (
+                        <div key={day} className="flex items-center justify-between text-sm">
+                          <span className="capitalize text-muted-foreground">{day}</span>
+                          <span className="font-medium">{site.openingHours || "—"}</span>
+                        </div>
+                      ))
+                    ) : site.openingHours ? (
                       <p className="text-sm font-medium">{site.openingHours}</p>
-                    )}
-                    {site.openingDays && site.openingDays.length > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {site.openingDays.join(", ")}
-                      </p>
-                    )}
+                    ) : null}
                   </div>
                 </div>
               )}
@@ -196,13 +216,6 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
                 </div>
               )}
 
-              {/* Access */}
-              {site.access && (
-                <div className="rounded-[12px] bg-muted/50 p-3">
-                  <p className="text-sm">{site.access}</p>
-                </div>
-              )}
-
               {/* Instructions */}
               {site.instructions && (
                 <div className="rounded-[12px] bg-muted/50 p-3">
@@ -211,12 +224,15 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
               )}
             </div>
 
-            {/* Equipments - Simplified */}
+            {/* Equipments with title */}
             {site.equipments && site.equipments.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {site.equipments.map((equipment) => (
-                  <EquipmentBadge key={equipment} equipment={equipment} />
-                ))}
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground/70">Equipements et services sur place</h3>
+                <div className="flex flex-wrap gap-2">
+                  {site.equipments.map((equipment) => (
+                    <EquipmentBadge key={equipment} equipment={equipment} />
+                  ))}
+                </div>
               </div>
             )}
 
@@ -295,6 +311,8 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
         mainSiteId={selectedSiteId}
         remainingCredits={credits?.remaining || 0}
         sites={sites}
+        userEmail={user.email || ""}
+        hasActivePlan={!!plan}
       />
     </>
   )

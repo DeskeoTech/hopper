@@ -21,7 +21,37 @@ export async function getMeetingRoomsBySite(
     return { rooms: [], error: error.message }
   }
 
-  return { rooms: (rooms as MeetingRoomResource[]) || [] }
+  if (!rooms || rooms.length === 0) {
+    return { rooms: [] }
+  }
+
+  // Fetch photos for all rooms
+  const roomIds = rooms.map((r) => r.id)
+  const { data: photos } = await supabase
+    .from("resource_photos")
+    .select("resource_id, storage_path")
+    .in("resource_id", roomIds)
+    .order("created_at", { ascending: true })
+
+  // Build photo URLs map
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const photosByRoom: Record<string, string[]> = {}
+  photos?.forEach((photo) => {
+    const url = `${supabaseUrl}/storage/v1/object/public/resource-photos/${photo.storage_path}`
+    if (!photosByRoom[photo.resource_id]) {
+      photosByRoom[photo.resource_id] = [url]
+    } else {
+      photosByRoom[photo.resource_id].push(url)
+    }
+  })
+
+  // Add photos to rooms
+  const roomsWithPhotos = rooms.map((room) => ({
+    ...room,
+    photoUrls: photosByRoom[room.id] || [],
+  }))
+
+  return { rooms: roomsWithPhotos as MeetingRoomResource[] }
 }
 
 export async function checkAvailability(
