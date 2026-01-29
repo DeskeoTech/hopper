@@ -30,10 +30,6 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
     router.push("/login")
   }
 
-  const handleContact = () => {
-    // TODO: Implement contact functionality
-  }
-
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
       <h1 className="font-header text-xl sm:text-2xl font-bold uppercase tracking-tight">
@@ -61,6 +57,9 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
             <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
               Facturation
             </TabsTrigger>
+            <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              Contact
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -85,20 +84,38 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
         <TabsContent value="facturation" className="mt-6">
           <FacturationTab />
         </TabsContent>
+
+        <TabsContent value="contact" className="mt-6">
+          <div className="rounded-[20px] bg-card p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                <MessageCircle className="h-5 w-5 text-primary" />
+              </div>
+              <h3 className="font-header text-lg font-semibold">Nous contacter</h3>
+            </div>
+            <p className="text-sm text-muted-foreground mb-4">
+              Une question ? Un problème ? Notre équipe est à votre disposition.
+            </p>
+            <div className="space-y-3">
+              <a
+                href="mailto:contact@deskeo.com"
+                className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3 transition-colors hover:bg-muted"
+              >
+                <span className="text-sm">📧 contact@deskeo.com</span>
+              </a>
+              <a
+                href="tel:+33176440240"
+                className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3 transition-colors hover:bg-muted"
+              >
+                <span className="text-sm">📞 01 76 44 02 40</span>
+              </a>
+            </div>
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Action buttons at bottom */}
       <div className="flex flex-col gap-3 border-t border-border pt-6">
-        <Button
-          variant="outline"
-          className="w-full justify-start gap-3 h-12"
-          onClick={handleContact}
-          disabled
-        >
-          <MessageCircle className="h-5 w-5 text-muted-foreground" />
-          <span className="text-sm font-medium">Contact</span>
-        </Button>
-
         <Button
           variant="outline"
           className="w-full justify-start gap-3 h-12 text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"

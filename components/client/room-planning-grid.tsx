@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo } from "react"
-import { Users, Coins, DoorOpen } from "lucide-react"
+import { useMemo, useState } from "react"
+import { Users, Coins, DoorOpen, ChevronLeft, ChevronRight, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -15,12 +16,169 @@ interface RoomPlanningGridProps {
   remainingCredits: number
 }
 
+// Photo slider component for room header
+function RoomPhotoSlider({
+  photos,
+  roomName,
+  onPhotoClick,
+}: {
+  photos: string[]
+  roomName: string
+  onPhotoClick: (photos: string[], index: number) => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  if (photos.length === 0) {
+    return (
+      <div className="mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg bg-muted/60 flex items-center justify-center mb-2">
+        <DoorOpen className="h-6 w-6 text-muted-foreground/60" />
+      </div>
+    )
+  }
+
+  const handlePrev = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length)
+  }
+
+  const handleNext = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setCurrentIndex((prev) => (prev + 1) % photos.length)
+  }
+
+  return (
+    <div className="relative mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg overflow-hidden mb-2 group">
+      <button
+        type="button"
+        onClick={() => onPhotoClick(photos, currentIndex)}
+        className="w-full h-full"
+      >
+        <img
+          src={photos[currentIndex]}
+          alt={`${roomName} - Photo ${currentIndex + 1}`}
+          className="w-full h-full object-cover transition-transform group-hover:scale-105"
+        />
+      </button>
+      {photos.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={handlePrev}
+            className="absolute left-0.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            onClick={handleNext}
+            className="absolute right-0.5 top-1/2 -translate-y-1/2 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <ChevronRight className="h-3 w-3" />
+          </button>
+          <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-0.5">
+            {photos.map((_, idx) => (
+              <span
+                key={idx}
+                className={cn(
+                  "w-1 h-1 rounded-full",
+                  idx === currentIndex ? "bg-white" : "bg-white/50"
+                )}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+// Fullscreen photo viewer
+function PhotoViewer({
+  photos,
+  initialIndex,
+  onClose,
+}: {
+  photos: string[]
+  initialIndex: number
+  onClose: () => void
+}) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex)
+
+  const handlePrev = () => {
+    setCurrentIndex((prev) => (prev - 1 + photos.length) % photos.length)
+  }
+
+  const handleNext = () => {
+    setCurrentIndex((prev) => (prev + 1) % photos.length)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+      >
+        <X className="h-6 w-6 text-white" />
+      </button>
+
+      <button
+        type="button"
+        onClick={handlePrev}
+        className="absolute left-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+      >
+        <ChevronLeft className="h-8 w-8 text-white" />
+      </button>
+
+      <img
+        src={photos[currentIndex]}
+        alt={`Photo ${currentIndex + 1}`}
+        className="max-w-[90vw] max-h-[90vh] object-contain"
+      />
+
+      <button
+        type="button"
+        onClick={handleNext}
+        className="absolute right-4 z-10 p-3 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+      >
+        <ChevronRight className="h-8 w-8 text-white" />
+      </button>
+
+      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+        {photos.map((_, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => setCurrentIndex(idx)}
+            className={cn(
+              "w-2.5 h-2.5 rounded-full transition-colors",
+              idx === currentIndex ? "bg-white" : "bg-white/40 hover:bg-white/60"
+            )}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function RoomPlanningGrid({
   rooms,
   bookings,
   onSlotClick,
   remainingCredits,
 }: RoomPlanningGridProps) {
+  const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  const handlePhotoClick = (photos: string[], index: number) => {
+    setViewerPhotos(photos)
+    setViewerIndex(index)
+  }
+
+  const closeViewer = () => {
+    setViewerPhotos(null)
+  }
+
   // Group bookings by room
   const bookingsByRoom = useMemo(() => {
     const map = new Map<string, RoomBooking[]>()
@@ -71,10 +229,12 @@ export function RoomPlanningGrid({
                 key={room.id}
                 className="flex-1 min-w-[100px] text-center pt-4"
               >
-                {/* Room icon/placeholder */}
-                <div className="mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg bg-muted/60 flex items-center justify-center mb-2">
-                  <DoorOpen className="h-6 w-6 text-muted-foreground/60" />
-                </div>
+                {/* Room photo slider */}
+                <RoomPhotoSlider
+                  photos={room.photoUrls || []}
+                  roomName={room.name}
+                  onPhotoClick={handlePhotoClick}
+                />
 
                 {/* Room name */}
                 <p className="text-sm font-medium text-foreground truncate px-1">
@@ -100,6 +260,15 @@ export function RoomPlanningGrid({
             ))}
           </div>
         </div>
+
+        {/* Fullscreen photo viewer */}
+        {viewerPhotos && (
+          <PhotoViewer
+            photos={viewerPhotos}
+            initialIndex={viewerIndex}
+            onClose={closeViewer}
+          />
+        )}
 
         {/* Timeline grid */}
         <div className="flex relative mt-2">
