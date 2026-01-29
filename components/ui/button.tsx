@@ -5,8 +5,8 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  // Base styles: minimal radius, no shadows, translateY hover
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-sm text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive border",
+  // Base styles: consistent rounded corners matching design system
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[8px] text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-ring aria-invalid:ring-destructive/20 aria-invalid:border-destructive border",
   {
     variants: {
       variant: {
@@ -29,12 +29,12 @@ const buttonVariants = cva(
         link: 'text-primary underline-offset-4 hover:underline border-transparent',
       },
       size: {
-        default: 'h-9 px-4 py-2 rounded-sm has-[>svg]:px-3',
-        sm: 'h-8 rounded-sm gap-1.5 px-3 has-[>svg]:px-2.5',
-        lg: 'h-10 rounded-sm px-6 has-[>svg]:px-4',
-        icon: 'size-9 rounded-sm',
-        'icon-sm': 'size-8 rounded-sm',
-        'icon-lg': 'size-10 rounded-sm',
+        default: 'h-9 px-4 py-2 rounded-[8px] has-[>svg]:px-3',
+        sm: 'h-8 rounded-[8px] gap-1.5 px-3 has-[>svg]:px-2.5',
+        lg: 'h-10 rounded-[8px] px-6 has-[>svg]:px-4',
+        icon: 'size-9 rounded-[8px]',
+        'icon-sm': 'size-8 rounded-[8px]',
+        'icon-lg': 'size-10 rounded-[8px]',
       },
     },
     defaultVariants: {

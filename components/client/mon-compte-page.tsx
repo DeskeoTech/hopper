@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
-import { LogOut, MessageCircle, Loader2 } from "lucide-react"
+import { LogOut, MessageCircle, Loader2, Building2, Ticket, Crown, User, Package, Coins, Receipt } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
 import { MesCoordonneesTab } from "./mes-coordonnees-tab"
 import { MonForfaitTab } from "./mon-forfait-tab"
@@ -19,9 +20,18 @@ interface MonComptePageProps {
 }
 
 export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
-  const { canManageCompany } = useClientLayout()
+  const { user, credits, plan, canManageCompany } = useClientLayout()
   const router = useRouter()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [activeTab, setActiveTab] = useState("coordonnees")
+
+  // User info
+  const firstName = user?.first_name || ""
+  const lastName = user?.last_name || ""
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Utilisateur"
+  const companyName = user?.companies?.name || null
+  const planName = plan?.name || null
+  const remainingCredits = credits?.remaining ?? 0
 
   const handleLogout = async () => {
     setLoggingOut(true)
@@ -30,34 +40,87 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
     router.push("/login")
   }
 
+  // Menu items for mobile grid
+  const menuItems = [
+    { value: "coordonnees", label: "Mes coordonnées", icon: User },
+    { value: "forfait", label: "Mon forfait", icon: Package },
+    { value: "credits", label: "Mes crédits", icon: Coins },
+    ...(canManageCompany ? [{ value: "entreprise", label: "Mon entreprise", icon: Building2 }] : []),
+    { value: "facturation", label: "Facturation", icon: Receipt },
+    { value: "contact", label: "Contact", icon: MessageCircle },
+  ]
+
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
       <h1 className="font-header text-xl sm:text-2xl font-bold uppercase tracking-tight">
         Mon Compte
       </h1>
 
-      <Tabs defaultValue="coordonnees" className="w-full">
-        {/* Mobile: horizontal scroll, Desktop: flex row */}
-        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide sm:mx-0 sm:px-0 sm:overflow-visible">
-          <TabsList className="inline-flex h-auto w-max gap-1 p-1 sm:w-full sm:justify-start">
-            <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+      {/* User Info Block - Mobile only */}
+      <div className="md:hidden rounded-[16px] bg-card p-4 shadow-sm">
+        <p className="font-header text-lg font-semibold text-foreground">{fullName}</p>
+        {companyName && (
+          <div className="mt-1 flex items-center gap-1.5 text-sm text-foreground/70">
+            <Building2 className="h-3.5 w-3.5" />
+            <span>{companyName}</span>
+          </div>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5 text-sm text-foreground/70">
+            <Ticket className="h-3.5 w-3.5" />
+            <span>{remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}</span>
+          </div>
+          {planName && (
+            <div className="flex items-center gap-1.5 text-sm text-foreground/70">
+              <Crown className="h-3.5 w-3.5" />
+              <span>{planName}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        {/* Mobile: 2-column grid */}
+        <div className="grid grid-cols-2 gap-2 md:hidden">
+          {menuItems.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => setActiveTab(item.value)}
+              className={cn(
+                "flex items-center gap-2.5 rounded-[12px] p-3 text-left transition-all",
+                activeTab === item.value
+                  ? "bg-foreground text-background"
+                  : "bg-card hover:bg-card/80"
+              )}
+            >
+              <item.icon className="h-4 w-4 shrink-0" />
+              <span className="text-xs font-medium truncate">{item.label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Desktop: horizontal tabs */}
+        <div className="hidden md:block">
+          <TabsList className="inline-flex h-auto w-full gap-1 p-1 justify-start">
+            <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-sm">
               Mes coordonnées
             </TabsTrigger>
-            <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
               Mon forfait
             </TabsTrigger>
-            <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
               Mes crédits
             </TabsTrigger>
             {canManageCompany && (
-              <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+              <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-sm">
                 Mon entreprise
               </TabsTrigger>
             )}
-            <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
               Facturation
             </TabsTrigger>
-            <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-xs sm:text-sm">
+            <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-sm">
               Contact
             </TabsTrigger>
           </TabsList>

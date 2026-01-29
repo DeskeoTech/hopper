@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { UserProfileCard } from "./user-profile-card"
 import { UserBookingsSection } from "./user-bookings-section"
 import { BookMeetingRoomModal } from "./book-meeting-room-modal"
 import { HomepageHero } from "./homepage-hero"
@@ -65,17 +64,12 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
         {/* Site Selector - shown on both mobile and desktop */}
         <HomepageSiteSelector />
 
-        {/* Quick Actions - Mobile only */}
-        <div className="md:hidden">
-          <h2 className="mb-3 font-header text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+        {/* Quick Actions */}
+        <div>
+          <h2 className="mb-3 font-header text-xl text-foreground">
             Actions rapides
           </h2>
           <HomepageQuickActions />
-        </div>
-
-        {/* User Profile Card - Desktop only */}
-        <div className="hidden md:block">
-          <UserProfileCard />
         </div>
 
         <UserBookingsSection
