@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -12,6 +12,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
 import type { SupportTicketWithDetails, TicketStatus, TicketRequestType } from "@/lib/types/database"
@@ -101,20 +108,16 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
 
   const getStatusBadge = (status: TicketStatus | null) => {
     const statusConfig = {
-      todo: { label: "À faire", className: "bg-orange-100 text-orange-700" },
-      in_progress: { label: "En cours", className: "bg-blue-100 text-blue-700" },
-      done: { label: "Résolu", className: "bg-green-100 text-green-700" },
+      todo: { label: "À faire", dotClass: "text-warning" },
+      in_progress: { label: "En cours", dotClass: "text-blue-500" },
+      done: { label: "Résolu", dotClass: "text-success" },
     }
 
     const config = status ? statusConfig[status] : null
 
     return (
-      <span
-        className={cn(
-          "inline-flex rounded-sm px-2 py-0.5 text-xs font-medium",
-          config?.className || "bg-gray-100 text-gray-600"
-        )}
-      >
+      <span className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+        <span className={cn("text-base", config?.dotClass || "text-muted-foreground")}>●</span>
         {config?.label || "-"}
       </span>
     )
@@ -140,12 +143,12 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
 
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-lg border bg-card">
+      <div className="overflow-x-auto rounded-[20px] bg-card">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-b border-border/50 hover:bg-transparent">
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("created_at")}
               >
                 <div className="flex items-center">
@@ -154,7 +157,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("user_name")}
               >
                 <div className="flex items-center">
@@ -163,7 +166,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="hidden cursor-pointer select-none md:table-cell"
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide md:table-cell"
                 onClick={() => handleSort("company_name")}
               >
                 <div className="flex items-center">
@@ -172,7 +175,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </div>
               </TableHead>
               <TableHead
-                className="hidden cursor-pointer select-none sm:table-cell"
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide sm:table-cell"
                 onClick={() => handleSort("request_type")}
               >
                 <div className="flex items-center">
@@ -180,11 +183,11 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                   <SortIcon field="request_type" />
                 </div>
               </TableHead>
-              <TableHead className="hidden lg:table-cell">
+              <TableHead className="hidden text-xs font-bold uppercase tracking-wide lg:table-cell">
                 Description
               </TableHead>
               <TableHead
-                className="cursor-pointer select-none"
+                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("status")}
               >
                 <div className="flex items-center">
@@ -192,23 +195,26 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                   <SortIcon field="status" />
                 </div>
               </TableHead>
+              <TableHead className="w-[50px]">
+                <span className="sr-only">Actions</span>
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {paginatedTickets.map((ticket) => (
-              <TableRow key={ticket.id}>
-                <TableCell className="text-muted-foreground">
-                  {format(new Date(ticket.created_at), "dd MMM yyyy", { locale: fr })}
+              <TableRow key={ticket.id} className="border-b border-border/30 hover:bg-muted/30">
+                <TableCell>
+                  {format(new Date(ticket.created_at), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
-                <TableCell className="font-medium">
+                <TableCell className="font-semibold uppercase">
                   <div className="flex flex-col">
                     <span>{getUserName(ticket)}</span>
                     {ticket.user_email && ticket.user_first_name && (
-                      <span className="text-xs text-muted-foreground">{ticket.user_email}</span>
+                      <span className="text-xs font-normal normal-case text-muted-foreground">{ticket.user_email}</span>
                     )}
                   </div>
                 </TableCell>
-                <TableCell className="hidden text-muted-foreground md:table-cell">
+                <TableCell className="hidden font-semibold uppercase md:table-cell">
                   {ticket.company_name || "-"}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
@@ -221,6 +227,21 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </TableCell>
                 <TableCell>
                   {getStatusBadge(ticket.status)}
+                </TableCell>
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Actions</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem>
+                        Voir détails
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}

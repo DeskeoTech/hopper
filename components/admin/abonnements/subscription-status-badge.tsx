@@ -11,32 +11,28 @@ export function SubscriptionStatusBadge({ status, size = "sm" }: SubscriptionSta
   const config = {
     actif: {
       label: "Actif",
-      bgClass: "bg-success/10 text-success border-success/30",
-      dotClass: "bg-success",
+      dotClass: "text-success",
     },
     inactif: {
       label: "Inactif",
-      bgClass: "bg-muted text-muted-foreground border-muted-foreground/30",
-      dotClass: "bg-muted-foreground",
+      dotClass: "text-muted-foreground",
     },
     expirant: {
-      label: "Expire bientot",
-      bgClass: "bg-warning/10 text-warning border-warning/30",
-      dotClass: "bg-warning",
+      label: "Expire bientôt",
+      dotClass: "text-warning",
     },
   }
 
-  const { label, bgClass, dotClass } = config[status]
+  const { label, dotClass } = config[status]
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-sm border font-medium",
-        size === "sm" ? "px-2.5 py-1 text-xs" : "px-3 py-1.5 text-sm",
-        bgClass
+        "inline-flex items-center gap-1.5 font-medium text-foreground",
+        size === "sm" ? "text-sm" : "text-base"
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-sm", dotClass)} />
+      <span className={cn("text-base", dotClass)}>●</span>
       {label}
     </span>
   )

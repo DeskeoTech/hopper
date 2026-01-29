@@ -98,15 +98,15 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-[20px] bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">Total</p>
           <p className="mt-1 text-2xl font-bold text-foreground">{totalCount}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-[20px] bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">Ouverts</p>
           <p className="mt-1 text-2xl font-bold text-green-600">{openCount}</p>
         </div>
-        <div className="rounded-lg border bg-card p-4">
+        <div className="rounded-[20px] bg-card p-4">
           <p className="text-sm font-medium text-muted-foreground">Résolus</p>
           <p className="mt-1 text-2xl font-bold text-green-600">{resolvedCount}</p>
         </div>
@@ -121,7 +121,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
       {ticketsWithDetails && ticketsWithDetails.length > 0 ? (
         <TicketsTable tickets={ticketsWithDetails} />
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
+        <div className="flex flex-col items-center justify-center rounded-[20px] bg-card p-12">
           <Headphones className="mb-4 h-12 w-12 text-muted-foreground/50" />
           <p className="text-muted-foreground">
             {search || status || request_type ? "Aucun ticket ne correspond à vos critères" : "Aucun ticket trouvé"}
