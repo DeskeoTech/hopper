@@ -44,7 +44,7 @@ export function HomepageQuickActions() {
             "hover:bg-card/80 active:scale-[0.98]"
           )}
         >
-          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-orange-50 text-orange-500">
+          <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-[#1B1918]/10 text-[#1B1918]">
             <Info className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <span className="text-center text-[11px] sm:text-xs font-medium text-foreground/70 leading-tight line-clamp-2">

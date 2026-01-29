@@ -8,6 +8,20 @@ import { Label } from "@/components/ui/label"
 import { useClientLayout } from "./client-layout-provider"
 import { updateUserProfile } from "@/lib/actions/user-company-info"
 
+// Format French phone number: 01 23 45 67 89
+function formatFrenchPhone(value: string): string {
+  // Remove all non-digit characters
+  const digits = value.replace(/\D/g, "")
+  // Limit to 10 digits
+  const limited = digits.slice(0, 10)
+  // Format with spaces every 2 digits
+  const parts = []
+  for (let i = 0; i < limited.length; i += 2) {
+    parts.push(limited.slice(i, i + 2))
+  }
+  return parts.join(" ")
+}
+
 export function MesCoordonneesTab() {
   const { user } = useClientLayout()
   const [loading, setLoading] = useState(false)
@@ -16,7 +30,7 @@ export function MesCoordonneesTab() {
 
   const [firstName, setFirstName] = useState(user.first_name || "")
   const [lastName, setLastName] = useState(user.last_name || "")
-  const [phone, setPhone] = useState(user.phone || "")
+  const [phone, setPhone] = useState(formatFrenchPhone(user.phone || ""))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -43,7 +57,7 @@ export function MesCoordonneesTab() {
     <div className="rounded-[16px] bg-card p-6 shadow-sm">
       <div className="mb-6 flex items-center gap-2">
         <User className="h-5 w-5 text-foreground/50" />
-        <h2 className="text-lg font-semibold">Mes coordonnées</h2>
+        <h2 className="text-lg font-semibold">Coordonnées</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -87,11 +101,15 @@ export function MesCoordonneesTab() {
               id="phone"
               type="tel"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatFrenchPhone(e.target.value))}
               placeholder="01 23 45 67 89"
               className="pl-10"
+              maxLength={14}
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            Format : 01 23 45 67 89
+          </p>
         </div>
 
         {error && (

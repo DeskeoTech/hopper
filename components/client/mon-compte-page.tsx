@@ -12,6 +12,7 @@ import { MonForfaitTab } from "./mon-forfait-tab"
 import { MesCreditsTab } from "./mes-credits-tab"
 import { MonEntrepriseTab } from "./mon-entreprise-tab"
 import { FacturationTab } from "./facturation-tab"
+import { SupportTab } from "./support-tab"
 import { createClient } from "@/lib/supabase/client"
 import type { ContractHistoryItem } from "@/lib/actions/contracts"
 
@@ -42,20 +43,16 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
 
   // Menu items for mobile grid
   const menuItems = [
-    { value: "coordonnees", label: "Mes coordonnées", icon: User },
-    { value: "forfait", label: "Mon forfait", icon: Package },
-    { value: "credits", label: "Mes crédits", icon: Coins },
-    ...(canManageCompany ? [{ value: "entreprise", label: "Mon entreprise", icon: Building2 }] : []),
+    { value: "coordonnees", label: "Coordonnées", icon: User },
+    { value: "forfait", label: "Forfait", icon: Package },
+    { value: "credits", label: "Crédits", icon: Coins },
+    ...(canManageCompany ? [{ value: "entreprise", label: "Entreprise", icon: Building2 }] : []),
     { value: "facturation", label: "Facturation", icon: Receipt },
-    { value: "contact", label: "Contact", icon: MessageCircle },
+    { value: "contact", label: "Support", icon: MessageCircle },
   ]
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
-      <h1 className="font-header text-xl sm:text-2xl font-bold uppercase tracking-tight">
-        Mon Compte
-      </h1>
-
       {/* User Info Block - Mobile only */}
       <div className="md:hidden rounded-[16px] bg-card p-4 shadow-sm">
         <p className="font-header text-lg font-semibold text-foreground">{fullName}</p>
@@ -104,24 +101,24 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
         <div className="hidden md:block">
           <TabsList className="inline-flex h-auto w-full gap-1 p-1 justify-start">
             <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-sm">
-              Mes coordonnées
+              Coordonnées
             </TabsTrigger>
             <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
-              Mon forfait
+              Forfait
             </TabsTrigger>
             <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
-              Mes crédits
+              Crédits
             </TabsTrigger>
             {canManageCompany && (
               <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-sm">
-                Mon entreprise
+                Entreprise
               </TabsTrigger>
             )}
             <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
               Facturation
             </TabsTrigger>
             <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-sm">
-              Contact
+              Support
             </TabsTrigger>
           </TabsList>
         </div>
@@ -149,31 +146,7 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
         </TabsContent>
 
         <TabsContent value="contact" className="mt-6">
-          <div className="rounded-[20px] bg-card p-6 shadow-sm">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                <MessageCircle className="h-5 w-5 text-primary" />
-              </div>
-              <h3 className="font-header text-lg font-semibold">Nous contacter</h3>
-            </div>
-            <p className="text-sm text-muted-foreground mb-4">
-              Une question ? Un problème ? Notre équipe est à votre disposition.
-            </p>
-            <div className="space-y-3">
-              <a
-                href="mailto:contact@deskeo.com"
-                className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3 transition-colors hover:bg-muted"
-              >
-                <span className="text-sm">📧 contact@deskeo.com</span>
-              </a>
-              <a
-                href="tel:+33176440240"
-                className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3 transition-colors hover:bg-muted"
-              >
-                <span className="text-sm">📞 01 76 44 02 40</span>
-              </a>
-            </div>
-          </div>
+          <SupportTab />
         </TabsContent>
       </Tabs>
 

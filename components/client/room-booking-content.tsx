@@ -44,7 +44,8 @@ import {
   checkAvailability,
   createMeetingRoomBooking,
 } from "@/lib/actions/bookings"
-import { disabledDateMatcher, getNextBusinessDay, getPreviousBusinessDay, isToday } from "@/lib/dates"
+import { disabledDateMatcher, getNextBusinessDay, getNextBusinessDays, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
+import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -307,6 +308,9 @@ export function RoomBookingContent({
   const isTodaySelected = isToday(selectedDate)
   const previousBusinessDay = getPreviousBusinessDay(selectedDate)
 
+  // Get next 10 business days for quick selection (modal only)
+  const upcomingDays = useMemo(() => getNextBusinessDays(10), [])
+
   // Render credits insufficient message with links
   const renderCreditsError = () => (
     <div className="mt-3 space-y-2">
@@ -389,72 +393,139 @@ export function RoomBookingContent({
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
           {/* Site and Date row */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Site switcher */}
-            <div className="flex items-center gap-2 flex-1">
-              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <SearchableSelect
-                options={sortedSites.map((s) => ({
-                  value: s.id,
-                  label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
-                }))}
-                value={selectedSiteId || ""}
-                onValueChange={handleSiteChange}
-                placeholder="Sélectionner un site"
-                searchPlaceholder="Rechercher un site..."
-                triggerClassName="flex-1 max-w-[250px]"
-              />
-            </div>
+          <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${isModal ? "sm:justify-center" : "sm:justify-between"}`}>
+            {/* Site switcher (page only) */}
+            {!isModal && (
+              <div className="flex items-center gap-2 flex-1">
+                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <SearchableSelect
+                  options={sortedSites.map((s) => ({
+                    value: s.id,
+                    label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
+                  }))}
+                  value={selectedSiteId || ""}
+                  onValueChange={handleSiteChange}
+                  placeholder="Sélectionner un site"
+                  searchPlaceholder="Rechercher un site..."
+                  triggerClassName="flex-1 max-w-[250px]"
+                />
+              </div>
+            )}
 
-            {/* Date navigation */}
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  if (previousBusinessDay) {
-                    setSelectedDate(previousBusinessDay)
-                  }
-                }}
-                disabled={!previousBusinessDay}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
+            {/* Date navigation - different for modal vs page */}
+            {isModal ? (
+              // Modal: horizontal scrollable day picker
+              <div className="flex items-center gap-2 w-full justify-center">
+                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                  {upcomingDays.map((day) => {
+                    const isSelected = isSameDay(day, selectedDate)
+                    const dayIsToday = isToday(day)
+                    return (
+                      <button
+                        key={day.toISOString()}
+                        type="button"
+                        onClick={() => handleDateChange(day)}
+                        className={cn(
+                          "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-xl transition-all",
+                          isSelected
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "bg-muted/50 hover:bg-muted text-foreground"
+                        )}
+                      >
+                        <span className={cn(
+                          "text-[10px] font-medium uppercase tracking-wide",
+                          isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                        )}>
+                          {format(day, "EEE", { locale: fr })}
+                        </span>
+                        <span className={cn(
+                          "text-lg font-semibold leading-tight",
+                          isSelected ? "text-primary-foreground" : "text-foreground"
+                        )}>
+                          {format(day, "d")}
+                        </span>
+                        <span className={cn(
+                          "text-[9px]",
+                          isSelected ? "text-primary-foreground/70" : "text-muted-foreground/70"
+                        )}>
+                          {dayIsToday ? "Auj." : format(day, "MMM", { locale: fr })}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+                {/* Calendar button for other dates */}
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-[58px] w-10 shrink-0 rounded-xl"
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateChange}
+                      disabled={disabledDateMatcher}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            ) : (
+              // Page: classic navigation with arrows
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => {
+                    if (previousBusinessDay) {
+                      setSelectedDate(previousBusinessDay)
+                    }
+                  }}
+                  disabled={!previousBusinessDay}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="min-w-[140px]">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {isTodaySelected ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center">
-                  <Calendar
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateChange}
-                    disabled={disabledDateMatcher}
-                  />
-                </PopoverContent>
-              </Popover>
+                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="min-w-[140px]">
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {isTodaySelected ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="center">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={handleDateChange}
+                      disabled={disabledDateMatcher}
+                    />
+                  </PopoverContent>
+                </Popover>
 
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setSelectedDate(getNextBusinessDay(selectedDate))}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => setSelectedDate(getNextBusinessDay(selectedDate))}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Capacity filter */}
           {capacityOptions.length > 0 && (
             <div className="flex items-center gap-2 flex-wrap">
               <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Places min:</span>
+              <span className="text-sm text-muted-foreground">Capacité</span>
               <div className="flex flex-wrap gap-1">
                 <Button
                   variant={capacityFilter === null ? "default" : "outline"}
@@ -508,6 +579,54 @@ export function RoomBookingContent({
               )}
             </div>
           )}
+
+          {/* Warning banner when user can't book (page only) */}
+          {!isModal && (!hasActivePlan || remainingCredits === 0) && (
+            <div className="rounded-[16px] border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-100">
+                  <Coins className="h-4 w-4 text-amber-600" />
+                </div>
+                <div className="flex-1">
+                  {!hasActivePlan ? (
+                    <>
+                      <p className="font-medium text-amber-800">
+                        Votre pass Hopper a expiré
+                      </p>
+                      <p className="mt-1 text-sm text-amber-700">
+                        Vous ne pouvez pas réserver de salle de réunion. Souscrivez un nouveau pass pour accéder aux réservations.
+                      </p>
+                      <a
+                        href={`https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+                      >
+                        Souscrire un pass
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-medium text-amber-800">
+                        Vous n&apos;avez plus de crédits
+                      </p>
+                      <p className="mt-1 text-sm text-amber-700">
+                        Votre solde de crédits est à 0. Achetez des crédits supplémentaires pour réserver une salle de réunion.
+                      </p>
+                      <Link
+                        href="/boutique?tab=credits"
+                        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
+                      >
+                        Acheter des crédits
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -521,6 +640,47 @@ export function RoomBookingContent({
       {isModal ? (
         // Modal layout
         <div className="flex-1 overflow-hidden flex flex-col">
+          {/* Warning banner for modal when user can't book */}
+          {view === "planning" && (!hasActivePlan || remainingCredits === 0) && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3 shrink-0">
+              <div className="flex items-start gap-2">
+                <Coins className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {!hasActivePlan ? (
+                    <>
+                      <p className="text-sm font-medium text-amber-800">
+                        Votre pass Hopper a expiré
+                      </p>
+                      <a
+                        href={`https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+                      >
+                        Souscrire un pass
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-medium text-amber-800">
+                        Vous n&apos;avez plus de crédits
+                      </p>
+                      <Link
+                        href="/boutique?tab=credits"
+                        onClick={onClose}
+                        className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
+                      >
+                        Acheter des crédits
+                        <ExternalLink className="h-3 w-3" />
+                      </Link>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Planning Grid */}
           {view === "planning" && (
             <div className="flex-1 overflow-auto">
