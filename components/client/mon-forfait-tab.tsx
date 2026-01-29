@@ -1,7 +1,8 @@
 "use client"
 
-import { CreditCard } from "lucide-react"
+import { CreditCard, Calendar, Check } from "lucide-react"
 import { useClientLayout } from "./client-layout-provider"
+import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -37,93 +38,148 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
-        <div className="mb-4 flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-foreground/50" />
-          <h2 className="text-lg font-semibold">Forfait actuel</h2>
+      <div className="rounded-[16px] bg-card p-5 sm:p-6 shadow-sm">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <CreditCard className="h-6 w-6 text-foreground/50" />
+            <h2 className="text-xl font-semibold">Forfait actuel</h2>
+          </div>
+          {plan && (
+            <span
+              className={cn(
+                "inline-flex rounded-full px-3 py-1.5 text-sm font-medium",
+                activeContract ? statusColors[activeContract.status] : "bg-green-100 text-green-700"
+              )}
+            >
+              {activeContract ? statusLabels[activeContract.status] : "Actif"}
+            </span>
+          )}
         </div>
 
         {plan ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="space-y-6">
+            {/* Plan name and details */}
             <div>
-              <p className="text-xs font-medium uppercase text-foreground/60">Forfait</p>
-              <p className="mt-1 text-lg font-semibold">{plan.name}</p>
+              <p className="text-2xl font-semibold text-foreground">{plan.name}</p>
+              {activeContract?.number_of_seats && activeContract.number_of_seats > 1 && (
+                <p className="mt-2 text-lg text-foreground/60">
+                  {activeContract.number_of_seats} postes
+                </p>
+              )}
             </div>
-            {activeContract?.number_of_seats && (
-              <div>
-                <p className="text-xs font-medium uppercase text-foreground/60">Nombre de postes</p>
-                <p className="mt-1 font-medium">
-                  {activeContract.number_of_seats} poste{activeContract.number_of_seats > 1 ? "s" : ""}
-                </p>
-              </div>
-            )}
-            {activeContract?.start_date && (
-              <div>
-                <p className="text-xs font-medium uppercase text-foreground/60">Date de début</p>
-                <p className="mt-1 font-medium">
-                  {new Date(activeContract.start_date).toLocaleDateString("fr-FR")}
-                </p>
-              </div>
-            )}
-            {activeContract?.commitment_end_date && (
-              <div>
-                <p className="text-xs font-medium uppercase text-foreground/60">Fin d&apos;engagement</p>
-                <p className="mt-1 font-medium">
-                  {new Date(activeContract.commitment_end_date).toLocaleDateString("fr-FR")}
-                </p>
-              </div>
-            )}
+
+            {/* Dates */}
+            <div className="flex flex-col gap-5 sm:flex-row sm:flex-wrap sm:gap-8">
+              {activeContract?.start_date && (
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
+                    <Calendar className="h-5 w-5 text-foreground/50" />
+                  </div>
+                  <div>
+                    <p className="text-base text-foreground/50">Date de début</p>
+                    <p className="text-lg font-medium">
+                      {new Date(activeContract.start_date).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+              {activeContract?.commitment_end_date && (
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
+                    <Calendar className="h-5 w-5 text-foreground/50" />
+                  </div>
+                  <div>
+                    <p className="text-base text-foreground/50">Fin d&apos;engagement</p>
+                    <p className="text-lg font-medium">
+                      {new Date(activeContract.commitment_end_date).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Benefits list */}
+            <div className="rounded-[12px] bg-foreground/[0.03] p-5">
+              <p className="mb-4 text-base font-medium uppercase text-foreground/50">Inclus dans votre forfait</p>
+              <ul className="space-y-4">
+                <li className="flex items-center gap-4 text-lg text-foreground/80">
+                  <Check className="h-6 w-6 shrink-0 text-green-600" />
+                  Accès illimité à Hopper Coworking
+                </li>
+                <li className="flex items-center gap-4 text-lg text-foreground/80">
+                  <Check className="h-6 w-6 shrink-0 text-green-600" />
+                  Réservation de salles de réunion
+                </li>
+                <li className="flex items-center gap-4 text-lg text-foreground/80">
+                  <Check className="h-6 w-6 shrink-0 text-green-600" />
+                  WiFi haut débit
+                </li>
+              </ul>
+            </div>
+
+            {/* Manage button */}
+            <Button variant="outline" disabled className="w-full h-14 text-lg">
+              Gérer mon forfait
+            </Button>
           </div>
         ) : (
-          <p className="text-muted-foreground">Aucun forfait actif</p>
+          <p className="text-lg text-muted-foreground">Aucun forfait actif</p>
         )}
       </div>
 
       {/* Contract History */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
-        <h3 className="mb-4 text-lg font-semibold">Historique des contrats</h3>
+      <div className="rounded-[16px] bg-card p-5 sm:p-6 shadow-sm">
+        <h3 className="mb-5 text-xl font-semibold">Historique des contrats</h3>
 
         {!initialContractHistory || initialContractHistory.length === 0 ? (
-          <p className="text-muted-foreground">Aucun historique de contrat</p>
+          <p className="text-lg text-muted-foreground">Aucun historique de contrat</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Forfait</TableHead>
-                  <TableHead className="hidden sm:table-cell">Date début</TableHead>
-                  <TableHead className="hidden sm:table-cell">Date fin</TableHead>
-                  <TableHead className="hidden md:table-cell">Postes</TableHead>
-                  <TableHead className="hidden md:table-cell">Prix TTC/mois</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-base">Forfait</TableHead>
+                  <TableHead className="hidden sm:table-cell text-base">Date début</TableHead>
+                  <TableHead className="hidden sm:table-cell text-base">Date fin</TableHead>
+                  <TableHead className="hidden md:table-cell text-base">Postes</TableHead>
+                  <TableHead className="hidden md:table-cell text-base">Prix TTC/mois</TableHead>
+                  <TableHead className="text-base">Statut</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {initialContractHistory.map((contract) => (
                   <TableRow key={contract.id}>
-                    <TableCell className="font-medium">{contract.plan_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell className="font-medium text-base py-4">{contract.plan_name}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-base py-4">
                       {contract.start_date
                         ? new Date(contract.start_date).toLocaleDateString("fr-FR")
                         : "—"}
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">
+                    <TableCell className="hidden sm:table-cell text-base py-4">
                       {contract.commitment_end_date
                         ? new Date(contract.commitment_end_date).toLocaleDateString("fr-FR")
                         : "—"}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden md:table-cell text-base py-4">
                       {contract.number_of_seats ?? "—"}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">
+                    <TableCell className="hidden md:table-cell text-base py-4">
                       {contract.price_per_seat_month
                         ? `${contract.price_per_seat_month.toLocaleString("fr-FR")} €`
                         : "—"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-4">
                       <span
                         className={cn(
-                          "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+                          "inline-flex rounded-full px-3 py-1.5 text-sm font-medium",
                           statusColors[contract.status] || "bg-gray-100 text-gray-700"
                         )}
                       >

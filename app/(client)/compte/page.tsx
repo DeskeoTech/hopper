@@ -118,5 +118,10 @@ export default async function ComptePage() {
       }
     }) || []
 
-  return <AccountPage bookings={transformedBookings} contracts={contracts} />
+  return (
+    <AccountPage
+      bookings={transformedBookings}
+      contracts={contracts}
+    />
+  )
 }

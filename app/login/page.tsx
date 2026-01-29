@@ -51,11 +51,6 @@ export default async function LoginPage({
                 />
               </div>
 
-              {/* Title */}
-              <h1 className="mb-6 text-center font-header text-2xl font-semibold text-foreground sm:text-3xl">
-                Bienvenue
-              </h1>
-
               {/* Login Form */}
               <LoginForm initialError={error} />
             </div>

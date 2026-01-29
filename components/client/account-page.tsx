@@ -79,19 +79,19 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
           onBookClick={canBook ? () => setBookingModalOpen(true) : undefined}
           canBook={canBook}
         />
-
-        <BookMeetingRoomModal
-          open={bookingModalOpen}
-          onOpenChange={setBookingModalOpen}
-          userId={user.id}
-          companyId={user.company_id || ""}
-          mainSiteId={selectedSiteId}
-          remainingCredits={credits?.remaining || 0}
-          sites={sites}
-          userEmail={user.email || ""}
-          hasActivePlan={!!plan}
-        />
       </div>
+
+      <BookMeetingRoomModal
+        open={bookingModalOpen}
+        onOpenChange={setBookingModalOpen}
+        userId={user.id}
+        companyId={user.company_id || ""}
+        mainSiteId={selectedSiteId}
+        remainingCredits={credits?.remaining || 0}
+        sites={sites}
+        userEmail={user.email || ""}
+        hasActivePlan={!!plan}
+      />
     </div>
   )
 }
