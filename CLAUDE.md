@@ -59,7 +59,7 @@ npm run start    # Start production server
 ## Design System
 
 Custom Deskeo brand with:
-- **Primary background:** #F0E8DC (warm beige)
+- **Primary background:** #F2E7DC (warm beige)
 - **Primary text:** #1B1918 (dark brown)
 - **Fonts:** ProgramNarOT (headers), Articulat CF (body), GT Alpina (editorial)
 - **Border radius:** 20px default

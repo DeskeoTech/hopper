@@ -6,27 +6,27 @@
      DESIGN SYSTEM - HOPPER
      ========================================
      Palette: 3 couleurs principales + 1 erreur
-     - bg-primary: #F0E8DC (beige - fond principal)
+     - bg-primary: #F2E7DC (beige - fond principal)
      - text-primary: #1B1918 (dark - texte, bordures, CTAs)
      - bg-secondary: #D9D0C4 (beige foncé - cards, panels)
      - error: rouge pastel (validation uniquement)
   ======================================== */
 
   /* Design System Colors */
-  --color-bg-primary: #F0E8DC;
+  --color-bg-primary: #F2E7DC;
   --color-text-primary: #1B1918;
   --color-bg-secondary: #D9D0C4;
   --color-error: oklch(0.7 0.15 25);
 
   /* Mappings shadcn/ui */
-  --background: #F0E8DC;
+  --background: #F2E7DC;
   --foreground: #1B1918;
   --card: #F5F0E8;
   --card-foreground: #1B1918;
-  --popover: #F0E8DC;
+  --popover: #F2E7DC;
   --popover-foreground: #1B1918;
   --primary: #1B1918;
-  --primary-foreground: #F0E8DC;
+  --primary-foreground: #F2E7DC;
   --secondary: transparent;
   --secondary-foreground: #1B1918;
   --muted: #D9D0C4;
@@ -49,9 +49,9 @@
 
   /* Sidebar */
   --sidebar: #1B1918;
-  --sidebar-foreground: #F0E8DC;
+  --sidebar-foreground: #F2E7DC;
   --sidebar-primary: #1B1918;
-  --sidebar-primary-foreground: #F0E8DC;
+  --sidebar-primary-foreground: #F2E7DC;
   --sidebar-accent: #D9D0C4;
   --sidebar-accent-foreground: #1B1918;
   --sidebar-border: #1B1918;
@@ -59,7 +59,7 @@
 
   /* Brand */
   --brand: #1B1918;
-  --brand-foreground: #F0E8DC;
+  --brand-foreground: #F2E7DC;
   --brand-accent: #D9D0C4;
   --brand-accent-foreground: #1B1918;
   --brand-muted: #D9D0C4;
@@ -163,8 +163,8 @@
   .font-heading {
     font-family: var(--font-header);
     text-transform: uppercase;
-    font-weight: 900;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -181,8 +181,8 @@
     font-family: var(--font-header);
     font-size: clamp(36px, 4vw, 64px);
     text-transform: uppercase;
-    font-weight: 900;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }
@@ -191,8 +191,8 @@
     font-family: var(--font-header);
     font-size: clamp(28px, 3vw, 44px);
     text-transform: uppercase;
-    font-weight: 900;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }
@@ -201,8 +201,8 @@
     font-family: var(--font-header);
     font-size: 24px;
     text-transform: uppercase;
-    font-weight: 900;
-    letter-spacing: 0.05em;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     line-height: 1.0;
     -webkit-font-smoothing: antialiased;
   }

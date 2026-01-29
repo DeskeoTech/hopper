@@ -348,7 +348,7 @@ Les mutations de données utilisent les Server Actions Next.js (`"use server"`).
 
 | Variable | Valeur | Usage |
 |----------|--------|-------|
-| `--color-bg-primary` | `#F0E8DC` | Fond principal (beige chaud) |
+| `--color-bg-primary` | `#F2E7DC` | Fond principal (beige chaud) |
 | `--color-text-primary` | `#1B1918` | Texte, bordures, CTAs (brun foncé) |
 | `--color-bg-secondary` | `#D9D0C4` | Cards, panels (beige foncé) |
 
