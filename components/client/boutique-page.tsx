@@ -38,7 +38,7 @@ export function BoutiquePage() {
       {/* Credits and Coworking Section */}
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
         {/* Buy Credits Card */}
-        <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+        <div className="rounded-[16px] bg-card p-4 sm:p-6 shadow-sm">
           <div className="flex items-start gap-3 sm:gap-4">
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-amber-100">
               <Coins className="h-5 w-5 sm:h-6 sm:w-6 text-amber-600" />
@@ -60,7 +60,7 @@ export function BoutiquePage() {
         </div>
 
         {/* Book Coworking Card */}
-        <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+        <div className="rounded-[16px] bg-card p-4 sm:p-6 shadow-sm">
           <div className="flex items-start gap-3 sm:gap-4">
             <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-blue-100">
               <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
@@ -82,7 +82,7 @@ export function BoutiquePage() {
       </div>
 
       {/* Hopper Café Section */}
-      <div className="rounded-[16px] border bg-card p-4 sm:p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6 shadow-sm">
         <div className="flex items-start gap-3 sm:gap-4 mb-4 sm:mb-6">
           <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-full bg-orange-100">
             <Coffee className="h-5 w-5 sm:h-6 sm:w-6 text-orange-600" />
