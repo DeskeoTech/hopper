@@ -1,7 +1,7 @@
 import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AccountPage } from "@/components/client/account-page"
-import type { BookingWithDetails, ResourceType } from "@/lib/types/database"
+import type { BookingWithDetails, ContractForDisplay, ResourceType, PlanRecurrence, FloorLevel } from "@/lib/types/database"
 
 export default async function ComptePage() {
   const authUser = await getUser()
@@ -12,10 +12,10 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch only user ID (user profile is already in layout context)
+  // Fetch user profile with company_id
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id")
+    .select("id, company_id")
     .eq("email", authUser.email)
     .single()
 
@@ -34,6 +34,7 @@ export default async function ComptePage() {
         name,
         type,
         capacity,
+        floor,
         site_id,
         sites!left (id, name)
       )
@@ -43,8 +44,39 @@ export default async function ComptePage() {
     .order("start_date", { ascending: false })
     .limit(50)
 
+  // Fetch company's contracts (passes) with plan and site details
+  let contracts: ContractForDisplay[] = []
+  if (userProfile.company_id) {
+    const { data: contractsData } = await supabase
+      .from("contracts")
+      .select(`
+        id,
+        status,
+        start_date,
+        commitment_end_date,
+        plans (name, recurrence),
+        sites (name)
+      `)
+      .eq("company_id", userProfile.company_id)
+      .order("start_date", { ascending: false })
+      .limit(50)
+
+    contracts = (contractsData || []).map((c) => {
+      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+      const site = c.sites as unknown as { name: string } | null
+      return {
+        id: c.id,
+        status: c.status as "active" | "suspended" | "terminated",
+        start_date: c.start_date,
+        end_date: c.commitment_end_date,
+        plan_name: plan?.name || "Pass",
+        plan_recurrence: plan?.recurrence || null,
+        site_name: site?.name || null,
+      }
+    })
+  }
+
   // Transform bookings to flat structure with details
-  // Note: user fields are not used in client booking cards (only in admin views)
   const transformedBookings: BookingWithDetails[] =
     bookings?.map((b) => {
       const resource = b.resources as {
@@ -52,6 +84,7 @@ export default async function ComptePage() {
         name: string
         type: ResourceType
         capacity: number | null
+        floor: FloorLevel | null
         site_id: string
         sites: { id: string; name: string } | null
       } | null
@@ -74,6 +107,7 @@ export default async function ComptePage() {
         resource_name: resource?.name || null,
         resource_type: resource?.type || null,
         resource_capacity: resource?.capacity || null,
+        resource_floor: resource?.floor || null,
         site_id: resource?.site_id || null,
         site_name: resource?.sites?.name || null,
         user_first_name: null,
@@ -84,5 +118,5 @@ export default async function ComptePage() {
       }
     }) || []
 
-  return <AccountPage bookings={transformedBookings} />
+  return <AccountPage bookings={transformedBookings} contracts={contracts} />
 }

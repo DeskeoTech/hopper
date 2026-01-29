@@ -28,7 +28,8 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
   const fullDate = format(parsedDate, "EEEE d MMMM yyyy", { locale: fr })
 
   const isCancelled = booking.status === "cancelled"
-  const isActuallyPast = new Date(booking.start_date) < new Date()
+  // Past = end_date has passed (both date AND time)
+  const isActuallyPast = new Date(booking.end_date) < new Date()
   const canModify = !isCancelled && !isActuallyPast && userId
 
   return (
@@ -40,6 +41,11 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
         )}
       >
         <div className="flex flex-col items-center text-center">
+          {/* Type tag */}
+          <span className="mb-2 rounded-full bg-foreground/10 px-2.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-foreground/70">
+            SALLE DE RÉUNION
+          </span>
+
           {/* Day name */}
           <p className="font-header text-[10px] font-medium tracking-wide text-foreground/40">
             {dayName}
@@ -58,9 +64,17 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
             {startTime} - {endTime}
           </p>
 
+          {/* Room name and floor */}
+          {booking.resource_name && (
+            <p className="mt-1.5 text-[10px] font-medium text-foreground/60 truncate max-w-[130px]">
+              {booking.resource_name}
+              {booking.resource_floor && ` · ${booking.resource_floor}`}
+            </p>
+          )}
+
           {/* Site name */}
           {booking.site_name && (
-            <div className="mt-1.5 flex items-center gap-1 text-[10px] text-foreground/40">
+            <div className="mt-1 flex items-center gap-1 text-[10px] text-foreground/40">
               <MapPin className="h-2.5 w-2.5" />
               <span className="truncate max-w-[110px]">{booking.site_name}</span>
             </div>
