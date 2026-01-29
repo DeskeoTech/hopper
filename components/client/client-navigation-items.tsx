@@ -27,6 +27,7 @@ export function ClientNavigationItems({ onItemClick, className }: ClientNavigati
     <nav className={cn("space-y-1", className)}>
       {clientNavigation.map((item) => {
         const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
+        const isMobileOnly = item.href === "/mon-compte"
         return (
           <Link
             key={item.name}
@@ -36,7 +37,8 @@ export function ClientNavigationItems({ onItemClick, className }: ClientNavigati
               "flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-sm font-medium transition-all duration-200 text-[#F0E8DC]",
               isActive
                 ? "bg-[#F0E8DC] text-[#1B1918]"
-                : "opacity-70 hover:bg-[#F0E8DC]/5 hover:opacity-100"
+                : "opacity-70 hover:bg-[#F0E8DC]/5 hover:opacity-100",
+              isMobileOnly && "md:hidden"
             )}
           >
             <item.icon className="h-5 w-5" />

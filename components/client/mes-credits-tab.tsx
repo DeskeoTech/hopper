@@ -50,19 +50,16 @@ export function MesCreditsTab() {
   return (
     <div className="space-y-6">
       {/* Credit Balance Card */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
-        <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-between">
+      <div className="rounded-[16px] bg-card p-4 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-sm text-muted-foreground">Solde actuel</p>
-            <p className="text-4xl font-bold text-foreground">
-              {credits?.remaining ?? 0}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              crédits disponibles sur {credits?.allocated ?? 0} alloués
+            <p className="text-xs text-muted-foreground">Solde actuel</p>
+            <p className="text-2xl font-bold text-foreground">
+              {credits?.remaining ?? 0} <span className="text-sm font-normal text-muted-foreground">/ {credits?.allocated ?? 0}</span>
             </p>
           </div>
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <Coins className="h-8 w-8 text-primary" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
+            <Coins className="h-5 w-5 text-primary" />
           </div>
         </div>
       </div>
