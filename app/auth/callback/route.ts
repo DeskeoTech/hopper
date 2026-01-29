@@ -43,7 +43,7 @@ export async function GET(request: Request) {
             : existingUser.role
 
           if (userRole === "user") {
-            return NextResponse.redirect(`${origin}/`)
+            return NextResponse.redirect(`${origin}/compte`)
           }
           return NextResponse.redirect(`${origin}${next}`)
         } else {
