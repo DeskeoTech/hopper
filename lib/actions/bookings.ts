@@ -496,7 +496,7 @@ export async function createBookingFromAdmin(data: {
   return { success: true, bookingId: booking.id }
 }
 
-// Fetch resources for a given site (used in admin create booking)
+// Fetch meeting rooms for a given site (used in admin create booking)
 export async function getResourcesBySite(
   siteId: string
 ): Promise<{ resources: Array<{ id: string; name: string; type: string }>; error?: string }> {
@@ -507,6 +507,7 @@ export async function getResourcesBySite(
     .select("id, name, type")
     .eq("site_id", siteId)
     .eq("status", "available")
+    .eq("type", "meeting_room")
     .order("name")
 
   if (error) {

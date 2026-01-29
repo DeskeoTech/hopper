@@ -64,13 +64,13 @@ export default async function ReservationsPage({
     endDate = addDays(referenceDate, 30)
   }
 
-  // Build bookings query with joins
+  // Build bookings query with joins - only meeting rooms
   let query = supabase
     .from("bookings")
     .select(
       `
       *,
-      resources!left (
+      resources!inner (
         id,
         name,
         type,
@@ -87,6 +87,7 @@ export default async function ReservationsPage({
       )
     `
     )
+    .eq("resources.type", "meeting_room")
     .gte("start_date", startDate.toISOString())
     .lte("start_date", endDate.toISOString())
     .order("start_date")
@@ -211,6 +212,7 @@ export default async function ReservationsPage({
           sites={sites}
           companies={companies}
           users={users}
+          hiddenFilters={["type"]}
         />
       </Suspense>
 
