@@ -44,9 +44,9 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   // Menu items for mobile grid
   const menuItems = [
     { value: "coordonnees", label: "Coordonnées", icon: User },
+    ...(canManageCompany ? [{ value: "entreprise", label: "Entreprise", icon: Building2 }] : []),
     { value: "forfait", label: "Forfait", icon: Package },
     { value: "credits", label: "Crédits", icon: Coins },
-    ...(canManageCompany ? [{ value: "entreprise", label: "Entreprise", icon: Building2 }] : []),
     { value: "facturation", label: "Facturation", icon: Receipt },
     { value: "contact", label: "Support", icon: MessageCircle },
   ]
@@ -103,17 +103,17 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
             <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-sm">
               Coordonnées
             </TabsTrigger>
+            {canManageCompany && (
+              <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-sm">
+                Entreprise
+              </TabsTrigger>
+            )}
             <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
               Forfait
             </TabsTrigger>
             <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
               Crédits
             </TabsTrigger>
-            {canManageCompany && (
-              <TabsTrigger value="entreprise" className="whitespace-nowrap px-3 py-2 text-sm">
-                Entreprise
-              </TabsTrigger>
-            )}
             <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
               Facturation
             </TabsTrigger>
@@ -127,6 +127,12 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
           <MesCoordonneesTab />
         </TabsContent>
 
+        {canManageCompany && (
+          <TabsContent value="entreprise" className="mt-6">
+            <MonEntrepriseTab />
+          </TabsContent>
+        )}
+
         <TabsContent value="forfait" className="mt-6">
           <MonForfaitTab initialContractHistory={initialContractHistory} />
         </TabsContent>
@@ -134,12 +140,6 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
         <TabsContent value="credits" className="mt-6">
           <MesCreditsTab />
         </TabsContent>
-
-        {canManageCompany && (
-          <TabsContent value="entreprise" className="mt-6">
-            <MonEntrepriseTab />
-          </TabsContent>
-        )}
 
         <TabsContent value="facturation" className="mt-6">
           <FacturationTab />
