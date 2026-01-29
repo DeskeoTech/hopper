@@ -12,10 +12,6 @@ export function AdminSidebar() {
         <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-brand-accent">
           <MapPin className="h-5 w-5 text-brand-accent-foreground" />
         </div>
-        <div>
-          <span className="font-header text-lg">HOPPER</span>
-          <span className="ml-1.5 text-xs text-brand-foreground/60">by Deskeo</span>
-        </div>
       </div>
 
       {/* Navigation */}

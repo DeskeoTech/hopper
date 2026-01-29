@@ -187,7 +187,7 @@ export function MonEntrepriseTab() {
           <div className="mb-4 flex items-center gap-2">
             <Users className="h-4 w-4 text-foreground/40" />
             <h2 className="text-sm font-medium text-foreground/70">
-              {companyName || "Mon entreprise"}
+              {companyName || "Entreprise"}
             </h2>
           </div>
 

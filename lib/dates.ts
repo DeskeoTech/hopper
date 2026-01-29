@@ -147,3 +147,36 @@ export function isToday(date: Date): boolean {
     date.getDate() === today.getDate()
   )
 }
+
+/**
+ * Get the next N available business days starting from today
+ */
+export function getNextBusinessDays(count: number): Date[] {
+  const days: Date[] = []
+  let currentDate = new Date()
+  currentDate.setHours(0, 0, 0, 0)
+
+  // If today is a business day, include it
+  if (!isWeekend(currentDate) && !isFrenchHoliday(currentDate)) {
+    days.push(new Date(currentDate))
+  }
+
+  // Get remaining days
+  while (days.length < count) {
+    currentDate = getNextBusinessDay(currentDate)
+    days.push(new Date(currentDate))
+  }
+
+  return days
+}
+
+/**
+ * Check if two dates are the same day
+ */
+export function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
+}

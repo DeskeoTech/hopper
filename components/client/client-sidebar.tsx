@@ -25,11 +25,7 @@ export function ClientSidebar() {
   return (
     <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 flex-col bg-[#1B1918] text-[#F0E8DC] md:flex">
       {/* Logo Header */}
-      <div className="flex flex-col gap-0.5 border-b border-[#F0E8DC]/10 px-6 py-5">
-        <span className="font-header text-xl font-bold uppercase tracking-tight text-[#F0E8DC]">
-          HOPPER
-        </span>
-        <span className="text-sm text-[#F0E8DC]/60">La Casa Deskeo</span>
+      <div className="flex h-16 items-center border-b border-[#F0E8DC]/10 px-6">
       </div>
 
       {/* Navigation */}

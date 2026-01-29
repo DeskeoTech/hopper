@@ -40,7 +40,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
       <div className="rounded-[16px] bg-card p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-2">
           <CreditCard className="h-5 w-5 text-foreground/50" />
-          <h2 className="text-lg font-semibold">Mon forfait actuel</h2>
+          <h2 className="text-lg font-semibold">Forfait actuel</h2>
         </div>
 
         {plan ? (
