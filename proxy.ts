@@ -1,9 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-// Pattern pour les domaines preview v0 (dynamiques)
-const PREVIEW_DOMAIN_PATTERN = /^preview-hopper-app-[a-z0-9]+\.vusercontent\.net$/i
-
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -34,13 +31,8 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // Vérifier si on est sur un domaine preview
-  const host = request.headers.get("host") || ""
-  const isPreviewDomain = PREVIEW_DOMAIN_PATTERN.test(host)
-
   // If user is not authenticated and trying to access /admin, redirect to login
-  // (sauf sur les domaines preview)
-  if (!user && request.nextUrl.pathname.startsWith("/admin") && !isPreviewDomain) {
+  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
@@ -53,7 +45,7 @@ export async function proxy(request: NextRequest) {
   )
 
   // If user is not authenticated and trying to access protected client routes, redirect to login
-  if (!user && isProtectedClientRoute && !isPreviewDomain) {
+  if (!user && isProtectedClientRoute) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
