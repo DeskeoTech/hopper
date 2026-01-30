@@ -38,7 +38,7 @@ export default async function LoginPage({
 
           <div className="w-full max-w-md space-y-6">
             {/* Login Card */}
-            <div className="rounded-[20px] border bg-card/95 p-6 shadow-lg backdrop-blur-sm sm:p-8">
+            <div className="rounded-[20px] bg-card/95 p-6 shadow-lg backdrop-blur-sm sm:p-8">
               {/* Logo - centered inside card */}
               <div className="mb-6 flex justify-center">
                 <Image
