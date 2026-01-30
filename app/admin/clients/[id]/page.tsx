@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2, Info } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
+import { StripePortalButton, StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
 import {
   Tooltip,
   TooltipContent,
@@ -56,61 +57,80 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
   const totalCredits = creditsResult ?? 0
 
-  // Fetch credit movements from bookings
+  // Fetch credit movements from bookings and adjustments
   const userIds = users?.map((u) => u.id) || []
   let movements: CreditMovement[] = []
 
-  if (userIds.length > 0) {
-    const { data: bookings } = await supabase
-      .from("bookings")
-      .select(`
-        id,
-        start_date,
-        status,
-        credits_used,
-        notes,
-        resource:resources(name)
-      `)
-      .in("user_id", userIds)
-      .not("credits_used", "is", null)
-      .order("start_date", { ascending: false })
-      .limit(50)
+  // Fetch bookings with credits
+  const bookingsPromise = userIds.length > 0
+    ? supabase
+        .from("bookings")
+        .select(`
+          id,
+          start_date,
+          status,
+          credits_used,
+          notes,
+          resource:resources(name)
+        `)
+        .in("user_id", userIds)
+        .not("credits_used", "is", null)
+        .order("start_date", { ascending: false })
+        .limit(50)
+    : Promise.resolve({ data: [] })
 
-    // Transform bookings to credit movements
-    let runningBalance = totalCredits
-    movements = (bookings || []).map((booking) => {
-      const isConfirmed = booking.status === "confirmed"
-      const isCancelled = booking.status === "cancelled"
-      const creditsUsed = booking.credits_used || 0
+  // Fetch manual credit adjustments (direct company credits, not via contracts)
+  const adjustmentsPromise = supabase
+    .from("credits")
+    .select("id, allocated_credits, reason, created_at")
+    .eq("company_id", id)
+    .is("contract_id", null)
+    .order("created_at", { ascending: false })
+    .limit(50)
 
-      let type: CreditMovementType = "reservation"
-      let amount = -creditsUsed
+  const [{ data: bookings }, { data: adjustments }] = await Promise.all([
+    bookingsPromise,
+    adjustmentsPromise,
+  ])
 
-      if (isCancelled) {
-        type = "cancellation"
-        amount = creditsUsed // Credits restored
-      }
+  // Transform bookings to movements
+  const bookingMovements: CreditMovement[] = (bookings || []).map((booking) => {
+    const isCancelled = booking.status === "cancelled"
+    const creditsUsed = booking.credits_used || 0
+    const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
 
-      const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
-      const description = isCancelled
-        ? `Annulation - ${resourceName}`
-        : `Réservation - ${resourceName}`
+    return {
+      id: booking.id,
+      date: booking.start_date,
+      type: isCancelled ? "cancellation" as const : "reservation" as const,
+      amount: isCancelled ? creditsUsed : -creditsUsed,
+      description: isCancelled ? `Annulation - ${resourceName}` : `Réservation - ${resourceName}`,
+      balance_after: 0, // Will be calculated below
+    }
+  })
 
-      const movement: CreditMovement = {
-        id: booking.id,
-        date: booking.start_date,
-        type,
-        amount,
-        description,
-        balance_after: runningBalance,
-      }
+  // Transform adjustments to movements
+  const adjustmentMovements: CreditMovement[] = (adjustments || []).map((adj) => ({
+    id: adj.id,
+    date: adj.created_at,
+    type: "adjustment" as const,
+    amount: adj.allocated_credits,
+    description: adj.reason || (adj.allocated_credits > 0 ? "Ajout de crédits" : "Retrait de crédits"),
+    balance_after: 0, // Will be calculated below
+  }))
 
-      // Adjust running balance for display (reverse chronological)
-      runningBalance = runningBalance - amount
+  // Merge and sort by date (most recent first)
+  const allMovements = [...bookingMovements, ...adjustmentMovements].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  )
 
-      return movement
-    })
-  }
+  // Calculate running balance
+  let runningBalance = totalCredits
+  movements = allMovements.map((movement) => {
+    const movementWithBalance = { ...movement, balance_after: runningBalance }
+    runningBalance = runningBalance - movement.amount
+    return movementWithBalance
+  })
 
   // Determine subscription status
   const now = new Date()
@@ -297,6 +317,15 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   {!company.subscription_period && !company.subscription_start_date && !company.subscription_end_date && (
                     <p className="text-muted-foreground text-sm">Non renseigné</p>
                   )}
+                  {company.customer_id_stripe && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <StripePortalButton
+                        customerId={company.customer_id_stripe}
+                        customerEmail={company.contact_email}
+                        companyName={company.name || undefined}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -307,9 +336,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     <CreditCard className="h-5 w-5" />
                     Stripe
                   </h2>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Customer ID</span>
-                    <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Customer ID</span>
+                      <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
+                    </div>
+                    <StripeDashboardButton customerId={company.customer_id_stripe} />
                   </div>
                 </div>
               )}
@@ -344,6 +376,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
               {/* Credits */}
               <CreditsSection
                 companyId={company.id}
+                companyName={company.name || undefined}
                 totalCredits={totalCredits}
                 movements={movements}
               />
