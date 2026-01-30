@@ -36,9 +36,10 @@ import type { User, UserRole } from "@/lib/types/database"
 interface EditUserModalProps {
   user: User
   companyId: string
+  trigger?: React.ReactNode
 }
 
-export function EditUserModal({ user, companyId }: EditUserModalProps) {
+export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -73,9 +74,11 @@ export function EditUserModal({ user, companyId }: EditUserModalProps) {
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm">
-            <Pencil className="h-4 w-4" />
-          </Button>
+          {trigger || (
+            <Button variant="ghost" size="sm">
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
         </DialogTrigger>
         <DialogContent>
           <DialogHeader>

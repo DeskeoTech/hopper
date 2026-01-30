@@ -1,8 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Coins, Settings2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { Coins } from "lucide-react"
 import { CreditsHistoryTable } from "./credits-history-table"
 import { CreditAdjustmentModal } from "./credit-adjustment-modal"
 import type { CreditMovement } from "@/lib/types/database"
@@ -20,20 +19,11 @@ export function CreditsSection({ companyId, companyName, totalCredits, movements
   return (
     <>
       <div className="rounded-lg bg-card p-4 sm:p-6">
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4">
           <h2 className="flex items-center gap-2 type-h3 text-foreground">
             <Coins className="h-5 w-5" />
             Crédits
           </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full hover:bg-primary/10"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Settings2 className="h-4 w-4" />
-            <span className="sr-only">Ajuster les crédits</span>
-          </Button>
         </div>
 
         {/* Credit Balance Card */}
