@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2, Info } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
+import { StripePortalButton, StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
 import {
   Tooltip,
   TooltipContent,
@@ -297,6 +298,15 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   {!company.subscription_period && !company.subscription_start_date && !company.subscription_end_date && (
                     <p className="text-muted-foreground text-sm">Non renseigné</p>
                   )}
+                  {company.customer_id_stripe && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <StripePortalButton
+                        customerId={company.customer_id_stripe}
+                        customerEmail={company.contact_email}
+                        companyName={company.name || undefined}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -307,9 +317,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     <CreditCard className="h-5 w-5" />
                     Stripe
                   </h2>
-                  <div>
-                    <span className="text-sm text-muted-foreground">Customer ID</span>
-                    <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
+                  <div className="space-y-4">
+                    <div>
+                      <span className="text-sm text-muted-foreground">Customer ID</span>
+                      <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
+                    </div>
+                    <StripeDashboardButton customerId={company.customer_id_stripe} />
                   </div>
                 </div>
               )}
