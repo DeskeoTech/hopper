@@ -42,20 +42,18 @@ export function CreditAdjustmentModal({
   const [error, setError] = useState<string | null>(null)
 
   const numAmount = parseInt(amount) || 0
-  const newBalance = type === "add"
-    ? currentCredits + numAmount
-    : currentCredits - numAmount
+  const newBalance = currentCredits + numAmount
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    if (numAmount <= 0) {
-      setError("Veuillez entrer un nombre positif")
+    if (numAmount === 0) {
+      setError("Veuillez entrer un nombre différent de zéro")
       return
     }
 
-    if (type === "remove" && numAmount > currentCredits) {
-      setError("Impossible de retirer plus de crédits que le solde actuel")
+    if (newBalance < 0) {
+      setError("Le solde ne peut pas être négatif")
       return
     }
 
@@ -64,7 +62,7 @@ export function CreditAdjustmentModal({
 
     try {
       const supabase = createClient()
-      const finalAmount = type === "add" ? numAmount : -numAmount
+      const finalAmount = numAmount
 
       const { error: insertError } = await supabase
         .from("credits")
@@ -128,28 +126,26 @@ export function CreditAdjustmentModal({
             <p className="text-xs text-muted-foreground">crédits</p>
           </div>
 
-          {/* Add/Remove Toggle */}
+          {/* Add/Remove Buttons */}
           <div className="flex gap-2">
             <Button
               type="button"
-              variant={type === "add" ? "default" : "outline"}
-              className={cn(
-                "flex-1 gap-2",
-                type === "add" && "bg-green-600 hover:bg-green-700"
-              )}
-              onClick={() => setType("add")}
+              className="flex-1 gap-2 bg-[#E0EAF0] hover:bg-[#C9DBE8] text-[#1B1918] border border-[#1B1918]/20"
+              onClick={() => {
+                setType("add")
+                setAmount(String(numAmount + 1))
+              }}
             >
               <Plus className="h-4 w-4" />
               Ajouter
             </Button>
             <Button
               type="button"
-              variant={type === "remove" ? "default" : "outline"}
-              className={cn(
-                "flex-1 gap-2",
-                type === "remove" && "bg-red-600 hover:bg-red-700"
-              )}
-              onClick={() => setType("remove")}
+              className="flex-1 gap-2 bg-[#FAE5D8] hover:bg-[#F0D5C4] text-[#1B1918] border border-[#1B1918]/20"
+              onClick={() => {
+                setType("remove")
+                setAmount(String(numAmount - 1))
+              }}
             >
               <Minus className="h-4 w-4" />
               Retirer
@@ -162,7 +158,6 @@ export function CreditAdjustmentModal({
             <Input
               id="amount"
               type="number"
-              min="1"
               placeholder="0"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -171,7 +166,7 @@ export function CreditAdjustmentModal({
           </div>
 
           {/* New Balance Preview */}
-          {numAmount > 0 && (
+          {numAmount !== 0 && (
             <div className="flex items-center justify-center gap-3 rounded-lg border border-dashed border-primary/50 bg-primary/5 p-3">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-sm text-muted-foreground">Nouveau solde :</span>
@@ -217,9 +212,11 @@ export function CreditAdjustmentModal({
               type="submit"
               className={cn(
                 "flex-1",
-                type === "add" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"
+                numAmount >= 0
+                  ? "bg-[#E0EAF0] hover:bg-[#C9DBE8] text-[#1B1918]"
+                  : "bg-[#FAE5D8] hover:bg-[#F0D5C4] text-[#1B1918]"
               )}
-              disabled={isLoading || numAmount <= 0}
+              disabled={isLoading || numAmount === 0}
             >
               {isLoading ? (
                 <>
@@ -228,8 +225,8 @@ export function CreditAdjustmentModal({
                 </>
               ) : (
                 <>
-                  {type === "add" ? <Plus className="mr-2 h-4 w-4" /> : <Minus className="mr-2 h-4 w-4" />}
-                  {type === "add" ? "Ajouter" : "Retirer"} {numAmount > 0 ? numAmount : ""} crédit{numAmount > 1 ? "s" : ""}
+                  {numAmount >= 0 ? <Plus className="mr-2 h-4 w-4" /> : <Minus className="mr-2 h-4 w-4" />}
+                  {numAmount >= 0 ? "Ajouter" : "Retirer"} {Math.abs(numAmount)} crédit{Math.abs(numAmount) > 1 ? "s" : ""}
                 </>
               )}
             </Button>
