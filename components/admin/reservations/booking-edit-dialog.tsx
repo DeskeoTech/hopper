@@ -179,9 +179,14 @@ export function BookingEditDialog({
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <span>{booking.site_name || "Site inconnu"}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <User className="h-4 w-4 text-muted-foreground" />
-                <span>{userName}</span>
+              <div className="flex items-start gap-3">
+                <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div className="flex flex-col">
+                  <span className="font-medium">{userName}</span>
+                  {booking.user_email && (
+                    <span className="text-xs text-muted-foreground">{booking.user_email}</span>
+                  )}
+                </div>
               </div>
               {booking.company_name && (
                 <div className="flex items-center gap-3">

@@ -195,7 +195,7 @@ function MobileCalendarGrid({
     <div className="overflow-x-auto -mx-3 px-3">
       <div style={{ minWidth: `${Math.max(rooms.length * 70 + 40, 280)}px` }}>
         {/* Header with rooms */}
-        <div className="flex sticky top-0 bg-card z-10 pb-2">
+        <div className="flex sticky top-0 bg-transparent z-10 pb-2">
           {/* Time column header */}
           <div className="w-10 shrink-0" />
 
@@ -251,7 +251,7 @@ function MobileCalendarGrid({
         </div>
 
         {/* Timeline grid */}
-        <div className="flex relative mt-1">
+        <div className="flex relative mt-3">
           {/* Now indicator */}
           {nowPosition !== null && (
             <div
@@ -433,7 +433,7 @@ export function RoomPlanningGrid({
       <div className="hidden sm:block overflow-x-auto -mx-4 sm:-mx-6">
         <div className="min-w-[600px] px-4 sm:px-6">
           {/* Header with rooms */}
-          <div className="flex sticky top-0 bg-background z-10 pb-3">
+          <div className="flex sticky top-0 bg-transparent z-10 pb-4">
             {/* Time column header */}
             <div className="w-12 shrink-0" />
 
@@ -477,7 +477,7 @@ export function RoomPlanningGrid({
           </div>
 
           {/* Timeline grid */}
-          <div className="flex relative mt-2">
+          <div className="flex relative mt-4">
             {/* Now indicator */}
             {nowPosition !== null && (
               <div

@@ -388,7 +388,7 @@ export function RoomBookingContent({
   }
 
   return (
-    <div className={isModal ? "flex flex-col h-full" : "space-y-4"}>
+    <div className={isModal ? "flex flex-col h-full gap-5" : "space-y-6"}>
       {/* Header controls - always visible in planning view */}
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
@@ -521,35 +521,6 @@ export function RoomBookingContent({
             )}
           </div>
 
-          {/* Capacity filter */}
-          {capacityOptions.length > 0 && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">Capacité</span>
-              <div className="flex flex-wrap gap-1">
-                <Button
-                  variant={capacityFilter === null ? "default" : "outline"}
-                  size="sm"
-                  className="h-7 px-2 text-xs"
-                  onClick={() => setCapacityFilter(null)}
-                >
-                  Toutes
-                </Button>
-                {capacityOptions.map((cap) => (
-                  <Button
-                    key={cap}
-                    variant={capacityFilter === cap ? "default" : "outline"}
-                    size="sm"
-                    className="h-7 px-2 text-xs"
-                    onClick={() => setCapacityFilter(cap)}
-                  >
-                    {cap}+
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
           {/* Credits indicator (page only) */}
           {!isModal && (
             <div className="flex items-center justify-between rounded-[16px] border bg-card p-3 sm:p-4">
@@ -664,24 +635,55 @@ export function RoomBookingContent({
 
           {/* Planning Grid */}
           {view === "planning" && (
-            <div className="flex-1 overflow-auto">
-              {loadingRooms || loadingBookings ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex-1 overflow-auto flex flex-col">
+              <div className="flex-1">
+                {loadingRooms || loadingBookings ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : filteredRooms.length === 0 ? (
+                  <p className="py-8 text-center type-body text-muted-foreground">
+                    {rooms.length === 0
+                      ? "Aucune salle disponible sur ce site"
+                      : "Aucune salle ne correspond au filtre de capacité"}
+                  </p>
+                ) : (
+                  <RoomPlanningGrid
+                    rooms={filteredRooms}
+                    bookings={bookings}
+                    onSlotClick={handleSlotClick}
+                    remainingCredits={remainingCredits}
+                  />
+                )}
+              </div>
+
+              {/* Capacity filter - below calendar */}
+              {capacityOptions.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t shrink-0">
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="text-sm text-muted-foreground">Capacité</span>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      variant={capacityFilter === null ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setCapacityFilter(null)}
+                    >
+                      Toutes
+                    </Button>
+                    {capacityOptions.map((cap) => (
+                      <Button
+                        key={cap}
+                        variant={capacityFilter === cap ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs"
+                        onClick={() => setCapacityFilter(cap)}
+                      >
+                        {cap}+
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-              ) : filteredRooms.length === 0 ? (
-                <p className="py-8 text-center type-body text-muted-foreground">
-                  {rooms.length === 0
-                    ? "Aucune salle disponible sur ce site"
-                    : "Aucune salle ne correspond au filtre de capacité"}
-                </p>
-              ) : (
-                <RoomPlanningGrid
-                  rooms={filteredRooms}
-                  bookings={bookings}
-                  onSlotClick={handleSlotClick}
-                  remainingCredits={remainingCredits}
-                />
               )}
             </div>
           )}
@@ -855,6 +857,35 @@ export function RoomBookingContent({
                 onSlotClick={handleSlotClick}
                 remainingCredits={remainingCredits}
               />
+            )}
+
+            {/* Capacity filter - below calendar */}
+            {capacityOptions.length > 0 && view === "planning" && (
+              <div className="flex items-center gap-2 flex-wrap pt-4 mt-4 border-t">
+                <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Capacité</span>
+                <div className="flex flex-wrap gap-1">
+                  <Button
+                    variant={capacityFilter === null ? "default" : "outline"}
+                    size="sm"
+                    className="h-7 px-2 text-xs"
+                    onClick={() => setCapacityFilter(null)}
+                  >
+                    Toutes
+                  </Button>
+                  {capacityOptions.map((cap) => (
+                    <Button
+                      key={cap}
+                      variant={capacityFilter === cap ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2 text-xs"
+                      onClick={() => setCapacityFilter(cap)}
+                    >
+                      {cap}+
+                    </Button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

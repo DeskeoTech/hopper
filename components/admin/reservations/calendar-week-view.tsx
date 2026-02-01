@@ -224,16 +224,17 @@ export function CalendarWeekView({
       booking: BookingWithDetails,
       dayIndex: number
     ) => {
-      // Don't allow drag for cancelled or past bookings, or if no update handler
-      if (booking.status === "cancelled" || isBookingPast(booking) || !onBookingUpdate || isUpdating) {
-        return
-      }
-
       // Only left click
       if (e.button !== 0) return
 
       e.preventDefault()
       e.stopPropagation()
+
+      // For cancelled/past bookings or when updating, only allow click (no drag)
+      if (booking.status === "cancelled" || isBookingPast(booking) || !onBookingUpdate || isUpdating) {
+        onBookingClick?.(booking)
+        return
+      }
 
       const grid = gridRef.current
       if (!grid) return
@@ -253,7 +254,7 @@ export function CalendarWeekView({
         gridRect,
       })
     },
-    [onBookingUpdate, isUpdating, getBookingPosition, isBookingPast]
+    [onBookingUpdate, onBookingClick, isUpdating, getBookingPosition, isBookingPast]
   )
 
   // Handle mouse move during drag
@@ -540,7 +541,7 @@ export function CalendarWeekView({
                             </p>
                           </div>
                           {height >= 60 && (
-                            <p className="truncate text-[9px] font-medium opacity-50">
+                            <p className="truncate text-[10px] font-semibold opacity-60">
                               {booking.site_name || booking.company_name || ""}
                             </p>
                           )}
@@ -589,7 +590,7 @@ export function CalendarWeekView({
                           </p>
                         </div>
                         {dragState.initialHeight >= 60 && (
-                          <p className="truncate text-[9px] font-medium opacity-50">
+                          <p className="truncate text-[10px] font-semibold opacity-60">
                             {dragState.booking.site_name ||
                               dragState.booking.company_name ||
                               ""}
