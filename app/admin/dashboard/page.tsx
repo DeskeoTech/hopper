@@ -1,9 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
-import { LayoutDashboard, TrendingUp, TrendingDown, Users, Building2, Headphones, Armchair, DoorOpen, MapPin } from "lucide-react"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format } from "date-fns"
+import { LayoutDashboard, TrendingUp, TrendingDown, Headphones } from "lucide-react"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addWeeks, addMonths, format } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+import { OccupationCard } from "@/components/admin/occupation-card"
+import { GrowthCard } from "@/components/admin/growth-card"
+import { ReservationsCard } from "@/components/admin/reservations-card"
+import { ForecastCard } from "@/components/admin/forecast-card"
 
 // Composant carte métrique principale
 function MetricCard({
@@ -192,50 +196,6 @@ function ProgressBar({
   )
 }
 
-// Composant élément de site
-function SiteOccupancyItem({
-  name,
-  occupancy,
-  rank,
-  isLeast = false,
-}: {
-  name: string
-  occupancy: number
-  rank?: number
-  isLeast?: boolean
-}) {
-  return (
-    <div className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-      <div className="flex items-center gap-3">
-        {rank && (
-          <span className={cn(
-            "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
-            rank === 1 && "bg-yellow-100 text-yellow-700",
-            rank === 2 && "bg-gray-100 text-gray-600",
-            rank === 3 && "bg-orange-100 text-orange-700",
-          )}>
-            {rank}
-          </span>
-        )}
-        {isLeast && (
-          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600">
-            <TrendingDown className="h-3 w-3" />
-          </span>
-        )}
-        <span className="text-lg font-medium truncate max-w-[150px] md:max-w-none md:whitespace-normal md:overflow-visible">{name}</span>
-      </div>
-      <span className={cn(
-        "text-lg font-bold",
-        occupancy >= 80 && "text-green-600",
-        occupancy >= 50 && occupancy < 80 && "text-orange-500",
-        occupancy < 50 && "text-red-500"
-      )}>
-        {occupancy}%
-      </span>
-    </div>
-  )
-}
-
 export default async function DashboardPage() {
   const supabase = await createClient()
   const now = new Date()
@@ -250,6 +210,14 @@ export default async function DashboardPage() {
   const lastMonthStart = startOfMonth(subMonths(now, 1))
   const lastMonthEnd = endOfMonth(subMonths(now, 1))
 
+  // Dates pour les prévisions
+  const nextWeekStart = startOfWeek(addWeeks(now, 1), { weekStartsOn: 1 })
+  const nextWeekEnd = endOfWeek(addWeeks(now, 1), { weekStartsOn: 1 })
+  const weekAfterNextStart = startOfWeek(addWeeks(now, 2), { weekStartsOn: 1 })
+  const weekAfterNextEnd = endOfWeek(addWeeks(now, 2), { weekStartsOn: 1 })
+  const nextMonthStart = startOfMonth(addMonths(now, 1))
+  const nextMonthEnd = endOfMonth(addMonths(now, 1))
+
   // Récupération des données en parallèle
   const [
     // Métriques générales
@@ -258,8 +226,7 @@ export default async function DashboardPage() {
     activeUsersResult,
 
     // Réservations temps réel (aujourd'hui)
-    todayBenchBookingsResult,
-    todayMeetingRoomBookingsResult,
+    todayBookingsResult,
 
     // Support tickets
     openTicketsResult,
@@ -268,12 +235,15 @@ export default async function DashboardPage() {
     // Données pour occupation des sites
     resourcesResult,
     bookingsThisWeekResult,
-    bookingsThisMonthResult,
-    bookingsTodayResult,
 
-    // Croissance abonnements
-    companiesThisMonthResult,
-    companiesLastMonthResult,
+    // Croissance contrats
+    contractsThisMonthResult,
+    contractsLastMonthResult,
+
+    // Prévisions - bookings futurs
+    bookingsNextWeekResult,
+    bookingsWeekAfterNextResult,
+    bookingsNextMonthResult,
   ] = await Promise.all([
     // Nombre de sites
     supabase.from("sites").select("*", { count: "exact", head: true }).eq("status", "open"),
@@ -284,21 +254,11 @@ export default async function DashboardPage() {
     // Membres actifs
     supabase.from("users").select("*", { count: "exact", head: true }).eq("status", "active"),
 
-    // Réservations benchs aujourd'hui
+    // Réservations aujourd'hui (avec resource_id pour calculer disponibilité par site)
     supabase
       .from("bookings")
-      .select("id, resource:resources!inner(type)", { count: "exact" })
+      .select("id, resource_id, seats_count, resource:resources!inner(type, site_id)")
       .eq("status", "confirmed")
-      .eq("resources.type", "bench")
-      .gte("start_date", todayStart.toISOString())
-      .lte("start_date", todayEnd.toISOString()),
-
-    // Réservations salles aujourd'hui
-    supabase
-      .from("bookings")
-      .select("id, resource:resources!inner(type)", { count: "exact" })
-      .eq("status", "confirmed")
-      .eq("resources.type", "meeting_room")
       .gte("start_date", todayStart.toISOString())
       .lte("start_date", todayEnd.toISOString()),
 
@@ -325,35 +285,45 @@ export default async function DashboardPage() {
       .gte("start_date", weekStart.toISOString())
       .lte("start_date", weekEnd.toISOString()),
 
-    // Réservations ce mois par ressource
+    // Contrats actifs créés ce mois (avec plan pour le type d'offre)
     supabase
-      .from("bookings")
-      .select("id, resource_id, seats_count")
-      .eq("status", "confirmed")
-      .gte("start_date", monthStart.toISOString())
-      .lte("start_date", monthEnd.toISOString()),
-
-    // Réservations aujourd'hui par ressource
-    supabase
-      .from("bookings")
-      .select("id, resource_id, seats_count")
-      .eq("status", "confirmed")
-      .gte("start_date", todayStart.toISOString())
-      .lte("start_date", todayEnd.toISOString()),
-
-    // Nouvelles entreprises ce mois
-    supabase
-      .from("companies")
-      .select("*", { count: "exact", head: true })
+      .from("contracts")
+      .select("id, status, created_at, plan:plans!inner(recurrence)")
+      .eq("status", "active")
       .gte("created_at", monthStart.toISOString())
       .lte("created_at", monthEnd.toISOString()),
 
-    // Nouvelles entreprises le mois dernier
+    // Contrats actifs créés le mois dernier (avec plan pour le type d'offre)
     supabase
-      .from("companies")
-      .select("*", { count: "exact", head: true })
+      .from("contracts")
+      .select("id, status, created_at, plan:plans!inner(recurrence)")
+      .eq("status", "active")
       .gte("created_at", lastMonthStart.toISOString())
       .lte("created_at", lastMonthEnd.toISOString()),
+
+    // Réservations semaine n+1
+    supabase
+      .from("bookings")
+      .select("id, resource_id, seats_count")
+      .eq("status", "confirmed")
+      .gte("start_date", nextWeekStart.toISOString())
+      .lte("start_date", nextWeekEnd.toISOString()),
+
+    // Réservations semaine n+2
+    supabase
+      .from("bookings")
+      .select("id, resource_id, seats_count")
+      .eq("status", "confirmed")
+      .gte("start_date", weekAfterNextStart.toISOString())
+      .lte("start_date", weekAfterNextEnd.toISOString()),
+
+    // Réservations mois m+1
+    supabase
+      .from("bookings")
+      .select("id, resource_id, seats_count")
+      .eq("status", "confirmed")
+      .gte("start_date", nextMonthStart.toISOString())
+      .lte("start_date", nextMonthEnd.toISOString()),
   ])
 
   // Calculs des métriques
@@ -361,26 +331,62 @@ export default async function DashboardPage() {
   const companiesCount = companiesResult.count || 0
   const activeUsersCount = activeUsersResult.count || 0
 
-  const todayBenchBookings = todayBenchBookingsResult.count || 0
-  const todayMeetingRoomBookings = todayMeetingRoomBookingsResult.count || 0
+  const todayBookings = todayBookingsResult.data || []
 
   const openTickets = openTicketsResult.count || 0
   const resolvedTickets = resolvedTicketsResult.count || 0
   const totalTickets = openTickets + resolvedTickets
   const ticketResolutionRate = totalTickets > 0 ? Math.round((resolvedTickets / totalTickets) * 100) : 0
 
-  // Croissance abonnements
-  const newCompaniesThisMonth = companiesThisMonthResult.count || 0
-  const newCompaniesLastMonth = companiesLastMonthResult.count || 0
-  const subscriptionGrowth = newCompaniesLastMonth > 0
-    ? Math.round(((newCompaniesThisMonth - newCompaniesLastMonth) / newCompaniesLastMonth) * 100)
-    : newCompaniesThisMonth > 0 ? 100 : 0
+  // Croissance contrats
+  const contractsThisMonth = contractsThisMonthResult.data || []
+  const contractsLastMonth = contractsLastMonthResult.data || []
+
+  // Calcul croissance par type d'offre
+  type RecurrenceType = "daily" | "weekly" | "monthly"
+  const offerLabels: Record<RecurrenceType, string> = {
+    daily: "Pass Day",
+    weekly: "Pass Week",
+    monthly: "Pass Month",
+  }
+
+  function countByRecurrence(contracts: typeof contractsThisMonth) {
+    const counts: Record<RecurrenceType, number> = { daily: 0, weekly: 0, monthly: 0 }
+    contracts.forEach((c) => {
+      const plan = c.plan as { recurrence: RecurrenceType | null } | null
+      if (plan?.recurrence) {
+        counts[plan.recurrence]++
+      }
+    })
+    return counts
+  }
+
+  const thisMonthCounts = countByRecurrence(contractsThisMonth)
+  const lastMonthCounts = countByRecurrence(contractsLastMonth)
+
+  const offerGrowths = (["daily", "weekly", "monthly"] as RecurrenceType[]).map((recurrence) => {
+    const current = thisMonthCounts[recurrence]
+    const previous = lastMonthCounts[recurrence]
+    const growthRate = previous > 0
+      ? Math.round(((current - previous) / previous) * 100)
+      : current > 0 ? 100 : 0
+    return {
+      name: offerLabels[recurrence],
+      currentCount: current,
+      previousCount: previous,
+      growthRate,
+    }
+  })
+
+  const newContractsThisMonth = contractsThisMonth.length
+  const newContractsLastMonth = contractsLastMonth.length
+  const globalGrowthRate = newContractsLastMonth > 0
+    ? Math.round(((newContractsThisMonth - newContractsLastMonth) / newContractsLastMonth) * 100)
+    : newContractsThisMonth > 0 ? 100 : 0
 
   // Calcul occupation par site
   const resources = resourcesResult.data || []
   const bookingsWeek = bookingsThisWeekResult.data || []
-  const bookingsMonth = bookingsThisMonthResult.data || []
-  const bookingsToday = bookingsTodayResult.data || []
 
   // Grouper les ressources par site et calculer la capacité totale
   const siteCapacities = new Map<string, { name: string; capacity: number }>()
@@ -432,18 +438,6 @@ export default async function DashboardPage() {
   }
 
   const weeklyOccupancies = calculateOccupancyBySite(bookingsWeek, 5) // 5 jours ouvrés
-  const monthlyOccupancies = calculateOccupancyBySite(bookingsMonth, 22) // ~22 jours ouvrés
-  const dailyOccupancies = calculateOccupancyBySite(bookingsToday, 1)
-
-  // Site le plus occupé par période
-  const mostOccupiedDay = dailyOccupancies.length > 0 ? dailyOccupancies[0] : null
-  const mostOccupiedWeek = weeklyOccupancies.length > 0 ? weeklyOccupancies[0] : null
-  const mostOccupiedMonth = monthlyOccupancies.length > 0 ? monthlyOccupancies[0] : null
-
-  // Site le moins occupé par période
-  const leastOccupiedWeek = weeklyOccupancies.length > 0 ? weeklyOccupancies[weeklyOccupancies.length - 1] : null
-  const leastOccupiedMonth = monthlyOccupancies.length > 0 ? monthlyOccupancies[monthlyOccupancies.length - 1] : null
-  const leastOccupiedDay = dailyOccupancies.length > 0 ? dailyOccupancies[dailyOccupancies.length - 1] : null
 
   // Taux d'occupation global (semaine)
   const totalCapacity = Array.from(siteCapacities.values()).reduce((sum, s) => sum + s.capacity, 0)
@@ -451,6 +445,157 @@ export default async function DashboardPage() {
   const globalOccupancyRate = totalCapacity > 0
     ? Math.round((totalBookingsWeek / (totalCapacity * 5)) * 100)
     : 0
+
+  // Calcul disponibilité par site pour aujourd'hui
+  type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
+
+  // Grouper les ressources par site et par type
+  const siteResourcesByType = new Map<string, { name: string; benchCapacity: number; meetingRoomCapacity: number }>()
+  resources.forEach((r) => {
+    if (r.site_id && r.site) {
+      const siteData = r.site as { id: string; name: string; status: string }
+      const existing = siteResourcesByType.get(r.site_id)
+      const capacity = r.capacity || 1
+      const resourceType = r.type as ResourceType
+
+      if (existing) {
+        if (resourceType === "bench" || resourceType === "flex_desk") {
+          existing.benchCapacity += capacity
+        } else if (resourceType === "meeting_room") {
+          existing.meetingRoomCapacity += capacity
+        }
+      } else {
+        siteResourcesByType.set(r.site_id, {
+          name: siteData.name,
+          benchCapacity: (resourceType === "bench" || resourceType === "flex_desk") ? capacity : 0,
+          meetingRoomCapacity: resourceType === "meeting_room" ? capacity : 0,
+        })
+      }
+    }
+  })
+
+  // Compter les réservations d'aujourd'hui par site et par type
+  const todayBookingsBySiteAndType = new Map<string, { benchBooked: number; meetingRoomBooked: number }>()
+  todayBookings.forEach((b) => {
+    const resource = b.resource as { type: ResourceType; site_id: string } | null
+    if (resource?.site_id) {
+      const existing = todayBookingsBySiteAndType.get(resource.site_id)
+      const seatsCount = b.seats_count || 1
+
+      if (existing) {
+        if (resource.type === "bench" || resource.type === "flex_desk") {
+          existing.benchBooked += seatsCount
+        } else if (resource.type === "meeting_room") {
+          existing.meetingRoomBooked += seatsCount
+        }
+      } else {
+        todayBookingsBySiteAndType.set(resource.site_id, {
+          benchBooked: (resource.type === "bench" || resource.type === "flex_desk") ? seatsCount : 0,
+          meetingRoomBooked: resource.type === "meeting_room" ? seatsCount : 0,
+        })
+      }
+    }
+  })
+
+  // Calculer disponibilité par site
+  const benchAvailabilityBySite: { siteId: string; siteName: string; available: number; total: number }[] = []
+  const meetingRoomAvailabilityBySite: { siteId: string; siteName: string; available: number; total: number }[] = []
+
+  siteResourcesByType.forEach((site, siteId) => {
+    const bookings = todayBookingsBySiteAndType.get(siteId) || { benchBooked: 0, meetingRoomBooked: 0 }
+
+    if (site.benchCapacity > 0) {
+      benchAvailabilityBySite.push({
+        siteId,
+        siteName: site.name,
+        available: Math.max(0, site.benchCapacity - bookings.benchBooked),
+        total: site.benchCapacity,
+      })
+    }
+
+    if (site.meetingRoomCapacity > 0) {
+      meetingRoomAvailabilityBySite.push({
+        siteId,
+        siteName: site.name,
+        available: Math.max(0, site.meetingRoomCapacity - bookings.meetingRoomBooked),
+        total: site.meetingRoomCapacity,
+      })
+    }
+  })
+
+  // Trier par disponibilité décroissante
+  benchAvailabilityBySite.sort((a, b) => b.available - a.available)
+  meetingRoomAvailabilityBySite.sort((a, b) => b.available - a.available)
+
+  // Calcul des prévisions
+  const bookingsNextWeek = bookingsNextWeekResult.data || []
+  const bookingsWeekAfterNext = bookingsWeekAfterNextResult.data || []
+  const bookingsNextMonth = bookingsNextMonthResult.data || []
+
+  // Calculer le nombre de jours ouvrés dans le mois prochain (approximation: 22 jours)
+  const workingDaysNextMonth = 22
+
+  // Fonction pour calculer les prévisions par site
+  function calculateForecastBySite(bookings: typeof bookingsNextWeek, periodDays: number) {
+    const siteBookings = new Map<string, number>()
+    bookings.forEach((b) => {
+      if (b.resource_id) {
+        const siteId = resourceToSite.get(b.resource_id)
+        if (siteId) {
+          siteBookings.set(siteId, (siteBookings.get(siteId) || 0) + (b.seats_count || 1))
+        }
+      }
+    })
+
+    const forecasts: { siteId: string; siteName: string; occupancyRate: number; bookedCount: number; totalCapacity: number }[] = []
+    siteCapacities.forEach((site, siteId) => {
+      const bookingCount = siteBookings.get(siteId) || 0
+      const maxPossible = site.capacity * periodDays
+      const occupancyRate = maxPossible > 0 ? Math.round((bookingCount / maxPossible) * 100) : 0
+      forecasts.push({
+        siteId,
+        siteName: site.name,
+        occupancyRate: Math.min(occupancyRate, 100),
+        bookedCount: bookingCount,
+        totalCapacity: maxPossible,
+      })
+    })
+
+    return forecasts.sort((a, b) => b.occupancyRate - a.occupancyRate)
+  }
+
+  // Calculer les prévisions pour chaque période
+  const forecastNextWeek = calculateForecastBySite(bookingsNextWeek, 5)
+  const forecastWeekAfterNext = calculateForecastBySite(bookingsWeekAfterNext, 5)
+  const forecastNextMonth = calculateForecastBySite(bookingsNextMonth, workingDaysNextMonth)
+
+  // Calculer les taux globaux pour chaque période
+  function calculateGlobalOccupancy(forecasts: typeof forecastNextWeek) {
+    const totalBooked = forecasts.reduce((sum, f) => sum + f.bookedCount, 0)
+    const totalCapacity = forecasts.reduce((sum, f) => sum + f.totalCapacity, 0)
+    return totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0
+  }
+
+  const forecastPeriods = [
+    {
+      label: `Semaine du ${format(nextWeekStart, "d MMM", { locale: fr })}`,
+      shortLabel: "S+1",
+      sites: forecastNextWeek,
+      globalOccupancy: calculateGlobalOccupancy(forecastNextWeek),
+    },
+    {
+      label: `Semaine du ${format(weekAfterNextStart, "d MMM", { locale: fr })}`,
+      shortLabel: "S+2",
+      sites: forecastWeekAfterNext,
+      globalOccupancy: calculateGlobalOccupancy(forecastWeekAfterNext),
+    },
+    {
+      label: format(nextMonthStart, "MMMM yyyy", { locale: fr }),
+      shortLabel: "M+1",
+      sites: forecastNextMonth,
+      globalOccupancy: calculateGlobalOccupancy(forecastNextMonth),
+    },
+  ]
 
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
@@ -475,26 +620,13 @@ export default async function DashboardPage() {
       {/* Section principale : Occupation + Clients */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
         {/* Carte Occupation - grande */}
-        <div className="lg:col-span-2 rounded-[20px] bg-card p-5 sm:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex-1">
-              <h2 className="font-header text-[22px] uppercase tracking-wide">Occupation</h2>
-              <p className="text-base text-muted-foreground mt-0.5">Taux de présence cette semaine</p>
-              <div className="flex items-baseline gap-2 mt-3">
-                <span className="font-header text-[40px] sm:text-[52px]">{globalOccupancyRate}%</span>
-                {globalOccupancyRate > 0 && (
-                  <span className="text-green-600 text-lg font-medium flex items-center">
-                    <TrendingUp className="h-4 w-4 mr-0.5" />
-                    actif
-                  </span>
-                )}
-              </div>
-              <p className="text-base text-muted-foreground mt-2">
-                {totalBookingsWeek} réservations / {totalCapacity * 5} places disponibles
-              </p>
-            </div>
-            <CircularGauge value={globalOccupancyRate} label="global" size="lg" />
-          </div>
+        <div className="lg:col-span-2 h-full">
+          <OccupationCard
+            globalOccupancyRate={globalOccupancyRate}
+            totalBookings={totalBookingsWeek}
+            totalCapacity={totalCapacity * 5}
+            siteOccupancies={weeklyOccupancies}
+          />
         </div>
 
         {/* Carte Clients */}
@@ -515,34 +647,15 @@ export default async function DashboardPage() {
       </div>
 
       {/* Section Réservations temps réel */}
-      <div className="rounded-[20px] bg-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-header text-lg uppercase tracking-wide">Réservations</h2>
-          <span className="text-[14px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
-            TEMPS RÉEL
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <div className="bg-muted/50 p-4 rounded-lg text-center">
-            <Armchair className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-2xl">{todayBenchBookings}</p>
-            <p className="text-[13px] text-muted-foreground uppercase font-medium">Benchs</p>
-          </div>
-          <div className="bg-muted/50 p-4 rounded-lg text-center">
-            <DoorOpen className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-2xl">{todayMeetingRoomBookings}</p>
-            <p className="text-[13px] text-muted-foreground uppercase font-medium">Salles</p>
-          </div>
-          <div className="bg-muted/50 p-4 rounded-lg text-center">
-            <Building2 className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
-            <p className="font-header text-2xl">{sitesCount}</p>
-            <p className="text-[13px] text-muted-foreground uppercase font-medium">Sites Actifs</p>
-          </div>
-        </div>
-      </div>
+      <ReservationsCard
+        todayBenchBookings={benchAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
+        todayMeetingRoomBookings={meetingRoomAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
+        benchAvailabilityBySite={benchAvailabilityBySite}
+        meetingRoomAvailabilityBySite={meetingRoomAvailabilityBySite}
+      />
 
       {/* Grille métriques secondaires */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         {/* Support */}
         <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-start justify-between mb-3">
@@ -573,147 +686,16 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Croissance Abonnements */}
-        <div className="rounded-[20px] bg-card p-5">
-          <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-lg uppercase tracking-wide">Croissance</h2>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Abonnements</p>
-          <div className="flex items-baseline gap-2">
-            <span className="font-header text-[28px]">{subscriptionGrowth > 0 ? "+" : ""}{subscriptionGrowth}%</span>
-            {subscriptionGrowth > 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            ) : subscriptionGrowth < 0 ? (
-              <TrendingDown className="h-4 w-4 text-red-500" />
-            ) : null}
-          </div>
-          <p className="text-[13px] text-muted-foreground mt-2">
-            {newCompaniesThisMonth} nouvelle{newCompaniesThisMonth !== 1 ? "s" : ""} entreprise{newCompaniesThisMonth !== 1 ? "s" : ""} ce mois
-          </p>
-        </div>
-
-        {/* Sites Actifs */}
-        <div className="rounded-[20px] bg-card p-5">
-          <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-lg uppercase tracking-wide">Sites</h2>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Actifs</p>
-          <p className="font-header text-[28px] mb-2">{sitesCount}</p>
-          <Link
-            href="/admin/sites"
-            className="text-base text-brand hover:underline"
-          >
-            Voir tous les sites →
-          </Link>
-        </div>
+        {/* Croissance Contrats */}
+        <GrowthCard
+          globalGrowthRate={globalGrowthRate}
+          newContractsThisMonth={newContractsThisMonth}
+          offerGrowths={offerGrowths}
+        />
       </div>
 
-      {/* Section Sites : Top 3 + Moins occupé */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Site le plus occupé */}
-        <div className="rounded-[20px] bg-card p-5">
-          <h2 className="font-header text-lg uppercase tracking-wide mb-4">
-            Site le plus occupé
-          </h2>
-          <div className="space-y-4">
-            {/* Aujourd'hui */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
-              {mostOccupiedDay ? (
-                <SiteOccupancyItem
-                  name={mostOccupiedDay.name}
-                  occupancy={mostOccupiedDay.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-
-            <div className="h-px bg-border" />
-
-            {/* Cette semaine */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
-              {mostOccupiedWeek ? (
-                <SiteOccupancyItem
-                  name={mostOccupiedWeek.name}
-                  occupancy={mostOccupiedWeek.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-
-            <div className="h-px bg-border" />
-
-            {/* Ce mois */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
-              {mostOccupiedMonth ? (
-                <SiteOccupancyItem
-                  name={mostOccupiedMonth.name}
-                  occupancy={mostOccupiedMonth.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Site le moins occupé */}
-        <div className="rounded-[20px] bg-card p-5">
-          <h2 className="font-header text-lg uppercase tracking-wide mb-4">
-            Site le moins occupé
-          </h2>
-          <div className="space-y-4">
-            {/* Aujourd'hui */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Aujourd&apos;hui</p>
-              {leastOccupiedDay ? (
-                <SiteOccupancyItem
-                  name={leastOccupiedDay.name}
-                  occupancy={leastOccupiedDay.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-
-            <div className="h-px bg-border" />
-
-            {/* Cette semaine */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Cette semaine</p>
-              {leastOccupiedWeek ? (
-                <SiteOccupancyItem
-                  name={leastOccupiedWeek.name}
-                  occupancy={leastOccupiedWeek.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-
-            <div className="h-px bg-border" />
-
-            {/* Ce mois */}
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-2">Ce mois</p>
-              {leastOccupiedMonth ? (
-                <SiteOccupancyItem
-                  name={leastOccupiedMonth.name}
-                  occupancy={leastOccupiedMonth.occupancy}
-                />
-              ) : (
-                <p className="text-lg text-muted-foreground">Aucune donnée</p>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Section Prévisions */}
+      <ForecastCard periods={forecastPeriods} />
     </div>
   )
 }
