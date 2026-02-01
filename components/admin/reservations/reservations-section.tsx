@@ -6,10 +6,12 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
+  startOfDay,
+  endOfDay,
   addDays,
   parseISO,
 } from "date-fns"
-import type { BookingWithDetails, ResourceType } from "@/lib/types/database"
+import type { BookingWithDetails, ResourceType, MeetingRoomResource } from "@/lib/types/database"
 import type { HiddenFilter } from "./reservations-filters"
 import type { ViewMode } from "./view-toggle"
 import { Calendar } from "lucide-react"
@@ -61,6 +63,10 @@ export async function ReservationsSection({
   } else if (view === "month") {
     startDate = startOfMonth(referenceDate)
     endDate = endOfMonth(referenceDate)
+  } else if (view === "rooms") {
+    // Rooms view shows a single day
+    startDate = startOfDay(referenceDate)
+    endDate = endOfDay(referenceDate)
   } else {
     startDate = referenceDate
     endDate = addDays(referenceDate, 30)
@@ -106,6 +112,46 @@ export async function ReservationsSection({
   const sites = sitesResult.data || []
   const companies = companiesResult.data || []
   const users = usersResult.data || []
+
+  // Fetch meeting rooms for site context (for rooms view)
+  let meetingRooms: MeetingRoomResource[] = []
+  if (context.type === "site") {
+    const { data: rooms } = await supabase
+      .from("resources")
+      .select("id, name, capacity, floor, hourly_credit_rate, equipments, status")
+      .eq("site_id", context.siteId)
+      .eq("type", "meeting_room")
+      .eq("status", "available")
+      .order("name")
+
+    if (rooms && rooms.length > 0) {
+      // Fetch photos for all rooms
+      const roomIds = rooms.map((r) => r.id)
+      const { data: photos } = await supabase
+        .from("resource_photos")
+        .select("resource_id, storage_path")
+        .in("resource_id", roomIds)
+        .order("created_at", { ascending: true })
+
+      // Build photo URLs map
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+      const photosByRoom: Record<string, string[]> = {}
+      photos?.forEach((photo) => {
+        const url = `${supabaseUrl}/storage/v1/object/public/resource-photos/${photo.storage_path}`
+        if (!photosByRoom[photo.resource_id]) {
+          photosByRoom[photo.resource_id] = [url]
+        } else {
+          photosByRoom[photo.resource_id].push(url)
+        }
+      })
+
+      // Add photos to rooms
+      meetingRooms = rooms.map((room) => ({
+        ...room,
+        photoUrls: photosByRoom[room.id] || [],
+      })) as MeetingRoomResource[]
+    }
+  }
 
   // Transform bookings to flat structure with details
   let transformedBookings: BookingWithDetails[] =
@@ -257,6 +303,8 @@ export async function ReservationsSection({
           referenceDate={referenceDate.toISOString()}
           hiddenFilters={hiddenFilters}
           paramPrefix={paramPrefix}
+          meetingRooms={meetingRooms}
+          showRoomsView={context.type === "site"}
         />
       </Suspense>
     </div>

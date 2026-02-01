@@ -30,6 +30,7 @@ interface ReservationsCalendarProps {
   view: ViewMode
   referenceDate: string
   paramPrefix?: string
+  showRoomsView?: boolean
 }
 
 export function ReservationsCalendar({
@@ -37,6 +38,7 @@ export function ReservationsCalendar({
   view,
   referenceDate,
   paramPrefix = "",
+  showRoomsView = false,
 }: ReservationsCalendarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -235,7 +237,7 @@ export function ReservationsCalendar({
           <div />
         )}
 
-        <ViewToggle currentView={view} onViewChange={handleViewChange} />
+        <ViewToggle currentView={view} onViewChange={handleViewChange} showRoomsView={showRoomsView} />
       </div>
 
       {/* Date range picker for list view */}
