@@ -432,57 +432,71 @@ export function RoomPlanningGrid({
       {/* Desktop view: horizontal grid */}
       <div className="hidden sm:block overflow-x-auto -mx-4 sm:-mx-6">
         <div className="min-w-[600px] px-4 sm:px-6">
-          {/* Header with rooms */}
-          <div className="flex sticky top-0 bg-transparent z-10 pb-4">
-            {/* Time column header */}
-            <div className="w-12 shrink-0" />
+          {/* Use CSS Grid for perfect alignment between header and timeline */}
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `48px repeat(${rooms.length}, minmax(90px, 1fr))`,
+              gap: "8px",
+            }}
+          >
+            {/* Header row - Time column header */}
+            <div className="shrink-0" />
 
-            {/* Room headers */}
-            <div className="flex flex-1 gap-2">
-              {rooms.map((room) => (
-                <div
-                  key={room.id}
-                  className="flex-1 min-w-[90px] text-center pt-4"
-                >
-                  {/* Room photo slider */}
-                  <RoomPhotoSlider
-                    photos={room.photoUrls || []}
-                    roomName={room.name}
-                    onPhotoClick={handlePhotoClick}
-                  />
+            {/* Header row - Room headers */}
+            {rooms.map((room) => (
+              <div
+                key={`header-${room.id}`}
+                className="text-center pt-4 pb-4"
+              >
+                {/* Room photo slider */}
+                <RoomPhotoSlider
+                  photos={room.photoUrls || []}
+                  roomName={room.name}
+                  onPhotoClick={handlePhotoClick}
+                />
 
-                  {/* Room name */}
-                  <p className="text-sm font-medium text-foreground truncate px-1">
-                    {room.name}
-                  </p>
+                {/* Room name */}
+                <p className="text-sm font-medium text-foreground truncate px-1">
+                  {room.name}
+                </p>
 
-                  {/* Room info */}
-                  <div className="flex items-center justify-center gap-2 mt-0.5 text-xs text-muted-foreground/80">
-                    {room.capacity && (
-                      <span className="flex items-center gap-0.5">
-                        <Users className="h-3 w-3" />
-                        {room.capacity}
-                      </span>
-                    )}
-                    {room.hourly_credit_rate && (
-                      <span className="flex items-center gap-0.5">
-                        <Coins className="h-3 w-3" />
-                        {room.hourly_credit_rate}/h
-                      </span>
-                    )}
-                  </div>
+                {/* Room info */}
+                <div className="flex items-center justify-center gap-2 mt-0.5 text-xs text-muted-foreground/80">
+                  {room.capacity && (
+                    <span className="flex items-center gap-0.5">
+                      <Users className="h-3 w-3" />
+                      {room.capacity}
+                    </span>
+                  )}
+                  {room.hourly_credit_rate && (
+                    <span className="flex items-center gap-0.5">
+                      <Coins className="h-3 w-3" />
+                      {room.hourly_credit_rate}/h
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
 
-          {/* Timeline grid */}
-          <div className="flex relative mt-4">
+          {/* Timeline grid - separate for relative positioning of now indicator */}
+          <div
+            className="grid relative"
+            style={{
+              gridTemplateColumns: `48px repeat(${rooms.length}, minmax(90px, 1fr))`,
+              gap: "8px",
+            }}
+          >
             {/* Now indicator */}
             {nowPosition !== null && (
               <div
-                className="absolute left-12 right-0 z-20 pointer-events-none flex items-center"
-                style={{ top: `${nowPosition}%` }}
+                className="absolute z-20 pointer-events-none flex items-center"
+                style={{
+                  top: `${nowPosition}%`,
+                  left: "48px",
+                  right: 0,
+                }}
               >
                 <div className="w-2 h-2 rounded-full bg-destructive -ml-1" />
                 <div className="h-[1px] bg-destructive flex-1" />
@@ -490,7 +504,7 @@ export function RoomPlanningGrid({
             )}
 
             {/* Time column */}
-            <div className="w-12 shrink-0">
+            <div>
               {HOURS.map((hour) => (
                 <div
                   key={hour}
@@ -505,76 +519,74 @@ export function RoomPlanningGrid({
             </div>
 
             {/* Room columns */}
-            <div className="flex flex-1 gap-2">
-              {rooms.map((room) => {
-                const roomBookings = bookingsByRoom.get(room.id) || []
-                const affordable = canAffordRoom(room)
+            {rooms.map((room) => {
+              const roomBookings = bookingsByRoom.get(room.id) || []
+              const affordable = canAffordRoom(room)
 
-                return (
-                  <div
-                    key={room.id}
-                    className="flex-1 min-w-[90px] relative"
-                  >
-                    {/* Subtle background column */}
-                    <div className="absolute inset-0 bg-muted/20 rounded-lg" />
+              return (
+                <div
+                  key={`grid-${room.id}`}
+                  className="relative"
+                >
+                  {/* Subtle background column */}
+                  <div className="absolute inset-0 bg-muted/20 rounded-lg" />
 
-                    {/* Hour slots */}
-                    <div className="relative">
-                      {HOURS.map((hour, index) => {
-                        const available = isSlotAvailable(room.id, hour)
-                        const isPast = currentHour > hour
-
-                        return (
-                          <button
-                            key={hour}
-                            type="button"
-                            onClick={() => available && affordable && !isPast && onSlotClick(room, hour)}
-                            disabled={!available || !affordable || isPast}
-                            className={cn(
-                              "w-full transition-colors relative",
-                              index < HOURS.length - 1 && "border-b border-foreground/5",
-                              available && affordable && !isPast
-                                ? "hover:bg-primary/5 cursor-pointer"
-                                : "cursor-not-allowed",
-                              isPast && "bg-foreground/[0.02]"
-                            )}
-                            style={{ height: SLOT_HEIGHT }}
-                          />
-                        )
-                      })}
-                    </div>
-
-                    {/* Booking blocks */}
-                    {roomBookings.map((booking) => {
-                      const top = (booking.startHour - 8) * SLOT_HEIGHT
-                      const height = (booking.endHour - booking.startHour) * SLOT_HEIGHT
+                  {/* Hour slots */}
+                  <div className="relative">
+                    {HOURS.map((hour, index) => {
+                      const available = isSlotAvailable(room.id, hour)
+                      const isPast = currentHour > hour
 
                       return (
-                        <div
-                          key={booking.id}
-                          className="absolute left-1 right-1 rounded-md bg-foreground/10 p-1.5 overflow-hidden pointer-events-none"
-                          style={{ top, height }}
-                        >
-                          <p className="text-xs font-medium text-foreground truncate">
-                            {booking.title || "Réservé"}
-                          </p>
-                          {booking.userName && height > 50 && (
-                            <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                              {booking.userName}
-                            </p>
+                        <button
+                          key={hour}
+                          type="button"
+                          onClick={() => available && affordable && !isPast && onSlotClick(room, hour)}
+                          disabled={!available || !affordable || isPast}
+                          className={cn(
+                            "w-full transition-colors relative",
+                            index < HOURS.length - 1 && "border-b border-foreground/5",
+                            available && affordable && !isPast
+                              ? "hover:bg-primary/5 cursor-pointer"
+                              : "cursor-not-allowed",
+                            isPast && "bg-foreground/[0.02]"
                           )}
-                          {height > 70 && (
-                            <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                              {booking.startHour}h - {booking.endHour}h
-                            </p>
-                          )}
-                        </div>
+                          style={{ height: SLOT_HEIGHT }}
+                        />
                       )
                     })}
                   </div>
-                )
-              })}
-            </div>
+
+                  {/* Booking blocks */}
+                  {roomBookings.map((booking) => {
+                    const top = (booking.startHour - 8) * SLOT_HEIGHT
+                    const height = (booking.endHour - booking.startHour) * SLOT_HEIGHT
+
+                    return (
+                      <div
+                        key={booking.id}
+                        className="absolute left-1 right-1 rounded-md bg-foreground/10 p-1.5 overflow-hidden pointer-events-none"
+                        style={{ top, height }}
+                      >
+                        <p className="text-xs font-medium text-foreground truncate">
+                          {booking.title || "Réservé"}
+                        </p>
+                        {booking.userName && height > 50 && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+                            {booking.userName}
+                          </p>
+                        )}
+                        {height > 70 && (
+                          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                            {booking.startHour}h - {booking.endHour}h
+                          </p>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
         </div>
       </div>
