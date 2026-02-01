@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -237,8 +237,19 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        Voir détails
+                      <DropdownMenuItem
+                        onClick={() => {
+                          if (ticket.freshdesk_ticket_id) {
+                            window.open(
+                              `https://mydeskeosupport.freshdesk.com/a/tickets/${ticket.freshdesk_ticket_id}`,
+                              "_blank"
+                            )
+                          }
+                        }}
+                        disabled={!ticket.freshdesk_ticket_id}
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Voir dans Freshdesk
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
