@@ -64,6 +64,22 @@ Custom Deskeo brand with:
 - **Fonts:** ProgramNarOT (headers), Articulat CF (body), GT Alpina (editorial)
 - **Border radius:** 20px default
 
+### Interface Client (App Client)
+
+Pour les composants de l'interface client (`components/client/`), suivre les patterns définis dans `.claude/skills/hopper-design-system/SKILL.md` :
+
+- **Design flat** : Aucune ombre (pas de shadow-sm, shadow-lg, etc.)
+- **Cards** : `rounded-[16px] bg-card` (séparation par différence de fond, pas de bordures)
+- **Boutons** : `rounded-full bg-[#1B1918] text-white uppercase`
+- **Icônes** : Dans cercles avec `bg-foreground/5`
+- **Titres** : `font-header font-bold uppercase tracking-tight`
+- **Dropdowns** : Animation avec `transition-all duration-200` et `max-h-0/max-h-[500px]`
+
+Fichiers de référence :
+- `components/client/dashboard/quick-action-cards.tsx`
+- `components/client/dashboard/available-rooms-section.tsx`
+- `components/client/user-booking-card.tsx`
+
 ## Responsive Design Guidelines
 
 **The site must be fully responsive.** Follow these patterns for all new components:

@@ -112,7 +112,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
   return (
     <div
       className={cn(
-        "relative rounded-[16px] border bg-card p-4 sm:p-5 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 hover:shadow-md",
+        "relative rounded-[16px] border bg-card p-4 sm:p-5 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 ",
         plan.isPopular && "border-primary/30 ring-1 ring-primary/20"
       )}
     >

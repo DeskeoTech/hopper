@@ -50,7 +50,7 @@ export function MesCreditsTab() {
   return (
     <div className="space-y-6">
       {/* Credit Balance Card */}
-      <div className="rounded-[16px] bg-card p-4 shadow-sm">
+      <div className="rounded-[16px] bg-card p-4 ">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">Solde actuel</p>
@@ -78,7 +78,7 @@ export function MesCreditsTab() {
       </Button>
 
       {/* Credits History */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <h3 className="mb-4 text-lg font-semibold">Historique des mouvements</h3>
 
         {creditMovements.length === 0 ? (

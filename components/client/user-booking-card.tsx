@@ -36,7 +36,7 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
     <>
       <div
         className={cn(
-          "flex-shrink-0 w-[160px] rounded-[16px] bg-card p-4 transition-all duration-200",
+          "flex-shrink-0 w-[160px] rounded-[20px] bg-card p-4  transition-all duration-200",
           isPast && "opacity-50"
         )}
       >

@@ -123,7 +123,7 @@ export function SupportTab() {
   return (
     <div className="space-y-6">
       {/* Contact Form */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <div className="mb-6 flex items-center gap-2">
           <MessageCircle className="h-5 w-5 text-foreground/50" />
           <h2 className="text-lg font-semibold">Contacter le support</h2>
@@ -195,7 +195,7 @@ export function SupportTab() {
       </div>
 
       {/* Tickets List */}
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <div className="mb-6 flex items-center gap-2">
           <Clock className="h-5 w-5 text-foreground/50" />
           <h2 className="text-lg font-semibold">Mes demandes</h2>

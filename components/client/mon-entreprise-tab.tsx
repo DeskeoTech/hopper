@@ -173,7 +173,7 @@ export function MonEntrepriseTab() {
 
   if (!companyId) {
     return (
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <p className="text-muted-foreground">Aucune entreprise associée</p>
       </div>
     )
