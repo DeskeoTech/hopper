@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
-import { ClientSidebar } from "@/components/client/client-sidebar"
 import { ClientHeader } from "@/components/client/client-header"
-import { ClientBottomTabs } from "@/components/client/client-bottom-tabs"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
@@ -279,11 +277,9 @@ export default async function ClientLayout({
       )}
       <ExpiredContractBanner />
       <div className="min-h-screen bg-background overflow-x-hidden">
-        <ClientSidebar />
-        <div className="flex min-h-screen flex-col md:ml-64 overflow-x-hidden">
+        <div className="flex min-h-screen flex-col overflow-x-hidden">
           <ClientHeader />
-          <main className="flex-1 pb-20 md:pb-0 overflow-x-hidden">{children}</main>
-          <ClientBottomTabs />
+          <main className="flex-1 overflow-x-hidden">{children}</main>
         </div>
       </div>
     </ClientLayoutProvider>

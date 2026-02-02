@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
-import { LogOut, MessageCircle, Loader2, Building2, Ticket, Crown, User, Package, Coins, Receipt } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { LogOut, MessageCircle, Loader2, Building2, Ticket, Crown, User, Package, Coins, Receipt, ArrowLeft } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import Link from "next/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -30,9 +31,14 @@ interface MonComptePageProps {
 export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   const { user, credits, plan, canManageCompany } = useClientLayout()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loggingOut, setLoggingOut] = useState(false)
   const [activeTab, setActiveTab] = useState("coordonnees")
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  // Preserve site param in navigation
+  const siteParam = searchParams.get("site")
+  const accueilHref = siteParam ? `/compte?site=${siteParam}` : "/compte"
 
   // User info
   const firstName = user?.first_name || ""
@@ -62,6 +68,17 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   return (
     <>
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
+      {/* Back to home button */}
+      <Link
+        href={accueilHref}
+        className="inline-flex items-center gap-2 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+      >
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
+          <ArrowLeft className="h-4 w-4" />
+        </div>
+        <span>Retour à l&apos;accueil</span>
+      </Link>
+
       {/* Header with logout button */}
       <div className="flex items-start justify-between gap-4">
         {/* User Info Block - Mobile only */}
