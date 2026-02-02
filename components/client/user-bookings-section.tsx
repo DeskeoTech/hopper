@@ -1,10 +1,10 @@
 "use client"
 
 import { useMemo } from "react"
-import { CalendarX2 } from "lucide-react"
+import { CalendarX2, Briefcase } from "lucide-react"
 import { UserBookingCard } from "./user-booking-card"
 import { ContractCard } from "./contract-card"
-import type { BookingWithDetails, ContractForDisplay, ReservationItem, ReservationItemType } from "@/lib/types/database"
+import type { BookingWithDetails, ContractForDisplay, ReservationItemType } from "@/lib/types/database"
 
 interface UserBookingsSectionProps {
   bookings: BookingWithDetails[]
@@ -30,84 +30,103 @@ export function UserBookingsSection({
   contracts = [],
   userId,
 }: UserBookingsSectionProps) {
-  // Create unified reservation items and filter for upcoming only
-  const upcomingItems = useMemo(() => {
+  // Filter meeting room bookings (upcoming or ongoing, not cancelled)
+  const meetingRoomBookings = useMemo(() => {
     const now = new Date()
-
-    // Transform bookings to reservation items
-    const bookingItems: ReservationItem[] = bookings.map((b) => ({
-      id: b.id,
-      type: "meeting_room" as ReservationItemType,
-      start_date: b.start_date,
-      end_date: b.end_date,
-      site_name: b.site_name,
-      status: b.status || "confirmed",
-      booking: b,
-    }))
-
-    // Transform contracts to reservation items
-    const contractItems: ReservationItem[] = contracts.map((c) => ({
-      id: c.id,
-      type: getPassType(c.plan_recurrence),
-      start_date: c.start_date || "",
-      end_date: c.end_date || "",
-      site_name: c.site_name,
-      status: c.status,
-      contract: c,
-    }))
-
-    // Combine all items
-    const allItems = [...bookingItems, ...contractItems]
-
-    // Filter for upcoming only and sort by start_date ascending
-    return allItems
-      .filter((item) => {
-        if (item.booking) {
-          // Booking is upcoming if it hasn't started yet
-          return new Date(item.start_date) > now && item.status !== "cancelled"
-        }
-        if (item.contract) {
-          return item.status !== "terminated" && (!item.end_date || new Date(item.end_date) >= now)
-        }
-        return false
+    return bookings
+      .filter((b) => {
+        // Include if: upcoming (start > now) OR ongoing (start <= now <= end)
+        const isUpcoming = new Date(b.start_date) > now
+        const isOngoing = new Date(b.start_date) <= now && new Date(b.end_date) >= now
+        return (isUpcoming || isOngoing) && b.status !== "cancelled"
       })
       .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
-  }, [bookings, contracts])
+  }, [bookings])
+
+  // Filter passes (active or not terminated)
+  const activeContracts = useMemo(() => {
+    const now = new Date()
+    return contracts
+      .filter((c) => {
+        return c.status !== "terminated" && (!c.end_date || new Date(c.end_date) >= now)
+      })
+      .sort((a, b) => {
+        const dateA = a.start_date ? new Date(a.start_date).getTime() : 0
+        const dateB = b.start_date ? new Date(b.start_date).getTime() : 0
+        return dateA - dateB
+      })
+  }, [contracts])
+
+  const hasAnyReservations = meetingRoomBookings.length > 0 || activeContracts.length > 0
 
   return (
-    <div className="space-y-4">
-      <h2 className="font-header text-xl text-foreground">Réservations à venir</h2>
+    <div className="space-y-6">
+      <h2 className="font-header text-xl text-foreground">Mes réservations</h2>
 
-      {upcomingItems.length > 0 ? (
-        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-3 pb-2">
-            {upcomingItems.map((item) =>
-              item.booking ? (
-                <UserBookingCard
-                  key={`booking-${item.id}`}
-                  booking={item.booking}
-                  userId={userId}
-                  isPast={false}
-                />
-              ) : item.contract ? (
-                <ContractCard
-                  key={`contract-${item.id}`}
-                  contract={item.contract}
-                  type={item.type}
-                  isPast={false}
-                />
-              ) : null
-            )}
-          </div>
-        </div>
-      ) : (
-        <div className="rounded-[20px] bg-card p-6 text-center ">
+      {!hasAnyReservations ? (
+        <div className="rounded-[20px] bg-card p-6 text-center">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
             <CalendarX2 className="h-6 w-6 text-muted-foreground" />
           </div>
           <p className="mt-4 text-sm text-muted-foreground">
-            Aucune réservation à venir
+            Aucune réservation
           </p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {/* Meeting Rooms Section */}
+          <div className="space-y-3">
+            <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
+              Salles de réunion
+            </h3>
+            {meetingRoomBookings.length > 0 ? (
+              <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 pb-2">
+                  {meetingRoomBookings.map((booking) => (
+                    <UserBookingCard
+                      key={`booking-${booking.id}`}
+                      booking={booking}
+                      userId={userId}
+                      isPast={false}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[16px] bg-card p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Aucune réservation de salle
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Postes Section (Passes) */}
+          <div className="space-y-3">
+            <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
+              Postes
+            </h3>
+            {activeContracts.length > 0 ? (
+              <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 pb-2">
+                  {activeContracts.map((contract) => (
+                    <ContractCard
+                      key={`contract-${contract.id}`}
+                      contract={contract}
+                      type={getPassType(contract.plan_recurrence)}
+                      isPast={false}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-[16px] bg-card p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Aucun pass actif
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
