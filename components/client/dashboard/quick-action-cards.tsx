@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Users, Wifi, Copy, Check, ChevronDown, MapPin, Clock, Train, ExternalLink } from "lucide-react"
+import { Users, Wifi, Copy, Check, ChevronDown, MapPin, Clock, Train, ExternalLink, Building2, Paintbrush } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useClientLayout } from "../client-layout-provider"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
@@ -118,8 +118,52 @@ export function QuickActionCards() {
         />
       </div>
 
+      {/* Deskeo services */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => window.open("https://www.deskeo.com/fr/work-spaces/", "_blank")}
+          className="flex items-center gap-3 rounded-[16px] bg-card p-4 text-left transition-colors hover:bg-card/80"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Building2 className="h-5 w-5 text-foreground/70" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-header text-sm font-semibold uppercase tracking-tight">
+              Réserver un bureau opéré
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Espaces de travail clé en main
+            </p>
+          </div>
+          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+        <button
+          type="button"
+          onClick={() => window.open("https://www.deskeo.com/fr/design-build/", "_blank")}
+          className="flex items-center gap-3 rounded-[16px] bg-card p-4 text-left transition-colors hover:bg-card/80"
+        >
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Paintbrush className="h-5 w-5 text-foreground/70" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-header text-sm font-semibold uppercase tracking-tight">
+              Aménager vos bureaux
+            </h4>
+            <p className="text-xs text-muted-foreground">
+              Design & Build sur mesure
+            </p>
+          </div>
+          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+        </button>
+      </div>
+
       {/* Site info section */}
-      <div className="rounded-[16px] bg-card overflow-hidden">
+      <div className="space-y-3">
+        <h3 className="font-header text-sm font-semibold uppercase tracking-tight text-muted-foreground">
+          Infos utiles
+        </h3>
+        <div className="rounded-[16px] bg-card overflow-hidden">
         {/* WiFi info row with "Voir toutes les infos" button */}
         <div className="flex items-center gap-3 p-4">
           {/* WiFi icon */}
@@ -254,6 +298,7 @@ export function QuickActionCards() {
               </div>
             </div>
         )}
+        </div>
       </div>
 
       {/* Booking Modal */}
