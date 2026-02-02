@@ -282,6 +282,25 @@ export interface SupportTicketWithDetails extends SupportTicket {
   company_name: string | null
 }
 
+// News post types
+export interface NewsPost {
+  id: string
+  title: string
+  content: string
+  excerpt: string | null
+  image_storage_path: string | null
+  site_id: string | null
+  published_at: string | null
+  is_pinned: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface NewsPostWithSite extends NewsPost {
+  site_name: string | null
+  image_url: string | null
+}
+
 export interface Database {
   public: {
     Tables: {

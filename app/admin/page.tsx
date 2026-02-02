@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
+import { NewsCard } from "@/components/client/news-card"
+import { getNewsPosts } from "@/lib/actions/news"
 import {
   Building2,
   Calendar,
@@ -37,6 +39,9 @@ export default async function AccueilPage() {
   const sitesCount = sitesResult.count || 0
   const companiesCount = companiesResult.count || 0
   const bookingsCount = bookingsResult.count || 0
+
+  // Fetch latest news posts (admin sees all posts)
+  const newsPosts = await getNewsPosts({ limit: 3 })
 
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
@@ -188,11 +193,19 @@ export default async function AccueilPage() {
       {/* Fil d'actualité */}
       <section>
         <h2 className="type-h3 text-foreground mb-4">Fil d'actualité</h2>
-        <div className="rounded-lg bg-card p-8 text-center">
-          <p className="text-muted-foreground">
-            Aucune actualité pour le moment.
-          </p>
-        </div>
+        {newsPosts.length === 0 ? (
+          <div className="rounded-lg bg-card p-8 text-center">
+            <p className="text-muted-foreground">
+              Aucune actualité pour le moment.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {newsPosts.map((post) => (
+              <NewsCard key={post.id} post={post} variant="compact" />
+            ))}
+          </div>
+        )}
       </section>
     </div>
   )

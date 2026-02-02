@@ -8,7 +8,7 @@ import { clientNavigation } from "@/lib/navigation"
 // Short labels for mobile tabs
 const shortLabels: Record<string, string> = {
   "Accueil": "Accueil",
-  "Fil d'actualité": "Actus",
+  // "Fil d'actualité": "Actus", // TODO: réactiver quand la page sera enrichie
   "Boutique": "Boutique",
   "Mon Compte": "Compte",
 }
