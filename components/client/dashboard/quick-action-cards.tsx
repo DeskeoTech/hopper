@@ -34,7 +34,7 @@ interface ActionCardProps {
 
 function ActionCard({ image, title, description, capacity, buttonText, onClick }: ActionCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-[16px]">
+    <div className="relative overflow-hidden rounded-[16px] flex flex-col">
       {/* Image - background */}
       <div className="aspect-[4/3] overflow-hidden">
         <img
@@ -45,11 +45,12 @@ function ActionCard({ image, title, description, capacity, buttonText, onClick }
       </div>
 
       {/* Content - overlapping the image */}
-      <div className="relative -mt-[50%] mx-3 mb-3 rounded-[12px] bg-card p-4">
+      <div className="relative -mt-[50%] mx-3 mb-3 rounded-[12px] bg-card p-4 flex flex-col flex-1">
         <h3 className="font-header text-base font-bold uppercase tracking-tight">{title}</h3>
         {description && (
           <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
         )}
+        <div className="flex-1 min-h-2" />
         <Button
           onClick={onClick}
           size="sm"
