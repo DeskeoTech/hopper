@@ -27,6 +27,12 @@ export function ContractCard({ contract, type, isPast = false }: ContractCardPro
 
   const isTerminated = contract.status === "terminated"
 
+  // Ongoing = active, started, and not ended yet
+  const now = new Date()
+  const isOngoing = contract.status === "active" &&
+    startDate && startDate <= now &&
+    (!endDate || endDate >= now)
+
   return (
     <div
       className={cn(
@@ -66,8 +72,13 @@ export function ContractCard({ contract, type, isPast = false }: ContractCardPro
           </div>
         )}
 
-        {/* Status badge */}
-        {(isPast || isTerminated) && (
+        {/* Status badge: En cours > Terminé > Passé */}
+        {isOngoing && (
+          <span className="mt-2.5 rounded-full bg-green-500/20 px-2.5 py-0.5 text-[10px] font-semibold text-green-700">
+            En cours
+          </span>
+        )}
+        {!isOngoing && (isPast || isTerminated) && (
           <span className="mt-2.5 rounded-full bg-foreground/5 px-2.5 py-0.5 text-[10px] text-foreground/50">
             {isTerminated ? "Terminé" : "Passé"}
           </span>

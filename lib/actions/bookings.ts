@@ -332,13 +332,39 @@ export async function cancelBooking(
     return { error: updateError.message }
   }
 
-  // Note: Credits are not refunded for cancelled bookings
-  // If credits should be refunded, uncomment the following code:
-  /*
-  if (booking.credits_used && booking.credits_used > 0) {
-    // Refund credits logic would go here
+  // Refund credits if any were used
+  if (booking.credits_used && booking.credits_used > 0 && booking.user_id) {
+    // Get user's company_id
+    const { data: user } = await supabase
+      .from("users")
+      .select("company_id")
+      .eq("id", booking.user_id)
+      .single()
+
+    if (user?.company_id) {
+      // Find the active credit record for this company
+      const today = new Date().toISOString().split("T")[0]
+      const { data: creditRecord } = await supabase
+        .from("credits")
+        .select("id, remaining_credits, contracts!inner(company_id, status)")
+        .eq("contracts.company_id", user.company_id)
+        .eq("contracts.status", "active")
+        .lte("period", today)
+        .order("period", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (creditRecord) {
+        // Refund the credits
+        await supabase
+          .from("credits")
+          .update({
+            remaining_credits: creditRecord.remaining_credits + booking.credits_used,
+          })
+          .eq("id", creditRecord.id)
+      }
+    }
   }
-  */
 
   revalidatePath("/")
   revalidatePath("/admin/reservations")
