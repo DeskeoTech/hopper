@@ -10,6 +10,7 @@ import type { Equipment } from "@/lib/types/database"
 
 // Action card images
 const ROOM_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop"
+const CREDITS_IMAGE = "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop"
 
 // Equipment labels in French
 const equipmentLabels: Record<Equipment, string> = {
@@ -72,6 +73,11 @@ export function QuickActionCards() {
     window.open(url, "_blank")
   }
 
+  const handleBuyCredits = () => {
+    const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
+    window.open(stripeUrl, "_blank")
+  }
+
   const copyWifiPassword = () => {
     if (selectedSiteWithDetails?.wifiPassword) {
       navigator.clipboard.writeText(selectedSiteWithDetails.wifiPassword)
@@ -101,7 +107,7 @@ export function QuickActionCards() {
   return (
     <>
       {/* Action cards grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ActionCard
           image={ROOM_IMAGE}
           title="Réserver une salle"
@@ -115,6 +121,13 @@ export function QuickActionCards() {
           description="À la journée, à la semaine ou au mois"
           buttonText="Réserver"
           onClick={handleBookDesk}
+        />
+        <ActionCard
+          image={CREDITS_IMAGE}
+          title="Acheter des crédits"
+          description="Rechargez votre compte pour vos prochaines réservations"
+          buttonText="Acheter"
+          onClick={handleBuyCredits}
         />
       </div>
 
