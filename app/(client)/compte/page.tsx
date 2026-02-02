@@ -53,9 +53,8 @@ export default async function ComptePage() {
         id,
         status,
         start_date,
-        commitment_end_date,
-        plans (name, recurrence),
-        sites (name)
+        end_date,
+        plans (name, recurrence)
       `)
       .eq("company_id", userProfile.company_id)
       .order("start_date", { ascending: false })
@@ -63,15 +62,14 @@ export default async function ComptePage() {
 
     contracts = (contractsData || []).map((c) => {
       const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
-      const site = c.sites as unknown as { name: string } | null
       return {
         id: c.id,
         status: c.status as "active" | "suspended" | "terminated",
         start_date: c.start_date,
-        end_date: c.commitment_end_date,
+        end_date: c.end_date,
         plan_name: plan?.name || "Pass",
         plan_recurrence: plan?.recurrence || null,
-        site_name: site?.name || null,
+        site_name: null,
       }
     })
   }
