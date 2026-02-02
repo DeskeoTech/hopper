@@ -9,7 +9,6 @@ import { clientNavigation } from "@/lib/navigation"
 const shortLabels: Record<string, string> = {
   "Accueil": "Accueil",
   "Fil d'actualité": "Actus",
-  "Salles de réunion": "Salles",
   "Boutique": "Boutique",
   "Mon Compte": "Compte",
 }

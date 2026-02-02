@@ -54,7 +54,7 @@ export function MesCoordonneesTab() {
   }
 
   return (
-    <div className="rounded-[16px] bg-card p-6 shadow-sm">
+    <div className="rounded-[16px] bg-card p-6 ">
       <div className="mb-6 flex items-center gap-2">
         <User className="h-5 w-5 text-foreground/50" />
         <h2 className="text-lg font-semibold">Coordonnées</h2>

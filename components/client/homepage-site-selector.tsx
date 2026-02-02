@@ -74,7 +74,7 @@ export function HomepageSiteSelector() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-[16px] bg-card shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 rounded-[16px] bg-card ">
           {/* Search input */}
           <div className="border-b border-foreground/5 p-3">
             <div className="flex items-center gap-2 rounded-[12px] bg-muted px-3 py-2">

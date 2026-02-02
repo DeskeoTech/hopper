@@ -48,7 +48,7 @@ export function FacturationTab() {
     <>
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 rounded-[20px] bg-card p-8 shadow-lg">
+          <div className="flex flex-col items-center gap-4 rounded-[20px] bg-card p-8 ">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <CreditCard className="h-8 w-8 text-primary" />
             </div>
@@ -65,7 +65,7 @@ export function FacturationTab() {
         </div>
       )}
 
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <div className="mb-4 flex items-center gap-2">
           <Receipt className="h-5 w-5 text-foreground/50" />
           <h2 className="text-lg font-semibold">Facturation</h2>

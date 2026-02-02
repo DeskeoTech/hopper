@@ -54,7 +54,7 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
       {/* User Info Block - Mobile only */}
-      <div className="md:hidden rounded-[16px] bg-card p-4 shadow-sm">
+      <div className="md:hidden rounded-[16px] bg-card p-4 ">
         <p className="font-header text-lg font-semibold text-foreground">{fullName}</p>
         {companyName && (
           <div className="mt-1 flex items-center gap-1.5 text-sm text-foreground/70">

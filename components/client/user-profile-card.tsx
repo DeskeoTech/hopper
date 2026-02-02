@@ -16,7 +16,7 @@ export function UserProfileCard() {
 
   return (
     <>
-      <div className="rounded-[16px] bg-card p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-6 ">
         <h1 className="font-header text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           Bonjour {firstName} 👋
         </h1>

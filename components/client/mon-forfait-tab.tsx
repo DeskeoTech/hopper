@@ -38,7 +38,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
-      <div className="rounded-[16px] bg-card p-5 sm:p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-5 sm:p-6 ">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <CreditCard className="h-6 w-6 text-foreground/50" />
@@ -136,7 +136,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
       </div>
 
       {/* Contract History */}
-      <div className="rounded-[16px] bg-card p-5 sm:p-6 shadow-sm">
+      <div className="rounded-[16px] bg-card p-5 sm:p-6 ">
         <h3 className="mb-5 text-xl font-semibold">Historique des contrats</h3>
 
         {!initialContractHistory || initialContractHistory.length === 0 ? (

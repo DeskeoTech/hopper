@@ -350,11 +350,11 @@ export function RoomBookingContent({
   // Success screen
   if (success) {
     return (
-      <div className="py-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-          <Check className="h-8 w-8 text-green-600" />
+      <div className="py-12 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5">
+          <Check className="h-8 w-8 text-green-500" />
         </div>
-        <p className="type-body text-foreground">
+        <p className="text-sm font-medium text-foreground">
           Votre salle a été réservée avec succès !
         </p>
       </div>
@@ -426,27 +426,27 @@ export function RoomBookingContent({
                         type="button"
                         onClick={() => handleDateChange(day)}
                         className={cn(
-                          "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-xl transition-all",
+                          "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-[16px] transition-all",
                           isSelected
-                            ? "bg-primary text-primary-foreground shadow-sm"
-                            : "bg-muted/50 hover:bg-muted text-foreground"
+                            ? "bg-[#1B1918] text-white "
+                            : "bg-foreground/5 hover:bg-foreground/10 text-foreground"
                         )}
                       >
                         <span className={cn(
                           "text-[10px] font-medium uppercase tracking-wide",
-                          isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                          isSelected ? "text-white/80" : "text-muted-foreground"
                         )}>
                           {format(day, "EEE", { locale: fr })}
                         </span>
                         <span className={cn(
                           "text-lg font-semibold leading-tight",
-                          isSelected ? "text-primary-foreground" : "text-foreground"
+                          isSelected ? "text-white" : "text-foreground"
                         )}>
                           {format(day, "d")}
                         </span>
                         <span className={cn(
                           "text-[9px]",
-                          isSelected ? "text-primary-foreground/70" : "text-muted-foreground/70"
+                          isSelected ? "text-white/70" : "text-muted-foreground/70"
                         )}>
                           {dayIsToday ? "Auj." : format(day, "MMM", { locale: fr })}
                         </span>
@@ -460,7 +460,7 @@ export function RoomBookingContent({
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-[58px] w-10 shrink-0 rounded-xl"
+                      className="h-[58px] w-10 shrink-0 rounded-[16px] border-0 bg-foreground/5 hover:bg-foreground/10"
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </Button>
@@ -691,7 +691,7 @@ export function RoomBookingContent({
           {/* Slots view */}
           {view === "slots" && selectedRoom && (
             <div className="space-y-4 overflow-auto flex-1">
-              <div className="rounded-lg border p-3 bg-muted/50">
+              <div className="rounded-[16px] p-4 bg-foreground/5">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="type-body font-medium truncate">{selectedRoom.name}</p>
@@ -732,7 +732,7 @@ export function RoomBookingContent({
 
               {selectedSlots.length > 0 && (
                 <div
-                  className={`rounded-lg p-3 ${!hasEnoughCredits ? "bg-destructive/10 border border-destructive/20" : "bg-muted"}`}
+                  className={`rounded-[16px] p-4 ${!hasEnoughCredits ? "bg-destructive/10" : "bg-foreground/5"}`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="type-body-sm text-muted-foreground">Coût total</span>
@@ -762,7 +762,7 @@ export function RoomBookingContent({
           {/* Confirm view */}
           {view === "confirm" && selectedRoom && selectedDate && (
             <div className="space-y-4 overflow-auto flex-1">
-              <div className="rounded-lg border p-4 space-y-3">
+              <div className="rounded-[16px] bg-foreground/5 p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
@@ -800,15 +800,15 @@ export function RoomBookingContent({
                 </div>
               </div>
 
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+              <div className="rounded-[16px] bg-[#1B1918] p-4 text-white">
                 <div className="flex items-center justify-between">
-                  <span className="type-body font-medium">Total à débiter</span>
+                  <span className="text-sm font-medium">Total à débiter</span>
                   <div className="flex items-center gap-1">
-                    <Coins className="h-5 w-5 text-primary" />
-                    <span className="type-h4 text-primary">{creditsNeeded} crédits</span>
+                    <Coins className="h-5 w-5" />
+                    <span className="text-lg font-bold">{creditsNeeded} crédits</span>
                   </div>
                 </div>
-                <p className="mt-1 type-body-sm text-muted-foreground">
+                <p className="mt-1 text-xs text-white/70">
                   Il vous restera {remainingCredits - creditsNeeded} crédits après cette
                   réservation
                 </p>
@@ -818,17 +818,17 @@ export function RoomBookingContent({
 
           {/* Navigation buttons (modal) */}
           {view !== "planning" && (
-            <div className="flex justify-end gap-2 pt-4 shrink-0 border-t mt-4">
-              <Button variant="outline" onClick={onClose}>
+            <div className="flex justify-end gap-3 pt-4 shrink-0 border-t border-foreground/5 mt-4">
+              <Button variant="outline" onClick={onClose} className="rounded-full">
                 Annuler
               </Button>
               {view === "confirm" ? (
-                <Button onClick={() => setConfirmOpen(true)} disabled={submitting}>
+                <Button onClick={() => setConfirmOpen(true)} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Confirmer la réservation
                 </Button>
               ) : (
-                <Button onClick={handleNext} disabled={!canProceed()}>
+                <Button onClick={handleNext} disabled={!canProceed()} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
                   Continuer
                 </Button>
               )}
