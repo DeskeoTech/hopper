@@ -27,6 +27,9 @@ export function HomepageHero({ imageUrl, siteName }: HomepageHeroProps) {
         </div>
       )}
 
+      {/* Top gradient for smooth header transition */}
+      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-background via-background/50 to-transparent" />
+
       {/* Gradient overlay with blur effect at bottom - lighter on mobile for better image visibility */}
       <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent sm:via-background/40" />
 
