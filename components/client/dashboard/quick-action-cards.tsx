@@ -34,27 +34,25 @@ interface ActionCardProps {
 
 function ActionCard({ image, title, description, capacity, buttonText, onClick }: ActionCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-[16px] flex flex-col">
-      {/* Image - background */}
-      <div className="aspect-[4/3] overflow-hidden">
-        <img
-          src={image}
-          alt={title}
-          className="h-full w-full object-cover"
-        />
-      </div>
+    <div className="relative overflow-hidden rounded-[16px] h-[280px]">
+      {/* Image - full height background */}
+      <img
+        src={image}
+        alt={title}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
 
-      {/* Content - overlapping the image */}
-      <div className="relative -mt-[50%] mx-3 mb-3 rounded-[12px] bg-card p-4 flex flex-col flex-1">
+      {/* Content - positioned at bottom with fixed height */}
+      <div className="absolute bottom-3 left-3 right-3 rounded-[12px] bg-card p-4 flex flex-col h-[140px]">
         <h3 className="font-header text-base font-bold uppercase tracking-tight">{title}</h3>
         {description && (
           <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
         )}
-        <div className="flex-1 min-h-2" />
+        <div className="flex-1" />
         <Button
           onClick={onClick}
           size="sm"
-          className="mt-4 rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide h-9 px-5"
+          className="rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide h-9 px-5"
         >
           {buttonText}
         </Button>
