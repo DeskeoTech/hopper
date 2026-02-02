@@ -11,7 +11,6 @@ import {
   Circle,
   AlertCircle,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
@@ -123,10 +122,12 @@ export function SupportTab() {
   return (
     <div className="space-y-6">
       {/* Contact Form */}
-      <div className="rounded-[16px] bg-card p-6 ">
-        <div className="mb-6 flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-foreground/50" />
-          <h2 className="text-lg font-semibold">Contacter le support</h2>
+      <div className="rounded-[16px] bg-card p-6">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <MessageCircle className="h-5 w-5 text-foreground/70" />
+          </div>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Contacter le support</h2>
         </div>
 
         <p className="mb-6 text-sm text-muted-foreground">
@@ -166,39 +167,45 @@ export function SupportTab() {
           </div>
 
           {error && (
-            <div className="rounded-md bg-destructive/10 p-3">
+            <div className="rounded-[12px] bg-destructive/10 p-4">
               <p className="text-sm text-destructive">{error}</p>
             </div>
           )}
 
           {success && (
-            <div className="flex items-center gap-2 rounded-md bg-green-100 p-3 text-green-700">
+            <div className="flex items-center gap-2 rounded-[12px] bg-green-500/10 p-4 text-green-600">
               <Check className="h-4 w-4" />
-              <p className="text-sm">Votre demande a été envoyée avec succès</p>
+              <p className="text-sm font-medium">Votre demande a été envoyée avec succès</p>
             </div>
           )}
 
-          <Button type="submit" disabled={loading} className="w-full sm:w-auto">
+          <button
+            type="submit"
+            disabled={loading}
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
+          >
             {loading ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
                 Envoi en cours...
               </>
             ) : (
               <>
-                <Send className="mr-2 h-4 w-4" />
+                <Send className="h-4 w-4" />
                 Envoyer ma demande
               </>
             )}
-          </Button>
+          </button>
         </form>
       </div>
 
       {/* Tickets List */}
-      <div className="rounded-[16px] bg-card p-6 ">
-        <div className="mb-6 flex items-center gap-2">
-          <Clock className="h-5 w-5 text-foreground/50" />
-          <h2 className="text-lg font-semibold">Mes demandes</h2>
+      <div className="rounded-[16px] bg-card p-6">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Clock className="h-5 w-5 text-foreground/70" />
+          </div>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Mes demandes</h2>
         </div>
 
         {loadingTickets ? (
@@ -206,9 +213,11 @@ export function SupportTab() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : tickets.length === 0 ? (
-          <div className="py-8 text-center">
-            <MessageCircle className="mx-auto h-10 w-10 text-muted-foreground/30" />
-            <p className="mt-3 text-sm text-muted-foreground">
+          <div className="rounded-[12px] bg-foreground/[0.03] p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <MessageCircle className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
               Vous n&apos;avez pas encore de demande
             </p>
           </div>
@@ -220,7 +229,7 @@ export function SupportTab() {
               return (
                 <div
                   key={ticket.id}
-                  className="rounded-[12px] border border-border bg-background p-4"
+                  className="rounded-[12px] bg-foreground/[0.03] p-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex-1 min-w-0">

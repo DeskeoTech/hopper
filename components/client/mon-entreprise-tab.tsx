@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Loader2, Users, Shield, UserCircle, Plus } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
@@ -184,9 +183,11 @@ export function MonEntrepriseTab() {
       <div className="space-y-6">
         {/* Header with company name and seats */}
         <div className="rounded-[16px] bg-card p-4 sm:p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Users className="h-4 w-4 text-foreground/40" />
-            <h2 className="text-sm font-medium text-foreground/70">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+              <Users className="h-5 w-5 text-foreground/70" />
+            </div>
+            <h2 className="font-header text-lg font-bold uppercase tracking-tight">
               {companyName || "Entreprise"}
             </h2>
           </div>
@@ -201,28 +202,28 @@ export function MonEntrepriseTab() {
                 </div>
                 <Progress value={progressValue} className="h-1.5" />
               </div>
-              <Button
+              <button
+                type="button"
                 disabled={!canAddUser}
                 onClick={() => setAddUserOpen(true)}
-                size="sm"
-                className="shrink-0"
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#1B1918] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
+                <Plus className="h-3.5 w-3.5" />
                 Ajouter
-              </Button>
+              </button>
             </div>
           )}
         </div>
 
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3">
+          <div className="rounded-[12px] bg-destructive/10 p-4">
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {/* Users list */}
         <div className="rounded-[16px] bg-card p-4 sm:p-6">
-          <h3 className="mb-4 text-sm font-medium text-foreground/70">Utilisateurs</h3>
+          <h3 className="mb-4 font-header text-sm font-bold uppercase tracking-tight text-foreground/70">Utilisateurs</h3>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -382,20 +383,29 @@ export function MonEntrepriseTab() {
               </Select>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)}>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => setAddUserOpen(false)}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
               Annuler
-            </Button>
-            <Button onClick={handleAddUser} disabled={addingUser}>
+            </button>
+            <button
+              type="button"
+              onClick={handleAddUser}
+              disabled={addingUser}
+              className="flex items-center gap-2 rounded-full bg-[#1B1918] px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
+            >
               {addingUser ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Création...
                 </>
               ) : (
                 "Créer"
               )}
-            </Button>
+            </button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

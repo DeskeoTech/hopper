@@ -2,7 +2,6 @@
 
 import { CreditCard, Calendar, Check } from "lucide-react"
 import { useClientLayout } from "./client-layout-provider"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -38,11 +37,13 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
   return (
     <div className="space-y-6">
       {/* Current Plan Card */}
-      <div className="rounded-[16px] bg-card p-5 sm:p-6 ">
+      <div className="rounded-[16px] bg-card p-5 sm:p-6">
         <div className="mb-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-6 w-6 text-foreground/50" />
-            <h2 className="text-xl font-semibold">Forfait actuel</h2>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+              <CreditCard className="h-5 w-5 text-foreground/70" />
+            </div>
+            <h2 className="font-header text-xl font-bold uppercase tracking-tight">Forfait actuel</h2>
           </div>
           {plan && (
             <span
@@ -126,9 +127,13 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
             </div>
 
             {/* Manage button */}
-            <Button variant="outline" disabled className="w-full h-14 text-lg">
+            <button
+              type="button"
+              disabled
+              className="w-full rounded-full bg-foreground/5 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-foreground/50 transition-colors disabled:cursor-not-allowed"
+            >
               Gérer mon forfait
-            </Button>
+            </button>
           </div>
         ) : (
           <p className="text-lg text-muted-foreground">Aucun forfait actif</p>
@@ -136,8 +141,8 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
       </div>
 
       {/* Contract History */}
-      <div className="rounded-[16px] bg-card p-5 sm:p-6 ">
-        <h3 className="mb-5 text-xl font-semibold">Historique des contrats</h3>
+      <div className="rounded-[16px] bg-card p-5 sm:p-6">
+        <h3 className="mb-5 font-header text-lg font-bold uppercase tracking-tight">Historique des contrats</h3>
 
         {!initialContractHistory || initialContractHistory.length === 0 ? (
           <p className="text-lg text-muted-foreground">Aucun historique de contrat</p>

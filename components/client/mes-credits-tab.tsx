@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 import { ArrowDown, ArrowUp, Coins, ShoppingCart } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -50,7 +49,7 @@ export function MesCreditsTab() {
   return (
     <div className="space-y-6">
       {/* Credit Balance Card */}
-      <div className="rounded-[16px] bg-card p-4 ">
+      <div className="rounded-[16px] bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="text-xs text-muted-foreground">Solde actuel</p>
@@ -58,28 +57,28 @@ export function MesCreditsTab() {
               {credits?.remaining ?? 0} <span className="text-sm font-normal text-muted-foreground">/ {credits?.allocated ?? 0}</span>
             </p>
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10">
-            <Coins className="h-5 w-5 text-primary" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Coins className="h-5 w-5 text-foreground/70" />
           </div>
         </div>
       </div>
 
       {/* Buy Credits Button */}
-      <Button
-        className="w-full"
-        size="lg"
+      <button
+        type="button"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
         onClick={() => {
           const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
           window.open(stripeUrl, "_blank")
         }}
       >
-        <ShoppingCart className="mr-2 h-4 w-4" />
-        Acheter des Crédits supplémentaires
-      </Button>
+        <ShoppingCart className="h-4 w-4" />
+        Acheter des crédits
+      </button>
 
       {/* Credits History */}
-      <div className="rounded-[16px] bg-card p-6 ">
-        <h3 className="mb-4 text-lg font-semibold">Historique des mouvements</h3>
+      <div className="rounded-[16px] bg-card p-6">
+        <h3 className="mb-4 font-header text-lg font-bold uppercase tracking-tight">Historique des mouvements</h3>
 
         {creditMovements.length === 0 ? (
           <p className="text-muted-foreground">Aucun mouvement de crédit enregistré</p>
@@ -98,7 +97,7 @@ export function MesCreditsTab() {
             </div>
 
             {/* Table */}
-            <div className="overflow-x-auto rounded-md border">
+            <div className="overflow-x-auto rounded-[12px] bg-foreground/[0.02]">
               <Table>
                 <TableHeader>
                   <TableRow>

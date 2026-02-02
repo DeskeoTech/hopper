@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Loader2, User, Mail, Phone, Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useClientLayout } from "./client-layout-provider"
@@ -54,10 +53,12 @@ export function MesCoordonneesTab() {
   }
 
   return (
-    <div className="rounded-[16px] bg-card p-6 ">
-      <div className="mb-6 flex items-center gap-2">
-        <User className="h-5 w-5 text-foreground/50" />
-        <h2 className="text-lg font-semibold">Coordonnées</h2>
+    <div className="rounded-[16px] bg-card p-6">
+      <div className="mb-6 flex items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+          <User className="h-5 w-5 text-foreground/70" />
+        </div>
+        <h2 className="font-header text-lg font-bold uppercase tracking-tight">Coordonnées</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -84,9 +85,9 @@ export function MesCoordonneesTab() {
 
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
-          <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
-            <Mail className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{user.email}</span>
+          <div className="flex items-center gap-2 rounded-[12px] bg-foreground/5 px-3 py-2.5">
+            <Mail className="h-4 w-4 text-foreground/50" />
+            <span className="text-sm text-foreground/70">{user.email}</span>
           </div>
           <p className="text-xs text-muted-foreground">
             L&apos;email ne peut pas être modifié
@@ -113,28 +114,32 @@ export function MesCoordonneesTab() {
         </div>
 
         {error && (
-          <div className="rounded-md bg-destructive/10 p-3">
+          <div className="rounded-[12px] bg-destructive/10 p-4">
             <p className="text-sm text-destructive">{error}</p>
           </div>
         )}
 
         {success && (
-          <div className="flex items-center gap-2 rounded-md bg-green-100 p-3 text-green-700">
+          <div className="flex items-center gap-2 rounded-[12px] bg-green-500/10 p-4 text-green-600">
             <Check className="h-4 w-4" />
-            <p className="text-sm">Informations mises à jour</p>
+            <p className="text-sm font-medium">Informations mises à jour</p>
           </div>
         )}
 
-        <Button type="submit" disabled={loading}>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
+        >
           {loading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
               Enregistrement...
-            </>
+            </span>
           ) : (
-            "Enregistrer les modifications"
+            "Enregistrer"
           )}
-        </Button>
+        </button>
       </form>
     </div>
   )
