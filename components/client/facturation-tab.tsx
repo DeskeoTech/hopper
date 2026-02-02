@@ -2,8 +2,7 @@
 
 import { useState } from "react"
 import { Receipt, ExternalLink, Loader2, CreditCard } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { createClient } from "@/lib/supabase/client"
+import { createBillingPortalSession } from "@/lib/actions/billing"
 
 export function FacturationTab() {
   const [isLoading, setIsLoading] = useState(false)
@@ -14,32 +13,23 @@ export function FacturationTab() {
     setError(null)
 
     try {
-      const supabase = createClient()
       const returnUrl = `${window.location.origin}/mon-compte?tab=facturation`
 
-      const { data, error: fnError } = await supabase.functions.invoke(
-        "manage-plan",
-        {
-          body: { returnUrl },
-        }
-      )
+      // Call Server Action directly (no edge function needed)
+      const result = await createBillingPortalSession(returnUrl)
 
-      if (fnError) {
-        console.error("Edge function error:", fnError)
-        throw new Error(fnError.message || "Erreur lors de l'appel au service")
+      if (result.error) {
+        throw new Error(result.error)
       }
 
-      console.log("Edge function response:", data)
-
-      if (!data?.url) {
+      if (!result.url) {
         throw new Error("URL de facturation non reçue")
       }
 
-      window.location.href = data.url
+      // Redirect to Stripe Billing Portal
+      window.location.href = result.url
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Une erreur est survenue"
-      )
+      setError(err instanceof Error ? err.message : "Une erreur est survenue")
       setIsLoading(false)
     }
   }
@@ -48,12 +38,12 @@ export function FacturationTab() {
     <>
       {isLoading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4 rounded-[20px] bg-card p-8 ">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-              <CreditCard className="h-8 w-8 text-primary" />
+          <div className="flex flex-col items-center gap-4 rounded-[20px] bg-card p-8">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5">
+              <CreditCard className="h-8 w-8 text-foreground/70" />
             </div>
             <div className="flex items-center gap-3">
-              <Loader2 className="h-5 w-5 animate-spin text-primary" />
+              <Loader2 className="h-5 w-5 animate-spin text-foreground/70" />
               <p className="text-lg font-medium">Connexion à Stripe...</p>
             </div>
             <p className="text-center text-sm text-muted-foreground">
@@ -65,10 +55,12 @@ export function FacturationTab() {
         </div>
       )}
 
-      <div className="rounded-[16px] bg-card p-6 ">
-        <div className="mb-4 flex items-center gap-2">
-          <Receipt className="h-5 w-5 text-foreground/50" />
-          <h2 className="text-lg font-semibold">Facturation</h2>
+      <div className="rounded-[16px] bg-card p-6">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Receipt className="h-5 w-5 text-foreground/70" />
+          </div>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Facturation</h2>
         </div>
 
         <p className="mb-6 text-muted-foreground">
@@ -76,17 +68,18 @@ export function FacturationTab() {
           gérer vos informations de paiement.
         </p>
 
-        <Button
+        <button
+          type="button"
           onClick={handleOpenBillingPortal}
           disabled={isLoading}
-          className="w-full sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
         >
-          <ExternalLink className="mr-2 h-4 w-4" />
+          <ExternalLink className="h-4 w-4" />
           Accéder à mon compte facturation
-        </Button>
+        </button>
 
         {error && (
-          <p className="mt-3 text-xs text-destructive">{error}</p>
+          <p className="mt-4 rounded-[12px] bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
         )}
       </div>
     </>
