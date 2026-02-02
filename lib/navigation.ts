@@ -29,7 +29,7 @@ export const adminNavigation: NavItem[] = [
 
 export const clientNavigation: NavItem[] = [
   { name: "Accueil", href: "/compte", icon: Home },
-  { name: "Fil d'actualité", href: "/actualites", icon: Newspaper },
+  // { name: "Fil d'actualité", href: "/actualites", icon: Newspaper }, // TODO: réactiver quand la page sera enrichie
   { name: "Salles de réunion", href: "/salles", icon: DoorOpen },
   { name: "Boutique", href: "/boutique", icon: ShoppingCart },
   { name: "Mon Compte", href: "/mon-compte", icon: User },
