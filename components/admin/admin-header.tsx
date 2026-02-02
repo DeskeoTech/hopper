@@ -49,7 +49,7 @@ export function AdminHeader({ userEmail }: AdminHeaderProps) {
           alt="Hopper Logo"
           width={400}
           height={160}
-          className="h-8 w-auto md:h-16"
+          className="h-14 w-auto md:h-20"
           priority
         />
       </div>

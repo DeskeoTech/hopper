@@ -40,7 +40,7 @@ export function ClientHeader() {
           alt="Hopper Logo"
           width={400}
           height={160}
-          className="h-8 w-auto md:h-12"
+          className="h-14 w-auto md:h-20"
           priority
         />
       </Link>
