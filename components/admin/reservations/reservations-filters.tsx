@@ -6,6 +6,7 @@ import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { MultiSelectCheckbox } from "@/components/ui/multi-select-checkbox"
 
 export type HiddenFilter = "site" | "company" | "status" | "type" | "user" | "search"
 
@@ -55,12 +56,19 @@ export function ReservationsFilters({
 
   const [search, setSearch] = useState(getParam("search") || "")
 
-  const updateUrl = (updates: Record<string, string | null>) => {
+  const updateUrl = (updates: Record<string, string | string[] | null>) => {
     const params = new URLSearchParams(searchParams.toString())
 
     Object.entries(updates).forEach(([key, value]) => {
       const prefixedKey = getParamKey(key)
-      if (value && value !== "all") {
+      if (Array.isArray(value)) {
+        // Handle array values (for multi-select)
+        if (value.length > 0) {
+          params.set(prefixedKey, value.join(","))
+        } else {
+          params.delete(prefixedKey)
+        }
+      } else if (value && value !== "all") {
         params.set(prefixedKey, value)
       } else {
         params.delete(prefixedKey)
@@ -70,6 +78,10 @@ export function ReservationsFilters({
     startTransition(() => {
       router.push(`${pathname}?${params.toString()}`)
     })
+  }
+
+  const handleSitesChange = (selectedSites: string[]) => {
+    updateUrl({ site: selectedSites })
   }
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -109,15 +121,20 @@ export function ReservationsFilters({
     getParam("user")
 
   const siteOptions = useMemo(
-    () => [
-      { value: "all", label: "Tous les sites" },
-      ...sites.map((site) => ({
+    () =>
+      sites.map((site) => ({
         value: site.id,
         label: site.name || "Sans nom",
       })),
-    ],
     [sites]
   )
+
+  // Parse site param as array (comma-separated)
+  const selectedSites = useMemo(() => {
+    const siteParam = getParam("site")
+    if (!siteParam) return []
+    return siteParam.split(",").filter(Boolean)
+  }, [searchParams, paramPrefix])
 
   const companyOptions = useMemo(
     () => [
@@ -185,13 +202,14 @@ export function ReservationsFilters({
         )}
 
         {showSite && (
-          <SearchableSelect
+          <MultiSelectCheckbox
             options={siteOptions}
-            value={getParam("site") || "all"}
-            onValueChange={(value) => handleFilterChange("site", value)}
-            placeholder="Site"
+            value={selectedSites}
+            onValueChange={handleSitesChange}
+            placeholder="Sites"
             searchPlaceholder="Rechercher un site..."
-            triggerClassName="w-full sm:w-[180px]"
+            allLabel="Tous les sites"
+            triggerClassName="w-full sm:w-[200px]"
           />
         )}
 

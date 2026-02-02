@@ -161,9 +161,12 @@ export default async function ReservationsPage({
 
   // Apply client-side filters that require joined data
   if (params.site && params.site !== "all") {
-    transformedBookings = transformedBookings.filter(
-      (b) => b.site_id === params.site
-    )
+    const selectedSites = params.site.split(",").filter(Boolean)
+    if (selectedSites.length > 0) {
+      transformedBookings = transformedBookings.filter(
+        (b) => b.site_id && selectedSites.includes(b.site_id)
+      )
+    }
   }
   if (params.company && params.company !== "all") {
     transformedBookings = transformedBookings.filter(
