@@ -200,6 +200,30 @@ git push -u origin <nom-de-la-branche>
 gh pr create --title "..." --body "..."
 ```
 
+## Version Bump Automatique
+
+Utiliser le skill `/version-bump` pour incrémenter la version de l'app avant chaque PR.
+
+Le skill analyse automatiquement les commits de la branche selon les [Conventional Commits](https://www.conventionalcommits.org/) :
+
+| Préfixe de commit | Type de bump |
+|-------------------|--------------|
+| `feat:` ou `feature:` | **minor** (0.X.0) |
+| `BREAKING CHANGE:` ou `!:` | **major** (X.0.0) |
+| `fix:`, `refactor:`, `chore:`, `docs:`, etc. | **patch** (0.0.X) |
+
+**Utilisation :**
+```bash
+/version-bump           # Analyse auto et applique le bump
+/version-bump dry-run   # Affiche sans modifier
+/version-bump patch     # Force un type spécifique
+```
+
+**Workflow recommandé avant une PR :**
+1. Committer avec des préfixes conventionnels (`feat:`, `fix:`, etc.)
+2. Lancer `/version-bump` pour incrémenter la version
+3. Pousser et créer la PR
+
 ## Linear Integration
 
 **Toujours synchroniser les stories avec Linear via le MCP Linear.**
