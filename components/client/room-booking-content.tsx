@@ -374,7 +374,7 @@ export function RoomBookingContent({
             <SearchableSelect
               options={sortedSites.map((s) => ({
                 value: s.id,
-                label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
+                label: s.name,
               }))}
               value=""
               onValueChange={handleSiteChange}
@@ -392,25 +392,26 @@ export function RoomBookingContent({
       {/* Header controls - always visible in planning view */}
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
-          {/* Site and Date row */}
+          {/* Site selector (modal only - above date row) */}
+          {isModal && (
+            <div className="flex items-center gap-2 w-full">
+              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <SearchableSelect
+                options={sortedSites.map((s) => ({
+                  value: s.id,
+                  label: s.name,
+                }))}
+                value={selectedSiteId || ""}
+                onValueChange={handleSiteChange}
+                placeholder="Sélectionner un site"
+                searchPlaceholder="Rechercher un site..."
+                triggerClassName="flex-1"
+              />
+            </div>
+          )}
+
+          {/* Date row */}
           <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${isModal ? "sm:justify-center" : "sm:justify-between"}`}>
-            {/* Site switcher (page only) */}
-            {!isModal && (
-              <div className="flex items-center gap-2 flex-1">
-                <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <SearchableSelect
-                  options={sortedSites.map((s) => ({
-                    value: s.id,
-                    label: s.id === mainSiteId ? `${s.name} (Site principal)` : s.name,
-                  }))}
-                  value={selectedSiteId || ""}
-                  onValueChange={handleSiteChange}
-                  placeholder="Sélectionner un site"
-                  searchPlaceholder="Rechercher un site..."
-                  triggerClassName="flex-1 max-w-[250px]"
-                />
-              </div>
-            )}
 
             {/* Date navigation - different for modal vs page */}
             {isModal ? (

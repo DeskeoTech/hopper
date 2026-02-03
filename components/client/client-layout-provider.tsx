@@ -16,6 +16,7 @@ export interface SiteWithDetails {
   imageUrl: string | null
   photoUrls: string[]
   capacityRange: { min: number; max: number } | null
+  totalWorkstations: number
   openingHours: string | null
   openingDays: string[] | null
   wifiSsid: string | null
@@ -31,6 +32,7 @@ interface ClientLayoutContextValue {
   creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
+  allSites: Site[]
   sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   selectedSite: Site | null
@@ -52,6 +54,7 @@ interface ClientLayoutProviderProps {
   creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
+  allSites: Site[]
   sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   isAdmin: boolean
@@ -65,6 +68,7 @@ export function ClientLayoutProvider({
   creditMovements,
   plan,
   sites,
+  allSites,
   sitesWithDetails,
   selectedSiteId: initialSelectedSiteId,
   isAdmin,
@@ -100,6 +104,7 @@ export function ClientLayoutProvider({
         creditMovements,
         plan,
         sites,
+        allSites,
         sitesWithDetails,
         selectedSiteId: currentSelectedSiteId,
         selectedSite,

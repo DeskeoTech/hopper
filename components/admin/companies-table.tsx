@@ -175,7 +175,7 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                 onClick={() => handleSort("period")}
               >
                 <div className="flex items-center">
-                  Période
+                  Pass
                   <SortIcon field="period" />
                 </div>
               </TableHead>
