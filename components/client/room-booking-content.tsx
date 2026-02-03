@@ -19,16 +19,6 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -95,7 +85,6 @@ export function RoomBookingContent({
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const [success, setSuccess] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
 
@@ -266,7 +255,6 @@ export function RoomBookingContent({
     })
 
     setSubmitting(false)
-    setConfirmOpen(false)
 
     if (result.error) {
       setError(result.error)
@@ -654,6 +642,7 @@ export function RoomBookingContent({
                     bookings={bookings}
                     onSlotClick={handleSlotClick}
                     remainingCredits={remainingCredits}
+                    selectedDate={selectedDate}
                   />
                 )}
               </div>
@@ -713,6 +702,24 @@ export function RoomBookingContent({
                   </div>
                 </div>
               </div>
+
+              {/* Warning when user has no credits */}
+              {remainingCredits === 0 && (
+                <div className="rounded-[16px] border border-destructive/20 bg-destructive/10 p-4">
+                  <div className="flex items-start gap-3">
+                    <Coins className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-destructive">
+                        Vous n&apos;avez plus de crédits
+                      </p>
+                      <p className="mt-1 text-sm text-destructive/80">
+                        Vous ne pouvez pas réserver cette salle sans crédits.
+                      </p>
+                      {renderCreditsError()}
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="type-body-sm font-medium text-foreground mb-2 block">
@@ -824,7 +831,7 @@ export function RoomBookingContent({
                 Annuler
               </Button>
               {view === "confirm" ? (
-                <Button onClick={() => setConfirmOpen(true)} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
+                <Button onClick={handleConfirm} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Confirmer la réservation
                 </Button>
@@ -857,6 +864,7 @@ export function RoomBookingContent({
                 bookings={bookings}
                 onSlotClick={handleSlotClick}
                 remainingCredits={remainingCredits}
+                selectedDate={selectedDate}
               />
             )}
 
@@ -1026,7 +1034,7 @@ export function RoomBookingContent({
                     </p>
                   </div>
 
-                  <Button onClick={() => setConfirmOpen(true)} className="w-full" disabled={submitting}>
+                  <Button onClick={handleConfirm} className="w-full" disabled={submitting}>
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Confirmer la réservation
                   </Button>
@@ -1037,25 +1045,6 @@ export function RoomBookingContent({
         </div>
       )}
 
-      {/* Confirmation dialog */}
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirmer la réservation</AlertDialogTitle>
-            <AlertDialogDescription>
-              Voulez-vous vraiment réserver cette salle ? {creditsNeeded} crédit
-              {creditsNeeded > 1 ? "s" : ""} seront débités de votre compte.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirm} disabled={submitting}>
-              {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   )
 }
