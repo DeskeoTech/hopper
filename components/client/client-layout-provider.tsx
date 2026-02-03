@@ -16,6 +16,7 @@ export interface SiteWithDetails {
   imageUrl: string | null
   photoUrls: string[]
   capacityRange: { min: number; max: number } | null
+  totalWorkstations: number
   openingHours: string | null
   openingDays: string[] | null
   wifiSsid: string | null
