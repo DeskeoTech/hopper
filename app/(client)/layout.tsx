@@ -236,6 +236,19 @@ export default async function ClientLayout({
   const isDeskeoEmployee =
     authUser.email.endsWith("@deskeo.fr") || authUser.email.endsWith("@deskeo.com")
 
+  // Fetch company admin for non-admin users (to display in contact dialog)
+  let companyAdmin: { first_name: string | null; last_name: string | null; email: string | null } | null = null
+  if (userProfile.company_id && userProfile.role === "user") {
+    const { data: admin } = await supabase
+      .from("users")
+      .select("first_name, last_name, email")
+      .eq("company_id", userProfile.company_id)
+      .eq("role", "admin")
+      .limit(1)
+      .single()
+    companyAdmin = admin
+  }
+
   // Determine selected site: URL param > main_site_id > first site
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
@@ -277,6 +290,7 @@ export default async function ClientLayout({
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
       isDeskeoEmployee={isDeskeoEmployee}
+      companyAdmin={companyAdmin}
     >
       {needsOnboarding && (
         <OnboardingModal

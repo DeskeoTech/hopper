@@ -13,6 +13,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
+import { AdminContactDialog } from "./admin-contact-dialog"
 import type { CreditMovementType } from "@/lib/types/database"
 
 const typeLabels: Record<CreditMovementType | "purchase", string> = {
@@ -38,8 +39,18 @@ const filterOptions = [
 ]
 
 export function MesCreditsTab() {
-  const { credits, creditMovements, user } = useClientLayout()
+  const { credits, creditMovements, user, isAdmin, companyAdmin } = useClientLayout()
   const [typeFilter, setTypeFilter] = useState("all")
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false)
+
+  const handleBuyCredits = () => {
+    if (!isAdmin) {
+      setAdminDialogOpen(true)
+      return
+    }
+    const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
+    window.open(stripeUrl, "_blank")
+  }
 
   const filteredMovements = useMemo(() => {
     if (typeFilter === "all") return creditMovements
@@ -67,14 +78,19 @@ export function MesCreditsTab() {
       <button
         type="button"
         className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
-        onClick={() => {
-          const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
-          window.open(stripeUrl, "_blank")
-        }}
+        onClick={handleBuyCredits}
       >
         <ShoppingCart className="h-4 w-4" />
         Acheter des crédits
       </button>
+
+      {/* Admin Contact Dialog for non-admin users */}
+      <AdminContactDialog
+        open={adminDialogOpen}
+        onOpenChange={setAdminDialogOpen}
+        admin={companyAdmin}
+        actionType="credits"
+      />
 
       {/* Credits History */}
       <div className="rounded-[16px] bg-card p-6">

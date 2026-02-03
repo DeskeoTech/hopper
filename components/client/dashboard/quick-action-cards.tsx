@@ -5,6 +5,7 @@ import { ExternalLink, Building2, Paintbrush } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useClientLayout } from "../client-layout-provider"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
+import { AdminContactDialog } from "../admin-contact-dialog"
 // Action card images
 const ROOM_IMAGE = "https://images.unsplash.com/photo-1497366216548-37526070297c?w=400&h=300&fit=crop"
 const CREDITS_IMAGE = "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=400&h=300&fit=crop"
@@ -48,15 +49,27 @@ function ActionCard({ image, title, description, capacity, buttonText, onClick }
 }
 
 export function QuickActionCards() {
-  const { user, credits, allSites, selectedSiteId, selectedSiteWithDetails, plan, mainSiteId } = useClientLayout()
+  const { user, credits, allSites, selectedSiteId, selectedSiteWithDetails, plan, mainSiteId, isAdmin, companyAdmin } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false)
+  const [adminDialogAction, setAdminDialogAction] = useState<"credits" | "desk">("credits")
 
   const handleBookDesk = () => {
+    if (!isAdmin) {
+      setAdminDialogAction("desk")
+      setAdminDialogOpen(true)
+      return
+    }
     const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(user.email || "")}`
     window.open(url, "_blank")
   }
 
   const handleBuyCredits = () => {
+    if (!isAdmin) {
+      setAdminDialogAction("credits")
+      setAdminDialogOpen(true)
+      return
+    }
     const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
     window.open(stripeUrl, "_blank")
   }
@@ -142,6 +155,14 @@ export function QuickActionCards() {
         sites={allSites}
         userEmail={user.email || ""}
         hasActivePlan={!!plan}
+      />
+
+      {/* Admin Contact Dialog for non-admin users */}
+      <AdminContactDialog
+        open={adminDialogOpen}
+        onOpenChange={setAdminDialogOpen}
+        admin={companyAdmin}
+        actionType={adminDialogAction}
       />
     </>
   )

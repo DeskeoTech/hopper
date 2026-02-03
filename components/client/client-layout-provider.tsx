@@ -9,6 +9,12 @@ interface Site {
   name: string
 }
 
+export interface CompanyAdmin {
+  first_name: string | null
+  last_name: string | null
+  email: string | null
+}
+
 export interface SiteWithDetails {
   id: string
   name: string
@@ -43,6 +49,7 @@ interface ClientLayoutContextValue {
   isNomad: boolean
   mainSiteId: string | null
   canManageCompany: boolean
+  companyAdmin: CompanyAdmin | null
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
@@ -59,6 +66,7 @@ interface ClientLayoutProviderProps {
   selectedSiteId: string | null
   isAdmin: boolean
   isDeskeoEmployee: boolean
+  companyAdmin: CompanyAdmin | null
 }
 
 export function ClientLayoutProvider({
@@ -73,6 +81,7 @@ export function ClientLayoutProvider({
   selectedSiteId: initialSelectedSiteId,
   isAdmin,
   isDeskeoEmployee,
+  companyAdmin,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -115,6 +124,7 @@ export function ClientLayoutProvider({
         isNomad,
         mainSiteId,
         canManageCompany,
+        companyAdmin,
       }}
     >
       {children}
