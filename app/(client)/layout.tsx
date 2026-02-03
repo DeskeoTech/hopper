@@ -148,17 +148,24 @@ export default async function ClientLayout({
   // Determine main site ID early (needed for site filtering)
   const mainSiteId = userProfile.companies?.main_site_id || null
 
-  // Fetch all open sites
-  const { data: sites } = await supabase
+  // Fetch ALL open sites (for booking modal)
+  const { data: allSites } = await supabase
     .from("sites")
     .select(`
-      id, name, address,
+      id, name, address, is_nomad,
       opening_hours, opening_days,
       wifi_ssid, wifi_password,
       equipments, instructions, access
     `)
     .eq("status", "open")
     .order("name")
+
+  // Filter sites for general use: nomad sites + main site only
+  const sites = (allSites || []).filter((site) => {
+    if (site.is_nomad) return true
+    if (mainSiteId && site.id === mainSiteId) return true
+    return false
+  })
 
   // Fetch site photos for site switcher modal
   const { data: sitePhotos } = await supabase
@@ -258,7 +265,8 @@ export default async function ClientLayout({
       credits={userCredits}
       creditMovements={creditMovements}
       plan={userPlan}
-      sites={sites || []}
+      sites={sites}
+      allSites={(allSites || []).map((s) => ({ id: s.id, name: s.name }))}
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}

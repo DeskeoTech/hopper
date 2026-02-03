@@ -1,7 +1,6 @@
 "use client"
 
 import { Building2 } from "lucide-react"
-import { HomepageSiteSelector } from "./homepage-site-selector"
 import { QuickActionCards } from "./dashboard/quick-action-cards"
 import { SitesListSection } from "./dashboard/sites-list-section"
 import { UserBookingsSection } from "./user-bookings-section"
@@ -67,11 +66,8 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
         </div>
       </div>
 
-      {/* Content - overlaps hero slightly for smooth transition */}
-      <div className="relative z-10 mx-auto w-full max-w-3xl space-y-6 px-4 md:px-0 -mt-8 md:-mt-12 pb-12">
-        {/* Site Selector */}
-        <HomepageSiteSelector />
-
+      {/* Content */}
+      <div className="relative z-10 mx-auto w-full max-w-3xl space-y-6 px-4 md:px-0 mt-4 pb-12">
         {/* Quick Actions (includes site info button) */}
         <QuickActionCards />
 
