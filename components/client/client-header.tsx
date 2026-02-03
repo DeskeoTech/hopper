@@ -67,7 +67,10 @@ export function ClientHeader() {
         {/* Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 transition-colors hover:bg-foreground/10">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 transition-colors hover:bg-foreground/10"
+              suppressHydrationWarning
+            >
               <User className="h-5 w-5 text-foreground/70" />
             </button>
           </DropdownMenuTrigger>

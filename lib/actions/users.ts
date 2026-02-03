@@ -295,6 +295,22 @@ export async function createUserByAdmin(
     return { success: false, error: "Accès non autorisé" }
   }
 
+  // Check if email already exists
+  if (data.email) {
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id, company_id")
+      .eq("email", data.email)
+      .single()
+
+    if (existingUser) {
+      if (existingUser.company_id) {
+        return { success: false, error: "Cet email est déjà lié à une entreprise" }
+      }
+      return { success: false, error: "Cet email existe déjà dans le système" }
+    }
+  }
+
   // Check seats quota
   const seatsInfo = await getCompanySeatsInfo(companyId)
   if (seatsInfo.error) {
@@ -322,6 +338,7 @@ export async function createUserByAdmin(
 
   revalidatePath("/compte")
   revalidatePath("/mon-compte")
+  revalidatePath("/entreprise")
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true, error: null }
 }

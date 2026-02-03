@@ -39,7 +39,7 @@ import {
   createUserByAdmin,
 } from "@/lib/actions/users"
 import { assignUserToContract } from "@/lib/actions/user-contracts"
-import type { Company, UserRole } from "@/lib/types/database"
+import type { Company } from "@/lib/types/database"
 import type { ContractWithSeats, UserWithContract } from "@/app/(client)/entreprise/page"
 
 interface EntreprisePageProps {
@@ -67,8 +67,13 @@ export function EntreprisePage({
   const [newUserFirstName, setNewUserFirstName] = useState("")
   const [newUserLastName, setNewUserLastName] = useState("")
   const [newUserEmail, setNewUserEmail] = useState("")
-  const [newUserPhone, setNewUserPhone] = useState("")
-  const [newUserRole, setNewUserRole] = useState<UserRole>("user")
+
+  // Link contract modal state
+  const [linkContractOpen, setLinkContractOpen] = useState(false)
+  const [userToLink, setUserToLink] = useState<UserWithContract | null>(null)
+
+  // No seats dialog state
+  const [noSeatsDialogOpen, setNoSeatsDialogOpen] = useState(false)
 
   // Calculate seats info from contracts
   const totalSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
@@ -144,6 +149,18 @@ export function EntreprisePage({
     setUpdatingUserId(null)
   }
 
+  const openLinkContractModal = (user: UserWithContract) => {
+    setUserToLink(user)
+    setLinkContractOpen(true)
+  }
+
+  const handleLinkContract = async (contractId: string) => {
+    if (!userToLink) return
+    await handleContractChange(userToLink.id, contractId)
+    setLinkContractOpen(false)
+    setUserToLink(null)
+  }
+
   const handleAddUser = async () => {
     if (!company.id) return
     setAddingUser(true)
@@ -153,8 +170,8 @@ export function EntreprisePage({
       first_name: newUserFirstName || null,
       last_name: newUserLastName || null,
       email: newUserEmail || null,
-      phone: newUserPhone || null,
-      role: newUserRole,
+      phone: null,
+      role: "user",
     })
 
     if (result.error) {
@@ -168,8 +185,6 @@ export function EntreprisePage({
       setNewUserFirstName("")
       setNewUserLastName("")
       setNewUserEmail("")
-      setNewUserPhone("")
-      setNewUserRole("user")
       setAddUserOpen(false)
     }
 
@@ -194,14 +209,9 @@ export function EntreprisePage({
         </span>
       )
     }
-    return (
-      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-600">
-        Actif
-      </span>
-    )
+    return null
   }
 
-  const canAddUser = totalSeats > 0 && activeUsers < totalSeats
   const progressValue = totalSeats > 0 ? (activeUsers / totalSeats) * 100 : 0
 
   const getCompanyTypeLabel = (type: string | null) => {
@@ -215,8 +225,29 @@ export function EntreprisePage({
     }
   }
 
+  const formatDateRange = (start: string | null, end: string | null) => {
+    const formatDate = (date: string) => {
+      return new Date(date).toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    }
+
+    if (start && end) {
+      return `${formatDate(start)} → ${formatDate(end)}`
+    }
+    if (start) {
+      return `Depuis le ${formatDate(start)}`
+    }
+    if (end) {
+      return `Jusqu'au ${formatDate(end)}`
+    }
+    return null
+  }
+
   return (
-    <div className="p-4 md:p-6">
+    <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
       {/* Back link */}
       <Link
         href="/compte"
@@ -275,17 +306,12 @@ export function EntreprisePage({
                     key={contract.id}
                     className="rounded-[12px] bg-background/50 p-4"
                   >
-                    <div className="flex items-center justify-between mb-2">
+                    <div className="mb-2">
                       <h3 className="font-medium text-sm">{contract.plan_name}</h3>
-                      {isFull ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] text-amber-600">
-                          <Check className="h-3 w-3" />
-                          Complet
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-600">
-                          {contract.total_seats - contract.assigned_seats} dispo
-                        </span>
+                      {(contract.start_date || contract.end_date) && (
+                        <p className="text-xs text-foreground/50">
+                          {formatDateRange(contract.start_date, contract.end_date)}
+                        </p>
                       )}
                     </div>
 
@@ -318,8 +344,8 @@ export function EntreprisePage({
             </div>
 
             {/* Seats progress bar and add user button */}
-            {totalSeats > 0 && (
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              {totalSeats > 0 && (
                 <div className="flex-1 min-w-[150px] max-w-[200px]">
                   <div className="flex items-center justify-between text-xs mb-1.5">
                     <span className="text-foreground/50">Sièges utilisés</span>
@@ -329,17 +355,22 @@ export function EntreprisePage({
                   </div>
                   <Progress value={progressValue} className="h-1.5" />
                 </div>
-                <button
-                  type="button"
-                  disabled={!canAddUser}
-                  onClick={() => setAddUserOpen(true)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#1B1918] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <Plus className="h-3.5 w-3.5" />
-                  Ajouter
-                </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeUsers >= totalSeats) {
+                    setNoSeatsDialogOpen(true)
+                  } else {
+                    setAddUserOpen(true)
+                  }
+                }}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#1B1918] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Ajouter
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -393,20 +424,21 @@ export function EntreprisePage({
 
                     {/* Actions */}
                     <div className="flex shrink-0 items-center gap-2 flex-wrap">
-                      {/* Contract selector */}
-                      {!isDisabled && (
+                      {/* Contract selector or link button */}
+                      {!isDisabled && user.contract_id ? (
+                        // User has a contract - show dropdown to change or remove
                         <Select
-                          value={user.contract_id || "none"}
+                          value={user.contract_id}
                           onValueChange={(value) =>
                             handleContractChange(user.id, value === "none" ? null : value)
                           }
                           disabled={isUpdating}
                         >
                           <SelectTrigger className="h-7 w-auto min-w-[120px] gap-1 border-0 bg-foreground/5 px-2 text-xs">
-                            <SelectValue placeholder="Sans contrat" />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Sans contrat</SelectItem>
+                            <SelectItem value="none">Retirer du contrat</SelectItem>
                             {contracts.map((contract) => {
                               const isAssignedToThis = user.contract_id === contract.id
                               const hasSpace =
@@ -425,7 +457,24 @@ export function EntreprisePage({
                             })}
                           </SelectContent>
                         </Select>
-                      )}
+                      ) : !isDisabled ? (
+                        // User has no contract - show link button
+                        <button
+                          type="button"
+                          onClick={() => openLinkContractModal(user)}
+                          disabled={isUpdating || contracts.every((c) => c.assigned_seats >= c.total_seats)}
+                          className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <>
+                              <FileText className="h-3 w-3" />
+                              Lier à un contrat
+                            </>
+                          )}
+                        </button>
+                      ) : null}
 
                       {/* Role selector */}
                       {!isCurrentUser && !isDisabled ? (
@@ -514,28 +563,6 @@ export function EntreprisePage({
                 placeholder="Email"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                value={newUserPhone}
-                onChange={(e) => setNewUserPhone(e.target.value)}
-                placeholder="Téléphone"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
-              <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as UserRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="admin">Administrateur</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
           </div>
           <DialogFooter className="gap-2 sm:gap-0">
             <button
@@ -559,6 +586,108 @@ export function EntreprisePage({
               ) : (
                 "Créer"
               )}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Contract Dialog */}
+      <Dialog open={linkContractOpen} onOpenChange={setLinkContractOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lier à un contrat</DialogTitle>
+            <DialogDescription>
+              {userToLink && (
+                <>
+                  Sélectionnez un contrat pour{" "}
+                  <span className="font-medium">
+                    {[userToLink.first_name, userToLink.last_name].filter(Boolean).join(" ") ||
+                      userToLink.email ||
+                      "cet utilisateur"}
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            {contracts.length === 0 ? (
+              <p className="text-sm text-foreground/50 text-center py-4">
+                Aucun contrat disponible
+              </p>
+            ) : (
+              contracts.map((contract) => {
+                const isFull = contract.assigned_seats >= contract.total_seats
+                const availableSeats = contract.total_seats - contract.assigned_seats
+
+                return (
+                  <button
+                    key={contract.id}
+                    type="button"
+                    onClick={() => handleLinkContract(contract.id)}
+                    disabled={isFull || updatingUserId === userToLink?.id}
+                    className="flex w-full items-center justify-between rounded-[12px] bg-foreground/5 p-4 text-left transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{contract.plan_name}</p>
+                      <p className="text-xs text-foreground/50">
+                        {contract.assigned_seats} / {contract.total_seats} postes utilisés
+                      </p>
+                    </div>
+                    {isFull ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
+                        <Check className="h-3 w-3" />
+                        Complet
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs text-green-600">
+                        {availableSeats} dispo
+                      </span>
+                    )}
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setLinkContractOpen(false)}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
+              Annuler
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* No Seats Dialog */}
+      <Dialog open={noSeatsDialogOpen} onOpenChange={setNoSeatsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Quota de sièges atteint</DialogTitle>
+            <DialogDescription>
+              Vous avez atteint le nombre maximum d&apos;utilisateurs pour vos contrats actuels.
+              Pour ajouter plus d&apos;utilisateurs, veuillez souscrire à un nouveau contrat.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => setNoSeatsDialogOpen(false)}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
+              Fermer
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const currentUserEmail = users.find((u) => u.id === currentUserId)?.email || ""
+                const url = `https://hopper-coworking.com/?email_user=${encodeURIComponent(currentUserEmail)}`
+                window.open(url, "_blank")
+              }}
+              className="flex items-center gap-2 rounded-full bg-[#1B1918] px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
+            >
+              Souscrire un contrat
             </button>
           </DialogFooter>
         </DialogContent>
