@@ -367,6 +367,7 @@ export async function cancelBooking(
   }
 
   revalidatePath("/")
+  revalidatePath("/compte")
   revalidatePath("/admin/reservations")
   return { success: true }
 }
