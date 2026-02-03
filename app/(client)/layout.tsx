@@ -146,7 +146,7 @@ export default async function ClientLayout({
     })
   }
 
-  // Determine main site ID early (needed for site filtering)
+  // Determine main site ID (used for default site selection)
   const mainSiteId = userProfile.companies?.main_site_id || null
 
   // Fetch ALL open sites (for booking modal)
@@ -161,12 +161,8 @@ export default async function ClientLayout({
     .eq("status", "open")
     .order("name")
 
-  // Filter sites for general use: nomad sites + main site only
-  const sites = (allSites || []).filter((site) => {
-    if (site.is_nomad) return true
-    if (mainSiteId && site.id === mainSiteId) return true
-    return false
-  })
+  // Use all open sites
+  const sites = allSites || []
 
   // Fetch site photos for site switcher modal
   const { data: sitePhotos } = await supabase
