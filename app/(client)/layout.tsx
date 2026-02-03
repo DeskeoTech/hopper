@@ -148,8 +148,8 @@ export default async function ClientLayout({
   // Determine main site ID early (needed for site filtering)
   const mainSiteId = userProfile.companies?.main_site_id || null
 
-  // Fetch sites: nomad sites + main site only
-  const sitesQuery = supabase
+  // Fetch ALL open sites (for booking modal)
+  const { data: allSites } = await supabase
     .from("sites")
     .select(`
       id, name, address, is_nomad,
@@ -158,15 +158,14 @@ export default async function ClientLayout({
       equipments, instructions, access
     `)
     .eq("status", "open")
+    .order("name")
 
-  // Filter: nomad sites OR main site
-  if (mainSiteId) {
-    sitesQuery.or(`is_nomad.eq.true,id.eq.${mainSiteId}`)
-  } else {
-    sitesQuery.eq("is_nomad", true)
-  }
-
-  const { data: sites } = await sitesQuery.order("name")
+  // Filter sites for general use: nomad sites + main site only
+  const sites = (allSites || []).filter((site) => {
+    if (site.is_nomad) return true
+    if (mainSiteId && site.id === mainSiteId) return true
+    return false
+  })
 
   // Fetch site photos for site switcher modal
   const { data: sitePhotos } = await supabase
@@ -257,7 +256,8 @@ export default async function ClientLayout({
       credits={userCredits}
       creditMovements={creditMovements}
       plan={userPlan}
-      sites={sites || []}
+      sites={sites}
+      allSites={(allSites || []).map((s) => ({ id: s.id, name: s.name }))}
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}

@@ -31,6 +31,7 @@ interface ClientLayoutContextValue {
   creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
+  allSites: Site[]
   sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   selectedSite: Site | null
@@ -52,6 +53,7 @@ interface ClientLayoutProviderProps {
   creditMovements: CreditMovement[]
   plan: UserPlan | null
   sites: Site[]
+  allSites: Site[]
   sitesWithDetails: SiteWithDetails[]
   selectedSiteId: string | null
   isAdmin: boolean
@@ -65,6 +67,7 @@ export function ClientLayoutProvider({
   creditMovements,
   plan,
   sites,
+  allSites,
   sitesWithDetails,
   selectedSiteId: initialSelectedSiteId,
   isAdmin,
@@ -100,6 +103,7 @@ export function ClientLayoutProvider({
         creditMovements,
         plan,
         sites,
+        allSites,
         sitesWithDetails,
         selectedSiteId: currentSelectedSiteId,
         selectedSite,
