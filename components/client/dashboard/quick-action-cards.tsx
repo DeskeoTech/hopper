@@ -134,7 +134,7 @@ export function QuickActionCards() {
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <button
           type="button"
-          onClick={() => window.open("https://www.deskeo.com/fr/work-spaces/", "_blank")}
+          onClick={() => window.open("https://www.deskeo.com/fr/work-spaces/#contact_form-42134d31-70fc-48e7-8ebb-f13eb270014f", "_blank")}
           className="flex items-center gap-3 rounded-[16px] bg-card p-4 text-left transition-colors hover:bg-card/80"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
@@ -176,57 +176,57 @@ export function QuickActionCards() {
           Infos utiles
         </h3>
         <div className="rounded-[16px] bg-card overflow-hidden">
-        {/* WiFi info row with "Voir toutes les infos" button */}
-        <div className="flex items-center gap-3 p-4">
-          {/* WiFi icon */}
-          {selectedSiteWithDetails?.wifiSsid && (
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-              <Wifi className="h-5 w-5 text-foreground/70" />
-            </div>
-          )}
+          {/* WiFi info row with "Voir toutes les infos" button */}
+          <div className="flex items-center gap-3 p-4">
+            {/* WiFi icon */}
+            {selectedSiteWithDetails?.wifiSsid && (
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                <Wifi className="h-5 w-5 text-foreground/70" />
+              </div>
+            )}
 
-          {/* WiFi info + copy button */}
-          {selectedSiteWithDetails?.wifiSsid && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium">{selectedSiteWithDetails.wifiSsid}</p>
-              {selectedSiteWithDetails.wifiPassword && (
-                <div className="flex items-center gap-1.5">
-                  <p className="text-xs text-muted-foreground font-mono">{selectedSiteWithDetails.wifiPassword}</p>
-                  <button
-                    type="button"
-                    onClick={copyWifiPassword}
-                    className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-foreground/10 transition-colors"
-                  >
-                    {copiedWifi ? (
-                      <Check className="h-3 w-3 text-green-500" />
-                    ) : (
-                      <Copy className="h-3 w-3 text-muted-foreground" />
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+            {/* WiFi info + copy button */}
+            {selectedSiteWithDetails?.wifiSsid && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium">{selectedSiteWithDetails.wifiSsid}</p>
+                {selectedSiteWithDetails.wifiPassword && (
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs text-muted-foreground font-mono">{selectedSiteWithDetails.wifiPassword}</p>
+                    <button
+                      type="button"
+                      onClick={copyWifiPassword}
+                      className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-foreground/10 transition-colors"
+                    >
+                      {copiedWifi ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
-          {/* Voir toutes les infos button - aligned right */}
+            {/* Voir toutes les infos button - aligned right */}
+            {hasAdditionalInfo && (
+              <button
+                type="button"
+                onClick={() => setSiteInfoExpanded(!siteInfoExpanded)}
+                className="flex items-center gap-1 text-xs font-medium text-foreground/70 hover:text-foreground transition-colors shrink-0"
+              >
+                <span>Voir toutes les infos</span>
+                <ChevronDown className={cn(
+                  "h-3.5 w-3.5 transition-transform duration-200",
+                  siteInfoExpanded && "rotate-180"
+                )} />
+              </button>
+            )}
+          </div>
+
+          {/* Expanded content */}
           {hasAdditionalInfo && (
-            <button
-              type="button"
-              onClick={() => setSiteInfoExpanded(!siteInfoExpanded)}
-              className="flex items-center gap-1 text-xs font-medium text-foreground/70 hover:text-foreground transition-colors shrink-0"
-            >
-              <span>Voir toutes les infos</span>
-              <ChevronDown className={cn(
-                "h-3.5 w-3.5 transition-transform duration-200",
-                siteInfoExpanded && "rotate-180"
-              )} />
-            </button>
-          )}
-        </div>
-
-        {/* Expanded content */}
-        {hasAdditionalInfo && (
-          <div className={cn(
+            <div className={cn(
               "overflow-hidden transition-all duration-200",
               siteInfoExpanded ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
             )}>
@@ -309,7 +309,7 @@ export function QuickActionCards() {
                 )}
               </div>
             </div>
-        )}
+          )}
         </div>
       </div>
 
