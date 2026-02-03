@@ -617,10 +617,10 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* Section principale : Occupation + Clients */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-3">
-        {/* Carte Occupation - grande */}
-        <div className="lg:col-span-2 h-full">
+      {/* Section principale : Occupation + Réservations */}
+      <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
+        {/* Carte Occupation */}
+        <div className="lg:col-span-3 h-full">
           <OccupationCard
             globalOccupancyRate={globalOccupancyRate}
             totalBookings={totalBookingsWeek}
@@ -629,69 +629,74 @@ export default async function DashboardPage() {
           />
         </div>
 
-        {/* Carte Clients */}
-        <div className="rounded-[20px] bg-card p-5">
-          <h2 className="font-header text-lg uppercase tracking-wide mb-4">Clients</h2>
-          <div className="space-y-4">
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Membres Actifs</p>
-              <p className="font-header text-[28px]">{activeUsersCount.toLocaleString("fr-FR")}</p>
-            </div>
-            <div className="h-px bg-border" />
-            <div>
-              <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Entreprises</p>
-              <p className="font-header text-[28px]">{companiesCount}</p>
-            </div>
-          </div>
+        {/* Carte Réservations */}
+        <div className="lg:col-span-2">
+          <ReservationsCard
+            todayBenchBookings={benchAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
+            todayMeetingRoomBookings={meetingRoomAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
+            benchAvailabilityBySite={benchAvailabilityBySite}
+            meetingRoomAvailabilityBySite={meetingRoomAvailabilityBySite}
+          />
         </div>
       </div>
 
-      {/* Section Réservations temps réel */}
-      <ReservationsCard
-        todayBenchBookings={benchAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
-        todayMeetingRoomBookings={meetingRoomAvailabilityBySite.reduce((sum, s) => sum + (s.total - s.available), 0)}
-        benchAvailabilityBySite={benchAvailabilityBySite}
-        meetingRoomAvailabilityBySite={meetingRoomAvailabilityBySite}
-      />
-
       {/* Grille métriques secondaires */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        {/* Support */}
-        <div className="rounded-[20px] bg-card p-5">
-          <div className="flex items-start justify-between mb-3">
-            <h2 className="font-header text-lg uppercase tracking-wide">Support</h2>
-            <Headphones className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-[14px] uppercase font-medium">Ouverts</span>
-              <span className="font-header text-[22px] text-orange-500">{openTickets}</span>
-            </div>
-            <ProgressBar
-              value={openTickets}
-              maxValue={Math.max(totalTickets, 1)}
-              color="orange"
-              showValue={false}
-            />
-            <div className="flex justify-between items-center">
-              <span className="text-[14px] uppercase font-medium">Résolus</span>
-              <span className="font-header text-[22px] text-green-600">{resolvedTickets}</span>
-            </div>
-            <ProgressBar
-              value={resolvedTickets}
-              maxValue={Math.max(totalTickets, 1)}
-              color="green"
-              showValue={false}
-            />
-          </div>
-        </div>
-
         {/* Croissance Contrats */}
         <GrowthCard
           globalGrowthRate={globalGrowthRate}
           newContractsThisMonth={newContractsThisMonth}
           offerGrowths={offerGrowths}
         />
+
+        {/* Colonne droite : Support + Clients */}
+        <div className="flex flex-col gap-4">
+          {/* Support */}
+          <div className="rounded-[20px] bg-card p-5">
+            <div className="flex items-start justify-between mb-3">
+              <h2 className="font-header text-lg uppercase tracking-wide">Support</h2>
+              <Headphones className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] uppercase font-medium">Ouverts</span>
+                <span className="font-header text-[22px] text-orange-500">{openTickets}</span>
+              </div>
+              <ProgressBar
+                value={openTickets}
+                maxValue={Math.max(totalTickets, 1)}
+                color="orange"
+                showValue={false}
+              />
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] uppercase font-medium">Résolus</span>
+                <span className="font-header text-[22px] text-green-600">{resolvedTickets}</span>
+              </div>
+              <ProgressBar
+                value={resolvedTickets}
+                maxValue={Math.max(totalTickets, 1)}
+                color="green"
+                showValue={false}
+              />
+            </div>
+          </div>
+
+          {/* Clients */}
+          <div className="rounded-[20px] bg-card p-5">
+            <h2 className="font-header text-lg uppercase tracking-wide mb-4">Clients</h2>
+            <div className="space-y-4">
+              <div>
+                <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Membres Actifs</p>
+                <p className="font-header text-[28px]">{activeUsersCount.toLocaleString("fr-FR")}</p>
+              </div>
+              <div className="h-px bg-border" />
+              <div>
+                <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Entreprises</p>
+                <p className="font-header text-[28px]">{companiesCount}</p>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Section Prévisions */}

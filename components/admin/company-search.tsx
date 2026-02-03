@@ -83,7 +83,7 @@ export function ClientsFilters({ sites }: ClientsFiltersProps) {
 
   const periodOptions = useMemo(
     () => [
-      { value: "all", label: "Toutes les périodes" },
+      { value: "all", label: "Tous les pass" },
       { value: "month", label: "Mensuel" },
       { value: "week", label: "Hebdomadaire" },
     ],
@@ -124,8 +124,8 @@ export function ClientsFilters({ sites }: ClientsFiltersProps) {
         options={periodOptions}
         value={period}
         onValueChange={handlePeriodChange}
-        placeholder="Période"
-        searchPlaceholder="Rechercher une période..."
+        placeholder="Pass"
+        searchPlaceholder="Rechercher un pass..."
         triggerClassName="w-full sm:w-[180px]"
       />
 

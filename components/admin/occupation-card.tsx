@@ -96,7 +96,7 @@ export function OccupationCard({
             )}
           </div>
           <p className="text-sm text-muted-foreground mt-2">
-            {totalBookings} réservations / {totalCapacity} places disponibles
+            {totalBookings} / {totalCapacity} places disponibles
           </p>
         </button>
       </DialogTrigger>

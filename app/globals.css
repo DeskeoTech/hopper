@@ -157,6 +157,15 @@
 
 @layer utilities {
   /* ========================================
+     LAYOUT UTILITIES
+     ======================================== */
+
+  /* Vertical writing mode (for sidebar text) */
+  .writing-vertical-rl {
+    writing-mode: vertical-rl;
+  }
+
+  /* ========================================
      TYPOGRAPHY UTILITIES
      ======================================== */
 
