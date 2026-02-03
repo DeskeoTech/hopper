@@ -253,6 +253,7 @@ export interface User {
   role: UserRole | null
   status: UserStatus | null
   company_id: string | null
+  contract_id: string | null
   photo_storage_path: string | null
   created_at: string
   updated_at: string

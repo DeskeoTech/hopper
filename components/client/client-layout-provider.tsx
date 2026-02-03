@@ -81,7 +81,7 @@ export function ClientLayoutProvider({
   const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === currentSelectedSiteId) || null
   const isNomad = plan?.name?.toUpperCase().includes("NOMAD") ?? false
   const mainSiteId = user.companies?.main_site_id || null
-  const canManageCompany = user.role === "admin" && user.companies?.company_type === "multi_employee"
+  const canManageCompany = user.role === "admin" && user.companies !== null
 
   const setSelectedSiteId = (siteId: string) => {
     // Update local state immediately for instant UI feedback

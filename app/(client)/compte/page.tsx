@@ -12,10 +12,10 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile with company_id
+  // Fetch user profile with company_id, role, and contract_id
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id, company_id")
+    .select("id, company_id, role, contract_id")
     .eq("email", authUser.email)
     .single()
 
@@ -44,34 +44,68 @@ export default async function ComptePage() {
     .order("start_date", { ascending: false })
     .limit(50)
 
-  // Fetch company's contracts (passes) with plan and site details
+  // Fetch contracts based on user role:
+  // - Admin: all company contracts
+  // - User: only their assigned contract (via contract_id)
   let contracts: ContractForDisplay[] = []
   if (userProfile.company_id) {
-    const { data: contractsData } = await supabase
-      .from("contracts")
-      .select(`
-        id,
-        status,
-        start_date,
-        end_date,
-        plans (name, recurrence)
-      `)
-      .eq("company_id", userProfile.company_id)
-      .order("start_date", { ascending: false })
-      .limit(50)
+    const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
 
-    contracts = (contractsData || []).map((c) => {
-      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
-      return {
-        id: c.id,
-        status: c.status as "active" | "suspended" | "terminated",
-        start_date: c.start_date,
-        end_date: c.end_date,
-        plan_name: plan?.name || "Pass",
-        plan_recurrence: plan?.recurrence || null,
-        site_name: null,
+    if (isAdmin) {
+      // Admin sees all company contracts
+      const { data: contractsData } = await supabase
+        .from("contracts")
+        .select(`
+          id,
+          status,
+          start_date,
+          end_date,
+          plans (name, recurrence)
+        `)
+        .eq("company_id", userProfile.company_id)
+        .order("start_date", { ascending: false })
+        .limit(50)
+
+      contracts = (contractsData || []).map((c) => {
+        const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+        return {
+          id: c.id,
+          status: c.status as "active" | "suspended" | "terminated",
+          start_date: c.start_date,
+          end_date: c.end_date,
+          plan_name: plan?.name || "Pass",
+          plan_recurrence: plan?.recurrence || null,
+          site_name: null,
+        }
+      })
+    } else if (userProfile.contract_id) {
+      // Regular user sees only their assigned contract
+      const { data: contractData } = await supabase
+        .from("contracts")
+        .select(`
+          id,
+          status,
+          start_date,
+          end_date,
+          plans (name, recurrence)
+        `)
+        .eq("id", userProfile.contract_id)
+        .single()
+
+      if (contractData) {
+        const plan = contractData.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+        contracts = [{
+          id: contractData.id,
+          status: contractData.status as "active" | "suspended" | "terminated",
+          start_date: contractData.start_date,
+          end_date: contractData.end_date,
+          plan_name: plan?.name || "Pass",
+          plan_recurrence: plan?.recurrence || null,
+          site_name: null,
+        }]
       }
-    })
+    }
+    // If user has no contract_id, contracts remains empty
   }
 
   // Transform bookings to flat structure with details
