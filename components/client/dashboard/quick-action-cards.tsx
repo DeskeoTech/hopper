@@ -108,6 +108,13 @@ export function QuickActionCards() {
       {/* Action cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ActionCard
+          image={CREDITS_IMAGE}
+          title="Acheter des crédits"
+          description="Rechargez votre compte pour vos prochaines réservations"
+          buttonText="Acheter"
+          onClick={handleBuyCredits}
+        />
+        <ActionCard
           image={ROOM_IMAGE}
           title="Réserver une salle"
           description="Réservez une salle de réunion"
@@ -120,13 +127,6 @@ export function QuickActionCards() {
           description="À la journée, à la semaine ou au mois"
           buttonText="Réserver"
           onClick={handleBookDesk}
-        />
-        <ActionCard
-          image={CREDITS_IMAGE}
-          title="Acheter des crédits"
-          description="Rechargez votre compte pour vos prochaines réservations"
-          buttonText="Acheter"
-          onClick={handleBuyCredits}
         />
       </div>
 
