@@ -642,7 +642,14 @@ export default async function DashboardPage() {
 
       {/* Grille métriques secondaires */}
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-        {/* Colonne gauche : Support + Clients */}
+        {/* Croissance Contrats */}
+        <GrowthCard
+          globalGrowthRate={globalGrowthRate}
+          newContractsThisMonth={newContractsThisMonth}
+          offerGrowths={offerGrowths}
+        />
+
+        {/* Colonne droite : Support + Clients */}
         <div className="flex flex-col gap-4">
           {/* Support */}
           <div className="rounded-[20px] bg-card p-5">
@@ -690,13 +697,6 @@ export default async function DashboardPage() {
             </div>
           </div>
         </div>
-
-        {/* Croissance Contrats */}
-        <GrowthCard
-          globalGrowthRate={globalGrowthRate}
-          newContractsThisMonth={newContractsThisMonth}
-          offerGrowths={offerGrowths}
-        />
       </div>
 
       {/* Section Prévisions */}
