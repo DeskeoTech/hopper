@@ -3,7 +3,7 @@
 import { Building2 } from "lucide-react"
 import { HomepageSiteSelector } from "./homepage-site-selector"
 import { QuickActionCards } from "./dashboard/quick-action-cards"
-import { AvailableRoomsSection } from "./dashboard/available-rooms-section"
+import { SitesListSection } from "./dashboard/sites-list-section"
 import { UserBookingsSection } from "./user-bookings-section"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay } from "@/lib/types/database"
@@ -82,8 +82,8 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
           userId={user.id}
         />
 
-        {/* Available Rooms */}
-        <AvailableRoomsSection />
+        {/* Sites List */}
+        <SitesListSection />
       </div>
     </div>
   )

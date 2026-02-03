@@ -148,25 +148,17 @@ export default async function ClientLayout({
   // Determine main site ID early (needed for site filtering)
   const mainSiteId = userProfile.companies?.main_site_id || null
 
-  // Fetch sites: nomad sites + main site only
-  const sitesQuery = supabase
+  // Fetch all open sites
+  const { data: sites } = await supabase
     .from("sites")
     .select(`
-      id, name, address, is_nomad,
+      id, name, address,
       opening_hours, opening_days,
       wifi_ssid, wifi_password,
       equipments, instructions, access
     `)
     .eq("status", "open")
-
-  // Filter: nomad sites OR main site
-  if (mainSiteId) {
-    sitesQuery.or(`is_nomad.eq.true,id.eq.${mainSiteId}`)
-  } else {
-    sitesQuery.eq("is_nomad", true)
-  }
-
-  const { data: sites } = await sitesQuery.order("name")
+    .order("name")
 
   // Fetch site photos for site switcher modal
   const { data: sitePhotos } = await supabase
@@ -174,10 +166,10 @@ export default async function ClientLayout({
     .select("site_id, storage_path")
     .order("created_at", { ascending: true })
 
-  // Fetch resource capacities for site switcher modal
+  // Fetch resources for site workstation count
   const { data: resources } = await supabase
     .from("resources")
-    .select("site_id, capacity")
+    .select("site_id, capacity, type")
 
   // Build site photos map (all photos per site)
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -193,6 +185,10 @@ export default async function ClientLayout({
 
   // Build site capacity map (min/max from resources)
   const siteCapacityMap: Record<string, { min: number; max: number }> = {}
+  // Count total workstations per site (bench, flex_desk, fixed_desk)
+  const siteWorkstationCount: Record<string, number> = {}
+  const workstationTypes = ["bench", "flex_desk", "fixed_desk"]
+
   resources?.forEach((resource) => {
     if (resource.capacity) {
       const existing = siteCapacityMap[resource.site_id]
@@ -208,6 +204,10 @@ export default async function ClientLayout({
         }
       }
     }
+    // Count workstations
+    if (workstationTypes.includes(resource.type)) {
+      siteWorkstationCount[resource.site_id] = (siteWorkstationCount[resource.site_id] || 0) + 1
+    }
   })
 
   // Build sitesWithDetails for the site switcher modal
@@ -218,6 +218,7 @@ export default async function ClientLayout({
     imageUrl: sitePhotosMap[site.id]?.[0] || null,
     photoUrls: sitePhotosMap[site.id] || [],
     capacityRange: siteCapacityMap[site.id] || null,
+    totalWorkstations: siteWorkstationCount[site.id] || 0,
     openingHours: site.opening_hours,
     openingDays: site.opening_days,
     wifiSsid: site.wifi_ssid,
