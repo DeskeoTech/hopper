@@ -47,32 +47,6 @@ function ActionCard({ image, title, description, capacity, buttonText, onClick }
   )
 }
 
-interface SimpleActionCardProps {
-  title: string
-  description?: string
-  buttonText: string
-  onClick: () => void
-}
-
-function SimpleActionCard({ title, description, buttonText, onClick }: SimpleActionCardProps) {
-  return (
-    <div className="rounded-[16px] bg-card p-4 flex flex-col">
-      <h3 className="font-header text-base font-bold uppercase tracking-tight">{title}</h3>
-      {description && (
-        <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
-      )}
-      <div className="flex-1 min-h-4" />
-      <Button
-        onClick={onClick}
-        size="sm"
-        className="rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide h-9 px-5"
-      >
-        {buttonText}
-      </Button>
-    </div>
-  )
-}
-
 export function QuickActionCards() {
   const { user, credits, allSites, selectedSiteId, selectedSiteWithDetails, plan, mainSiteId } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
@@ -110,28 +84,6 @@ export function QuickActionCards() {
         />
         <ActionCard
           image={siteImage}
-          title="Réserver un poste"
-          description="À la journée, à la semaine ou au mois"
-          buttonText="Réserver"
-          onClick={handleBookDesk}
-        />
-      </div>
-
-      {/* Simple action cards (without background images) */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <SimpleActionCard
-          title="Acheter des crédits"
-          description="Rechargez votre compte pour vos prochaines réservations"
-          buttonText="Acheter"
-          onClick={handleBuyCredits}
-        />
-        <SimpleActionCard
-          title="Réserver une salle"
-          description="Réservez une salle de réunion"
-          buttonText="Réserver"
-          onClick={() => setBookingModalOpen(true)}
-        />
-        <SimpleActionCard
           title="Réserver un poste"
           description="À la journée, à la semaine ou au mois"
           buttonText="Réserver"
