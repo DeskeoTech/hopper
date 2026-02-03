@@ -136,6 +136,102 @@ export function CalendarWeekView({
     return () => clearInterval(interval)
   }, [])
 
+  // Check if two bookings overlap in time
+  const bookingsOverlap = (a: BookingWithDetails, b: BookingWithDetails): boolean => {
+    const aStart = new Date(a.start_date).getTime()
+    const aEnd = new Date(a.end_date).getTime()
+    const bStart = new Date(b.start_date).getTime()
+    const bEnd = new Date(b.end_date).getTime()
+    return aStart < bEnd && bStart < aEnd
+  }
+
+  // Calculate layout for overlapping bookings
+  const calculateOverlapLayout = (dayBookings: BookingWithDetails[]): Map<string, { column: number; totalColumns: number }> => {
+    const layout = new Map<string, { column: number; totalColumns: number }>()
+
+    if (dayBookings.length === 0) return layout
+
+    // Sort bookings by start time, then by end time
+    const sorted = [...dayBookings].sort((a, b) => {
+      const startDiff = new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+      if (startDiff !== 0) return startDiff
+      return new Date(a.end_date).getTime() - new Date(b.end_date).getTime()
+    })
+
+    // Find groups of overlapping bookings
+    const groups: BookingWithDetails[][] = []
+
+    for (const booking of sorted) {
+      // Find an existing group that this booking overlaps with
+      let addedToGroup = false
+      for (const group of groups) {
+        if (group.some(b => bookingsOverlap(booking, b))) {
+          group.push(booking)
+          addedToGroup = true
+          break
+        }
+      }
+      if (!addedToGroup) {
+        groups.push([booking])
+      }
+    }
+
+    // Merge groups that overlap with each other
+    let merged = true
+    while (merged) {
+      merged = false
+      for (let i = 0; i < groups.length; i++) {
+        for (let j = i + 1; j < groups.length; j++) {
+          const groupsOverlap = groups[i].some(a =>
+            groups[j].some(b => bookingsOverlap(a, b))
+          )
+          if (groupsOverlap) {
+            groups[i] = [...groups[i], ...groups[j]]
+            groups.splice(j, 1)
+            merged = true
+            break
+          }
+        }
+        if (merged) break
+      }
+    }
+
+    // Assign columns within each group
+    for (const group of groups) {
+      // Sort group by start time
+      group.sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
+
+      const columns: BookingWithDetails[][] = []
+
+      for (const booking of group) {
+        // Find the first column where this booking doesn't overlap with existing bookings
+        let placed = false
+        for (let col = 0; col < columns.length; col++) {
+          const canPlace = columns[col].every(b => !bookingsOverlap(booking, b))
+          if (canPlace) {
+            columns[col].push(booking)
+            layout.set(booking.id, { column: col, totalColumns: 0 }) // totalColumns set later
+            placed = true
+            break
+          }
+        }
+        if (!placed) {
+          columns.push([booking])
+          layout.set(booking.id, { column: columns.length - 1, totalColumns: 0 })
+        }
+      }
+
+      // Set totalColumns for all bookings in this group
+      const totalColumns = columns.length
+      for (const booking of group) {
+        const existing = layout.get(booking.id)!
+        layout.set(booking.id, { ...existing, totalColumns })
+      }
+    }
+
+    return layout
+  }
+
   // Group bookings by day
   const bookingsByDay = useMemo(() => {
     const grouped: Record<string, BookingWithDetails[]> = {}
@@ -155,6 +251,18 @@ export function CalendarWeekView({
 
     return grouped
   }, [bookings, weekDays])
+
+  // Calculate overlap layouts for each day
+  const overlapLayouts = useMemo(() => {
+    const layouts: Record<string, Map<string, { column: number; totalColumns: number }>> = {}
+
+    weekDays.forEach((day) => {
+      const dayKey = format(day, "yyyy-MM-dd")
+      layouts[dayKey] = calculateOverlapLayout(bookingsByDay[dayKey] || [])
+    })
+
+    return layouts
+  }, [bookingsByDay, weekDays])
 
   // Calculate booking position and dimensions
   const getBookingPosition = (booking: BookingWithDetails) => {
@@ -500,6 +608,7 @@ export function CalendarWeekView({
             {weekDays.map((day, dayIndex) => {
               const dayKey = format(day, "yyyy-MM-dd")
               const dayBookings = bookingsByDay[dayKey] || []
+              const dayLayout = overlapLayouts[dayKey]
 
               return (
                 <div key={day.toISOString()} className="relative h-full">
@@ -513,19 +622,37 @@ export function CalendarWeekView({
                       !!onBookingUpdate &&
                       !isUpdating
 
+                    // Get overlap layout info
+                    const layoutInfo = dayLayout.get(booking.id) || { column: 0, totalColumns: 1 }
+                    const { column, totalColumns } = layoutInfo
+
+                    // Calculate width and left position for overlapping bookings
+                    const gap = 2 // Gap between overlapping bookings in pixels
+                    const padding = 4 // Left/right padding from container edges
+                    const availableWidth = 100 // percentage
+                    const columnWidth = totalColumns > 1
+                      ? (availableWidth - (totalColumns - 1) * gap / 10) / totalColumns
+                      : availableWidth
+                    const leftOffset = totalColumns > 1
+                      ? column * (columnWidth + gap / 10)
+                      : 0
+
                     return (
                       <div
                         key={booking.id}
                         className={cn(
-                          "absolute left-1 right-1 z-[2] overflow-hidden rounded-[16px] border border-border/10 p-2 transition-shadow hover:shadow-md sm:rounded-[20px] sm:p-3",
+                          "absolute z-[2] overflow-hidden rounded-[12px] border border-border/20 p-1.5 transition-shadow hover:shadow-md hover:z-[3] sm:rounded-[16px] sm:p-2",
                           getBookingColor(booking),
                           canDrag ? "cursor-grab active:cursor-grabbing" : "cursor-pointer",
-                          isBeingDragged && "opacity-40"
+                          isBeingDragged && "opacity-40",
+                          totalColumns > 1 && "border-l-[3px]"
                         )}
                         style={{
                           top: `${top}px`,
                           height: `${height}px`,
                           minHeight: "40px",
+                          left: `calc(${leftOffset}% + ${padding}px)`,
+                          width: `calc(${columnWidth}% - ${padding * 2 / totalColumns}px)`,
                         }}
                         onMouseDown={(e) =>
                           handleMouseDown(e, booking, dayIndex)
@@ -533,15 +660,15 @@ export function CalendarWeekView({
                       >
                         <div className="flex h-full flex-col justify-between select-none">
                           <div className="min-w-0">
-                            <p className="truncate text-[9px] font-bold uppercase opacity-60">
+                            <p className="truncate text-[8px] font-bold uppercase opacity-60 sm:text-[9px]">
                               {formatTimeRange(booking)}
                             </p>
-                            <p className="mt-0.5 truncate text-[10px] font-black uppercase leading-tight sm:text-xs">
+                            <p className="mt-0.5 truncate text-[9px] font-black uppercase leading-tight sm:text-[11px]">
                               {booking.resource_name || "Ressource"}
                             </p>
                           </div>
-                          {height >= 60 && (
-                            <p className="truncate text-[10px] font-semibold opacity-60">
+                          {height >= 60 && totalColumns <= 2 && (
+                            <p className="truncate text-[12px] font-bold uppercase text-right sm:text-[13px]">
                               {booking.site_name || booking.company_name || ""}
                             </p>
                           )}
@@ -590,7 +717,7 @@ export function CalendarWeekView({
                           </p>
                         </div>
                         {dragState.initialHeight >= 60 && (
-                          <p className="truncate text-[10px] font-semibold opacity-60">
+                          <p className="truncate text-[12px] font-bold uppercase text-right sm:text-[13px]">
                             {dragState.booking.site_name ||
                               dragState.booking.company_name ||
                               ""}

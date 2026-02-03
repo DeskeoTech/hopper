@@ -118,14 +118,14 @@ export function ReservationsCard({
   const totalMeetingRoomCapacity = meetingRoomAvailabilityBySite.reduce((sum, s) => sum + s.total, 0)
 
   return (
-    <div className="rounded-[20px] bg-card p-5">
+    <div className="rounded-[20px] bg-card p-5 h-full">
       <div className="flex items-center justify-between mb-4">
         <h2 className="font-header text-lg uppercase tracking-wide">Réservations</h2>
-        <span className="text-[14px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
+        <span className="text-[12px] bg-brand text-brand-foreground px-2 py-0.5 rounded-full font-medium">
           TEMPS RÉEL
         </span>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
         {/* Places disponibles */}
         <AvailabilityModal
           title="Places disponibles par site"
@@ -134,13 +134,19 @@ export function ReservationsCard({
           totalAvailable={totalBenchAvailable}
           totalCapacity={totalBenchCapacity}
         >
-          <button className="bg-muted/50 p-4 rounded-lg text-center hover:bg-muted/70 transition-colors group w-full">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <Armchair className="h-5 w-5 text-muted-foreground" />
-              <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          <button className="bg-muted/50 p-4 rounded-lg hover:bg-muted/70 transition-colors group w-full">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <Armchair className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[13px] text-muted-foreground uppercase font-medium">Places disponibles</p>
+                  <p className="font-header text-2xl">{totalBenchAvailable}</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="font-header text-2xl">{totalBenchAvailable}</p>
-            <p className="text-[13px] text-muted-foreground uppercase font-medium">Places disponibles</p>
           </button>
         </AvailabilityModal>
 
@@ -152,13 +158,19 @@ export function ReservationsCard({
           totalAvailable={totalMeetingRoomAvailable}
           totalCapacity={totalMeetingRoomCapacity}
         >
-          <button className="bg-muted/50 p-4 rounded-lg text-center hover:bg-muted/70 transition-colors group w-full">
-            <div className="flex items-center justify-center gap-1 mb-2">
-              <DoorOpen className="h-5 w-5 text-muted-foreground" />
-              <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          <button className="bg-muted/50 p-4 rounded-lg hover:bg-muted/70 transition-colors group w-full">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                  <DoorOpen className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <div className="text-left">
+                  <p className="text-[13px] text-muted-foreground uppercase font-medium">Salles disponibles</p>
+                  <p className="font-header text-2xl">{totalMeetingRoomAvailable}</p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <p className="font-header text-2xl">{totalMeetingRoomAvailable}</p>
-            <p className="text-[13px] text-muted-foreground uppercase font-medium">Salles disponibles</p>
           </button>
         </AvailabilityModal>
       </div>
