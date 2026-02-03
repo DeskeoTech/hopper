@@ -4,15 +4,17 @@ import { Building2 } from "lucide-react"
 import { QuickActionCards } from "./dashboard/quick-action-cards"
 import { SitesListSection } from "./dashboard/sites-list-section"
 import { UserBookingsSection } from "./user-bookings-section"
+import { ContractsListSection } from "./contracts-list-section"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay } from "@/lib/types/database"
 
 interface AccountPageProps {
   bookings: BookingWithDetails[]
   contracts: ContractForDisplay[]
+  isAdmin: boolean
 }
 
-export function AccountPage({ bookings, contracts }: AccountPageProps) {
+export function AccountPage({ bookings, contracts, isAdmin }: AccountPageProps) {
   const { user, selectedSiteWithDetails } = useClientLayout()
 
   // Get the first image of the selected site
@@ -71,12 +73,11 @@ export function AccountPage({ bookings, contracts }: AccountPageProps) {
         {/* Quick Actions (includes site info button) */}
         <QuickActionCards />
 
-        {/* Upcoming Reservations */}
-        <UserBookingsSection
-          bookings={bookings}
-          contracts={contracts}
-          userId={user.id}
-        />
+        {/* Upcoming Reservations (meeting rooms only) */}
+        <UserBookingsSection bookings={bookings} userId={user.id} />
+
+        {/* Contracts list */}
+        <ContractsListSection contracts={contracts} isAdmin={isAdmin} />
 
         {/* Sites List */}
         <SitesListSection />

@@ -23,6 +23,9 @@ export default async function ComptePage() {
     redirect("/login")
   }
 
+  // Determine if user is admin (admin or deskeo role)
+  const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
+
   // Fetch user's bookings with resource and site details
   const { data: bookings } = await supabase
     .from("bookings")
@@ -44,67 +47,45 @@ export default async function ComptePage() {
     .order("start_date", { ascending: false })
     .limit(50)
 
-  // Fetch contracts based on user role:
-  // - Admin: all company contracts
-  // - User: only their assigned contract (via contract_id)
+  // Fetch contracts based on user role
+  // Admin: all company contracts
+  // User: only their assigned contract
   let contracts: ContractForDisplay[] = []
   if (userProfile.company_id) {
-    const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
+    let query = supabase
+      .from("contracts")
+      .select(`
+        id,
+        status,
+        start_date,
+        end_date,
+        Number_of_seats,
+        plans (name, recurrence)
+      `)
+      .eq("company_id", userProfile.company_id)
 
-    if (isAdmin) {
-      // Admin sees all company contracts
-      const { data: contractsData } = await supabase
-        .from("contracts")
-        .select(`
-          id,
-          status,
-          start_date,
-          end_date,
-          plans (name, recurrence)
-        `)
-        .eq("company_id", userProfile.company_id)
-        .order("start_date", { ascending: false })
-        .limit(50)
-
-      contracts = (contractsData || []).map((c) => {
-        const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
-        return {
-          id: c.id,
-          status: c.status as "active" | "suspended" | "terminated",
-          start_date: c.start_date,
-          end_date: c.end_date,
-          plan_name: plan?.name || "Pass",
-          plan_recurrence: plan?.recurrence || null,
-          site_name: null,
-        }
-      })
-    } else if (userProfile.contract_id) {
-      // Regular user sees only their assigned contract
-      const { data: contractData } = await supabase
-        .from("contracts")
-        .select(`
-          id,
-          status,
-          start_date,
-          end_date,
-          plans (name, recurrence)
-        `)
-        .eq("id", userProfile.contract_id)
-        .single()
-
-      if (contractData) {
-        const plan = contractData.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
-        contracts = [{
-          id: contractData.id,
-          status: contractData.status as "active" | "suspended" | "terminated",
-          start_date: contractData.start_date,
-          end_date: contractData.end_date,
-          plan_name: plan?.name || "Pass",
-          plan_recurrence: plan?.recurrence || null,
-          site_name: null,
-        }]
-      }
+    // Regular user: filter by their assigned contract
+    if (!isAdmin && userProfile.contract_id) {
+      query = query.eq("id", userProfile.contract_id)
     }
+
+    const { data: contractsData } = await query
+      .order("start_date", { ascending: false })
+      .limit(50)
+
+    contracts = (contractsData || []).map((c) => {
+      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+      return {
+        id: c.id,
+        status: c.status as "active" | "suspended" | "terminated",
+        start_date: c.start_date,
+        end_date: c.end_date,
+        plan_name: plan?.name || "Pass",
+        plan_recurrence: plan?.recurrence || null,
+        site_name: null,
+        number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
+      }
+    })
     // If user has no contract_id, contracts remains empty
   }
 
@@ -154,6 +135,7 @@ export default async function ComptePage() {
     <AccountPage
       bookings={transformedBookings}
       contracts={contracts}
+      isAdmin={isAdmin}
     />
   )
 }

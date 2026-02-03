@@ -5,6 +5,7 @@ import { ClientHeader } from "@/components/client/client-header"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
+import { NoContractModal } from "@/components/client/no-contract-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
 
@@ -259,6 +260,15 @@ export default async function ClientLayout({
     userProfile.companies &&
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
 
+  // Check if regular user needs contract assignment (after onboarding and profile completion)
+  const needsContractAssignment =
+    !needsOnboarding &&
+    !needsProfileCompletion &&
+    userProfile.role === "user" &&
+    !isDeskeoEmployee &&
+    userProfile.company_id &&
+    !userProfile.contract_id
+
   return (
     <ClientLayoutProvider
       user={userProfile}
@@ -284,6 +294,7 @@ export default async function ClientLayout({
           company={userProfile.companies as Company}
         />
       )}
+      {needsContractAssignment && <NoContractModal open />}
       <ExpiredContractBanner />
       <div className="min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
