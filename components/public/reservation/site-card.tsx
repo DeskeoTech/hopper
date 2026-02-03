@@ -1,0 +1,229 @@
+"use client"
+
+import { useState, useCallback, memo } from "react"
+import Image from "next/image"
+import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import type { Site, Equipment } from "@/lib/types/database"
+
+interface SiteWithPhotos extends Site {
+  photos: string[]
+  capacity: number
+}
+
+interface SiteCardProps {
+  site: SiteWithPhotos
+  isHovered: boolean
+  onHover: (siteId: string | null) => void
+  onBook: (site: SiteWithPhotos) => void
+  onViewDetails: (site: SiteWithPhotos) => void
+}
+
+const equipmentIcons: Record<Equipment, React.ReactNode> = {
+  barista: <Coffee className="h-3 w-3" />,
+  stationnement_velo: <Bike className="h-3 w-3" />,
+  impression: <Printer className="h-3 w-3" />,
+  douches: <Droplets className="h-3 w-3" />,
+  salle_sport: <Dumbbell className="h-3 w-3" />,
+  terrasse: <Sun className="h-3 w-3" />,
+  rooftop: <Building className="h-3 w-3" />,
+}
+
+const equipmentLabels: Record<Equipment, string> = {
+  barista: "Barista",
+  stationnement_velo: "Le Coin Vélo",
+  impression: "Imprimante",
+  douches: "Douches",
+  salle_sport: "Salle de sport",
+  terrasse: "Terrasse",
+  rooftop: "Rooftop",
+}
+
+function extractDistrict(address: string): string {
+  const parisMatch = address.match(/75(\d{3})/)
+  if (parisMatch) {
+    const arr = parseInt(parisMatch[1], 10)
+    if (arr === 1) return "Paris 1er"
+    return `Paris ${arr}ème`
+  }
+
+  const lyonMatch = address.match(/69(\d{3})/)
+  if (lyonMatch) {
+    const arr = parseInt(lyonMatch[1], 10)
+    if (arr <= 9) {
+      if (arr === 1) return "Lyon 1er"
+      return `Lyon ${arr}ème`
+    }
+  }
+
+  const addressLower = address.toLowerCase()
+  if (addressLower.includes("neuilly")) return "Neuilly-sur-Seine"
+  if (addressLower.includes("boulogne")) return "Boulogne-Billancourt"
+  if (addressLower.includes("levallois")) return "Levallois-Perret"
+  if (addressLower.includes("issy")) return "Issy-les-Moulineaux"
+
+  const parts = address.split(",")
+  if (parts.length >= 2) {
+    const cityPart = parts[parts.length - 1].trim()
+    return cityPart.replace(/\d{5}\s*/, "").trim() || "Île-de-France"
+  }
+
+  return "Île-de-France"
+}
+
+export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBook, onViewDetails }: SiteCardProps) {
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+
+  const photos = site.photos.length > 0 ? site.photos : ["/placeholder-site.jpg"]
+
+  const goToPrevPhoto = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      setCurrentPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1))
+    },
+    [photos.length]
+  )
+
+  const goToNextPhoto = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      setCurrentPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1))
+    },
+    [photos.length]
+  )
+
+  const handleCardClick = useCallback(() => {
+    onViewDetails(site)
+  }, [site, onViewDetails])
+
+  const handleBookClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      onBook(site)
+    },
+    [site, onBook]
+  )
+
+  const district = extractDistrict(site.address)
+
+  return (
+    <div
+      className={cn(
+        "group cursor-pointer overflow-hidden rounded-2xl border bg-card transition-all duration-300",
+        isHovered ? "border-foreground/30 shadow-xl" : "border-border shadow-sm"
+      )}
+      onMouseEnter={() => onHover(site.id)}
+      onMouseLeave={() => onHover(null)}
+      onClick={handleCardClick}
+    >
+      {/* Photo Carousel */}
+      <div className="relative h-44 overflow-hidden bg-muted">
+        <div
+          className="flex h-full transition-transform duration-300 ease-out"
+          style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
+        >
+          {photos.map((photo, index) => (
+            <div key={index} className="relative h-full w-full flex-shrink-0">
+              <Image
+                src={photo}
+                alt={`${site.name} - Photo ${index + 1}`}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Navigation Arrows */}
+        {photos.length > 1 && (
+          <>
+            <button
+              onClick={goToPrevPhoto}
+              className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1.5 opacity-0 shadow-md transition-opacity group-hover:opacity-100 hover:bg-white"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={goToNextPhoto}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-1.5 opacity-0 shadow-md transition-opacity group-hover:opacity-100 hover:bg-white"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </>
+        )}
+
+        {/* Location Badge - Bottom Left */}
+        <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-[#D4C4B0] px-2.5 py-1">
+          <MapPin className="h-3 w-3" />
+          <span className="text-[10px] font-semibold">{district}</span>
+        </div>
+
+        {/* Capacity Badge - Top Right */}
+        <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full border border-white/20 bg-white px-2 py-0.5 shadow-sm">
+          <Users className="h-3 w-3 text-muted-foreground" />
+          <span className="text-[11px] font-medium">{site.capacity}</span>
+        </div>
+
+        {/* Photo Indicators - Bottom Center */}
+        {photos.length > 1 && (
+          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1">
+            {photos.slice(0, 5).map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setCurrentPhotoIndex(index)
+                }}
+                className={cn(
+                  "rounded-full transition-all",
+                  index === currentPhotoIndex
+                    ? "h-1.5 w-4 bg-white"
+                    : "h-1.5 w-1.5 bg-white/60 hover:bg-white/80"
+                )}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-4">
+        {/* Title */}
+        <h3 className="font-heading text-lg font-bold uppercase tracking-tight">{site.name}</h3>
+
+        {/* Price */}
+        <p className="mt-0.5 text-xs text-muted-foreground">Dès 30€/jour</p>
+
+        {/* Equipment Tags */}
+        {site.equipments && site.equipments.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {site.equipments.slice(0, 4).map((equipment) => (
+              <span
+                key={equipment}
+                className="flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-medium"
+              >
+                {equipmentIcons[equipment]}
+                {equipmentLabels[equipment]}
+              </span>
+            ))}
+            {site.equipments.length > 4 && (
+              <span className="flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-medium">
+                +{site.equipments.length - 4}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Book Button */}
+        <Button
+          className="mt-4 w-full rounded-full bg-[#1B1918] font-semibold uppercase tracking-wide hover:bg-[#1B1918]/90"
+          onClick={handleBookClick}
+        >
+          Réserver
+        </Button>
+      </div>
+    </div>
+  )
+})

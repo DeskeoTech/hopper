@@ -86,6 +86,7 @@ export default async function ComptePage() {
         number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
       }
     })
+    // If user has no contract_id, contracts remains empty
   }
 
   // Transform bookings to flat structure with details

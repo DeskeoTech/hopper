@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         // Check if user exists in users table
         const { data: existingUser } = await supabase
           .from("users")
-          .select("id, role")
+          .select("id, role, company_id, contract_id")
           .eq("email", user.email)
           .single()
 
@@ -35,6 +35,31 @@ export async function GET(request: Request) {
               .from("users")
               .update({ role: "deskeo" })
               .eq("id", existingUser.id)
+          }
+
+          // Auto-assign first user of a company to the first contract
+          if (existingUser.company_id && !existingUser.contract_id) {
+            const { count: userCount } = await supabase
+              .from("users")
+              .select("*", { count: "exact", head: true })
+              .eq("company_id", existingUser.company_id)
+
+            if (userCount === 1) {
+              const { data: firstContract } = await supabase
+                .from("contracts")
+                .select("id")
+                .eq("company_id", existingUser.company_id)
+                .order("start_date", { ascending: true })
+                .limit(1)
+                .single()
+
+              if (firstContract) {
+                await supabase
+                  .from("users")
+                  .update({ contract_id: firstContract.id })
+                  .eq("id", existingUser.id)
+              }
+            }
           }
 
           // Redirect based on role
