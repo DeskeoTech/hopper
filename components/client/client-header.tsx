@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { User, Ticket, Settings, ChevronRight } from "lucide-react"
+import { User, Building2, Ticket, Settings, ChevronRight } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
 import { useClientLayout } from "./client-layout-provider"
 
 export function ClientHeader() {
-  const { user, credits, isDeskeoEmployee } = useClientLayout()
+  const { user, credits, isDeskeoEmployee, canManageCompany } = useClientLayout()
   const searchParams = useSearchParams()
 
   // Preserve site param in navigation
@@ -67,7 +67,10 @@ export function ClientHeader() {
         {/* Profile Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 transition-colors hover:bg-foreground/10">
+            <button
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5 transition-colors hover:bg-foreground/10"
+              suppressHydrationWarning
+            >
               <User className="h-5 w-5 text-foreground/70" />
             </button>
           </DropdownMenuTrigger>
@@ -90,6 +93,24 @@ export function ClientHeader() {
                 <ChevronRight className="h-4 w-4" />
               </Link>
             </DropdownMenuItem>
+
+            {/* Company Management Link for Company Admins */}
+            {canManageCompany && (
+              <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+                <Link
+                  href="/entreprise"
+                  className="flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-colors border-t border-foreground/5"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                      <Building2 className="h-4 w-4 text-foreground/70" />
+                    </div>
+                    <span>Gérer mon entreprise</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              </DropdownMenuItem>
+            )}
 
             {/* Admin Link for Deskeo Employees */}
             {isDeskeoEmployee && (
