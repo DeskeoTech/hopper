@@ -38,6 +38,15 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Public routes that don't require authentication
+  const publicRoutes = ["/reservation", "/login", "/auth"]
+  const isPublicRoute = publicRoutes.some(
+    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+  )
+  if (isPublicRoute) {
+    return supabaseResponse
+  }
+
   // Protected client routes
   const protectedClientRoutes = ["/", "/salles", "/postes", "/compte", "/actualites"]
   const isProtectedClientRoute = protectedClientRoutes.some(
