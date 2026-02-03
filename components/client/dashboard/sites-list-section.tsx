@@ -113,7 +113,7 @@ export function SitesListSection() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="font-header text-xl text-foreground">Nos espaces</h2>
+          <h2 className="font-header text-xl text-foreground">Tous les sites Hopper</h2>
           {sitesWithDetails.length > 3 && (
             <button
               type="button"

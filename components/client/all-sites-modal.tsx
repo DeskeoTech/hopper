@@ -117,7 +117,7 @@ export function AllSitesModal({ open, onOpenChange, sites, onSiteSelect }: AllSi
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-4 md:rounded-t-[20px]">
           <h1 className="font-header text-xl font-bold uppercase tracking-tight">
-            Tous nos espaces
+            Tous les sites Hopper
           </h1>
           <button
             type="button"
