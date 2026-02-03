@@ -69,28 +69,30 @@ export default async function ClientLayout({
       }
     }
 
-    // Fetch plan from active contract
+    // Fetch plan from active contract (take most recent if multiple)
     const { data: contractData } = await supabase
       .from("contracts")
       .select(
         `
-        plans (name, price_per_seat_month, credits_per_month)
+        plans (name, price_per_seat_month, credits_per_person_month)
       `
       )
       .eq("company_id", userProfile.company_id)
       .eq("status", "active")
-      .single()
+      .order("start_date", { ascending: false })
+      .limit(1)
+      .maybeSingle()
 
     if (contractData?.plans) {
       const plan = contractData.plans as unknown as {
         name: string
         price_per_seat_month: number | null
-        credits_per_month: number | null
+        credits_per_person_month: number | null
       }
       userPlan = {
         name: plan.name,
         pricePerSeatMonth: plan.price_per_seat_month,
-        creditsPerMonth: plan.credits_per_month,
+        creditsPerMonth: plan.credits_per_person_month,
       }
     }
 

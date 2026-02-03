@@ -15,6 +15,7 @@ interface RoomPlanningGridProps {
   bookings: RoomBooking[]
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   remainingCredits: number
+  selectedDate: Date
 }
 
 // Photo slider component for room header
@@ -169,6 +170,7 @@ function MobileCalendarGrid({
   currentHour,
   currentMinutes,
   isWithinRange,
+  isToday,
   onSlotClick,
   onPhotoClick,
   canAffordRoom,
@@ -179,6 +181,7 @@ function MobileCalendarGrid({
   currentHour: number
   currentMinutes: number
   isWithinRange: boolean
+  isToday: boolean
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   onPhotoClick: (photos: string[], index: number) => void
   canAffordRoom: (room: MeetingRoomResource) => boolean
@@ -296,18 +299,18 @@ function MobileCalendarGrid({
                   <div className="relative">
                     {HOURS.map((hour, index) => {
                       const available = isSlotAvailable(room.id, hour)
-                      const isPast = currentHour > hour
+                      const isPast = isToday && currentHour > hour
 
                       return (
                         <button
                           key={hour}
                           type="button"
-                          onClick={() => available && affordable && !isPast && onSlotClick(room, hour)}
-                          disabled={!available || !affordable || isPast}
+                          onClick={() => available && !isPast && onSlotClick(room, hour)}
+                          disabled={!available || isPast}
                           className={cn(
                             "w-full transition-colors relative",
                             index < HOURS.length - 1 && "border-b border-foreground/5",
-                            available && affordable && !isPast
+                            available && !isPast
                               ? "hover:bg-primary/10 active:bg-primary/20 cursor-pointer"
                               : "cursor-not-allowed",
                             isPast && "bg-foreground/[0.02]"
@@ -355,6 +358,7 @@ export function RoomPlanningGrid({
   bookings,
   onSlotClick,
   remainingCredits,
+  selectedDate,
 }: RoomPlanningGridProps) {
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
@@ -384,6 +388,9 @@ export function RoomPlanningGrid({
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()
   const isWithinRange = currentHour >= 8 && currentHour < 20
+
+  // Check if selected date is today
+  const isToday = selectedDate.toDateString() === now.toDateString()
 
   // Calculate now indicator position (percentage from top of grid)
   const nowPosition = isWithinRange
@@ -422,6 +429,7 @@ export function RoomPlanningGrid({
           currentHour={currentHour}
           currentMinutes={currentMinutes}
           isWithinRange={isWithinRange}
+          isToday={isToday}
           onSlotClick={onSlotClick}
           onPhotoClick={handlePhotoClick}
           canAffordRoom={canAffordRoom}
@@ -535,18 +543,18 @@ export function RoomPlanningGrid({
                   <div className="relative">
                     {HOURS.map((hour, index) => {
                       const available = isSlotAvailable(room.id, hour)
-                      const isPast = currentHour > hour
+                      const isPast = isToday && currentHour > hour
 
                       return (
                         <button
                           key={hour}
                           type="button"
-                          onClick={() => available && affordable && !isPast && onSlotClick(room, hour)}
-                          disabled={!available || !affordable || isPast}
+                          onClick={() => available && !isPast && onSlotClick(room, hour)}
+                          disabled={!available || isPast}
                           className={cn(
                             "w-full transition-colors relative",
                             index < HOURS.length - 1 && "border-b border-foreground/5",
-                            available && affordable && !isPast
+                            available && !isPast
                               ? "hover:bg-primary/5 cursor-pointer"
                               : "cursor-not-allowed",
                             isPast && "bg-foreground/[0.02]"

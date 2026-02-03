@@ -236,23 +236,34 @@ export async function createMeetingRoomBooking(data: {
   }
 
   // 2. Check credits availability
-  const today = new Date().toISOString().split("T")[0]
-  const { data: credits, error: creditsError } = await supabase
+  // Fetch all credits for the company, then filter valid ones in JS
+  const { data: allCredits, error: creditsError } = await supabase
     .from("credits")
-    .select("id, remaining_credits, contracts!inner(company_id, status)")
-    .eq("contracts.company_id", data.companyId)
-    .eq("contracts.status", "active")
-    .lte("period", today)
-    .order("period", { ascending: false })
-    .limit(1)
-    .single()
+    .select("id, remaining_balance, expiration")
+    .eq("company_id", data.companyId)
+    .gt("remaining_balance", 0)
+    .order("created_at", { ascending: false })
 
-  if (creditsError || !credits) {
-    return { error: "Aucun crédit disponible pour cette période" }
+  if (creditsError) {
+    return { error: "Erreur lors de la vérification des crédits" }
   }
 
-  if (credits.remaining_credits < data.creditsToUse) {
-    return { error: `Crédits insuffisants (${credits.remaining_credits} restants, ${data.creditsToUse} requis)` }
+  // Filter valid credits (no expiration or expiration in the future)
+  const now = new Date()
+  const validCredits = (allCredits || []).filter((c) => {
+    if (!c.expiration) return true // No expiration = permanent
+    return new Date(c.expiration) > now
+  })
+
+  if (validCredits.length === 0) {
+    return { error: "Aucun crédit disponible" }
+  }
+
+  // Use the first valid credit record
+  const credits = validCredits[0]
+
+  if (credits.remaining_balance < data.creditsToUse) {
+    return { error: `Crédits insuffisants (${credits.remaining_balance} restants, ${data.creditsToUse} requis)` }
   }
 
   // 3. Create booking
@@ -274,11 +285,11 @@ export async function createMeetingRoomBooking(data: {
   }
 
   // 4. Deduct credits
+  const newBalance = credits.remaining_balance - data.creditsToUse
   const { error: creditUpdateError } = await supabase
     .from("credits")
     .update({
-      remaining_credits: credits.remaining_credits - data.creditsToUse,
-      updated_at: new Date().toISOString(),
+      remaining_balance: newBalance,
     })
     .eq("id", credits.id)
 
@@ -287,6 +298,20 @@ export async function createMeetingRoomBooking(data: {
     await supabase.from("bookings").delete().eq("id", booking.id)
     return { error: "Erreur lors de la déduction des crédits" }
   }
+
+  // 5. Create credit transaction record
+  await supabase.from("credit_transactions").insert({
+    credit_id: credits.id,
+    company_id: data.companyId,
+    booking_id: booking.id,
+    user_id: data.userId,
+    transaction_type: "debit",
+    amount: -data.creditsToUse,
+    balance_before: credits.remaining_balance,
+    balance_after: newBalance,
+    reason: "Réservation de salle de réunion",
+    performed_by: data.userId,
+  })
 
   revalidatePath("/")
   return { success: true, bookingId: booking.id }
@@ -342,26 +367,38 @@ export async function cancelBooking(
       .single()
 
     if (user?.company_id) {
-      // Find the active credit record for this company
-      const today = new Date().toISOString().split("T")[0]
+      // Find the credit record for this company (with valid credits or any recent one)
       const { data: creditRecord } = await supabase
         .from("credits")
-        .select("id, remaining_credits, contracts!inner(company_id, status)")
-        .eq("contracts.company_id", user.company_id)
-        .eq("contracts.status", "active")
-        .lte("period", today)
-        .order("period", { ascending: false })
+        .select("id, remaining_balance")
+        .eq("company_id", user.company_id)
+        .order("created_at", { ascending: false })
         .limit(1)
         .single()
 
       if (creditRecord) {
         // Refund the credits
+        const newBalance = creditRecord.remaining_balance + booking.credits_used
         await supabase
           .from("credits")
           .update({
-            remaining_credits: creditRecord.remaining_credits + booking.credits_used,
+            remaining_balance: newBalance,
           })
           .eq("id", creditRecord.id)
+
+        // Create credit transaction record for refund
+        await supabase.from("credit_transactions").insert({
+          credit_id: creditRecord.id,
+          company_id: user.company_id,
+          booking_id: bookingId,
+          user_id: booking.user_id,
+          transaction_type: "credit",
+          amount: booking.credits_used,
+          balance_before: creditRecord.remaining_balance,
+          balance_after: newBalance,
+          reason: "Annulation de réservation",
+          performed_by: userId || booking.user_id,
+        })
       }
     }
   }

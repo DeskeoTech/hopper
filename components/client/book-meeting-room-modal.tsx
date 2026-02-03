@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { Coins } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -65,7 +66,15 @@ export function BookMeetingRoomModal({
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         {!hasActivePlan && <ExpiredPassBanner userEmail={userEmail} />}
         <DialogHeader className="shrink-0">
-          <DialogTitle>Réserver une salle</DialogTitle>
+          <div className="flex items-center justify-between pr-8">
+            <DialogTitle>Réserver une salle</DialogTitle>
+            <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
+              <Coins className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
+              </span>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="flex-1 overflow-hidden">
