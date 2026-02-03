@@ -221,6 +221,7 @@ export interface ContractForDisplay {
   plan_name: string
   plan_recurrence: PlanRecurrence | null
   site_name: string | null
+  number_of_seats: number | null
 }
 
 // Unified reservation item (booking or contract)
@@ -253,6 +254,7 @@ export interface User {
   role: UserRole | null
   status: UserStatus | null
   company_id: string | null
+  contract_id: string | null
   photo_storage_path: string | null
   created_at: string
   updated_at: string

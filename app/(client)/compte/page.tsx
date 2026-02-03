@@ -12,16 +12,19 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile with company_id
+  // Fetch user profile with company_id, role, and contract_id
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id, company_id")
+    .select("id, company_id, role, contract_id")
     .eq("email", authUser.email)
     .single()
 
   if (!userProfile) {
     redirect("/login")
   }
+
+  // Determine if user is admin (admin or deskeo role)
+  const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
 
   // Fetch user's bookings with resource and site details
   const { data: bookings } = await supabase
@@ -44,19 +47,29 @@ export default async function ComptePage() {
     .order("start_date", { ascending: false })
     .limit(50)
 
-  // Fetch company's contracts (passes) with plan and site details
+  // Fetch contracts based on user role
+  // Admin: all company contracts
+  // User: only their assigned contract
   let contracts: ContractForDisplay[] = []
   if (userProfile.company_id) {
-    const { data: contractsData } = await supabase
+    let query = supabase
       .from("contracts")
       .select(`
         id,
         status,
         start_date,
         end_date,
+        Number_of_seats,
         plans (name, recurrence)
       `)
       .eq("company_id", userProfile.company_id)
+
+    // Regular user: filter by their assigned contract
+    if (!isAdmin && userProfile.contract_id) {
+      query = query.eq("id", userProfile.contract_id)
+    }
+
+    const { data: contractsData } = await query
       .order("start_date", { ascending: false })
       .limit(50)
 
@@ -70,6 +83,7 @@ export default async function ComptePage() {
         plan_name: plan?.name || "Pass",
         plan_recurrence: plan?.recurrence || null,
         site_name: null,
+        number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
       }
     })
   }
@@ -120,6 +134,7 @@ export default async function ComptePage() {
     <AccountPage
       bookings={transformedBookings}
       contracts={contracts}
+      isAdmin={isAdmin}
     />
   )
 }
