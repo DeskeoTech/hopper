@@ -34,7 +34,6 @@ import {
 import {
   getCompanyUsers,
   getCompanySeatsInfo,
-  deactivateUserByAdmin,
   createUserByAdmin,
 } from "@/lib/actions/users"
 import { assignUserToContract } from "@/lib/actions/user-contracts"
@@ -77,21 +76,6 @@ export function EntreprisePage({
   // Calculate seats info from contracts
   const totalSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
   const activeUsers = users.filter((u) => u.status === "active").length
-
-  const handleDeactivate = async (userId: string) => {
-    if (!company.id) return
-    setUpdatingUserId(userId)
-    setError(null)
-    const result = await deactivateUserByAdmin(userId, company.id)
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: "disabled" } : u))
-      )
-    }
-    setUpdatingUserId(null)
-  }
 
   const handleContractChange = async (userId: string, contractId: string | null) => {
     setUpdatingUserId(userId)
@@ -465,22 +449,6 @@ export function EntreprisePage({
                         <span className="text-xs text-foreground/40">
                           {getRoleLabel(user.role)}
                         </span>
-                      )}
-
-                      {/* Deactivate button */}
-                      {!isCurrentUser && !isDisabled && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeactivate(user.id)}
-                          disabled={isUpdating}
-                          className="rounded-full bg-foreground/5 px-2 py-1 text-[10px] text-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            "Désactiver"
-                          )}
-                        </button>
                       )}
                     </div>
                   </div>
