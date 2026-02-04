@@ -9,14 +9,12 @@ import type { ContractForDisplay } from "@/lib/types/database"
 
 interface ContractsListSectionProps {
   contracts: ContractForDisplay[]
-  isAdmin: boolean
 }
 
 const MAX_VISIBLE_CONTRACTS = 3
 
 export function ContractsListSection({
   contracts,
-  isAdmin,
 }: ContractsListSectionProps) {
   const [showAllModal, setShowAllModal] = useState(false)
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
@@ -35,11 +33,9 @@ export function ContractsListSection({
       })
   }, [contracts])
 
-  // Admin: show max 3 contracts, others: show all
-  const visibleContracts = isAdmin
-    ? activeContracts.slice(0, MAX_VISIBLE_CONTRACTS)
-    : activeContracts
-  const hasMore = isAdmin && activeContracts.length > MAX_VISIBLE_CONTRACTS
+  // Show max 3 contracts with "see more" button if needed
+  const visibleContracts = activeContracts.slice(0, MAX_VISIBLE_CONTRACTS)
+  const hasMore = activeContracts.length > MAX_VISIBLE_CONTRACTS
 
   const handleSelectContract = (contract: ContractForDisplay) => {
     setSelectedContract(contract)

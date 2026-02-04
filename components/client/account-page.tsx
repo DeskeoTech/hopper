@@ -76,8 +76,10 @@ export function AccountPage({ bookings, contracts, isAdmin }: AccountPageProps) 
         {/* Upcoming Reservations (meeting rooms only) */}
         <UserBookingsSection bookings={bookings} userId={user.id} />
 
-        {/* Contracts list */}
-        <ContractsListSection contracts={contracts} isAdmin={isAdmin} />
+        {/* Contracts list - only visible for admins */}
+        {isAdmin && (
+          <ContractsListSection contracts={contracts} />
+        )}
 
         {/* Sites List */}
         <SitesListSection />
