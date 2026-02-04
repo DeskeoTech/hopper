@@ -22,12 +22,16 @@ const typeLabels: Record<CreditMovementType, string> = {
   reservation: "Réservation",
   cancellation: "Annulation",
   adjustment: "Ajustement",
+  allocation: "Attribution",
+  expiration: "Expiration",
 }
 
 const typeColors: Record<CreditMovementType, string> = {
   reservation: "bg-blue-100 text-blue-700",
   cancellation: "bg-orange-100 text-orange-700",
   adjustment: "bg-purple-100 text-purple-700",
+  allocation: "bg-green-100 text-green-700",
+  expiration: "bg-red-100 text-red-700",
 }
 
 const filterOptions = [
@@ -35,6 +39,8 @@ const filterOptions = [
   { value: "reservation", label: "Réservation" },
   { value: "cancellation", label: "Annulation" },
   { value: "adjustment", label: "Ajustement" },
+  { value: "allocation", label: "Attribution" },
+  { value: "expiration", label: "Expiration" },
 ]
 
 export function CreditsHistoryTable({ movements }: CreditsHistoryTableProps) {

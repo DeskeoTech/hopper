@@ -308,8 +308,8 @@ export async function createMeetingRoomBooking(data: {
     company_id: data.companyId,
     booking_id: booking.id,
     user_id: data.userId,
-    transaction_type: "debit",
-    amount: -data.creditsToUse,
+    transaction_type: "consumption",
+    amount: data.creditsToUse,
     balance_before: credits.remaining_balance,
     balance_after: newBalance,
     reason: "Réservation de salle de réunion",
@@ -395,8 +395,8 @@ export async function cancelBooking(
           company_id: user.company_id,
           booking_id: bookingId,
           user_id: booking.user_id,
-          transaction_type: "credit",
-          amount: booking.credits_used,
+          transaction_type: "refund",
+          amount: -booking.credits_used,
           balance_before: creditRecord.remaining_balance,
           balance_after: newBalance,
           reason: "Annulation de réservation",
@@ -545,10 +545,11 @@ export async function createBookingFromAdmin(data: {
   }
 
   // Deduct credits
+  const newBalance = creditRecord.remaining_credits - creditsNeeded
   const { error: creditUpdateError } = await supabase
     .from("credits")
     .update({
-      remaining_credits: creditRecord.remaining_credits - creditsNeeded,
+      remaining_credits: newBalance,
       updated_at: new Date().toISOString(),
     })
     .eq("id", creditRecord.id)
@@ -558,6 +559,19 @@ export async function createBookingFromAdmin(data: {
     await supabase.from("bookings").delete().eq("id", booking.id)
     return { error: "Erreur lors de la déduction des crédits" }
   }
+
+  // Create credit transaction record
+  await supabase.from("credit_transactions").insert({
+    credit_id: creditRecord.id,
+    company_id: companyId,
+    booking_id: booking.id,
+    user_id: data.userId,
+    transaction_type: "consumption",
+    amount: creditsNeeded,
+    balance_before: creditRecord.remaining_credits,
+    balance_after: newBalance,
+    reason: "Réservation de salle de réunion",
+  })
 
   revalidatePath("/admin/reservations")
   return { success: true, bookingId: booking.id }
