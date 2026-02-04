@@ -22,6 +22,7 @@ interface RoomPlanningGridProps {
   bookings: RoomBooking[]
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
+  currentUserId?: string
 }
 
 // Fullscreen photo viewer
@@ -497,9 +498,10 @@ interface RoomTimelineProps {
   bookings: RoomBooking[]
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
+  currentUserId?: string
 }
 
-export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate }: RoomTimelineProps) {
+export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId }: RoomTimelineProps) {
   // Group bookings by room
   const bookingsByRoom = useMemo(() => {
     const map = new Map<string, RoomBooking[]>()
@@ -536,7 +538,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate }: Roo
   return (
     <>
       {/* Mobile timeline */}
-      <div className="sm:hidden -mx-3 px-3">
+      <div className="sm:hidden -mx-3 px-3 pt-2">
         <div
           className="relative"
           style={{ height: HOURS.length * MOBILE_SLOT_HEIGHT }}
@@ -623,15 +625,19 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate }: Roo
                     {roomBookings.map((booking) => {
                       const top = (booking.startHour - 8) * MOBILE_SLOT_HEIGHT
                       const height = (booking.endHour - booking.startHour) * MOBILE_SLOT_HEIGHT
+                      const isOwnBooking = currentUserId && booking.userId === currentUserId
 
                       return (
                         <div
                           key={booking.id}
-                          className="absolute left-0.5 right-0.5 rounded bg-foreground/10 p-1 overflow-hidden pointer-events-none z-10"
+                          className={cn(
+                            "absolute left-0.5 right-0.5 rounded p-1 overflow-hidden pointer-events-none z-10",
+                            isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                          )}
                           style={{ top: top + 1, height: height - 2 }}
                         >
                           <p className="text-[9px] font-medium text-foreground truncate leading-tight">
-                            {booking.title || "Réservé"}
+                            {isOwnBooking ? (booking.title || "Ma réservation") : "Indisponible"}
                           </p>
                           {height > 35 && (
                             <p className="text-[8px] text-muted-foreground/70 mt-0.5">
@@ -650,7 +656,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate }: Roo
       </div>
 
       {/* Desktop timeline */}
-      <div className="hidden sm:block -mx-4 sm:-mx-6 px-4 sm:px-6">
+      <div className="hidden sm:block -mx-4 sm:-mx-6 px-4 sm:px-6 pt-3">
         <div
           className="relative"
           style={{ height: HOURS.length * SLOT_HEIGHT }}
@@ -746,23 +752,22 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate }: Roo
                   {roomBookings.map((booking) => {
                     const top = (booking.startHour - 8) * SLOT_HEIGHT
                     const height = (booking.endHour - booking.startHour) * SLOT_HEIGHT
+                    const isOwnBooking = currentUserId && booking.userId === currentUserId
 
                     return (
                       <div
                         key={booking.id}
-                        className="absolute left-1 right-1 rounded-md bg-foreground/10 p-1.5 overflow-hidden pointer-events-none z-10"
+                        className={cn(
+                          "absolute left-1 right-1 rounded-md p-1.5 overflow-hidden pointer-events-none z-10",
+                          isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                        )}
                         style={{ top: top + 1, height: height - 2 }}
                       >
                         <p className="text-xs font-medium text-foreground truncate">
-                          {booking.title || "Réservé"}
+                          {isOwnBooking ? (booking.title || "Ma réservation") : "Indisponible"}
                         </p>
-                        {booking.userName && height > 50 && (
+                        {isOwnBooking && height > 50 && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {booking.userName}
-                          </p>
-                        )}
-                        {height > 70 && (
-                          <p className="text-[10px] text-muted-foreground/70 mt-0.5">
                             {booking.startHour}h - {booking.endHour}h
                           </p>
                         )}
@@ -787,6 +792,7 @@ export function RoomPlanningGrid({
   bookings,
   onSlotClick,
   selectedDate,
+  currentUserId,
 }: RoomPlanningGridProps) {
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
@@ -817,6 +823,7 @@ export function RoomPlanningGrid({
         bookings={bookings}
         onSlotClick={onSlotClick}
         selectedDate={selectedDate}
+        currentUserId={currentUserId}
       />
     </>
   )

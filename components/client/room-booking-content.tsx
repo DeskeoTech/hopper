@@ -42,7 +42,7 @@ import type { RoomBooking } from "@/lib/actions/bookings"
 type View = "planning" | "slots" | "confirm"
 
 // Number of days to show in the day picker
-const VISIBLE_DAYS_COUNT = 7
+const VISIBLE_DAYS_COUNT = 5
 
 interface RoomBookingContentProps {
   userId: string
@@ -55,6 +55,8 @@ interface RoomBookingContentProps {
   hasActivePlan?: boolean
   // For modal usage
   isModal?: boolean
+  selectedSiteIdProp?: string | null  // Controlled site selection from parent
+  onSiteChange?: (siteId: string | null) => void  // Callback when site changes
   onClose?: () => void
   onSuccess?: () => void
 }
@@ -69,11 +71,22 @@ export function RoomBookingContent({
   userEmail = "",
   hasActivePlan = true,
   isModal = false,
+  selectedSiteIdProp,
+  onSiteChange,
   onClose,
   onSuccess,
 }: RoomBookingContentProps) {
   const [view, setView] = useState<View>("planning")
-  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(mainSiteId)
+  // Use controlled state from parent if provided (modal mode), otherwise local state
+  const [localSelectedSiteId, setLocalSelectedSiteId] = useState<string | null>(mainSiteId)
+  const selectedSiteId = isModal && selectedSiteIdProp !== undefined ? selectedSiteIdProp : localSelectedSiteId
+  const setSelectedSiteId = (siteId: string | null) => {
+    if (isModal && onSiteChange) {
+      onSiteChange(siteId)
+    } else {
+      setLocalSelectedSiteId(siteId)
+    }
+  }
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [viewCenterDate, setViewCenterDate] = useState<Date>(new Date()) // Controls which days are shown in the picker
   const [selectedRoom, setSelectedRoom] = useState<MeetingRoomResource | null>(null)
@@ -444,48 +457,58 @@ export function RoomBookingContent({
       {/* Header controls - always visible in planning view */}
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
-          {/* Site selector (modal only - above date row) */}
+          {/* Modal: Capacity filter (left) + Day picker (centered absolutely) */}
           {isModal && (
-            <div className="flex items-center gap-2 w-full">
-              <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" />
-              <SearchableSelect
-                options={sortedSites.map((s) => ({
-                  value: s.id,
-                  label: s.name,
-                }))}
-                value={selectedSiteId || ""}
-                onValueChange={handleSiteChange}
-                placeholder="Sélectionner un site"
-                searchPlaceholder="Rechercher un site..."
-                triggerClassName="flex-1"
-              />
-            </div>
-          )}
+            <div className="relative flex items-center justify-between h-[52px]">
+              {/* Capacity filter - left */}
+              {capacityOptions.length > 0 ? (
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex gap-1">
+                    <Button
+                      variant={capacityFilter === null ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2 text-xs rounded-full"
+                      onClick={() => setCapacityFilter(null)}
+                    >
+                      Toutes
+                    </Button>
+                    {capacityOptions.map((cap) => (
+                      <Button
+                        key={cap}
+                        variant={capacityFilter === cap ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs rounded-full"
+                        onClick={() => setCapacityFilter(cap)}
+                      >
+                        {cap}+
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div /> // Empty div for spacing when no capacity options
+              )}
 
-          {/* Date row */}
-          <div className={`flex flex-col gap-3 sm:flex-row sm:items-center ${isModal ? "sm:justify-center" : "sm:justify-between"}`}>
-
-            {/* Date navigation - different for modal vs page */}
-            {isModal ? (
-              // Modal: horizontal day picker with arrows
-              <div className="flex items-center gap-2 w-full justify-center">
+              {/* Day picker - absolutely centered */}
+              <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
                 {/* Previous arrow */}
                 <button
                   type="button"
                   onClick={handlePrevDays}
                   disabled={!canNavigatePrev}
                   className={cn(
-                    "flex h-[58px] w-10 shrink-0 items-center justify-center rounded-[16px] transition-colors",
+                    "flex h-[52px] w-9 shrink-0 items-center justify-center rounded-[12px] transition-colors",
                     canNavigatePrev
                       ? "bg-foreground/5 hover:bg-foreground/10"
                       : "bg-foreground/5 opacity-50 cursor-not-allowed"
                   )}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
 
                 {/* Day buttons */}
-                <div className="flex gap-1.5">
+                <div className="flex gap-1">
                   {upcomingDays.map((day) => {
                     const isSelected = isSameDay(day, selectedDate)
                     const dayIsToday = isToday(day)
@@ -495,26 +518,26 @@ export function RoomBookingContent({
                         type="button"
                         onClick={() => handleDayClick(day)}
                         className={cn(
-                          "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-[16px] transition-all",
+                          "flex flex-col items-center justify-center min-w-[46px] h-[52px] rounded-[12px] transition-all",
                           isSelected
                             ? "bg-[#1B1918] text-white"
                             : "bg-foreground/5 hover:bg-foreground/10 text-foreground"
                         )}
                       >
                         <span className={cn(
-                          "text-[10px] font-medium uppercase tracking-wide",
+                          "text-[9px] font-medium uppercase tracking-wide",
                           isSelected ? "text-white/80" : "text-muted-foreground"
                         )}>
                           {format(day, "EEE", { locale: fr })}
                         </span>
                         <span className={cn(
-                          "text-lg font-semibold leading-tight",
+                          "text-base font-semibold leading-tight",
                           isSelected ? "text-white" : "text-foreground"
                         )}>
                           {format(day, "d")}
                         </span>
                         <span className={cn(
-                          "text-[9px]",
+                          "text-[8px]",
                           isSelected ? "text-white/70" : "text-muted-foreground/70"
                         )}>
                           {dayIsToday ? "Auj." : format(day, "MMM", { locale: fr })}
@@ -528,18 +551,18 @@ export function RoomBookingContent({
                 <button
                   type="button"
                   onClick={handleNextDays}
-                  className="flex h-[58px] w-10 shrink-0 items-center justify-center rounded-[16px] bg-foreground/5 hover:bg-foreground/10 transition-colors"
+                  className="flex h-[52px] w-9 shrink-0 items-center justify-center rounded-[12px] bg-foreground/5 hover:bg-foreground/10 transition-colors"
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
 
-                {/* Calendar button for other dates */}
+                {/* Calendar button */}
                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-[58px] w-10 shrink-0 rounded-[16px] border-0 bg-foreground/5 hover:bg-foreground/10"
+                      className="h-[52px] w-9 shrink-0 rounded-[12px] border-0 bg-foreground/5 hover:bg-foreground/10"
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </Button>
@@ -554,7 +577,14 @@ export function RoomBookingContent({
                   </PopoverContent>
                 </Popover>
               </div>
-            ) : (
+            </div>
+          )}
+
+          {/* Date row - Page only */}
+          <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${isModal ? "hidden" : ""}`}>
+
+            {/* Date navigation - page mode */}
+            {!isModal && (
               // Page: classic navigation with arrows
               <div className="flex items-center gap-1">
                 <Button
@@ -740,38 +770,11 @@ export function RoomBookingContent({
                     bookings={bookings}
                     onSlotClick={handleSlotClick}
                     selectedDate={selectedDate}
+                    currentUserId={userId}
                   />
                 )}
               </div>
 
-              {/* Capacity filter - fixed at bottom */}
-              {capacityOptions.length > 0 && (
-                <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t shrink-0">
-                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Capacité</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      variant={capacityFilter === null ? "default" : "outline"}
-                      size="sm"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => setCapacityFilter(null)}
-                    >
-                      Toutes
-                    </Button>
-                    {capacityOptions.map((cap) => (
-                      <Button
-                        key={cap}
-                        variant={capacityFilter === cap ? "default" : "outline"}
-                        size="sm"
-                        className="h-7 px-2 text-xs"
-                        onClick={() => setCapacityFilter(cap)}
-                      >
-                        {cap}+
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
 
@@ -961,6 +964,7 @@ export function RoomBookingContent({
                 bookings={bookings}
                 onSlotClick={handleSlotClick}
                 selectedDate={selectedDate}
+                currentUserId={userId}
               />
             )}
 
