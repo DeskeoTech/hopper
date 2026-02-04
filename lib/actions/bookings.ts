@@ -81,6 +81,7 @@ export async function checkAvailability(
 export interface RoomBooking {
   id: string
   resourceId: string
+  userId: string
   startHour: number
   endHour: number
   title: string | null
@@ -120,6 +121,7 @@ export async function getRoomBookingsForDate(
     .select(`
       id,
       resource_id,
+      user_id,
       start_date,
       end_date,
       notes,
@@ -139,6 +141,7 @@ export async function getRoomBookingsForDate(
     return {
       id: b.id,
       resourceId: b.resource_id,
+      userId: b.user_id,
       startHour: new Date(b.start_date).getHours(),
       endHour: new Date(b.end_date).getHours(),
       title: b.notes,
