@@ -268,6 +268,7 @@ export interface User {
   company_id: string | null
   contract_id: string | null
   photo_storage_path: string | null
+  is_hopper_admin: boolean
   created_at: string
   updated_at: string
 }

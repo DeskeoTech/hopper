@@ -239,11 +239,8 @@ export default async function ClientLayout({
   // Check if user has Deskeo email domain (for skipping onboarding)
   const isDeskeoEmployee =
     authUser.email.toLowerCase().endsWith("@deskeo.fr") || authUser.email.toLowerCase().endsWith("@deskeo.com")
-  // To access admin interface, user must have BOTH:
-  // 1. Role "admin" in the users table
-  // 2. Email from Deskeo domain (@deskeo.fr)
-  const isDeskeoAdmin =
-    userProfile.role === "admin" && authUser.email.toLowerCase().endsWith("@deskeo.fr")
+  // Check if user can access Hopper admin interface
+  const isHopperAdmin = userProfile.is_hopper_admin === true
 
   // Fetch company admin for non-admin users (to display in contact dialog)
   let companyAdmin: { first_name: string | null; last_name: string | null; email: string | null } | null = null
@@ -298,7 +295,7 @@ export default async function ClientLayout({
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
-      isDeskeoEmployee={isDeskeoAdmin}
+      isDeskeoEmployee={isHopperAdmin}
       companyAdmin={companyAdmin}
     >
       {needsOnboarding && (
