@@ -235,9 +235,15 @@ export default async function ClientLayout({
     transportationLines: site.transportation_lines,
   }))
 
-  const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
+  const isAdmin = userProfile.role === "admin"
+  // Check if user has Deskeo email domain (for skipping onboarding)
   const isDeskeoEmployee =
-    authUser.email.endsWith("@deskeo.fr") || authUser.email.endsWith("@deskeo.com")
+    authUser.email.toLowerCase().endsWith("@deskeo.fr") || authUser.email.toLowerCase().endsWith("@deskeo.com")
+  // To access admin interface, user must have BOTH:
+  // 1. Role "admin" in the users table
+  // 2. Email from Deskeo domain (@deskeo.fr)
+  const isDeskeoAdmin =
+    userProfile.role === "admin" && authUser.email.toLowerCase().endsWith("@deskeo.fr")
 
   // Fetch company admin for non-admin users (to display in contact dialog)
   let companyAdmin: { first_name: string | null; last_name: string | null; email: string | null } | null = null
@@ -256,7 +262,7 @@ export default async function ClientLayout({
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
   // Check if user needs onboarding (no company or onboarding not done)
-  // Applies to both "user" and "admin" roles (but not "deskeo" employees)
+  // Applies to both "user" and "admin" roles (but not Deskeo employees)
   const needsOnboarding =
     (userProfile.role === "user" || userProfile.role === "admin") &&
     !isDeskeoEmployee &&
@@ -292,7 +298,7 @@ export default async function ClientLayout({
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
-      isDeskeoEmployee={isDeskeoEmployee}
+      isDeskeoEmployee={isDeskeoAdmin}
       companyAdmin={companyAdmin}
     >
       {needsOnboarding && (

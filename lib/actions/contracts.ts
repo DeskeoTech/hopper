@@ -113,7 +113,7 @@ export async function getContractUsers(contractId: string): Promise<{
   }
 
   // Regular users can only see their own contract's users
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "deskeo"
+  const isAdmin = currentUser.role === "admin"
   if (!isAdmin && currentUser.contract_id !== contractId) {
     return { data: null, error: "Accès non autorisé" }
   }
@@ -159,7 +159,7 @@ export async function getCompanyUsersNotInContract(
   }
 
   // Only admins can access this
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "deskeo"
+  const isAdmin = currentUser.role === "admin"
   if (!isAdmin || currentUser.company_id !== companyId) {
     return { data: null, error: "Accès non autorisé" }
   }
@@ -203,7 +203,7 @@ export async function assignUserToContract(
   }
 
   // Only admins can assign users
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "deskeo"
+  const isAdmin = currentUser.role === "admin"
   if (!isAdmin) {
     return { success: false, error: "Accès non autorisé" }
   }
@@ -268,7 +268,7 @@ export async function removeUserFromContract(
   }
 
   // Only admins can remove users
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "deskeo"
+  const isAdmin = currentUser.role === "admin"
   if (!isAdmin) {
     return { success: false, error: "Accès non autorisé" }
   }
@@ -328,7 +328,7 @@ export async function createUserForContract(
   }
 
   // Only admins can create users
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "deskeo"
+  const isAdmin = currentUser.role === "admin"
   if (!isAdmin || currentUser.company_id !== companyId) {
     return { success: false, error: "Accès non autorisé" }
   }

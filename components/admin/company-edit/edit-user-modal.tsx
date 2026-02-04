@@ -133,7 +133,6 @@ export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) 
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="deskeo">Deskeo</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

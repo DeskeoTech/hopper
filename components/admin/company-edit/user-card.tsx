@@ -30,7 +30,6 @@ export function UserCard({ user, companyId }: UserCardProps) {
   const fullName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "Sans nom"
   const isActive = user.status === "active"
   const isAdmin = user.role === "admin"
-  const isDeskeo = user.role === "deskeo"
 
   const handleToggleStatus = async () => {
     setLoading(true)
@@ -52,12 +51,6 @@ export function UserCard({ user, companyId }: UserCardProps) {
               <span className="flex items-center gap-1 rounded-sm bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-700">
                 <Shield className="h-3 w-3" />
                 Admin
-              </span>
-            )}
-            {isDeskeo && (
-              <span className="flex items-center gap-1 rounded-sm bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
-                <Shield className="h-3 w-3" />
-                Deskeo
               </span>
             )}
             <span

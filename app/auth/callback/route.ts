@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server"
-import { isEmailInAirtable } from "@/lib/airtable/authorized-emails"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
@@ -18,9 +17,6 @@ export async function GET(request: Request) {
       } = await supabase.auth.getUser()
 
       if (user?.email) {
-        // Check if email is in Airtable collaborator table
-        const isCollaborator = await isEmailInAirtable(user.email)
-
         // Check if user exists in users table
         const { data: existingUser } = await supabase
           .from("users")
@@ -29,14 +25,6 @@ export async function GET(request: Request) {
           .single()
 
         if (existingUser) {
-          // Update role to 'deskeo' if collaborator (unless already admin)
-          if (isCollaborator && existingUser.role !== "admin") {
-            await supabase
-              .from("users")
-              .update({ role: "deskeo" })
-              .eq("id", existingUser.id)
-          }
-
           // Auto-assign first user of a company to the first contract
           if (existingUser.company_id && !existingUser.contract_id) {
             const { count: userCount } = await supabase
@@ -63,11 +51,7 @@ export async function GET(request: Request) {
           }
 
           // Redirect based on role
-          const userRole = isCollaborator && existingUser.role !== "admin"
-            ? "deskeo"
-            : existingUser.role
-
-          if (userRole === "user") {
+          if (existingUser.role === "user") {
             return NextResponse.redirect(`${origin}/compte`)
           }
           return NextResponse.redirect(`${origin}${next}`)
