@@ -60,21 +60,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // If user is authenticated, check role in users table AND email domain
+  // If user is authenticated, check is_hopper_admin flag
   if (user && request.nextUrl.pathname.startsWith("/admin")) {
     const { data: userData } = await supabase
       .from("users")
-      .select("role")
+      .select("is_hopper_admin")
       .eq("email", user.email)
       .limit(1)
       .maybeSingle()
 
-    // Check if email belongs to Deskeo domain
-    const isDeskeoEmail = user.email?.toLowerCase().endsWith("@deskeo.fr")
-
-    // Only allow users with admin role AND Deskeo email domain
-    // Both conditions must be met (AND, not OR)
-    if (!userData || userData.role !== "admin" || !isDeskeoEmail) {
+    // Only allow users with is_hopper_admin = true
+    if (!userData || !userData.is_hopper_admin) {
       return NextResponse.rewrite(new URL("/not-found", request.url))
     }
   }
