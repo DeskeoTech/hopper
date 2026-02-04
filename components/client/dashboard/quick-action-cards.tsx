@@ -33,7 +33,7 @@ function ActionCard({ image, title, description, capacity, buttonText, onClick }
       <div className="absolute bottom-3 left-3 right-3 rounded-[12px] bg-card p-5 flex flex-col h-[190px]">
         <h3 className="font-header text-lg font-bold uppercase tracking-tight">{title}</h3>
         {description && (
-          <p className="mt-1.5 text-base text-muted-foreground line-clamp-2">{description}</p>
+          <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
         )}
         <div className="flex-1" />
         <Button
@@ -84,7 +84,7 @@ export function QuickActionCards() {
         <ActionCard
           image={CREDITS_IMAGE}
           title="Acheter des crédits"
-          description="Rechargez votre compte pour vos prochaines réservations"
+          description="Rechargez votre compte"
           buttonText="Acheter"
           onClick={handleBuyCredits}
         />
