@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, type ReactNode } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement } from "@/lib/types/database"
+import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement, TransportationStop } from "@/lib/types/database"
 
 interface Site {
   id: string
@@ -30,6 +30,7 @@ export interface SiteWithDetails {
   equipments: Equipment[] | null
   instructions: string | null
   access: string | null
+  transportationLines: TransportationStop[] | null
 }
 
 interface ClientLayoutContextValue {

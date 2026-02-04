@@ -11,6 +11,9 @@ import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instruc
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { MetroLineBadge } from "@/components/ui/metro-line-badge"
+import type { TransportationStop } from "@/lib/types/database"
+import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
 
@@ -55,6 +58,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
     },
     {} as Record<string, typeof resources>,
   )
+
+  // Typed transportation lines to avoid multiple casts
+  const transportationLines = site.transportation_lines as TransportationStop[] | null
 
   return (
     <div className="space-y-6">
@@ -105,13 +111,13 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 <EditInstructionsModal
                   siteId={site.id}
                   initialInstructions={site.instructions}
-                  initialAccess={site.access}
+                  initialTransportation={transportationLines}
                 />
                 <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
                   <FileText className="h-5 w-5" />
                   Instructions & Accès
                 </h2>
-                {site.instructions || site.access ? (
+                {site.instructions || (transportationLines && transportationLines.length > 0) ? (
                   <div className="space-y-4">
                     {site.instructions && (
                       <div>
@@ -119,10 +125,21 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                         <p className="mt-1 text-foreground whitespace-pre-wrap">{site.instructions}</p>
                       </div>
                     )}
-                    {site.access && (
+                    {transportationLines && transportationLines.length > 0 && (
                       <div>
-                        <h3 className="text-sm font-medium text-muted-foreground">Accès</h3>
-                        <p className="mt-1 text-foreground">{site.access}</p>
+                        <h3 className="text-sm font-medium text-muted-foreground">Accès (transports)</h3>
+                        <div className="mt-2 space-y-2">
+                          {groupTransportByStation(transportationLines).map(({ station, lines }) => (
+                            <div key={station} className="flex items-center gap-2">
+                              <div className="flex gap-1">
+                                {lines.map((line) => (
+                                  <MetroLineBadge key={line} line={line} size="sm" />
+                                ))}
+                              </div>
+                              <span className="text-sm text-foreground">{station}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -312,3 +329,4 @@ function getResourceTypeLabel(type: string): string {
   }
   return labels[type] || type
 }
+

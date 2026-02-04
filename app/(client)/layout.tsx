@@ -158,7 +158,7 @@ export default async function ClientLayout({
       id, name, address, is_nomad,
       opening_hours, opening_days,
       wifi_ssid, wifi_password,
-      equipments, instructions, access
+      equipments, instructions, access, transportation_lines
     `)
     .eq("status", "open")
     .order("name")
@@ -232,6 +232,7 @@ export default async function ClientLayout({
     equipments: site.equipments,
     instructions: site.instructions,
     access: site.access,
+    transportationLines: site.transportation_lines,
   }))
 
   const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"

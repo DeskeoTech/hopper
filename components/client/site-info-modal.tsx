@@ -17,7 +17,9 @@ import {
 import { Button } from "@/components/ui/button"
 import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
 import { cn } from "@/lib/utils"
-import type { Equipment } from "@/lib/types/database"
+import type { Equipment, TransportationStop } from "@/lib/types/database"
+import { MetroLineBadge } from "@/components/ui/metro-line-badge"
+import { groupTransportByStation } from "@/lib/utils/transportation"
 
 interface SiteInfoModalProps {
   open: boolean
@@ -191,13 +193,24 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
               <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
             </a>
 
-            {/* Metro/Access */}
-            {site.access && (
-              <div className="flex items-center gap-3">
+            {/* Transportation */}
+            {site.transportationLines && site.transportationLines.length > 0 && (
+              <div className="flex items-start gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                   <Train className="h-5 w-5 text-foreground/70" />
                 </div>
-                <p className="text-sm">{site.access}</p>
+                <div className="flex-1 min-w-0 pt-2 space-y-1.5">
+                  {groupTransportByStation(site.transportationLines as TransportationStop[]).map(({ station, lines }) => (
+                    <div key={station} className="flex items-center gap-2">
+                      <div className="flex gap-1">
+                        {lines.map((line) => (
+                          <MetroLineBadge key={line} line={line} size="sm" />
+                        ))}
+                      </div>
+                      <span className="text-sm">{station}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

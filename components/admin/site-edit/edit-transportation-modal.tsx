@@ -4,7 +4,6 @@ import { useState } from "react"
 import { Pencil, Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import {
   Dialog,
@@ -32,24 +31,21 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { MetroLineBadge, METRO_LINES, RER_LINES } from "@/components/ui/metro-line-badge"
-import { updateSiteInstructionsAndTransportation } from "@/lib/actions/sites"
+import { updateSiteTransportation } from "@/lib/actions/sites"
 import type { TransportationStop, TransportLine } from "@/lib/types/database"
 
-interface EditInstructionsModalProps {
+interface EditTransportationModalProps {
   siteId: string
-  initialInstructions: string | null
   initialTransportation: TransportationStop[] | null
 }
 
-export function EditInstructionsModal({
+export function EditTransportationModal({
   siteId,
-  initialInstructions,
   initialTransportation,
-}: EditInstructionsModalProps) {
+}: EditTransportationModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [instructions, setInstructions] = useState(initialInstructions || "")
   const [stops, setStops] = useState<TransportationStop[]>(initialTransportation || [])
 
   // Form state for adding new stop
@@ -80,8 +76,7 @@ export function EditInstructionsModal({
 
   const handleConfirm = async () => {
     setLoading(true)
-    const result = await updateSiteInstructionsAndTransportation(siteId, {
-      instructions: instructions || null,
+    const result = await updateSiteTransportation(siteId, {
       transportation_lines: stops.length > 0 ? stops : null,
     })
     setLoading(false)
@@ -98,7 +93,6 @@ export function EditInstructionsModal({
     setOpen(newOpen)
     if (newOpen) {
       // Reset to initial state when opening
-      setInstructions(initialInstructions || "")
       setStops(initialTransportation || [])
       setSelectedLine("")
       setStationName("")
@@ -115,26 +109,13 @@ export function EditInstructionsModal({
         </DialogTrigger>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Modifier les instructions et l'accès</DialogTitle>
+            <DialogTitle>Modifier les transports</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="instructions">Instructions</Label>
-              <Textarea
-                id="instructions"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                rows={4}
-                placeholder="Instructions pour les utilisateurs..."
-              />
-            </div>
-
-            {/* Transportation Stops */}
-            <div className="space-y-3">
-              <Label>Accès (lignes de transport)</Label>
-
-              {/* Current stops list */}
-              {stops.length > 0 && (
+            {/* Current stops list */}
+            {stops.length > 0 && (
+              <div className="space-y-2">
+                <Label>Arrêts configurés</Label>
                 <div className="space-y-2 rounded-lg border p-3">
                   {stops.map((stop, index) => (
                     <div
@@ -155,63 +136,66 @@ export function EditInstructionsModal({
                     </div>
                   ))}
                 </div>
-              )}
-
-              {/* Add new stop form */}
-              <div className="space-y-2">
-                <div className="flex gap-2">
-                  <Select value={selectedLine} onValueChange={setSelectedLine}>
-                    <SelectTrigger className="w-[140px]">
-                      <SelectValue placeholder="Ligne" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                        Métro
-                      </div>
-                      {METRO_LINES.map((line) => (
-                        <SelectItem key={line} value={line}>
-                          <div className="flex items-center gap-2">
-                            <MetroLineBadge line={line} size="sm" />
-                            <span>{line}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                      <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
-                        RER
-                      </div>
-                      {RER_LINES.map((line) => (
-                        <SelectItem key={line} value={line}>
-                          <div className="flex items-center gap-2">
-                            <MetroLineBadge line={line} size="sm" />
-                            <span>{line.replace("RER ", "")}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input
-                    className="flex-1"
-                    placeholder="Station"
-                    value={stationName}
-                    onChange={(e) => setStationName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault()
-                        handleAddStop()
-                      }
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={handleAddStop}
-                    disabled={!selectedLine || !stationName.trim()}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
               </div>
+            )}
+
+            {/* Add new stop form */}
+            <div className="space-y-3">
+              <Label>Ajouter un arrêt</Label>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Ligne</Label>
+                <Select value={selectedLine} onValueChange={setSelectedLine}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une ligne" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      Métro
+                    </div>
+                    {METRO_LINES.map((line) => (
+                      <SelectItem key={line} value={line}>
+                        <div className="flex items-center gap-2">
+                          <MetroLineBadge line={line} size="sm" />
+                          <span>Ligne {line}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                      RER
+                    </div>
+                    {RER_LINES.map((line) => (
+                      <SelectItem key={line} value={line}>
+                        <div className="flex items-center gap-2">
+                          <MetroLineBadge line={line} size="sm" />
+                          <span>{line}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Station</Label>
+                <Input
+                  placeholder="Nom de la station"
+                  value={stationName}
+                  onChange={(e) => setStationName(e.target.value)}
+                />
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={handleAddStop}
+                disabled={!selectedLine || !stationName.trim()}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Ajouter
+              </Button>
             </div>
 
             <DialogFooter>
