@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { RoomPlanningGrid } from "./room-planning-grid"
+import { RoomPlanningGrid, RoomHeaders, RoomTimeline, PhotoViewer } from "./room-planning-grid"
 import { TimeSlotPicker } from "./time-slot-picker"
 import {
   getMeetingRoomsBySite,
@@ -34,12 +34,15 @@ import {
   checkAvailability,
   createMeetingRoomBooking,
 } from "@/lib/actions/bookings"
-import { disabledDateMatcher, getNextBusinessDay, getNextBusinessDays, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
+import { disabledDateMatcher, getNextBusinessDay, getNextBusinessDays, getBusinessDaysFrom, getBusinessDaysCentered, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
 type View = "planning" | "slots" | "confirm"
+
+// Number of days to show in the day picker
+const VISIBLE_DAYS_COUNT = 7
 
 interface RoomBookingContentProps {
   userId: string
@@ -72,6 +75,7 @@ export function RoomBookingContent({
   const [view, setView] = useState<View>("planning")
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(mainSiteId)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [viewCenterDate, setViewCenterDate] = useState<Date>(new Date()) // Controls which days are shown in the picker
   const [selectedRoom, setSelectedRoom] = useState<MeetingRoomResource | null>(null)
   const [selectedStartHour, setSelectedStartHour] = useState<number | null>(null)
   const [selectedSlots, setSelectedSlots] = useState<string[]>([])
@@ -87,6 +91,18 @@ export function RoomBookingContent({
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [calendarOpen, setCalendarOpen] = useState(false)
+  const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
+  const [viewerIndex, setViewerIndex] = useState(0)
+
+  // Photo viewer handlers
+  const handlePhotoClick = (photos: string[], index: number) => {
+    setViewerPhotos(photos)
+    setViewerIndex(index)
+  }
+
+  const closePhotoViewer = () => {
+    setViewerPhotos(null)
+  }
 
   // Filter rooms by capacity
   const filteredRooms = useMemo(() => {
@@ -182,16 +198,26 @@ export function RoomBookingContent({
     setError(null)
   }
 
-  // Handle date change
+  // Handle date change from calendar (updates both selected date and view center)
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
       setSelectedDate(date)
+      setViewCenterDate(date) // Also center the view on this date
       setSelectedRoom(null)
       setSelectedStartHour(null)
       setSelectedSlots([])
       setCalendarOpen(false)
       if (view !== "planning") setView("planning")
     }
+  }
+
+  // Handle day click from the day picker (only updates selected date, not view center)
+  const handleDayClick = (date: Date) => {
+    setSelectedDate(date)
+    setSelectedRoom(null)
+    setSelectedStartHour(null)
+    setSelectedSlots([])
+    if (view !== "planning") setView("planning")
   }
 
   // Handle slot click from planning grid
@@ -296,8 +322,37 @@ export function RoomBookingContent({
   const isTodaySelected = isToday(selectedDate)
   const previousBusinessDay = getPreviousBusinessDay(selectedDate)
 
-  // Get next 10 business days for quick selection (modal only)
-  const upcomingDays = useMemo(() => getNextBusinessDays(10), [])
+  // Get business days centered around the view center date (not selected date)
+  const upcomingDays = useMemo(() => {
+    return getBusinessDaysCentered(viewCenterDate, VISIBLE_DAYS_COUNT)
+  }, [viewCenterDate])
+
+  // Check if we can navigate to previous days
+  const canNavigatePrev = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return upcomingDays.length > 0 && upcomingDays[0] > today
+  }, [upcomingDays])
+
+  // Navigate to previous set of days (without changing selected date)
+  const handlePrevDays = () => {
+    if (upcomingDays.length > 0 && canNavigatePrev) {
+      const firstDay = upcomingDays[0]
+      const prevDay = getPreviousBusinessDay(firstDay)
+      if (prevDay) {
+        setViewCenterDate(prevDay)
+      }
+    }
+  }
+
+  // Navigate to next set of days (without changing selected date)
+  const handleNextDays = () => {
+    if (upcomingDays.length > 0) {
+      const lastDay = upcomingDays[upcomingDays.length - 1]
+      const nextDay = getNextBusinessDay(lastDay)
+      setViewCenterDate(nextDay)
+    }
+  }
 
   // Render credits insufficient message with links
   const renderCreditsError = () => (
@@ -376,7 +431,16 @@ export function RoomBookingContent({
   }
 
   return (
-    <div className={isModal ? "flex flex-col h-full gap-5" : "space-y-6"}>
+    <div className={isModal ? "flex flex-col flex-1 min-h-0 gap-5" : "space-y-6"}>
+      {/* Fullscreen photo viewer */}
+      {viewerPhotos && (
+        <PhotoViewer
+          photos={viewerPhotos}
+          initialIndex={viewerIndex}
+          onClose={closePhotoViewer}
+        />
+      )}
+
       {/* Header controls - always visible in planning view */}
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
@@ -403,9 +467,25 @@ export function RoomBookingContent({
 
             {/* Date navigation - different for modal vs page */}
             {isModal ? (
-              // Modal: horizontal scrollable day picker
+              // Modal: horizontal day picker with arrows
               <div className="flex items-center gap-2 w-full justify-center">
-                <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+                {/* Previous arrow */}
+                <button
+                  type="button"
+                  onClick={handlePrevDays}
+                  disabled={!canNavigatePrev}
+                  className={cn(
+                    "flex h-[58px] w-10 shrink-0 items-center justify-center rounded-[16px] transition-colors",
+                    canNavigatePrev
+                      ? "bg-foreground/5 hover:bg-foreground/10"
+                      : "bg-foreground/5 opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                {/* Day buttons */}
+                <div className="flex gap-1.5">
                   {upcomingDays.map((day) => {
                     const isSelected = isSameDay(day, selectedDate)
                     const dayIsToday = isToday(day)
@@ -413,11 +493,11 @@ export function RoomBookingContent({
                       <button
                         key={day.toISOString()}
                         type="button"
-                        onClick={() => handleDateChange(day)}
+                        onClick={() => handleDayClick(day)}
                         className={cn(
                           "flex flex-col items-center justify-center min-w-[52px] h-[58px] rounded-[16px] transition-all",
                           isSelected
-                            ? "bg-[#1B1918] text-white "
+                            ? "bg-[#1B1918] text-white"
                             : "bg-foreground/5 hover:bg-foreground/10 text-foreground"
                         )}
                       >
@@ -443,6 +523,16 @@ export function RoomBookingContent({
                     )
                   })}
                 </div>
+
+                {/* Next arrow */}
+                <button
+                  type="button"
+                  onClick={handleNextDays}
+                  className="flex h-[58px] w-10 shrink-0 items-center justify-center rounded-[16px] bg-foreground/5 hover:bg-foreground/10 transition-colors"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+
                 {/* Calendar button for other dates */}
                 <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                   <PopoverTrigger asChild>
@@ -599,7 +689,7 @@ export function RoomBookingContent({
       {/* Main content */}
       {isModal ? (
         // Modal layout
-        <div className="flex-1 overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
           {/* Warning banner for modal when user has no credits (pass expired is shown in modal header) */}
           {view === "planning" && hasActivePlan && remainingCredits === 0 && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3 shrink-0">
@@ -624,8 +714,16 @@ export function RoomBookingContent({
 
           {/* Planning Grid */}
           {view === "planning" && (
-            <div className="flex-1 overflow-auto flex flex-col">
-              <div className="flex-1">
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* Room headers - FIXED (outside scroll) */}
+              {!loadingRooms && !loadingBookings && filteredRooms.length > 0 && (
+                <div className="shrink-0">
+                  <RoomHeaders rooms={filteredRooms} onPhotoClick={handlePhotoClick} />
+                </div>
+              )}
+
+              {/* Scrollable timeline container */}
+              <div className="flex-1 overflow-y-auto min-h-0">
                 {loadingRooms || loadingBookings ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -637,17 +735,16 @@ export function RoomBookingContent({
                       : "Aucune salle ne correspond au filtre de capacité"}
                   </p>
                 ) : (
-                  <RoomPlanningGrid
+                  <RoomTimeline
                     rooms={filteredRooms}
                     bookings={bookings}
                     onSlotClick={handleSlotClick}
-                    remainingCredits={remainingCredits}
                     selectedDate={selectedDate}
                   />
                 )}
               </div>
 
-              {/* Capacity filter - below calendar */}
+              {/* Capacity filter - fixed at bottom */}
               {capacityOptions.length > 0 && (
                 <div className="flex items-center gap-2 flex-wrap pt-3 mt-3 border-t shrink-0">
                   <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
@@ -680,7 +777,7 @@ export function RoomBookingContent({
 
           {/* Slots view */}
           {view === "slots" && selectedRoom && (
-            <div className="space-y-4 overflow-auto flex-1">
+            <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
               <div className="rounded-[16px] p-4 bg-foreground/5">
                 <div className="flex items-center justify-between">
                   <div className="min-w-0 flex-1">
@@ -769,7 +866,7 @@ export function RoomBookingContent({
 
           {/* Confirm view */}
           {view === "confirm" && selectedRoom && selectedDate && (
-            <div className="space-y-4 overflow-auto flex-1">
+            <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
               <div className="rounded-[16px] bg-foreground/5 p-4 space-y-3">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
@@ -827,8 +924,8 @@ export function RoomBookingContent({
           {/* Navigation buttons (modal) */}
           {view !== "planning" && (
             <div className="flex justify-end gap-3 pt-4 shrink-0 border-t border-foreground/5 mt-4">
-              <Button variant="outline" onClick={onClose} className="rounded-full">
-                Annuler
+              <Button variant="outline" onClick={handleBack} className="rounded-full">
+                Retour
               </Button>
               {view === "confirm" ? (
                 <Button onClick={handleConfirm} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
@@ -863,7 +960,6 @@ export function RoomBookingContent({
                 rooms={filteredRooms}
                 bookings={bookings}
                 onSlotClick={handleSlotClick}
-                remainingCredits={remainingCredits}
                 selectedDate={selectedDate}
               />
             )}

@@ -1,13 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Coins } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Coins, ChevronLeft } from "lucide-react"
+import { Dialog, DialogContentFullscreen, DialogTitle } from "@/components/ui/dialog"
 import { RoomBookingContent } from "./room-booking-content"
 
 interface BookMeetingRoomModalProps {
@@ -31,7 +26,7 @@ function ExpiredPassBanner({ userEmail }: { userEmail: string }) {
   return (
     <div
       onClick={handleClick}
-      className="cursor-pointer bg-[#1B1918] py-3 text-center transition-opacity hover:opacity-90 -mx-6 -mt-6 mb-4 sm:rounded-t-[20px]"
+      className="cursor-pointer bg-[#1B1918] py-3 text-center transition-opacity hover:opacity-90 shrink-0"
     >
       <p className="whitespace-nowrap px-4 text-[10px] font-semibold text-white uppercase tracking-wide sm:text-xs">
         Votre pass Hopper a expiré, souscrivez-en un nouveau ici →
@@ -63,21 +58,38 @@ export function BookMeetingRoomModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContentFullscreen>
+        {/* Expired pass banner */}
         {!hasActivePlan && <ExpiredPassBanner userEmail={userEmail} />}
-        <DialogHeader className="shrink-0">
-          <div className="flex items-center justify-between pr-8">
-            <DialogTitle>Réserver une salle</DialogTitle>
-            <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
-              <Coins className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">
-                {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
-              </span>
-            </div>
-          </div>
-        </DialogHeader>
 
-        <div className="flex-1 overflow-hidden">
+        {/* Header */}
+        <div className="shrink-0 relative flex items-center justify-between px-4 py-4 border-b border-foreground/10">
+          {/* Back button - left */}
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="flex items-center gap-1 px-3 py-2 -ml-3 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+          >
+            <ChevronLeft className="h-5 w-5" />
+            <span>Retour</span>
+          </button>
+
+          {/* Title - centered */}
+          <DialogTitle className="absolute left-1/2 -translate-x-1/2">
+            Réserver une salle
+          </DialogTitle>
+
+          {/* Credits badge - right */}
+          <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
+            <Coins className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-medium">
+              {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 py-4">
           {open && (
             <RoomBookingContent
               key={contentKey}
@@ -96,7 +108,7 @@ export function BookMeetingRoomModal({
             />
           )}
         </div>
-      </DialogContent>
+      </DialogContentFullscreen>
     </Dialog>
   )
 }

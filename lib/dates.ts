@@ -171,6 +171,77 @@ export function getNextBusinessDays(count: number): Date[] {
 }
 
 /**
+ * Get N available business days starting from a specific date
+ */
+export function getBusinessDaysFrom(startDate: Date, count: number): Date[] {
+  const days: Date[] = []
+  let currentDate = new Date(startDate)
+  currentDate.setHours(0, 0, 0, 0)
+
+  // If start date is a business day, include it
+  if (!isWeekend(currentDate) && !isFrenchHoliday(currentDate)) {
+    days.push(new Date(currentDate))
+  }
+
+  // Get remaining days
+  while (days.length < count) {
+    currentDate = getNextBusinessDay(currentDate)
+    days.push(new Date(currentDate))
+  }
+
+  return days
+}
+
+/**
+ * Get N previous business days before a specific date (in reverse chronological order)
+ */
+export function getPreviousBusinessDays(date: Date, count: number): Date[] {
+  const days: Date[] = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  let currentDate = new Date(date)
+  currentDate.setHours(0, 0, 0, 0)
+  currentDate.setDate(currentDate.getDate() - 1)
+
+  while (days.length < count && currentDate >= today) {
+    if (!isWeekend(currentDate) && !isFrenchHoliday(currentDate)) {
+      days.push(new Date(currentDate))
+    }
+    currentDate.setDate(currentDate.getDate() - 1)
+  }
+
+  return days.reverse() // Return in chronological order
+}
+
+/**
+ * Get business days centered around a date (with date in the middle)
+ * Returns [daysBefore..., centerDate, ...daysAfter]
+ */
+export function getBusinessDaysCentered(centerDate: Date, totalCount: number): Date[] {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const centerDateNormalized = new Date(centerDate)
+  centerDateNormalized.setHours(0, 0, 0, 0)
+
+  // If center date is before today, start from today
+  if (centerDateNormalized < today) {
+    return getBusinessDaysFrom(today, totalCount)
+  }
+
+  const halfCount = Math.floor(totalCount / 2)
+
+  // Get days before center
+  const daysBefore = getPreviousBusinessDays(centerDateNormalized, halfCount)
+
+  // Get days from center onwards
+  const daysFromCenter = getBusinessDaysFrom(centerDateNormalized, totalCount - daysBefore.length)
+
+  return [...daysBefore, ...daysFromCenter]
+}
+
+/**
  * Check if two dates are the same day
  */
 export function isSameDay(date1: Date, date2: Date): boolean {
