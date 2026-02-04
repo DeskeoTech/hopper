@@ -16,7 +16,7 @@ import { ReservationsSection } from "@/components/admin/reservations/reservation
 import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { cn } from "@/lib/utils"
-import type { CreditMovement, CreditMovementType } from "@/lib/types/database"
+import type { CreditMovement } from "@/lib/types/database"
 
 interface CompanyDetailsPageProps {
   params: Promise<{ id: string }>
@@ -57,11 +57,29 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
   const totalCredits = creditsResult ?? 0
 
-  // Fetch credit movements from bookings and adjustments
+  // Fetch user IDs for this company (needed for bookings query)
   const userIds = users?.map((u) => u.id) || []
-  let movements: CreditMovement[] = []
 
-  // Fetch bookings with credits
+  // Fetch credit movements from credit_transactions table
+  const creditTransactionsPromise = supabase
+    .from("credit_transactions")
+    .select(`
+      id,
+      transaction_type,
+      amount,
+      balance_after,
+      reason,
+      created_at,
+      booking_id,
+      booking:bookings(
+        resource:resources(name)
+      )
+    `)
+    .eq("company_id", id)
+    .order("created_at", { ascending: false })
+    .limit(100)
+
+  // Fetch bookings with credits_used (for historical data without credit_transactions)
   const bookingsPromise = userIds.length > 0
     ? supabase
         .from("bookings")
@@ -70,66 +88,137 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
           start_date,
           status,
           credits_used,
-          notes,
           resource:resources(name)
         `)
         .in("user_id", userIds)
         .not("credits_used", "is", null)
+        .gt("credits_used", 0)
         .order("start_date", { ascending: false })
-        .limit(50)
+        .limit(100)
     : Promise.resolve({ data: [] })
 
-  // Fetch manual credit adjustments (direct company credits, not via contracts)
-  const adjustmentsPromise = supabase
-    .from("credits")
-    .select("id, allocated_credits, reason, created_at")
-    .eq("company_id", id)
-    .is("contract_id", null)
-    .order("created_at", { ascending: false })
-    .limit(50)
-
-  const [{ data: bookings }, { data: adjustments }] = await Promise.all([
+  const [{ data: creditTransactions }, { data: bookings }] = await Promise.all([
+    creditTransactionsPromise,
     bookingsPromise,
-    adjustmentsPromise,
   ])
 
-  // Transform bookings to movements
-  const bookingMovements: CreditMovement[] = (bookings || []).map((booking) => {
-    const isCancelled = booking.status === "cancelled"
-    const creditsUsed = booking.credits_used || 0
-    const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
+  // Get booking IDs that already have credit_transactions
+  const bookingIdsWithTransactions = new Set(
+    (creditTransactions || [])
+      .filter((tx) => tx.booking_id)
+      .map((tx) => tx.booking_id)
+  )
+
+  // Transform credit_transactions to CreditMovement format
+  const transactionMovements: CreditMovement[] = (creditTransactions || []).map((tx) => {
+    // Map transaction_type to CreditMovementType
+    const typeMapping: Record<string, CreditMovement["type"]> = {
+      consumption: "reservation",
+      refund: "cancellation",
+      allocation: "allocation",
+      expiration: "expiration",
+      adjustment: "adjustment",
+    }
+    const movementType = typeMapping[tx.transaction_type] || "adjustment"
+
+    // Get resource name from booking if available
+    const resourceName = (tx.booking as { resource: { name: string } | null } | null)?.resource?.name
+
+    // Determine display amount (negative for consumption, positive for refund/allocation)
+    let displayAmount: number
+    if (tx.transaction_type === "consumption") {
+      displayAmount = -Math.abs(tx.amount)
+    } else if (tx.transaction_type === "refund" || tx.transaction_type === "allocation") {
+      displayAmount = Math.abs(tx.amount)
+    } else if (tx.transaction_type === "expiration") {
+      displayAmount = -Math.abs(tx.amount)
+    } else {
+      // adjustment: keep the sign as-is from the database
+      displayAmount = tx.amount
+    }
+
+    // Build description
+    let description: string
+    if (tx.reason) {
+      description = tx.reason
+    } else {
+      switch (tx.transaction_type) {
+        case "consumption":
+          description = resourceName ? `Réservation - ${resourceName}` : "Consommation de crédits"
+          break
+        case "refund":
+          description = resourceName ? `Annulation - ${resourceName}` : "Remboursement de crédits"
+          break
+        case "allocation":
+          description = "Attribution de crédits"
+          break
+        case "expiration":
+          description = "Expiration de crédits"
+          break
+        default:
+          description = displayAmount > 0 ? "Ajout de crédits" : "Retrait de crédits"
+      }
+    }
 
     return {
-      id: booking.id,
-      date: booking.start_date,
-      type: isCancelled ? "cancellation" as const : "reservation" as const,
-      amount: isCancelled ? creditsUsed : -creditsUsed,
-      description: isCancelled ? `Annulation - ${resourceName}` : `Réservation - ${resourceName}`,
-      balance_after: 0, // Will be calculated below
+      id: tx.id,
+      date: tx.created_at,
+      type: movementType,
+      amount: displayAmount,
+      description,
+      balance_after: tx.balance_after,
     }
   })
 
-  // Transform adjustments to movements
-  const adjustmentMovements: CreditMovement[] = (adjustments || []).map((adj) => ({
-    id: adj.id,
-    date: adj.created_at,
-    type: "adjustment" as const,
-    amount: adj.allocated_credits,
-    description: adj.reason || (adj.allocated_credits > 0 ? "Ajout de crédits" : "Retrait de crédits"),
-    balance_after: 0, // Will be calculated below
-  }))
+  // Transform historical bookings (without credit_transactions) to CreditMovement format
+  const bookingMovements: CreditMovement[] = (bookings || [])
+    .filter((booking) => !bookingIdsWithTransactions.has(booking.id))
+    .flatMap((booking) => {
+      const creditsUsed = booking.credits_used || 0
+      const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
+      const movements: CreditMovement[] = []
+
+      // Add consumption movement for the booking
+      movements.push({
+        id: `booking-${booking.id}`,
+        date: booking.start_date,
+        type: "reservation" as const,
+        amount: -creditsUsed,
+        description: `Réservation - ${resourceName}`,
+        balance_after: 0, // Historical data - balance unknown
+      })
+
+      // If cancelled, also add refund movement
+      if (booking.status === "cancelled") {
+        movements.push({
+          id: `refund-${booking.id}`,
+          date: booking.start_date, // Use same date as booking
+          type: "cancellation" as const,
+          amount: creditsUsed,
+          description: `Annulation - ${resourceName}`,
+          balance_after: 0, // Historical data - balance unknown
+        })
+      }
+
+      return movements
+    })
 
   // Merge and sort by date (most recent first)
-  const allMovements = [...bookingMovements, ...adjustmentMovements].sort(
+  const allMovements = [...transactionMovements, ...bookingMovements].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   )
 
-  // Calculate running balance
+  // Calculate running balance starting from current total credits
+  // Work backwards through movements to compute balance_after for each
   let runningBalance = totalCredits
-  movements = allMovements.map((movement) => {
-    const movementWithBalance = { ...movement, balance_after: runningBalance }
+  const movements = allMovements.map((movement) => {
+    const balanceAfter = runningBalance
+    // For next (older) movement: balance_before = balance_after - amount
     runningBalance = runningBalance - movement.amount
-    return movementWithBalance
+    return {
+      ...movement,
+      balance_after: balanceAfter,
+    }
   })
 
   // Determine subscription status

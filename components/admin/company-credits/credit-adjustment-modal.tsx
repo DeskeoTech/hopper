@@ -63,19 +63,96 @@ export function CreditAdjustmentModal({
     try {
       const supabase = createClient()
       const finalAmount = numAmount
+      const adjustmentReason = reason || (finalAmount > 0 ? "Ajout manuel de crédits" : "Retrait manuel de crédits")
 
-      const { error: insertError } = await supabase
-        .from("credits")
-        .insert({
+      if (finalAmount > 0) {
+        // ADDING CREDITS: Create a new credit record
+        const { data: creditRecord, error: insertError } = await supabase
+          .from("credits")
+          .insert({
+            company_id: companyId,
+            allocated_credits: finalAmount,
+            remaining_balance: finalAmount,
+            expiration: null, // Manual adjustments are permanent
+            reason: adjustmentReason,
+          })
+          .select("id")
+          .single()
+
+        if (insertError) {
+          throw new Error(insertError.message)
+        }
+
+        // Create credit_transaction for tracking
+        await supabase.from("credit_transactions").insert({
+          credit_id: creditRecord.id,
           company_id: companyId,
-          allocated_credits: finalAmount,
-          extras_credit: true, // Manual adjustments are permanent
-          period: new Date().toISOString().split("T")[0],
-          reason: reason || null,
+          transaction_type: "allocation",
+          amount: finalAmount,
+          balance_before: currentCredits,
+          balance_after: newBalance,
+          reason: adjustmentReason,
         })
+      } else {
+        // REMOVING CREDITS: Deduct from existing credit records
+        const amountToRemove = Math.abs(finalAmount)
 
-      if (insertError) {
-        throw new Error(insertError.message)
+        // Find credit records with remaining balance (newest first to deduct from most recent)
+        const { data: creditRecords, error: fetchError } = await supabase
+          .from("credits")
+          .select("id, remaining_balance")
+          .eq("company_id", companyId)
+          .gt("remaining_balance", 0)
+          .or("expiration.is.null,expiration.gt.now()")
+          .order("created_at", { ascending: false })
+
+        if (fetchError) {
+          throw new Error(fetchError.message)
+        }
+
+        if (!creditRecords || creditRecords.length === 0) {
+          throw new Error("Aucun crédit disponible à retirer")
+        }
+
+        // Deduct credits from records
+        let remainingToDeduct = amountToRemove
+        let lastCreditId: string | null = null
+
+        for (const record of creditRecords) {
+          if (remainingToDeduct <= 0) break
+
+          const deductFromThis = Math.min(remainingToDeduct, record.remaining_balance)
+          const newBalance = record.remaining_balance - deductFromThis
+
+          const { error: updateError } = await supabase
+            .from("credits")
+            .update({ remaining_balance: newBalance })
+            .eq("id", record.id)
+
+          if (updateError) {
+            throw new Error(updateError.message)
+          }
+
+          remainingToDeduct -= deductFromThis
+          lastCreditId = record.id
+        }
+
+        if (remainingToDeduct > 0) {
+          throw new Error("Crédits insuffisants pour ce retrait")
+        }
+
+        // Create credit_transaction for tracking (use last affected credit record)
+        if (lastCreditId) {
+          await supabase.from("credit_transactions").insert({
+            credit_id: lastCreditId,
+            company_id: companyId,
+            transaction_type: "adjustment",
+            amount: -amountToRemove, // Negative amount for credit removal
+            balance_before: currentCredits,
+            balance_after: newBalance,
+            reason: adjustmentReason,
+          })
+        }
       }
 
       // Reset form and close
