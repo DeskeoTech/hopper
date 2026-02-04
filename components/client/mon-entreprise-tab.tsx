@@ -140,31 +140,6 @@ export function MonEntrepriseTab() {
     setAddingUser(false)
   }
 
-  const getRoleLabel = (role: string | null) => {
-    switch (role) {
-      case "admin":
-        return "Administrateur"
-      case "user":
-      default:
-        return "Utilisateur"
-    }
-  }
-
-  const getStatusBadge = (status: string | null) => {
-    if (status === "disabled") {
-      return (
-        <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/50">
-          Désactivé
-        </span>
-      )
-    }
-    return (
-      <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-[10px] text-green-600">
-        Actif
-      </span>
-    )
-  }
-
   const canAddUser = seatsInfo && seatsInfo.activeUsers < seatsInfo.maxSeats
   const progressValue = seatsInfo && seatsInfo.maxSeats > 0
     ? (seatsInfo.activeUsers / seatsInfo.maxSeats) * 100
@@ -264,7 +239,11 @@ export function MonEntrepriseTab() {
                         {isCurrentUser && (
                           <span className="text-[10px] text-foreground/40">(vous)</span>
                         )}
-                        {getStatusBadge(user.status)}
+                        {user.role === "admin" && (
+                          <span className="inline-flex items-center rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium text-foreground/70">
+                            Administrateur de l'entreprise
+                          </span>
+                        )}
                       </div>
                       <p className="truncate text-xs text-foreground/50">
                         {user.email || "—"}
@@ -290,11 +269,7 @@ export function MonEntrepriseTab() {
                             <SelectItem value="admin">Admin</SelectItem>
                           </SelectContent>
                         </Select>
-                      ) : (
-                        <span className="text-xs text-foreground/40">
-                          {getRoleLabel(user.role)}
-                        </span>
-                      )}
+                      ) : null}
 
                       {/* Deactivate button */}
                       {!isCurrentUser && !isDisabled && (

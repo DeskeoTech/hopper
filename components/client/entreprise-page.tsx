@@ -159,27 +159,6 @@ export function EntreprisePage({
     setAddingUser(false)
   }
 
-  const getRoleLabel = (role: string | null) => {
-    switch (role) {
-      case "admin":
-        return "Administrateur"
-      case "user":
-      default:
-        return "Utilisateur"
-    }
-  }
-
-  const getStatusBadge = (status: string | null) => {
-    if (status === "disabled") {
-      return (
-        <span className="inline-flex items-center rounded-full bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground/50">
-          Désactivé
-        </span>
-      )
-    }
-    return null
-  }
-
   const progressValue = totalSeats > 0 ? (activeUsers / totalSeats) * 100 : 0
 
   const getCompanyTypeLabel = (type: string | null) => {
@@ -382,7 +361,11 @@ export function EntreprisePage({
                           {isCurrentUser && (
                             <span className="text-[10px] text-foreground/40">(vous)</span>
                           )}
-                          {getStatusBadge(user.status)}
+                          {user.role === "admin" && (
+                            <span className="inline-flex items-center rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium text-foreground/70">
+                              Administrateur de l'entreprise
+                            </span>
+                          )}
                         </div>
                         <p className="truncate text-xs text-foreground/50">
                           {user.email || "—"}
@@ -444,12 +427,6 @@ export function EntreprisePage({
                         </button>
                       ) : null}
 
-                      {/* Role display (read-only) */}
-                      {!isDisabled && (
-                        <span className="text-xs text-foreground/40">
-                          {getRoleLabel(user.role)}
-                        </span>
-                      )}
                     </div>
                   </div>
                 )
