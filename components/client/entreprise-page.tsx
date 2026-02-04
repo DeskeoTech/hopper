@@ -34,7 +34,6 @@ import {
 import {
   getCompanyUsers,
   getCompanySeatsInfo,
-  updateUserRoleByAdmin,
   deactivateUserByAdmin,
   createUserByAdmin,
 } from "@/lib/actions/users"
@@ -78,21 +77,6 @@ export function EntreprisePage({
   // Calculate seats info from contracts
   const totalSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
   const activeUsers = users.filter((u) => u.status === "active").length
-
-  const handleRoleChange = async (userId: string, newRole: "admin" | "user") => {
-    if (!company.id) return
-    setUpdatingUserId(userId)
-    setError(null)
-    const result = await updateUserRoleByAdmin(userId, company.id, newRole)
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role: newRole } : u))
-      )
-    }
-    setUpdatingUserId(null)
-  }
 
   const handleDeactivate = async (userId: string) => {
     if (!company.id) return
@@ -476,28 +460,12 @@ export function EntreprisePage({
                         </button>
                       ) : null}
 
-                      {/* Role selector */}
-                      {!isCurrentUser && !isDisabled ? (
-                        <Select
-                          value={user.role || "user"}
-                          onValueChange={(value: "admin" | "user") =>
-                            handleRoleChange(user.id, value)
-                          }
-                          disabled={isUpdating}
-                        >
-                          <SelectTrigger className="h-7 w-auto gap-1 border-0 bg-foreground/5 px-2 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">Utilisateur</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      ) : !isDisabled ? (
+                      {/* Role display (read-only) */}
+                      {!isDisabled && (
                         <span className="text-xs text-foreground/40">
                           {getRoleLabel(user.role)}
                         </span>
-                      ) : null}
+                      )}
 
                       {/* Deactivate button */}
                       {!isCurrentUser && !isDisabled && (
