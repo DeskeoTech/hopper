@@ -11,7 +11,7 @@ export default function SiteNotFound() {
       <h2 className="mt-4 type-h3 text-foreground">Site non trouvé</h2>
       <p className="mt-2 text-muted-foreground">Le site que vous recherchez n'existe pas ou a été supprimé.</p>
       <Button asChild className="mt-6">
-        <Link href="/admin">Retour au dashboard</Link>
+        <Link href="/admin/sites">Retour aux sites</Link>
       </Button>
     </div>
   )
