@@ -48,12 +48,12 @@ export function ContractsListSection({
   if (activeContracts.length === 0) {
     return (
       <section className="space-y-4">
-        <h2 className="font-header text-xl text-foreground">Contrats</h2>
+        <h2 className="font-header text-2xl text-foreground">Contrats</h2>
         <div className="rounded-[16px] bg-card p-6 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-foreground/5">
-            <FileText className="h-6 w-6 text-foreground/40" />
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
+            <FileText className="h-7 w-7 text-foreground/40" />
           </div>
-          <p className="mt-4 text-sm text-muted-foreground">Aucun contrat actif</p>
+          <p className="mt-4 text-base text-muted-foreground">Aucun contrat actif</p>
         </div>
       </section>
     )
@@ -61,7 +61,7 @@ export function ContractsListSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="font-header text-xl text-foreground">Contrats</h2>
+      <h2 className="font-header text-2xl text-foreground">Contrats</h2>
 
       {/* Contract cards */}
       <div className="space-y-3">

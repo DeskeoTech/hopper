@@ -21,7 +21,7 @@ interface ActionCardProps {
 
 function ActionCard({ image, title, description, capacity, buttonText, onClick }: ActionCardProps) {
   return (
-    <div className="relative overflow-hidden rounded-[16px] h-[280px]">
+    <div className="relative overflow-hidden rounded-[16px] h-[320px]">
       {/* Image - full height background */}
       <img
         src={image}
@@ -30,16 +30,16 @@ function ActionCard({ image, title, description, capacity, buttonText, onClick }
       />
 
       {/* Content - positioned at bottom with fixed height */}
-      <div className="absolute bottom-3 left-3 right-3 rounded-[12px] bg-card p-4 flex flex-col h-[140px]">
-        <h3 className="font-header text-base font-bold uppercase tracking-tight">{title}</h3>
+      <div className="absolute bottom-3 left-3 right-3 rounded-[12px] bg-card p-5 flex flex-col h-[170px]">
+        <h3 className="font-header text-lg font-bold uppercase tracking-tight">{title}</h3>
         {description && (
-          <p className="mt-1 text-sm text-muted-foreground line-clamp-2">{description}</p>
+          <p className="mt-1.5 text-base text-muted-foreground line-clamp-2">{description}</p>
         )}
         <div className="flex-1" />
         <Button
           onClick={onClick}
           size="sm"
-          className="rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide h-9 px-5"
+          className="rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-sm font-semibold tracking-wide h-10 px-6"
         >
           {buttonText}
         </Button>
@@ -109,38 +109,38 @@ export function QuickActionCards() {
         <button
           type="button"
           onClick={() => window.open("https://www.deskeo.com/fr/work-spaces/#contact_form-42134d31-70fc-48e7-8ebb-f13eb270014f", "_blank")}
-          className="flex items-center gap-3 rounded-[16px] bg-card p-4 text-left transition-colors hover:bg-card/80"
+          className="flex items-center gap-4 rounded-[16px] bg-card p-5 text-left transition-colors hover:bg-card/80"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-            <Building2 className="h-5 w-5 text-foreground/70" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Building2 className="h-6 w-6 text-foreground/70" />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-header text-sm font-semibold uppercase tracking-tight">
+            <h4 className="font-header text-base font-semibold uppercase tracking-tight">
               Réserver un bureau opéré
             </h4>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Espaces de travail clé en main
             </p>
           </div>
-          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ExternalLink className="h-5 w-5 shrink-0 text-muted-foreground" />
         </button>
         <button
           type="button"
           onClick={() => window.open("https://www.deskeo.com/fr/design-build/", "_blank")}
-          className="flex items-center gap-3 rounded-[16px] bg-card p-4 text-left transition-colors hover:bg-card/80"
+          className="flex items-center gap-4 rounded-[16px] bg-card p-5 text-left transition-colors hover:bg-card/80"
         >
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-            <Paintbrush className="h-5 w-5 text-foreground/70" />
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Paintbrush className="h-6 w-6 text-foreground/70" />
           </div>
           <div className="flex-1 min-w-0">
-            <h4 className="font-header text-sm font-semibold uppercase tracking-tight">
+            <h4 className="font-header text-base font-semibold uppercase tracking-tight">
               Aménager vos bureaux
             </h4>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Design & Build sur mesure
             </p>
           </div>
-          <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+          <ExternalLink className="h-5 w-5 shrink-0 text-muted-foreground" />
         </button>
       </div>
 
