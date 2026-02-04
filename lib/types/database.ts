@@ -13,6 +13,17 @@ export type Equipment =
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
+// Transport types for metro/RER lines
+export type TransportLine =
+  | "1" | "2" | "3" | "3bis" | "4" | "5" | "6" | "7" | "7bis"
+  | "8" | "9" | "10" | "11" | "12" | "13" | "14"
+  | "RER A" | "RER B" | "RER C" | "RER D" | "RER E"
+
+export interface TransportationStop {
+  line: TransportLine
+  station: string
+}
+
 export interface Site {
   id: string
   name: string
@@ -26,6 +37,7 @@ export interface Site {
   wifi_ssid: string | null
   wifi_password: string | null
   access: string | null
+  transportation_lines: TransportationStop[] | null
   equipments: Equipment[] | null
   contact_first_name: string | null
   contact_last_name: string | null

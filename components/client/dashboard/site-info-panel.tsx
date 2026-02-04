@@ -9,9 +9,12 @@ import {
   ChevronDown,
 } from "lucide-react"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
+import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import { useClientLayout } from "../client-layout-provider"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
+import type { TransportationStop } from "@/lib/types/database"
+import { groupTransportByStation } from "@/lib/utils/transportation"
 
 export function SiteInfoPanel() {
   const { selectedSiteWithDetails: site } = useClientLayout()
@@ -24,7 +27,7 @@ export function SiteInfoPanel() {
   // Generate Google Maps URL from address
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
 
-  const hasInfo = site.wifiSsid || site.access || site.openingHours || (site.equipments && site.equipments.length > 0)
+  const hasInfo = site.wifiSsid || site.openingHours || (site.equipments && site.equipments.length > 0) || (site.transportationLines && site.transportationLines.length > 0)
 
   if (!hasInfo) {
     return null
@@ -69,11 +72,22 @@ export function SiteInfoPanel() {
           <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
         </a>
 
-        {/* Metro/Access */}
-        {site.access && (
-          <div className="flex items-center gap-3 rounded-[12px] bg-muted/50 p-3">
-            <Train className="h-5 w-5 shrink-0 text-primary" />
-            <span className="text-sm">{site.access}</span>
+        {/* Transportation */}
+        {site.transportationLines && site.transportationLines.length > 0 && (
+          <div className="flex items-start gap-3 rounded-[12px] bg-muted/50 p-3">
+            <Train className="h-5 w-5 shrink-0 text-primary mt-0.5" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              {groupTransportByStation(site.transportationLines as TransportationStop[]).map(({ station, lines }) => (
+                <div key={station} className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {lines.map((line) => (
+                      <MetroLineBadge key={line} line={line} size="sm" />
+                    ))}
+                  </div>
+                  <span className="text-sm">{station}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

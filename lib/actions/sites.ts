@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
-import type { SiteStatus, Equipment } from "@/lib/types/database"
+import type { SiteStatus, Equipment, TransportationStop } from "@/lib/types/database"
 
 export async function updateSiteHeader(
   siteId: string,
@@ -38,6 +38,30 @@ export async function updateSiteInstructions(
     .update({
       instructions: data.instructions || null,
       access: data.access || null,
+    })
+    .eq("id", siteId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/sites/${siteId}`)
+  return { success: true }
+}
+
+export async function updateSiteInstructionsAndTransportation(
+  siteId: string,
+  data: { instructions: string | null; transportation_lines: TransportationStop[] | null }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      instructions: data.instructions || null,
+      transportation_lines: data.transportation_lines && data.transportation_lines.length > 0
+        ? data.transportation_lines
+        : null,
     })
     .eq("id", siteId)
 
@@ -103,6 +127,29 @@ export async function updateSiteEquipments(
     .from("sites")
     .update({
       equipments: data.equipments && data.equipments.length > 0 ? data.equipments : null,
+    })
+    .eq("id", siteId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/sites/${siteId}`)
+  return { success: true }
+}
+
+export async function updateSiteTransportation(
+  siteId: string,
+  data: { transportation_lines: TransportationStop[] | null }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      transportation_lines: data.transportation_lines && data.transportation_lines.length > 0
+        ? data.transportation_lines
+        : null,
     })
     .eq("id", siteId)
 
@@ -205,6 +252,7 @@ export interface CreateSiteData {
   opening_days: string[] | null
   opening_hours: string | null
   equipments: Equipment[] | null
+  transportation_lines: TransportationStop[] | null
   // Step 3: Contact
   contact_first_name: string | null
   contact_last_name: string | null
@@ -229,6 +277,7 @@ export async function createSite(data: CreateSiteData) {
       opening_days: data.opening_days && data.opening_days.length > 0 ? data.opening_days : null,
       opening_hours: data.opening_hours || null,
       equipments: data.equipments && data.equipments.length > 0 ? data.equipments : null,
+      transportation_lines: data.transportation_lines && data.transportation_lines.length > 0 ? data.transportation_lines : null,
       contact_first_name: data.contact_first_name || null,
       contact_last_name: data.contact_last_name || null,
       contact_email: data.contact_email || null,
