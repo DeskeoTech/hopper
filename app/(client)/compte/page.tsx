@@ -23,8 +23,8 @@ export default async function ComptePage() {
     redirect("/login")
   }
 
-  // Determine if user is admin (admin or deskeo role)
-  const isAdmin = userProfile.role === "admin" || userProfile.role === "deskeo"
+  // Determine if user is admin
+  const isAdmin = userProfile.role === "admin"
 
   // Fetch user's bookings with resource and site details
   const { data: bookings } = await supabase

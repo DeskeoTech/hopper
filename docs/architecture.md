@@ -46,7 +46,7 @@
 | Service | Usage |
 |---------|-------|
 | Supabase | Base de données PostgreSQL + Authentification + Storage |
-| Airtable | Source de vérité pour les collaborateurs (détermination du rôle `deskeo`) |
+| Airtable | Source de données externe (non utilisé pour les rôles) |
 | Vercel | Hébergement et déploiement |
 | Vercel Analytics | Suivi d'usage |
 
@@ -168,8 +168,9 @@ hopper/
 | Rôle | Accès |
 |------|-------|
 | `user` | Interface client uniquement (`/`) |
-| `admin` | Interface admin complète (`/admin/*`) |
-| `deskeo` | Interface admin (collaborateurs Deskeo, détecté via Airtable) |
+| `admin` | Interface admin complète (`/admin/*`) - nécessite aussi un email @deskeo.fr |
+
+> **Note** : Pour accéder à l'interface admin, un utilisateur doit avoir le rôle `admin` ET un email @deskeo.fr
 
 ---
 
@@ -271,7 +272,7 @@ Utilisateurs des entreprises clientes.
 | id | uuid | Identifiant unique |
 | company_id | uuid | Entreprise (FK) |
 | email | text | Email (utilisé pour auth) |
-| role | enum | `admin` \| `user` \| `deskeo` |
+| role | enum | `admin` \| `user` |
 | status | enum | `active` \| `disabled` |
 
 #### bookings

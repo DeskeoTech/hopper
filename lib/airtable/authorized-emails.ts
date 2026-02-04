@@ -1,6 +1,6 @@
 /**
  * Airtable email check for collaborators
- * Used at login to determine if user should get 'deskeo' role
+ * Note: No longer used for role assignment (deprecated)
  */
 
 const AIRTABLE_BASE_ID = "appDe1N8etZrwWXrG"

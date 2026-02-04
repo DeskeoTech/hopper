@@ -253,7 +253,7 @@ export interface ReservationItem {
 }
 
 // User types
-export type UserRole = "admin" | "user" | "deskeo"
+export type UserRole = "admin" | "user"
 export type UserStatus = "active" | "disabled"
 
 export interface User {

@@ -55,7 +55,7 @@ interface UsersListProps {
 export function UsersList({ companyId, initialUsers }: UsersListProps) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "disabled">("all")
-  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user" | "deskeo">("all")
+  const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all")
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
   const [currentPage, setCurrentPage] = useState(1)
@@ -171,14 +171,6 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
         </span>
       )
     }
-    if (role === "deskeo") {
-      return (
-        <span className="inline-flex items-center gap-1 rounded-sm bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
-          <Shield className="h-3 w-3" />
-          Deskeo
-        </span>
-      )
-    }
     return <span className="text-sm text-muted-foreground">Utilisateur</span>
   }
 
@@ -236,14 +228,13 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
           </SelectContent>
         </Select>
 
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as "all" | "admin" | "user" | "deskeo")}>
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as "all" | "admin" | "user")}>
           <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Rôle" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les rôles</SelectItem>
             <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="deskeo">Deskeo</SelectItem>
             <SelectItem value="user">Utilisateur</SelectItem>
           </SelectContent>
         </Select>

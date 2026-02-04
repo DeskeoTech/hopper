@@ -110,7 +110,7 @@ Ces composants proviennent de shadcn/ui (style New York) et sont personnalisés 
 | BookMeetingRoomModal | `components/client/book-meeting-room-modal.tsx` | `open`, `onOpenChange`, `userId`, `companyId`, `mainSiteId`, `remainingCredits`, `sites` | Modal de réservation de salle |
 | MeetingRoomCard | `components/client/meeting-room-card.tsx` | `room`, `selected`, `onSelect` | Card sélection de salle |
 | TimeSlotPicker | `components/client/time-slot-picker.tsx` | `resourceId`, `date`, `onSelect` | Sélecteur de créneaux horaires |
-| AdminAccessButton | `components/client/admin-access-button.tsx` | - | Bouton d'accès admin (pour utilisateurs admin/deskeo) |
+| AdminAccessButton | `components/client/admin-access-button.tsx` | - | Bouton d'accès admin (pour admins Deskeo uniquement) |
 
 ---
 
