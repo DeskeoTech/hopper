@@ -11,6 +11,9 @@
     "linear": {
       "type": "http",
       "url": "https://mcp.linear.app/mcp"
+    },
+    "stripe": {
+      "url": "https://mcp.stripe.com"
     }
   }
 }
