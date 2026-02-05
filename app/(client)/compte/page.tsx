@@ -44,6 +44,7 @@ export default async function ComptePage() {
     `
     )
     .eq("user_id", userProfile.id)
+    .not("resource_id", "is", null)
     .order("start_date", { ascending: false })
     .limit(50)
 
