@@ -55,6 +55,7 @@ npm run start    # Start production server
 - Import aliases: `@/components`, `@/lib`, `@/hooks`
 - **Dropdown filters must always include a search bar.** Use the `SearchableSelect` component from `@/components/ui/searchable-select` instead of the basic `Select` component for all filter dropdowns.
 - **Search bars must filter results in real-time.** Trigger the search on every input change (`onChange`), not only on form submit. This provides instant feedback to the user.
+- **TOUJOURS utiliser context7 pour les APIs/librairies externes.** Avant d'utiliser une API ou librairie externe (Supabase, Stripe, React Hook Form, Zod, etc.), consulter la documentation via le MCP context7 (`mcp__context7__resolve-library-id` puis `mcp__context7__query-docs`) pour obtenir les patterns et la syntaxe à jour.
 
 ## Design System
 
