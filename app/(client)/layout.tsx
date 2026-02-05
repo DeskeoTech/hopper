@@ -236,9 +236,6 @@ export default async function ClientLayout({
   }))
 
   const isAdmin = userProfile.role === "admin"
-  // Check if user has Deskeo email domain (for skipping onboarding)
-  const isDeskeoEmployee =
-    authUser.email.toLowerCase().endsWith("@deskeo.fr") || authUser.email.toLowerCase().endsWith("@deskeo.com")
   // Check if user can access Hopper admin interface
   const isHopperAdmin = userProfile.is_hopper_admin === true
 
@@ -259,10 +256,8 @@ export default async function ClientLayout({
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
   // Check if user needs onboarding (no company or onboarding not done)
-  // Applies to both "user" and "admin" roles (but not Deskeo employees)
   const needsOnboarding =
     (userProfile.role === "user" || userProfile.role === "admin") &&
-    !isDeskeoEmployee &&
     (!userProfile.company_id ||
       !(userProfile.companies as Company | null)?.onboarding_done)
 
@@ -270,7 +265,6 @@ export default async function ClientLayout({
   const needsProfileCompletion =
     !needsOnboarding &&
     (userProfile.role === "user" || userProfile.role === "admin") &&
-    !isDeskeoEmployee &&
     userProfile.company_id &&
     userProfile.companies &&
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
@@ -280,7 +274,6 @@ export default async function ClientLayout({
     !needsOnboarding &&
     !needsProfileCompletion &&
     userProfile.role === "user" &&
-    !isDeskeoEmployee &&
     userProfile.company_id &&
     !userProfile.contract_id
 
