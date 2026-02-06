@@ -1,19 +1,28 @@
 "use client"
 
+import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react"
 import { format, addDays, subDays, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { Button } from "@/components/ui/button"
+import { Calendar } from "@/components/ui/calendar"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 interface DateNavigatorProps {
   currentDate: string // YYYY-MM-DD
+  basePath?: string // defaults to "/admin"
 }
 
-export function DateNavigator({ currentDate }: DateNavigatorProps) {
+export function DateNavigator({ currentDate, basePath = "/admin" }: DateNavigatorProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const date = new Date(currentDate + "T12:00:00")
+  const [open, setOpen] = useState(false)
 
   function navigateTo(newDate: Date) {
     const params = new URLSearchParams(searchParams.toString())
@@ -24,7 +33,7 @@ export function DateNavigator({ currentDate }: DateNavigatorProps) {
       params.set("date", dateStr)
     }
     const query = params.toString()
-    router.push(`/admin${query ? `?${query}` : ""}`)
+    router.push(`${basePath}${query ? `?${query}` : ""}`)
   }
 
   const label = isToday(date)
@@ -41,9 +50,30 @@ export function DateNavigator({ currentDate }: DateNavigatorProps) {
       >
         <ChevronLeft className="h-4 w-4" />
       </Button>
-      <span className="min-w-[160px] text-center text-sm font-medium capitalize">
-        {label}
-      </span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            className="min-w-[160px] justify-center gap-2 text-sm font-medium capitalize"
+          >
+            <CalendarDays className="h-4 w-4" />
+            {label}
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0" align="center">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={(day) => {
+              if (day) {
+                navigateTo(day)
+                setOpen(false)
+              }
+            }}
+            defaultMonth={date}
+          />
+        </PopoverContent>
+      </Popover>
       <Button
         variant="outline"
         size="icon"
