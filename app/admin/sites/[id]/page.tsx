@@ -14,7 +14,7 @@ import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipment
 import { ResourceFormModal } from "@/components/admin/site-edit/resource-form-modal"
 import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
-import type { TransportationStop } from "@/lib/types/database"
+import type { TransportationStop, Resource, Equipment } from "@/lib/types/database"
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -51,15 +51,14 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   })) || []
 
   // Group resources by type
-  const resourcesByType = resources?.reduce(
-    (acc, resource) => {
-      const type = resource.type
-      if (!acc[type]) acc[type] = []
-      acc[type].push(resource)
-      return acc
-    },
-    {} as Record<string, typeof resources>,
-  )
+  const resourcesByType: Record<string, Resource[]> = {}
+  if (resources) {
+    for (const resource of resources) {
+      const type = resource.type as string
+      if (!resourcesByType[type]) resourcesByType[type] = []
+      resourcesByType[type].push(resource as Resource)
+    }
+  }
 
   // Typed transportation lines to avoid multiple casts
   const transportationLines = site.transportation_lines as TransportationStop[] | null
@@ -213,7 +212,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     <div>
                       <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        {site.opening_days.map((day) => (
+                        {site.opening_days.map((day: string) => (
                           <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
                             {day}
                           </span>
@@ -271,7 +270,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 </h2>
                 {site.equipments && site.equipments.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {site.equipments.map((equipment) => (
+                    {(site.equipments as Equipment[]).map((equipment: Equipment) => (
                       <EquipmentBadge key={equipment} equipment={equipment} />
                     ))}
                   </div>
