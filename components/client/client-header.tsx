@@ -3,7 +3,7 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { User, Building2, Ticket, Settings, ChevronRight } from "lucide-react"
+import { User, Building2, Ticket, Settings, ChevronRight, MessageCircleQuestion } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -118,6 +118,22 @@ export function ClientHeader() {
                 </Link>
               </DropdownMenuItem>
             )}
+
+            {/* Contact Support Link */}
+            <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
+              <Link
+                href={siteParam ? `/mon-compte?tab=contact&site=${siteParam}` : "/mon-compte?tab=contact"}
+                className="flex items-center justify-between px-4 py-3 text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-foreground/5 transition-colors border-t border-foreground/5"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                    <MessageCircleQuestion className="h-4 w-4 text-foreground/70" />
+                  </div>
+                  <span>Contact support</span>
+                </div>
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </DropdownMenuItem>
 
             {/* Admin Link for Deskeo Employees */}
             {isDeskeoEmployee && (

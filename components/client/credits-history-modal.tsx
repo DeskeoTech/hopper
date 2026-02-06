@@ -88,7 +88,7 @@ export function CreditsHistoryModal({
                     {credits?.remaining ?? 0}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    crédits disponibles sur {credits?.allocated ?? 0} alloués
+                    crédits disponibles
                   </p>
                 </div>
                 <div className="mt-4 sm:mt-0">

@@ -32,7 +32,8 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loggingOut, setLoggingOut] = useState(false)
-  const [activeTab, setActiveTab] = useState("coordonnees")
+  const tabParam = searchParams.get("tab")
+  const [activeTab, setActiveTab] = useState(tabParam || "coordonnees")
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
 
   // Preserve site param in navigation
@@ -66,20 +67,31 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
   return (
     <>
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
-      {/* Back to home button */}
-      <Link
-        href={accueilHref}
-        className="inline-flex items-center gap-2 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
-      >
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
-          <ArrowLeft className="h-4 w-4" />
-        </div>
-        <span>Retour à l&apos;accueil</span>
-      </Link>
+      {/* Back to home + logout */}
+      <div className="flex items-center justify-between">
+        <Link
+          href={accueilHref}
+          className="inline-flex items-center gap-2 text-sm font-medium text-foreground/70 hover:text-foreground transition-colors"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
+            <ArrowLeft className="h-4 w-4" />
+          </div>
+          <span>Retour à l&apos;accueil</span>
+        </Link>
 
-      {/* Header with logout button */}
-      <div className="flex items-start justify-between gap-4">
-        {/* User Info Block - Mobile only */}
+        {/* Logout button */}
+        <button
+          type="button"
+          onClick={() => setShowLogoutConfirm(true)}
+          className="flex shrink-0 items-center gap-2 rounded-full bg-foreground/5 px-3 py-2 text-xs font-medium text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
+        >
+          <LogOut className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Déconnexion</span>
+        </button>
+      </div>
+
+      {/* User Info Block - Mobile only */}
+      <div className="flex items-start gap-4">
         <div className="md:hidden flex-1 rounded-[16px] bg-card p-4">
           <p className="font-header text-lg font-semibold text-foreground">{fullName}</p>
           {companyName && (
@@ -102,18 +114,6 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
           </div>
         </div>
 
-        {/* Desktop spacer */}
-        <div className="hidden md:block flex-1" />
-
-        {/* Logout button - top right */}
-        <button
-          type="button"
-          onClick={() => setShowLogoutConfirm(true)}
-          className="flex shrink-0 items-center gap-2 rounded-full bg-foreground/5 px-3 py-2 text-xs font-medium text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
-        >
-          <LogOut className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Déconnexion</span>
-        </button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
