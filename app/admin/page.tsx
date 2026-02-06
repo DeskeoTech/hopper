@@ -16,20 +16,34 @@ import {
   Home,
 } from "lucide-react"
 import { startOfWeek, endOfWeek } from "date-fns"
+import { Suspense } from "react"
+import { DateNavigator } from "@/components/admin/accueil/date-navigator"
 
-export default async function AccueilPage() {
+interface AccueilPageProps {
+  searchParams: Promise<{ date?: string }>
+}
+
+export default async function AccueilPage({ searchParams }: AccueilPageProps) {
+  const params = await searchParams
   const supabase = await createClient()
   const today = new Date().toISOString().split("T")[0]
+  const selectedDate = params.date || today
 
   // Récupération des données en parallèle
-  const [sitesResult, companiesResult, bookingsResult, activeClientsResult, allSitesResult] = await Promise.all([
-    // Nombre de sites
-    supabase.from("sites").select("*", { count: "exact", head: true }),
+  const [
+    openSitesCountResult,
+    companiesResult,
+    bookingsResult,
+    activeClientsResult,
+    allSitesResult,
+  ] = await Promise.all([
+    // Nombre de sites ouverts
+    supabase.from("sites").select("*", { count: "exact", head: true }).eq("status", "open"),
 
     // Nombre de companies
     supabase.from("companies").select("*", { count: "exact", head: true }),
 
-    // Réservations de la semaine courante (passées, présentes et futures)
+    // Réservations de la semaine courante
     supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
@@ -37,7 +51,7 @@ export default async function AccueilPage() {
       .lte("start_date", endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
       .eq("status", "confirmed"),
 
-    // Clients avec un forfait actif aujourd'hui
+    // Clients avec un forfait actif à la date sélectionnée
     supabase
       .from("users")
       .select(`
@@ -46,15 +60,15 @@ export default async function AccueilPage() {
         contracts!inner(id, status, start_date, end_date)
       `)
       .eq("contracts.status", "active")
-      .lte("contracts.start_date", today)
-      .or(`end_date.is.null,end_date.gte.${today}`, { referencedTable: "contracts" })
+      .lte("contracts.start_date", selectedDate)
+      .or(`end_date.is.null,end_date.gte.${selectedDate}`, { referencedTable: "contracts" })
       .order("last_name", { ascending: true }),
 
     // Sites ouverts (pour le filtre)
     supabase.from("sites").select("id, name").eq("status", "open").order("name"),
   ])
 
-  const sitesCount = sitesResult.count || 0
+  const openSitesCount = openSitesCountResult.count || 0
   const companiesCount = companiesResult.count || 0
   const bookingsCount = bookingsResult.count || 0
 
@@ -92,113 +106,109 @@ export default async function AccueilPage() {
         </div>
       </div>
 
+      {/* KPIs */}
+      <div className="grid grid-cols-3 gap-4">
+        <Link href="/admin/sites" className="group block">
+          <div className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Building2 className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{openSitesCount}</p>
+                <p className="text-sm text-muted-foreground">Sites ouverts</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/reservations" className="group block">
+          <div className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Calendar className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{bookingsCount}</p>
+                <p className="text-sm text-muted-foreground">Réservations / semaine</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/clients" className="group block">
+          <div className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Briefcase className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{companiesCount}</p>
+                <p className="text-sm text-muted-foreground">Entreprises</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+      </div>
+
       {/* Tableau des clients avec forfait actif */}
-      <ActiveClientsTable clients={activeClients} sites={allSites} />
+      <ActiveClientsTable clients={activeClients} sites={allSites} selectedDate={selectedDate} />
 
       {/* Accès rapide */}
       <CollapsibleSection title="Accès rapide">
-        <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
           {/* Nouvelle réservation */}
           <Link href="/admin/reservations" className="group block">
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Plus className="h-6 w-6 text-foreground/60" />
+            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                  <Plus className="h-5 w-5 text-foreground/60" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
                     Nouvelle réservation
                   </h3>
-                  <p className="text-base text-muted-foreground">
-                    Réservez un espace pour un client
-                  </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
             </article>
           </Link>
 
           {/* Sites */}
           <Link href="/admin/sites" className="group block">
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Building2 className="h-6 w-6 text-foreground/60" />
+            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                  <Building2 className="h-5 w-5 text-foreground/60" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
                     Sites
                   </h3>
-                  <p className="text-base text-muted-foreground">
-                    {sitesCount} site{sitesCount !== 1 ? "s" : ""}
-                  </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
             </article>
           </Link>
 
-          {/* Réservations */}
-          <Link href="/admin/reservations" className="group block">
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Calendar className="h-6 w-6 text-foreground/60" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
-                    Réservations
-                  </h3>
-                  <p className="text-base text-muted-foreground">
-                    {bookingsCount} cette semaine
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </article>
-          </Link>
-
-          {/* Clients */}
-          <Link href="/admin/clients" className="group block">
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Briefcase className="h-6 w-6 text-foreground/60" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
-                    Clients
-                  </h3>
-                  <p className="text-base text-muted-foreground">
-                    {companiesCount} entreprise{companiesCount !== 1 ? "s" : ""}
-                  </p>
-                </div>
-                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </article>
-          </Link>
-
-          {/* App Client Hopper Café */}
+          {/* Hopper Café */}
           <a
             href="https://hopper-cafe.softr.app/login"
             target="_blank"
             rel="noopener noreferrer"
             className="group block"
           >
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Coffee className="h-6 w-6 text-foreground/60" />
+            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                  <Coffee className="h-5 w-5 text-foreground/60" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
                     Hopper Café
                   </h3>
-                  <p className="text-base text-muted-foreground">
-                    Accès à l&apos;application Hopper Café
-                  </p>
                 </div>
-                <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
             </article>
           </a>
@@ -210,20 +220,17 @@ export default async function AccueilPage() {
             rel="noopener noreferrer"
             className="group block"
           >
-            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
-              <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
-                  <Package className="h-6 w-6 text-foreground/60" />
+            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                  <Package className="h-5 w-5 text-foreground/60" />
                 </div>
-                <div className="flex-1">
-                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
-                    Réception des commandes
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
+                    Réception commandes
                   </h3>
-                  <p className="text-base text-muted-foreground">
-                    Gestion des achats Deskeo
-                  </p>
                 </div>
-                <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
               </div>
             </article>
           </a>

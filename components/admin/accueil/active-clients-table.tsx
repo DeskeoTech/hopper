@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, Suspense } from "react"
 import { Users, ChevronDown } from "lucide-react"
+import { DateNavigator } from "./date-navigator"
 import {
   Table,
   TableBody,
@@ -30,6 +31,7 @@ interface SiteOption {
 interface ActiveClientsTableProps {
   clients: ActiveClient[]
   sites: SiteOption[]
+  selectedDate: string // YYYY-MM-DD
 }
 
 interface CompanyGroup {
@@ -96,7 +98,7 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
   )
 }
 
-export function ActiveClientsTable({ clients, sites }: ActiveClientsTableProps) {
+export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClientsTableProps) {
   const [siteFilter, setSiteFilter] = useState("all")
 
   const filteredClients = useMemo(() => {
@@ -134,19 +136,24 @@ export function ActiveClientsTable({ clients, sites }: ActiveClientsTableProps) 
     <section className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <h2 className="type-h3 text-foreground">Clients présents aujourd&apos;hui</h2>
+          <h2 className="type-h3 text-foreground">Clients présents</h2>
           <span className="inline-flex items-center rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
             {filteredClients.length}
           </span>
         </div>
-        <SearchableSelect
-          options={siteOptions}
-          value={siteFilter}
-          onValueChange={setSiteFilter}
-          placeholder="Filtrer par site"
-          searchPlaceholder="Rechercher un site..."
-          triggerClassName="w-full sm:w-[200px]"
-        />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Suspense fallback={null}>
+            <DateNavigator currentDate={selectedDate} />
+          </Suspense>
+          <SearchableSelect
+            options={siteOptions}
+            value={siteFilter}
+            onValueChange={setSiteFilter}
+            placeholder="Filtrer par site"
+            searchPlaceholder="Rechercher un site..."
+            triggerClassName="w-full sm:w-[200px]"
+          />
+        </div>
       </div>
 
       {companyGroups.length === 0 ? (

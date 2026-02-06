@@ -40,13 +40,14 @@ export async function getFlexDeskAvailability(
 }> {
   const supabase = await createClient()
 
-  // 1. Get flex desk resource and site info for this site
+  // 1. Get flex desk resource and site info for this site (open sites only)
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
-    .select("id, capacity, site_id, sites!inner(id, name)")
+    .select("id, capacity, site_id, sites!inner(id, name, status)")
     .eq("site_id", siteId)
     .eq("type", "flex_desk")
     .eq("status", "available")
+    .eq("sites.status", "open")
     .single()
 
   if (resourceError || !resource) {
@@ -108,9 +109,10 @@ export async function getSitesWithFlexDesks(): Promise<{
 
   const { data: resources, error } = await supabase
     .from("resources")
-    .select("site_id, capacity, sites!inner(id, name)")
+    .select("site_id, capacity, sites!inner(id, name, status)")
     .eq("type", "flex_desk")
     .eq("status", "available")
+    .eq("sites.status", "open")
 
   if (error) {
     return { sites: [], error: error.message }

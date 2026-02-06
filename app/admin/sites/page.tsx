@@ -23,12 +23,13 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     .select("site_id, storage_path")
     .order("created_at", { ascending: true })
 
-  // Get flex desk resources only (available status)
+  // Get flex desk resources only (available status, open sites only)
   const { data: flexResources } = await supabase
     .from("resources")
-    .select("id, site_id, capacity")
+    .select("id, site_id, capacity, sites!inner(status)")
     .eq("type", "flex_desk")
     .eq("status", "available")
+    .eq("sites.status", "open")
     .not("capacity", "is", null)
 
   // Get today's confirmed bookings for flex resources
@@ -119,7 +120,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
       <section>
 
         {filteredSites.length > 0 ? (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredSites.map((site) => (
               <SiteCard
                 key={site.id}
