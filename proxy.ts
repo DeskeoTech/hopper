@@ -31,6 +31,17 @@ export async function proxy(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // If refresh failed and user is null, clear stale auth cookies
+  // to prevent the browser from repeatedly trying to refresh with invalid tokens
+  if (!user) {
+    const authCookies = request.cookies.getAll().filter((c) => c.name.startsWith("sb-"))
+    if (authCookies.length > 0) {
+      authCookies.forEach(({ name }) => {
+        supabaseResponse.cookies.delete(name)
+      })
+    }
+  }
+
   // If user is not authenticated and trying to access /admin, redirect to login
   if (!user && request.nextUrl.pathname.startsWith("/admin")) {
     const url = request.nextUrl.clone()

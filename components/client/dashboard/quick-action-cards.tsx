@@ -26,7 +26,7 @@ function ActionCard({ title, description, buttonText, onClick }: ActionCardProps
       <Button
         onClick={onClick}
         size="sm"
-        className="shrink-0 w-[120px] sm:w-auto sm:mx-auto rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs sm:text-sm font-semibold tracking-wide h-10 sm:h-11 px-4 sm:px-8"
+        className="shrink-0 w-[120px] sm:w-auto sm:mx-auto rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs sm:text-sm font-semibold tracking-wide h-10 sm:h-[42px] px-4 sm:px-12"
       >
         {buttonText}
       </Button>
