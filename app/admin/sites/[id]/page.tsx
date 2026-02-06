@@ -4,13 +4,15 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone, Plus } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
 import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
 import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { ResourceFormModal } from "@/components/admin/site-edit/resource-form-modal"
+import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import type { TransportationStop } from "@/lib/types/database"
 import { groupTransportByStation } from "@/lib/utils/transportation"
@@ -150,10 +152,21 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
               {/* Resources */}
               <div className="rounded-lg bg-card p-4 sm:p-6">
-                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                  <Building2 className="h-5 w-5" />
-                  Ressources ({resources?.length || 0})
-                </h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 type-h3 text-foreground">
+                    <Building2 className="h-5 w-5" />
+                    Ressources ({resources?.length || 0})
+                  </h2>
+                  <ResourceFormModal
+                    siteId={site.id}
+                    trigger={
+                      <Button size="sm" className="gap-1">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">Ajouter</span>
+                      </Button>
+                    }
+                  />
+                </div>
 
                 {resourcesByType && Object.keys(resourcesByType).length > 0 ? (
                   <div className="space-y-6">

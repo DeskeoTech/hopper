@@ -1,6 +1,10 @@
+"use client"
+
 import type { Resource } from "@/lib/types/database"
-import { Users, MapPin } from "lucide-react"
+import { Users, MapPin, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { ResourceFormModal } from "@/components/admin/site-edit/resource-form-modal"
 
 interface ResourceCardProps {
   resource: Resource
@@ -20,8 +24,18 @@ const statusLabels = {
 
 export function ResourceCard({ resource }: ResourceCardProps) {
   return (
-    <div className="rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted">
-      <div className="flex items-start justify-between gap-2">
+    <div className="relative rounded-lg bg-muted/50 p-4 transition-colors hover:bg-muted">
+      <ResourceFormModal
+        siteId={resource.site_id}
+        resource={resource}
+        trigger={
+          <Button variant="ghost" size="sm" className="absolute top-2 right-2 h-7 w-7 p-0">
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        }
+      />
+
+      <div className="flex items-start justify-between gap-2 pr-8">
         <h4 className="font-medium text-foreground">{resource.name}</h4>
         <span className={cn("rounded-sm border px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>
           {statusLabels[resource.status]}
@@ -43,18 +57,11 @@ export function ResourceCard({ resource }: ResourceCardProps) {
         )}
       </div>
 
-      {(resource.hourly_rate || resource.daily_rate) && (
+      {resource.hourly_credit_rate && (
         <div className="mt-2 flex gap-3 text-xs">
-          {resource.hourly_rate && (
-            <span className="text-muted-foreground">
-              <span className="font-medium text-foreground">{resource.hourly_rate}€</span>/h
-            </span>
-          )}
-          {resource.daily_rate && (
-            <span className="text-muted-foreground">
-              <span className="font-medium text-foreground">{resource.daily_rate}€</span>/jour
-            </span>
-          )}
+          <span className="text-muted-foreground">
+            <span className="font-medium text-foreground">{resource.hourly_credit_rate}</span> crédits/h
+          </span>
         </div>
       )}
     </div>
