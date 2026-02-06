@@ -129,7 +129,7 @@ export function ClientHeader() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                     <MessageCircleQuestion className="h-4 w-4 text-foreground/70" />
                   </div>
-                  <span>Contact support</span>
+                  <span>Support</span>
                 </div>
                 <ChevronRight className="h-4 w-4" />
               </Link>

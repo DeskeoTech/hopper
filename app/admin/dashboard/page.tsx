@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { LayoutDashboard, TrendingUp, TrendingDown, Headphones } from "lucide-react"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addWeeks, addMonths, format } from "date-fns"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addWeeks, addMonths, format, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
@@ -8,6 +8,8 @@ import { OccupationCard } from "@/components/admin/occupation-card"
 import { GrowthCard } from "@/components/admin/growth-card"
 import { ReservationsCard } from "@/components/admin/reservations-card"
 import { ForecastCard } from "@/components/admin/forecast-card"
+import { DateNavigator } from "@/components/admin/accueil/date-navigator"
+import { Suspense } from "react"
 
 // Composant carte métrique principale
 function MetricCard({
@@ -196,9 +198,17 @@ function ProgressBar({
   )
 }
 
-export default async function DashboardPage() {
+interface DashboardPageProps {
+  searchParams: Promise<{ date?: string }>
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams
   const supabase = await createClient()
-  const now = new Date()
+  const today = new Date().toISOString().split("T")[0]
+  const selectedDate = params.date || today
+  const now = new Date(selectedDate + "T12:00:00")
+  const isViewingToday = isToday(now)
 
   // Dates pour les filtres
   const todayStart = startOfDay(now)
@@ -388,9 +398,10 @@ export default async function DashboardPage() {
   const resources = resourcesResult.data || []
   const bookingsWeek = bookingsThisWeekResult.data || []
 
-  // Grouper les ressources par site et calculer la capacité totale
+  // Grouper les ressources flex_desk par site et calculer la capacité totale
+  const flexDeskResources = resources.filter((r) => r.type === "flex_desk")
   const siteCapacities = new Map<string, { name: string; capacity: number }>()
-  resources.forEach((r) => {
+  flexDeskResources.forEach((r) => {
     if (r.site_id && r.site) {
       const existing = siteCapacities.get(r.site_id)
       const siteData = r.site as { id: string; name: string; status: string }
@@ -405,9 +416,9 @@ export default async function DashboardPage() {
     }
   })
 
-  // Mapper resource_id vers site_id
+  // Mapper resource_id vers site_id (uniquement flex_desk pour l'occupation)
   const resourceToSite = new Map<string, string>()
-  resources.forEach((r) => {
+  flexDeskResources.forEach((r) => {
     if (r.site_id) {
       resourceToSite.set(r.id, r.site_id)
     }
@@ -607,13 +618,20 @@ export default async function DashboardPage() {
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="type-h2 text-foreground">Dashboard</h1>
-            <span className="inline-flex items-center rounded-sm bg-brand px-2 py-0.5 text-[10px] font-medium uppercase text-brand-foreground">
-              Temps réel
-            </span>
+            {isViewingToday && (
+              <span className="inline-flex items-center rounded-sm bg-brand px-2 py-0.5 text-[10px] font-medium uppercase text-brand-foreground">
+                Temps réel
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             Vue d&apos;ensemble des métriques • {format(now, "EEEE d MMMM yyyy", { locale: fr })}
           </p>
+        </div>
+        <div className="shrink-0">
+          <Suspense fallback={null}>
+            <DateNavigator currentDate={selectedDate} basePath="/admin/dashboard" />
+          </Suspense>
         </div>
       </div>
 
