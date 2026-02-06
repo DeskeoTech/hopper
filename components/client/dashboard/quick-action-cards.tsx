@@ -15,7 +15,7 @@ interface ActionCardProps {
 
 function ActionCard({ title, description, buttonText, onClick }: ActionCardProps) {
   return (
-    <div className="rounded-[16px] bg-card p-4 sm:p-5 flex items-center gap-3 sm:flex-col sm:items-stretch sm:gap-0">
+    <div className="rounded-[16px] bg-card p-5 sm:p-6 flex items-center gap-3 sm:flex-col sm:items-stretch sm:gap-0">
       <div className="flex-1 min-w-0 sm:flex-initial">
         <h3 className="font-header text-base sm:text-lg font-bold uppercase tracking-tight">{title}</h3>
         {description && (
@@ -26,7 +26,7 @@ function ActionCard({ title, description, buttonText, onClick }: ActionCardProps
       <Button
         onClick={onClick}
         size="sm"
-        className="shrink-0 w-[120px] sm:w-auto sm:mx-auto rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs sm:text-sm font-semibold tracking-wide h-8 sm:h-10 px-4 sm:px-6"
+        className="shrink-0 w-[120px] sm:w-auto sm:mx-auto rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs sm:text-sm font-semibold tracking-wide h-10 sm:h-11 px-4 sm:px-8"
       >
         {buttonText}
       </Button>
