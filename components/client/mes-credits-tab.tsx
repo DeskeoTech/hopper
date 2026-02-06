@@ -65,7 +65,7 @@ export function MesCreditsTab() {
           <div>
             <p className="text-xs text-muted-foreground">Solde actuel</p>
             <p className="text-2xl font-bold text-foreground">
-              {credits?.remaining ?? 0} <span className="text-sm font-normal text-muted-foreground">/ {credits?.allocated ?? 0}</span>
+              {credits?.remaining ?? 0}
             </p>
           </div>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
