@@ -41,6 +41,18 @@ export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
       <article className="overflow-hidden rounded-2xl bg-background border border-foreground/10">
         {/* Header with image and capacity badge */}
         <div className="relative p-3 pb-0">
+          {/* Status badge - positioned in top left of card padding area */}
+          <div className={`absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
+            site.status === "open"
+              ? "bg-emerald-100 text-emerald-700"
+              : "bg-red-100 text-red-700"
+          }`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${
+              site.status === "open" ? "bg-emerald-500" : "bg-red-500"
+            }`} />
+            {site.status === "open" ? "Ouvert" : "Fermé"}
+          </div>
+
           {/* Flex desk availability badge - positioned in top right of card padding area */}
           {availabilityDisplay && (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">

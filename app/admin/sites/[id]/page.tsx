@@ -43,12 +43,33 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   // Fetch photos for this site
   const { data: photos } = await supabase.from("site_photos").select("*").eq("site_id", id).order("created_at")
 
+  // Fetch resource photos for all resources of this site
+  const resourceIds = resources?.map((r) => r.id) || []
+  const { data: resourcePhotos } = resourceIds.length > 0
+    ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("display_order")
+    : { data: null }
+
   // Build public URLs for photos
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const photoUrls = photos?.map((photo) => ({
     ...photo,
     url: `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`,
   })) || []
+
+  // Build resource photos map with public URLs
+  const resourcePhotosMap: Record<string, { id: string; url: string; storage_path: string; filename: string | null }[]> = {}
+  if (resourcePhotos) {
+    for (const rp of resourcePhotos) {
+      const rid = rp.resource_id
+      if (!resourcePhotosMap[rid]) resourcePhotosMap[rid] = []
+      resourcePhotosMap[rid].push({
+        id: rp.id,
+        url: `${supabaseUrl}/storage/v1/object/public/resource-photos/${rp.storage_path}`,
+        storage_path: rp.storage_path,
+        filename: rp.filename,
+      })
+    }
+  }
 
   // Group resources by type
   const resourcesByType: Record<string, Resource[]> = {}
@@ -176,7 +197,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                         </h3>
                         <div className="grid gap-3 sm:grid-cols-2">
                           {typeResources?.map((resource) => (
-                            <ResourceCard key={resource.id} resource={resource} />
+                            <ResourceCard key={resource.id} resource={resource} photos={resourcePhotosMap[resource.id]} />
                           ))}
                         </div>
                       </div>

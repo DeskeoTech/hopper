@@ -85,6 +85,15 @@ export interface SitePhoto {
   created_at: string
 }
 
+export interface ResourcePhoto {
+  id: string
+  resource_id: string
+  storage_path: string
+  filename: string | null
+  display_order: number
+  created_at: string
+}
+
 // Company types
 export type CompanyType = "self_employed" | "multi_employee"
 export type SubscriptionPeriod = "month" | "week"
