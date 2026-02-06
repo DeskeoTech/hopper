@@ -20,7 +20,9 @@ import { Label } from "@/components/ui/label"
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { completeOnboarding, uploadOnboardingKbis } from "@/lib/actions/onboarding"
 import type { Company } from "@/lib/types/database"
 import { cn } from "@/lib/utils"
@@ -283,6 +285,9 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
         onEscapeKeyDown={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
+        <VisuallyHidden>
+          <DialogTitle>Onboarding</DialogTitle>
+        </VisuallyHidden>
         {/* Success Screen with Confetti */}
         {isComplete ? (
           <div className="space-y-6 text-center animate-in fade-in-0 zoom-in-95 duration-500">

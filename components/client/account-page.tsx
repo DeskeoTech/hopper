@@ -17,8 +17,8 @@ interface AccountPageProps {
 export function AccountPage({ bookings, contracts, isAdmin }: AccountPageProps) {
   const { user, selectedSiteWithDetails } = useClientLayout()
 
-  // Get the first image of the selected site
-  const siteImageUrl = selectedSiteWithDetails?.imageUrl || selectedSiteWithDetails?.photoUrls?.[0] || null
+  // Fixed banner image - always the same coworking panoramic
+  const siteImageUrl = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
 
   return (
     <div className="flex flex-col">
@@ -38,7 +38,10 @@ export function AccountPage({ bookings, contracts, isAdmin }: AccountPageProps) 
                 <Building2 className="h-16 w-16 text-muted-foreground/30" />
               </div>
             )}
-            {/* Gradient overlay */}
+            {/* Top gradient + blur effect (header transition) */}
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent" />
+            {/* Bottom gradient overlay */}
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent sm:via-background/40" />
             <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-background to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
           </div>

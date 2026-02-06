@@ -53,8 +53,8 @@ export function ClientHeader() {
           )}
         </div>
 
-        {/* Credits Badge */}
-        <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
+        {/* Credits Badge - Desktop only */}
+        <div className="hidden md:flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
           <Ticket className="h-4 w-4 text-foreground/70" />
           <span className="text-xs font-medium">
             {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
@@ -75,6 +75,16 @@ export function ClientHeader() {
             align="end"
             className="w-56 rounded-[16px] bg-card p-0 border-0 shadow-none"
           >
+            {/* Credits - Mobile only */}
+            <div className="flex md:hidden items-center gap-3 px-4 py-3 border-b border-foreground/5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                <Ticket className="h-4 w-4 text-foreground/70" />
+              </div>
+              <span className="text-sm font-medium">
+                {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
+              </span>
+            </div>
+
             {/* Mon Compte Link */}
             <DropdownMenuItem asChild className="p-0 focus:bg-transparent">
               <Link
