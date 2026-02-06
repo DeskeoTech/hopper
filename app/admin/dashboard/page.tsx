@@ -459,7 +459,7 @@ export default async function DashboardPage() {
       const resourceType = r.type as ResourceType
 
       if (existing) {
-        if (resourceType === "bench" || resourceType === "flex_desk") {
+        if (resourceType === "flex_desk") {
           existing.benchCapacity += capacity
         } else if (resourceType === "meeting_room") {
           existing.meetingRoomCapacity += capacity
@@ -467,7 +467,7 @@ export default async function DashboardPage() {
       } else {
         siteResourcesByType.set(r.site_id, {
           name: siteData.name,
-          benchCapacity: (resourceType === "bench" || resourceType === "flex_desk") ? capacity : 0,
+          benchCapacity: resourceType === "flex_desk" ? capacity : 0,
           meetingRoomCapacity: resourceType === "meeting_room" ? capacity : 0,
         })
       }
@@ -483,14 +483,14 @@ export default async function DashboardPage() {
       const seatsCount = b.seats_count || 1
 
       if (existing) {
-        if (resource.type === "bench" || resource.type === "flex_desk") {
+        if (resource.type === "flex_desk") {
           existing.benchBooked += seatsCount
         } else if (resource.type === "meeting_room") {
           existing.meetingRoomBooked += seatsCount
         }
       } else {
         todayBookingsBySiteAndType.set(resource.site_id, {
-          benchBooked: (resource.type === "bench" || resource.type === "flex_desk") ? seatsCount : 0,
+          benchBooked: resource.type === "flex_desk" ? seatsCount : 0,
           meetingRoomBooked: resource.type === "meeting_room" ? seatsCount : 0,
         })
       }

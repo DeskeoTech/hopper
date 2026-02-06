@@ -1,8 +1,9 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
-import { Button } from "@/components/ui/button"
-import { NewsCard } from "@/components/client/news-card"
 import { getNewsPosts } from "@/lib/actions/news"
+import { ActiveClientsTable } from "@/components/admin/accueil/active-clients-table"
+import { CollapsibleSection } from "@/components/admin/accueil/collapsible-section"
+import { NewsFeedSection } from "@/components/admin/accueil/news-feed-section"
 import {
   Building2,
   Calendar,
@@ -18,9 +19,10 @@ import { startOfWeek, endOfWeek } from "date-fns"
 
 export default async function AccueilPage() {
   const supabase = await createClient()
+  const today = new Date().toISOString().split("T")[0]
 
   // Récupération des données en parallèle
-  const [sitesResult, companiesResult, bookingsResult] = await Promise.all([
+  const [sitesResult, companiesResult, bookingsResult, activeClientsResult, allSitesResult] = await Promise.all([
     // Nombre de sites
     supabase.from("sites").select("*", { count: "exact", head: true }),
 
@@ -34,14 +36,48 @@ export default async function AccueilPage() {
       .gte("start_date", startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
       .lte("start_date", endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString())
       .eq("status", "confirmed"),
+
+    // Clients avec un forfait actif aujourd'hui
+    supabase
+      .from("users")
+      .select(`
+        id, first_name, last_name,
+        companies!inner(name, main_site_id, sites(id, name)),
+        contracts!inner(id, status, start_date, end_date)
+      `)
+      .eq("contracts.status", "active")
+      .lte("contracts.start_date", today)
+      .or(`end_date.is.null,end_date.gte.${today}`, { referencedTable: "contracts" })
+      .order("last_name", { ascending: true }),
+
+    // Sites ouverts (pour le filtre)
+    supabase.from("sites").select("id, name").eq("status", "open").order("name"),
   ])
 
   const sitesCount = sitesResult.count || 0
   const companiesCount = companiesResult.count || 0
   const bookingsCount = bookingsResult.count || 0
 
+  // Transformer les clients actifs
+  const activeClients = (activeClientsResult.data || []).map((u) => {
+    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    return {
+      id: u.id,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      companyName: company?.name || null,
+      siteId: company?.sites?.id || null,
+      siteName: company?.sites?.name || null,
+    }
+  })
+
+  const allSites = (allSitesResult.data || []).map((s) => ({
+    id: s.id,
+    name: s.name,
+  }))
+
   // Fetch latest news posts (admin sees all posts)
-  const newsPosts = await getNewsPosts({ limit: 3 })
+  const newsPosts = await getNewsPosts({ limit: 20 })
 
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
@@ -52,32 +88,36 @@ export default async function AccueilPage() {
         </div>
         <div className="min-w-0 flex-1">
           <h1 className="type-h2 text-foreground">Accueil</h1>
-          <p className="mt-1 text-muted-foreground">Bienvenue sur votre espace d'administration</p>
+          <p className="mt-1 text-muted-foreground">Bienvenue sur votre espace d&apos;administration</p>
         </div>
       </div>
 
-      {/* CTA Créer une réservation */}
-      <div className="rounded-lg bg-card p-4 sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="type-h3 text-foreground">Créer une réservation</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Réservez un espace pour un client rapidement
-            </p>
-          </div>
-          <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/admin/reservations">
-              <Plus className="h-5 w-5" />
-              Nouvelle réservation
-            </Link>
-          </Button>
-        </div>
-      </div>
+      {/* Tableau des clients avec forfait actif */}
+      <ActiveClientsTable clients={activeClients} sites={allSites} />
 
       {/* Accès rapide */}
-      <section>
-        <h2 className="type-h3 text-foreground mb-4">Accès rapide</h2>
+      <CollapsibleSection title="Accès rapide">
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+          {/* Nouvelle réservation */}
+          <Link href="/admin/reservations" className="group block">
+            <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-sm bg-muted">
+                  <Plus className="h-6 w-6 text-foreground/60" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-header text-xl text-foreground group-hover:text-primary transition-colors">
+                    Nouvelle réservation
+                  </h3>
+                  <p className="text-base text-muted-foreground">
+                    Réservez un espace pour un client
+                  </p>
+                </div>
+                <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </div>
+            </article>
+          </Link>
+
           {/* Sites */}
           <Link href="/admin/sites" className="group block">
             <article className="rounded-lg bg-card p-5 transition-all hover:shadow-md">
@@ -155,7 +195,7 @@ export default async function AccueilPage() {
                     Hopper Café
                   </h3>
                   <p className="text-base text-muted-foreground">
-                    Accès à l'application Hopper Café
+                    Accès à l&apos;application Hopper Café
                   </p>
                 </div>
                 <ExternalLink className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -188,25 +228,12 @@ export default async function AccueilPage() {
             </article>
           </a>
         </div>
-      </section>
+      </CollapsibleSection>
 
       {/* Fil d'actualité */}
-      <section>
-        <h2 className="type-h3 text-foreground mb-4">Fil d'actualité</h2>
-        {newsPosts.length === 0 ? (
-          <div className="rounded-lg bg-card p-8 text-center">
-            <p className="text-muted-foreground">
-              Aucune actualité pour le moment.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-            {newsPosts.map((post) => (
-              <NewsCard key={post.id} post={post} variant="compact" />
-            ))}
-          </div>
-        )}
-      </section>
+      <CollapsibleSection title="Fil d'actualité">
+        <NewsFeedSection posts={newsPosts} />
+      </CollapsibleSection>
     </div>
   )
 }
