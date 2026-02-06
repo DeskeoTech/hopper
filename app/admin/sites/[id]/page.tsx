@@ -4,15 +4,17 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { EquipmentBadge } from "@/components/admin/equipment-badge"
 import { ResourceCard } from "@/components/admin/resource-card"
-import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone } from "lucide-react"
+import { ArrowLeft, MapPin, Clock, Wifi, Key, Calendar, FileText, Building2, User, Mail, Phone, Plus } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/site-edit/edit-header-modal"
 import { SitePhotoGallery } from "@/components/admin/site-edit/site-photo-gallery"
 import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instructions-modal"
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { ResourceFormModal } from "@/components/admin/site-edit/resource-form-modal"
+import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
-import type { TransportationStop } from "@/lib/types/database"
+import type { TransportationStop, Resource, Equipment } from "@/lib/types/database"
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -49,15 +51,14 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   })) || []
 
   // Group resources by type
-  const resourcesByType = resources?.reduce(
-    (acc, resource) => {
-      const type = resource.type
-      if (!acc[type]) acc[type] = []
-      acc[type].push(resource)
-      return acc
-    },
-    {} as Record<string, typeof resources>,
-  )
+  const resourcesByType: Record<string, Resource[]> = {}
+  if (resources) {
+    for (const resource of resources) {
+      const type = resource.type as string
+      if (!resourcesByType[type]) resourcesByType[type] = []
+      resourcesByType[type].push(resource as Resource)
+    }
+  }
 
   // Typed transportation lines to avoid multiple casts
   const transportationLines = site.transportation_lines as TransportationStop[] | null
@@ -150,10 +151,21 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
 
               {/* Resources */}
               <div className="rounded-lg bg-card p-4 sm:p-6">
-                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                  <Building2 className="h-5 w-5" />
-                  Ressources ({resources?.length || 0})
-                </h2>
+                <div className="mb-4 flex items-center justify-between">
+                  <h2 className="flex items-center gap-2 type-h3 text-foreground">
+                    <Building2 className="h-5 w-5" />
+                    Ressources ({resources?.length || 0})
+                  </h2>
+                  <ResourceFormModal
+                    siteId={site.id}
+                    trigger={
+                      <Button size="sm" className="gap-1">
+                        <Plus className="h-4 w-4" />
+                        <span className="hidden sm:inline">Ajouter</span>
+                      </Button>
+                    }
+                  />
+                </div>
 
                 {resourcesByType && Object.keys(resourcesByType).length > 0 ? (
                   <div className="space-y-6">
@@ -200,7 +212,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                     <div>
                       <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
                       <div className="mt-1 flex flex-wrap gap-1.5">
-                        {site.opening_days.map((day) => (
+                        {site.opening_days.map((day: string) => (
                           <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
                             {day}
                           </span>
@@ -258,7 +270,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 </h2>
                 {site.equipments && site.equipments.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
-                    {site.equipments.map((equipment) => (
+                    {(site.equipments as Equipment[]).map((equipment: Equipment) => (
                       <EquipmentBadge key={equipment} equipment={equipment} />
                     ))}
                   </div>

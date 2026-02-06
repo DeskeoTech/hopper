@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client"
 import { MobileNav } from "./mobile-nav"
 
 const pageTitles: Record<string, string> = {
-  "/admin": "Dashboard Hopper",
+  "/admin": "",
   "/admin/sites": "Sites",
   "/admin/reservations": "Réservations",
   "/admin/users": "Utilisateurs",
