@@ -1,7 +1,8 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement, TransportationStop } from "@/lib/types/database"
 
 interface Site {
@@ -90,6 +91,17 @@ export function ClientLayoutProvider({
 
   // Use local state for selectedSiteId to update immediately on selection
   const [currentSelectedSiteId, setCurrentSelectedSiteId] = useState(initialSelectedSiteId)
+
+  // Listen for auth state changes - redirect to login on token refresh failure
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        router.push("/login")
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [router])
 
   const selectedSite = sites.find((s) => s.id === currentSelectedSiteId) || null
   const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === currentSelectedSiteId) || null
