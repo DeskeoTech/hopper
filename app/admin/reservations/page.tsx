@@ -100,8 +100,9 @@ export default async function ReservationsPage({
   const { data: bookings, error: bookingsError } = await query
 
   // Fetch filter options
-  const [sitesResult, companiesResult, usersResult] = await Promise.all([
+  const [sitesResult, openSitesResult, companiesResult, usersResult] = await Promise.all([
     supabase.from("sites").select("id, name").order("name"),
+    supabase.from("sites").select("id, name").eq("status", "open").order("name"),
     supabase.from("companies").select("id, name").order("name"),
     supabase
       .from("users")
@@ -110,6 +111,7 @@ export default async function ReservationsPage({
   ])
 
   const sites = sitesResult.data || []
+  const openSites = openSitesResult.data || []
   const companies = companiesResult.data || []
   const users = usersResult.data || []
 
@@ -207,7 +209,7 @@ export default async function ReservationsPage({
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
-      <ReservationsHeader sites={sites} users={users} />
+      <ReservationsHeader sites={openSites} users={users} />
 
       {/* Filters */}
       <Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}>
