@@ -16,7 +16,7 @@ interface AdminContactDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   admin: CompanyAdmin | null
-  actionType: "credits" | "desk"
+  actionType: "credits" | "desk" | "billing"
 }
 
 export function AdminContactDialog({
@@ -25,9 +25,12 @@ export function AdminContactDialog({
   admin,
   actionType,
 }: AdminContactDialogProps) {
-  const actionLabel = actionType === "credits"
-    ? "acheter des crédits"
-    : "réserver un poste"
+  const actionLabels: Record<typeof actionType, string> = {
+    credits: "acheter des crédits",
+    desk: "réserver un poste",
+    billing: "accéder à la facturation",
+  }
+  const actionLabel = actionLabels[actionType]
 
   const adminName = admin
     ? `${admin.first_name || ""} ${admin.last_name || ""}`.trim() || "l'administrateur"

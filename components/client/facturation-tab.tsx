@@ -3,12 +3,21 @@
 import { useState } from "react"
 import { Receipt, ExternalLink, Loader2, CreditCard } from "lucide-react"
 import { createBillingPortalSession } from "@/lib/actions/billing"
+import { useClientLayout } from "./client-layout-provider"
+import { AdminContactDialog } from "./admin-contact-dialog"
 
 export function FacturationTab() {
+  const { isAdmin, companyAdmin } = useClientLayout()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [showContactAdmin, setShowContactAdmin] = useState(false)
 
   async function handleOpenBillingPortal() {
+    if (!isAdmin) {
+      setShowContactAdmin(true)
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
@@ -82,6 +91,13 @@ export function FacturationTab() {
           <p className="mt-4 rounded-[12px] bg-destructive/10 p-3 text-sm text-destructive">{error}</p>
         )}
       </div>
+
+      <AdminContactDialog
+        open={showContactAdmin}
+        onOpenChange={setShowContactAdmin}
+        admin={companyAdmin}
+        actionType="billing"
+      />
     </>
   )
 }
