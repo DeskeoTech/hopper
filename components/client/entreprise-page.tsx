@@ -37,7 +37,8 @@ import {
   createUserByAdmin,
 } from "@/lib/actions/users"
 import { assignUserToContract } from "@/lib/actions/user-contracts"
-import type { Company } from "@/lib/types/database"
+import { ContractDetailModal } from "./contract-detail-modal"
+import type { Company, ContractForDisplay } from "@/lib/types/database"
 import type { ContractWithSeats, UserWithContract } from "@/app/(client)/entreprise/page"
 
 interface EntreprisePageProps {
@@ -72,6 +73,9 @@ export function EntreprisePage({
 
   // No seats dialog state
   const [noSeatsDialogOpen, setNoSeatsDialogOpen] = useState(false)
+
+  // Contract detail modal state
+  const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
 
   // Calculate seats info from contracts
   const totalSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
@@ -242,16 +246,28 @@ export function EntreprisePage({
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {contracts.map((contract) => {
-                const isFull = contract.assigned_seats >= contract.total_seats
                 const progressPercent =
                   contract.total_seats > 0
                     ? (contract.assigned_seats / contract.total_seats) * 100
                     : 0
 
                 return (
-                  <div
+                  <button
                     key={contract.id}
-                    className="rounded-[12px] bg-background/50 p-4"
+                    type="button"
+                    onClick={() =>
+                      setSelectedContract({
+                        id: contract.id,
+                        status: contract.status,
+                        start_date: contract.start_date,
+                        end_date: contract.end_date,
+                        plan_name: contract.plan_name,
+                        plan_recurrence: contract.plan_recurrence,
+                        site_name: null,
+                        number_of_seats: contract.total_seats,
+                      })
+                    }
+                    className="rounded-[12px] bg-background/50 p-4 text-left transition-colors hover:bg-foreground/5 cursor-pointer"
                   >
                     <div className="mb-2">
                       <h3 className="font-medium text-sm">{contract.plan_name}</h3>
@@ -271,7 +287,7 @@ export function EntreprisePage({
                       </div>
                       <Progress value={progressPercent} className="h-1.5" />
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -572,6 +588,13 @@ export function EntreprisePage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Contract Detail Modal */}
+      <ContractDetailModal
+        contract={selectedContract}
+        open={!!selectedContract}
+        onOpenChange={(open) => !open && setSelectedContract(null)}
+      />
 
       {/* No Seats Dialog */}
       <Dialog open={noSeatsDialogOpen} onOpenChange={setNoSeatsDialogOpen}>
