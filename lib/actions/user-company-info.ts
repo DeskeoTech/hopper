@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import {
   userInfoSchema,
   companyInfoSchema,
@@ -20,19 +21,27 @@ export async function updateUserProfile(userId: string, data: UserInfoFormData) 
     return { error: validationResult.error.errors[0].message }
   }
 
-  const supabase = await createClient()
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
-  // Verify user is updating their own profile
+  // Use authenticated email as source of truth to identify the user
+  const email = authUser.email
+  if (!email) {
+    return { error: "Email non disponible" }
+  }
+
+  // Verify the userId matches the authenticated user's email
   const { data: userProfile } = await supabase
     .from("users")
     .select("id")
-    .eq("email", authUser.email)
+    .eq("email", email)
     .single()
 
   if (userProfile?.id !== userId) {
     return { error: "Accès non autorisé" }
   }
 
+  // Update using email as identifier (source of truth from auth)
   const { error } = await supabase
     .from("users")
     .update({
@@ -41,7 +50,7 @@ export async function updateUserProfile(userId: string, data: UserInfoFormData) 
       phone: data.phone,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", userId)
+    .eq("email", email)
 
   if (error) {
     return { error: error.message }
@@ -66,7 +75,8 @@ export async function updateCompanyProfile(
     return { error: validationResult.error.errors[0].message }
   }
 
-  const supabase = await createClient()
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   // Verify user belongs to this company
   const { data: userProfile } = await supabase
@@ -104,7 +114,8 @@ export async function uploadCompanyKbis(companyId: string, formData: FormData) {
     return { error: "Non autorisé" }
   }
 
-  const supabase = await createClient()
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   // Verify user belongs to this company
   const { data: userProfile } = await supabase

@@ -234,7 +234,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                       <span className="text-sm text-muted-foreground">Jours d'ouverture</span>
                       <div className="mt-1 flex flex-wrap gap-1.5">
                         {site.opening_days.map((day: string) => (
-                          <span key={day} className="rounded-sm border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
+                          <span key={day} className="rounded-full border border-border bg-muted px-2 py-1 text-xs font-medium text-foreground">
                             {day}
                           </span>
                         ))}

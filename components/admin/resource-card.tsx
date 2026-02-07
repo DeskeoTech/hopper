@@ -74,7 +74,7 @@ export function ResourceCard({ resource, photos = [] }: ResourceCardProps) {
 
       <div className="flex items-start justify-between gap-2 pr-16">
         <h4 className="font-medium text-foreground">{resource.name}</h4>
-        <span className={cn("rounded-sm border px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>
+        <span className={cn("rounded-full border px-2 py-0.5 text-xs font-medium", statusColors[resource.status])}>
           {statusLabels[resource.status]}
         </span>
       </div>

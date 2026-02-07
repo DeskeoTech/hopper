@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { Loader2, Building2, User, Upload, FileText, X } from "lucide-react"
+import { Loader2, Building2, User, Upload, FileText, X, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,7 @@ import {
   updateCompanyProfile,
   uploadCompanyKbis,
 } from "@/lib/actions/user-company-info"
+import { isCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { User as UserType, Company } from "@/lib/types/database"
 
 interface CompleteProfileModalProps {
@@ -56,17 +57,21 @@ export function CompleteProfileModal({
   const [kbisFile, setKbisFile] = useState<File | null>(null)
   const [existingKbis, setExistingKbis] = useState(company.kbis_storage_path)
 
+  // If company info is already complete (e.g. invited user), skip company fields
+  const companyAlreadyComplete = isCompanyInfoComplete(company)
+
   const needsKbis = companyType === "multi_employee"
   const hasKbis = !!kbisFile || !!existingKbis
 
-  const isFormValid =
-    firstName.trim() &&
-    lastName.trim() &&
-    phone.trim() &&
-    companyName.trim() &&
-    address.trim() &&
-    companyType &&
-    (!needsKbis || hasKbis)
+  const isFormValid = companyAlreadyComplete
+    ? firstName.trim() && lastName.trim() && phone.trim()
+    : firstName.trim() &&
+      lastName.trim() &&
+      phone.trim() &&
+      companyName.trim() &&
+      address.trim() &&
+      companyType &&
+      (!needsKbis || hasKbis)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -102,29 +107,31 @@ export function CompleteProfileModal({
       return
     }
 
-    // Update company info
-    const companyResult = await updateCompanyProfile(company.id, {
-      name: companyName.trim(),
-      address: address.trim(),
-      company_type: companyType as "self_employed" | "multi_employee",
-    })
+    // Update company info only if not already complete
+    if (!companyAlreadyComplete) {
+      const companyResult = await updateCompanyProfile(company.id, {
+        name: companyName.trim(),
+        address: address.trim(),
+        company_type: companyType as "self_employed" | "multi_employee",
+      })
 
-    if (companyResult.error) {
-      setError(companyResult.error)
-      setLoading(false)
-      return
-    }
-
-    // Upload KBIS if SAS and new file provided
-    if (needsKbis && kbisFile) {
-      const formData = new FormData()
-      formData.append("file", kbisFile)
-      const kbisResult = await uploadCompanyKbis(company.id, formData)
-
-      if (kbisResult.error) {
-        setError(kbisResult.error)
+      if (companyResult.error) {
+        setError(companyResult.error)
         setLoading(false)
         return
+      }
+
+      // Upload KBIS if SAS and new file provided
+      if (needsKbis && kbisFile) {
+        const formData = new FormData()
+        formData.append("file", kbisFile)
+        const kbisResult = await uploadCompanyKbis(company.id, formData)
+
+        if (kbisResult.error) {
+          setError(kbisResult.error)
+          setLoading(false)
+          return
+        }
       }
     }
 
@@ -158,8 +165,19 @@ export function CompleteProfileModal({
               Informations personnelles
             </div>
 
+            <div className="space-y-2.5">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={user.email || ""}
+                disabled
+                className="bg-muted text-muted-foreground"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <Label htmlFor="firstName">
                   Prénom <span className="text-destructive">*</span>
                 </Label>
@@ -170,7 +188,7 @@ export function CompleteProfileModal({
                   placeholder="Votre prénom"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 <Label htmlFor="lastName">
                   Nom <span className="text-destructive">*</span>
                 </Label>
@@ -183,7 +201,7 @@ export function CompleteProfileModal({
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               <Label htmlFor="phone">
                 Téléphone <span className="text-destructive">*</span>
               </Label>
@@ -197,113 +215,117 @@ export function CompleteProfileModal({
             </div>
           </div>
 
-          {/* Company Info Section */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Building2 className="h-4 w-4" />
-              Informations entreprise
-            </div>
+          {/* Company Info Section - hidden if company already complete (e.g. invited user) */}
+          {!companyAlreadyComplete && (
+            <>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Building2 className="h-4 w-4" />
+                  Informations entreprise
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="companyName">
-                Nom de l'entreprise <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="companyName"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                placeholder="Nom de votre entreprise"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="companyName">
+                    Nom de l'entreprise <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="companyName"
+                    value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)}
+                    placeholder="Nom de votre entreprise"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">
-                Adresse <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="address"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                placeholder="Adresse de l'entreprise"
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="address">
+                    Adresse <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="Adresse de l'entreprise"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label>
-                Type d'entreprise <span className="text-destructive">*</span>
-              </Label>
-              <Select
-                value={companyType}
-                onValueChange={(v) =>
-                  setCompanyType(v as "self_employed" | "multi_employee")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="self_employed">
-                    EI (Entreprise Individuelle)
-                  </SelectItem>
-                  <SelectItem value="multi_employee">SAS / SARL</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {/* KBIS Section - only shown for SAS */}
-          {needsKbis && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <FileText className="h-4 w-4" />
-                Document KBIS <span className="text-destructive">*</span>
+                <div className="space-y-2">
+                  <Label>
+                    Type d'entreprise <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={companyType}
+                    onValueChange={(v) =>
+                      setCompanyType(v as "self_employed" | "multi_employee")
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Sélectionner un type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="self_employed">
+                        EI (Entreprise Individuelle)
+                      </SelectItem>
+                      <SelectItem value="multi_employee">SAS / SARL</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              {existingKbis && !kbisFile ? (
-                <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1 text-sm">KBIS déjà fourni</span>
-                </div>
-              ) : kbisFile ? (
-                <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                  <span className="flex-1 truncate text-sm">
-                    {kbisFile.name}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRemoveFile}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="kbis-upload"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    Importer le KBIS
-                  </Button>
-                  <p className="text-xs text-muted-foreground">
-                    Formats acceptés : PDF, JPG, PNG
-                  </p>
+              {/* KBIS Section - only shown for SAS */}
+              {needsKbis && (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <FileText className="h-4 w-4" />
+                    Document KBIS <span className="text-destructive">*</span>
+                  </div>
+
+                  {existingKbis && !kbisFile ? (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1 text-sm">KBIS déjà fourni</span>
+                    </div>
+                  ) : kbisFile ? (
+                    <div className="flex items-center gap-2 rounded-md border bg-muted/50 p-3">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex-1 truncate text-sm">
+                        {kbisFile.name}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveFile}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        id="kbis-upload"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        Importer le KBIS
+                      </Button>
+                      <p className="text-xs text-muted-foreground">
+                        Formats acceptés : PDF, JPG, PNG
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
+            </>
           )}
 
           {/* Error message */}

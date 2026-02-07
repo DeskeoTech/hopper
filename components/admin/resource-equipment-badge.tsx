@@ -23,7 +23,7 @@ export function ResourceEquipmentBadge({ equipment, size = "md" }: ResourceEquip
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-sm border border-border bg-muted font-medium text-foreground",
+        "inline-flex items-center gap-1 rounded-full border border-border bg-muted font-medium text-foreground",
         size === "sm" ? "px-1.5 py-0.5 text-[10px]" : "px-2 py-1 text-xs"
       )}
     >
