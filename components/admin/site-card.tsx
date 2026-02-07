@@ -40,8 +40,8 @@ export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
     <Link href={`/admin/sites/${site.id}`} className="group block">
       <article className="overflow-hidden rounded-2xl bg-background border border-foreground/10">
         {/* Header with image and capacity badge */}
-        <div className="relative p-3 pb-0">
-          {/* Status badge - positioned in top left of card padding area */}
+        <div className="relative">
+          {/* Status badge */}
           <div className={`absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
             site.status === "open"
               ? "bg-emerald-100 text-emerald-700"
@@ -53,7 +53,7 @@ export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
             {site.status === "open" ? "Ouvert" : "Fermé"}
           </div>
 
-          {/* Flex desk availability badge - positioned in top right of card padding area */}
+          {/* Flex desk availability badge */}
           {availabilityDisplay && (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">
               <DeskIcon className="h-5 w-5" />
@@ -61,8 +61,8 @@ export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
             </div>
           )}
 
-          {/* Image with rounded corners */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-muted">
+          {/* Full-width image */}
+          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
             {imageUrl ? (
               <img
                 src={imageUrl || "/placeholder.svg"}
