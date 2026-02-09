@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { Building2 } from "lucide-react"
 import type { Site } from "@/lib/types/database"
+import { SiteInstructionsEditor } from "@/components/admin/sites/site-instructions-editor"
+import { SiteContactEditor, type DeskeoUser } from "@/components/admin/sites/site-contact-editor"
 
 function DeskIcon({ className }: { className?: string }) {
   return (
@@ -31,9 +33,10 @@ interface SiteCardProps {
   site: Site
   imageUrl?: string | null
   flexAvailability?: { available: number; total: number } | null
+  deskeoUsers?: DeskeoUser[]
 }
 
-export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
+export function SiteCard({ site, imageUrl, flexAvailability, deskeoUsers = [] }: SiteCardProps) {
   const availabilityDisplay = flexAvailability ? `${flexAvailability.available}/${flexAvailability.total}` : null
 
   return (
@@ -88,6 +91,38 @@ export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
           <h3 className="font-bold text-xl text-foreground leading-tight tracking-tight">{site.name}</h3>
 
           <p className="mt-2 text-sm text-foreground/60">{site.address}</p>
+
+          {/* Instructions edit */}
+          <div className="mt-3 flex items-center justify-between border-t border-foreground/5 pt-3">
+            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+              {site.instructions ? site.instructions : "Aucune instruction"}
+            </span>
+            <div onClick={(e) => e.stopPropagation()}>
+              <SiteInstructionsEditor
+                siteId={site.id}
+                siteName={site.name}
+                initialInstructions={site.instructions}
+                initialAccess={site.access}
+              />
+            </div>
+          </div>
+
+          {/* Contact edit */}
+          <div className="flex items-center justify-between border-t border-foreground/5 pt-3">
+            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
+              {site.contact_first_name || site.contact_last_name
+                ? `${site.contact_first_name || ""} ${site.contact_last_name || ""}`.trim()
+                : "Aucun contact"}
+            </span>
+            <div onClick={(e) => e.stopPropagation()}>
+              <SiteContactEditor
+                siteId={site.id}
+                siteName={site.name}
+                currentContactEmail={site.contact_email}
+                deskeoUsers={deskeoUsers}
+              />
+            </div>
+          </div>
         </div>
       </article>
     </Link>

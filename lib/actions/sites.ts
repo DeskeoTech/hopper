@@ -45,6 +45,7 @@ export async function updateSiteInstructions(
     return { error: error.message }
   }
 
+  revalidatePath("/admin/sites")
   revalidatePath(`/admin/sites/${siteId}`)
   return { success: true }
 }
@@ -157,6 +158,52 @@ export async function updateSiteTransportation(
     return { error: error.message }
   }
 
+  revalidatePath(`/admin/sites/${siteId}`)
+  return { success: true }
+}
+
+export async function getDeskeoUsers() {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name, email, phone")
+    .ilike("email", "%@deskeo.fr")
+    .order("first_name")
+
+  if (error) {
+    return { error: error.message, data: [] }
+  }
+
+  return { data: data || [] }
+}
+
+export async function updateSiteContact(
+  siteId: string,
+  data: {
+    contact_first_name: string | null
+    contact_last_name: string | null
+    contact_email: string | null
+    contact_phone: string | null
+  }
+) {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("sites")
+    .update({
+      contact_first_name: data.contact_first_name || null,
+      contact_last_name: data.contact_last_name || null,
+      contact_email: data.contact_email || null,
+      contact_phone: data.contact_phone || null,
+    })
+    .eq("id", siteId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin/sites")
   revalidatePath(`/admin/sites/${siteId}`)
   return { success: true }
 }

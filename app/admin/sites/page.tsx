@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import { SiteCard } from "@/components/admin/site-card"
 import { SitesSearch } from "@/components/admin/sites/sites-search"
 import { CreateSiteModal } from "@/components/admin/sites/create-site-modal"
+import { getDeskeoUsers } from "@/lib/actions/sites"
 import { Building2 } from "lucide-react"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -78,6 +79,9 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     siteFlexAvailabilityMap[siteId].available += Math.max(0, capacity - booked)
   })
 
+  // Fetch @deskeo.fr users for contact assignment
+  const { data: deskeoUsers } = await getDeskeoUsers()
+
   if (error) {
     return (
       <div className="flex items-center justify-center p-12">
@@ -127,6 +131,7 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
                 site={site}
                 imageUrl={siteImageMap[site.id]}
                 flexAvailability={siteFlexAvailabilityMap[site.id]}
+                deskeoUsers={deskeoUsers}
               />
             ))}
           </div>
