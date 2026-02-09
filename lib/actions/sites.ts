@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { SiteStatus, Equipment, TransportationStop } from "@/lib/types/database"
 
 export async function updateSiteHeader(
@@ -187,9 +188,27 @@ export async function updateSiteContact(
     contact_phone: string | null
   }
 ) {
-  const supabase = await createClient()
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { error: "Non authentifié" }
+  }
 
-  const { error } = await supabase
+  // Verify user is a hopper admin
+  const supabase = await createClient()
+  const { data: userData } = await supabase
+    .from("users")
+    .select("is_hopper_admin")
+    .eq("email", authUser.email)
+    .limit(1)
+    .maybeSingle()
+
+  if (!userData?.is_hopper_admin) {
+    return { error: "Accès non autorisé" }
+  }
+
+  const adminClient = createAdminClient()
+
+  const { error } = await adminClient
     .from("sites")
     .update({
       contact_first_name: data.contact_first_name || null,
