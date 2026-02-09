@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, Pencil, UserCheck, UserX } from "lucide-react"
+import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, ShieldCheck, ShieldOff, Pencil, UserCheck, UserX } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,7 +38,7 @@ import {
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { AddUserModal } from "./add-user-modal"
 import { EditUserModal } from "./edit-user-modal"
-import { toggleUserStatus } from "@/lib/actions/users"
+import { toggleUserStatus, toggleHopperAdmin } from "@/lib/actions/users"
 import { cn } from "@/lib/utils"
 import type { User } from "@/lib/types/database"
 
@@ -50,9 +50,10 @@ const PAGE_SIZE = 5
 interface UsersListProps {
   companyId: string
   initialUsers: User[]
+  isTechAdmin?: boolean
 }
 
-export function UsersList({ companyId, initialUsers }: UsersListProps) {
+export function UsersList({ companyId, initialUsers, isTechAdmin = false }: UsersListProps) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "disabled">("all")
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all")
@@ -60,6 +61,7 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
   const [currentPage, setCurrentPage] = useState(1)
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
+  const [confirmAdminToggle, setConfirmAdminToggle] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSort = (field: SortField) => {
@@ -193,6 +195,14 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
     setConfirmUser(null)
   }
 
+  const handleToggleHopperAdmin = async () => {
+    if (!confirmAdminToggle) return
+    setLoading(true)
+    await toggleHopperAdmin(confirmAdminToggle.id, companyId, !confirmAdminToggle.is_hopper_admin)
+    setLoading(false)
+    setConfirmAdminToggle(null)
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -299,6 +309,11 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
                       <SortIcon field="status" />
                     </div>
                   </TableHead>
+                  {isTechAdmin && (
+                    <TableHead className="hidden text-xs font-bold uppercase tracking-wide md:table-cell">
+                      Hopper Admin
+                    </TableHead>
+                  )}
                   <TableHead className="w-[50px]">
                     <span className="sr-only">Actions</span>
                   </TableHead>
@@ -324,6 +339,18 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
                       <TableCell>
                         {getStatusBadge(user.status)}
                       </TableCell>
+                      {isTechAdmin && (
+                        <TableCell className="hidden md:table-cell">
+                          {user.is_hopper_admin ? (
+                            <span className="inline-flex items-center gap-1 rounded-sm bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
+                              <ShieldCheck className="h-3 w-3" />
+                              Oui
+                            </span>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">Non</span>
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -343,6 +370,28 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
                                 </DropdownMenuItem>
                               }
                             />
+                            {isTechAdmin && (
+                              <DropdownMenuItem
+                                onClick={() => setConfirmAdminToggle(user)}
+                                className={cn(
+                                  user.is_hopper_admin
+                                    ? "text-orange-600 focus:text-orange-600"
+                                    : "text-purple-600 focus:text-purple-600"
+                                )}
+                              >
+                                {user.is_hopper_admin ? (
+                                  <>
+                                    <ShieldOff className="mr-2 h-4 w-4" />
+                                    Retirer Hopper Admin
+                                  </>
+                                ) : (
+                                  <>
+                                    <ShieldCheck className="mr-2 h-4 w-4" />
+                                    Rendre Hopper Admin
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() => setConfirmUser(user)}
                               className={cn(
@@ -400,7 +449,7 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
         </div>
       )}
 
-      {/* Confirm dialog */}
+      {/* Confirm status toggle dialog */}
       <AlertDialog open={!!confirmUser} onOpenChange={(open) => !open && setConfirmUser(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -416,6 +465,28 @@ export function UsersList({ companyId, initialUsers }: UsersListProps) {
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleToggleStatus} disabled={loading}>
+              {loading ? "En cours..." : "Confirmer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm Hopper Admin toggle dialog */}
+      <AlertDialog open={!!confirmAdminToggle} onOpenChange={(open) => !open && setConfirmAdminToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAdminToggle?.is_hopper_admin ? "Retirer les droits Hopper Admin" : "Accorder les droits Hopper Admin"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAdminToggle?.is_hopper_admin
+                ? `Voulez-vous vraiment retirer les droits Hopper Admin à ${confirmAdminToggle ? getFullName(confirmAdminToggle) : ""} ? L'utilisateur n'aura plus accès au back-office.`
+                : `Voulez-vous vraiment accorder les droits Hopper Admin à ${confirmAdminToggle ? getFullName(confirmAdminToggle) : ""} ? L'utilisateur aura accès au back-office d'administration.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleHopperAdmin} disabled={loading}>
               {loading ? "En cours..." : "Confirmer"}
             </AlertDialogAction>
           </AlertDialogFooter>

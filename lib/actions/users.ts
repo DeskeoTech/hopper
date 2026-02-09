@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { UserRole, UserStatus, User } from "@/lib/types/database"
 
 export async function getCompanyUsers(companyId: string): Promise<{ data: User[] | null; error: string | null }> {
@@ -265,6 +266,38 @@ export async function getCompanySeatsInfo(companyId: string): Promise<{
     },
     error: null,
   }
+}
+
+export async function toggleHopperAdmin(
+  userId: string,
+  companyId: string,
+  newValue: boolean
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  if (authUser.email !== "tech@deskeo.fr") {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("users")
+    .update({
+      is_hopper_admin: newValue,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true, error: null }
 }
 
 export async function createUserByAdmin(

@@ -1,6 +1,7 @@
 "use server"
 
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 interface OnboardingData {
@@ -20,7 +21,24 @@ export async function completeOnboarding(data: OnboardingData) {
     return { error: "Non autorisé" }
   }
 
-  const supabase = await createClient()
+  // Use admin client to bypass RLS recursive policy on companies table
+  const supabase = createAdminClient()
+
+  // Verify the userId matches the authenticated user
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("id, company_id")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!userProfile || userProfile.id !== data.userId) {
+    return { error: "Accès non autorisé" }
+  }
+
+  // If updating an existing company, verify user belongs to it
+  if (data.companyId && userProfile.company_id !== data.companyId) {
+    return { error: "Accès non autorisé à cette entreprise" }
+  }
 
   // Validate required fields
   if (!data.companyInfo.name.trim()) {
@@ -102,7 +120,19 @@ export async function uploadOnboardingKbis(companyId: string, formData: FormData
     return { error: "Non autorisé" }
   }
 
-  const supabase = await createClient()
+  // Use admin client to bypass RLS recursive policy on companies table
+  const supabase = createAdminClient()
+
+  // Verify user belongs to this company
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("company_id")
+    .eq("email", authUser.email)
+    .single()
+
+  if (userProfile?.company_id !== companyId) {
+    return { error: "Accès non autorisé à cette entreprise" }
+  }
 
   const file = formData.get("file") as File
   if (!file) {
