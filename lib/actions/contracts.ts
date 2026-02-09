@@ -78,6 +78,8 @@ export interface ContractUser {
   last_name: string | null
   email: string | null
   photo_storage_path: string | null
+  status: string | null
+  Onboarding: boolean
 }
 
 export async function getContractUsers(contractId: string): Promise<{
@@ -122,9 +124,8 @@ export async function getContractUsers(contractId: string): Promise<{
   // Fetch users assigned to this contract
   const { data: users, error } = await supabase
     .from("users")
-    .select("id, first_name, last_name, email, photo_storage_path")
+    .select("id, first_name, last_name, email, photo_storage_path, status, Onboarding")
     .eq("contract_id", contractId)
-    .eq("status", "active")
     .order("last_name")
 
   if (error) {

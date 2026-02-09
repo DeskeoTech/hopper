@@ -348,7 +348,7 @@ export function EntreprisePage({
             <div className="space-y-2">
               {users.map((user) => {
                 const isCurrentUser = user.id === currentUserId
-                const isDisabled = user.status === "disabled"
+                const isDisabled = user.status === "inactive"
                 const isUpdating = updatingUserId === user.id
                 const userName =
                   [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"

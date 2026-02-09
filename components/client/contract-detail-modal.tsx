@@ -190,24 +190,47 @@ export function ContractDetailModal({
               </div>
             ) : (
               <div className="space-y-2">
-                {users.map((contractUser) => (
-                  <div
-                    key={contractUser.id}
-                    className="flex items-center gap-3 rounded-[12px] bg-card p-3"
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-                      <User className="h-4 w-4 text-foreground/60" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {contractUser.first_name} {contractUser.last_name}
-                      </p>
-                      {contractUser.email && (
-                        <p className="text-xs text-foreground/50 truncate">{contractUser.email}</p>
+                {users.map((contractUser) => {
+                  const displayStatus = contractUser.status === "active"
+                    ? "active"
+                    : contractUser.Onboarding
+                      ? "inactive"
+                      : "pending"
+
+                  return (
+                    <div
+                      key={contractUser.id}
+                      className="flex items-center gap-3 rounded-[12px] bg-card p-3"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                        <User className="h-4 w-4 text-foreground/60" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground truncate">
+                          {contractUser.first_name} {contractUser.last_name}
+                        </p>
+                        {contractUser.email && (
+                          <p className="text-xs text-foreground/50 truncate">{contractUser.email}</p>
+                        )}
+                      </div>
+                      {displayStatus === "active" && (
+                        <span className="shrink-0 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-medium text-green-700">
+                          Actif
+                        </span>
+                      )}
+                      {displayStatus === "pending" && (
+                        <span className="shrink-0 rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-medium text-orange-700">
+                          En attente
+                        </span>
+                      )}
+                      {displayStatus === "inactive" && (
+                        <span className="shrink-0 rounded-full bg-foreground/5 px-2.5 py-0.5 text-xs font-medium text-foreground/50">
+                          Inactif
+                        </span>
                       )}
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
