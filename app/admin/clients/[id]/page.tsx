@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2, Info } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
@@ -28,6 +28,8 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   const resolvedSearchParams = await searchParams
   const activeTab = resolvedSearchParams.tab || "info"
   const supabase = await createClient()
+  const authUser = await getUser()
+  const isTechAdmin = authUser?.email === "tech@deskeo.fr"
 
   // Fetch company data with main site
   const { data: company, error } = await supabase
@@ -352,7 +354,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
               </div>
 
               {/* Users */}
-              <UsersList companyId={company.id} initialUsers={users || []} />
+              <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} />
             </div>
 
             {/* Sidebar - Right Column */}
