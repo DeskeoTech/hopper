@@ -1,11 +1,12 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { X, Calendar, Users, User } from "lucide-react"
+import { X, Calendar, Users, User, ExternalLink, Loader2 } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getContractUsers, type ContractUser } from "@/lib/actions/contracts"
+import { createBillingPortalSession } from "@/lib/actions/billing"
 import { useClientLayout } from "./client-layout-provider"
 import { AssignUserToContract } from "./assign-user-to-contract"
 import type { ContractForDisplay } from "@/lib/types/database"
@@ -24,6 +25,8 @@ export function ContractDetailModal({
   const { isDeskeoEmployee, plan, isAdmin, user } = useClientLayout()
   const [users, setUsers] = useState<ContractUser[]>([])
   const [loading, setLoading] = useState(false)
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [billingError, setBillingError] = useState<string | null>(null)
 
   // Check if expired contract banner is visible
   const showBanner = !isDeskeoEmployee && !plan
@@ -216,6 +219,43 @@ export function ContractDetailModal({
               companyId={companyId}
               onUserAssigned={refreshUsers}
             />
+          )}
+
+          {/* Stripe billing portal button - only visible for admins */}
+          {isAdmin && (
+            <button
+              type="button"
+              disabled={billingLoading}
+              onClick={async () => {
+                setBillingLoading(true)
+                setBillingError(null)
+                try {
+                  const returnUrl = `${window.location.origin}/mon-compte?tab=forfait`
+                  const result = await createBillingPortalSession(returnUrl)
+                  if (result.error) {
+                    setBillingError(result.error)
+                  } else if (result.url) {
+                    window.location.href = result.url
+                  }
+                } catch {
+                  setBillingError("Une erreur est survenue")
+                } finally {
+                  setBillingLoading(false)
+                }
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
+            >
+              {billingLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ExternalLink className="h-4 w-4" />
+              )}
+              Gérer sur Stripe
+            </button>
+          )}
+
+          {billingError && (
+            <p className="rounded-[12px] bg-destructive/10 p-3 text-sm text-destructive">{billingError}</p>
           )}
         </div>
       </div>

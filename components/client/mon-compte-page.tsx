@@ -16,25 +16,33 @@ import {
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
 import { MesCoordonneesTab } from "./mes-coordonnees-tab"
-import { MonForfaitTab } from "./mon-forfait-tab"
+import { ContractsListSection } from "./contracts-list-section"
 import { MesCreditsTab } from "./mes-credits-tab"
 import { FacturationTab } from "./facturation-tab"
 import { SupportTab } from "./support-tab"
 import { createClient } from "@/lib/supabase/client"
-import type { ContractHistoryItem } from "@/lib/actions/contracts"
+import type { ContractForDisplay } from "@/lib/types/database"
 
 interface MonComptePageProps {
-  initialContractHistory: ContractHistoryItem[] | null
+  contracts: ContractForDisplay[]
 }
 
-export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
-  const { user, credits, plan } = useClientLayout()
+export function MonComptePage({ contracts }: MonComptePageProps) {
+  const { user, credits, plan, isAdmin } = useClientLayout()
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loggingOut, setLoggingOut] = useState(false)
-  const tabParam = searchParams.get("tab")
-  const [activeTab, setActiveTab] = useState(tabParam || "coordonnees")
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+
+  // Admin-only tabs
+  const adminOnlyTabs = ["forfait", "facturation"]
+
+  // Sanitize tab param: non-admin cannot access admin-only tabs
+  const tabParam = searchParams.get("tab")
+  const initialTab = tabParam && (!adminOnlyTabs.includes(tabParam) || isAdmin)
+    ? tabParam
+    : "coordonnees"
+  const [activeTab, setActiveTab] = useState(initialTab)
 
   // Preserve site param in navigation
   const siteParam = searchParams.get("site")
@@ -63,6 +71,11 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
     { value: "facturation", label: "Facturation", icon: Receipt },
     { value: "contact", label: "Support", icon: MessageCircle },
   ]
+
+  // Filter out admin-only tabs for non-admin users
+  const visibleMenuItems = isAdmin
+    ? menuItems
+    : menuItems.filter((item) => !adminOnlyTabs.includes(item.value))
 
   return (
     <>
@@ -119,7 +132,7 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         {/* Mobile: 2-column grid */}
         <div className="grid grid-cols-2 gap-2 md:hidden">
-          {menuItems.map((item) => (
+          {visibleMenuItems.map((item) => (
             <button
               key={item.value}
               type="button"
@@ -143,15 +156,19 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
             <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-sm">
               Coordonnées
             </TabsTrigger>
-            <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
-              Forfait
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
+                Forfait
+              </TabsTrigger>
+            )}
             <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
               Crédits
             </TabsTrigger>
-            <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
-              Facturation
-            </TabsTrigger>
+            {isAdmin && (
+              <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
+                Facturation
+              </TabsTrigger>
+            )}
             <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-sm">
               Support
             </TabsTrigger>
@@ -162,17 +179,21 @@ export function MonComptePage({ initialContractHistory }: MonComptePageProps) {
           <MesCoordonneesTab />
         </TabsContent>
 
-        <TabsContent value="forfait" className="mt-6">
-          <MonForfaitTab initialContractHistory={initialContractHistory} />
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="forfait" className="mt-6">
+            <ContractsListSection contracts={contracts} />
+          </TabsContent>
+        )}
 
         <TabsContent value="credits" className="mt-6">
           <MesCreditsTab />
         </TabsContent>
 
-        <TabsContent value="facturation" className="mt-6">
-          <FacturationTab />
-        </TabsContent>
+        {isAdmin && (
+          <TabsContent value="facturation" className="mt-6">
+            <FacturationTab />
+          </TabsContent>
+        )}
 
         <TabsContent value="contact" className="mt-6">
           <SupportTab />
