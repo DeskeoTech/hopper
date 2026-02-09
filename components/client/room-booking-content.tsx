@@ -49,7 +49,6 @@ interface RoomBookingContentProps {
   companyId: string
   mainSiteId: string | null
   remainingCredits: number
-  allocatedCredits?: number
   sites: Array<{ id: string; name: string }>
   userEmail?: string
   hasActivePlan?: boolean
@@ -66,7 +65,6 @@ export function RoomBookingContent({
   companyId,
   mainSiteId,
   remainingCredits,
-  allocatedCredits,
   sites,
   userEmail = "",
   hasActivePlan = true,
@@ -644,19 +642,6 @@ export function RoomBookingContent({
                   </p>
                 </div>
               </div>
-              {allocatedCredits && allocatedCredits > 0 && (
-                <div className="hidden sm:block">
-                  <div className="h-2 w-24 overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-300"
-                      style={{ width: `${Math.round((remainingCredits / allocatedCredits) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="mt-1 type-body-sm text-muted-foreground text-right">
-                    sur {allocatedCredits}
-                  </p>
-                </div>
-              )}
             </div>
           )}
 
