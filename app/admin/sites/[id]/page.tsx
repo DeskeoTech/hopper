@@ -11,6 +11,7 @@ import { EditInstructionsModal } from "@/components/admin/site-edit/edit-instruc
 import { EditHoursModal } from "@/components/admin/site-edit/edit-hours-modal"
 import { EditWifiModal } from "@/components/admin/site-edit/edit-wifi-modal"
 import { EditEquipmentsModal } from "@/components/admin/site-edit/edit-equipments-modal"
+import { EditContactModal } from "@/components/admin/site-edit/edit-contact-modal"
 import { ResourceFormModal } from "@/components/admin/site-edit/resource-form-modal"
 import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
@@ -301,7 +302,14 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
               </div>
 
               {/* Contact */}
-              <div className="rounded-lg bg-card p-4 sm:p-6">
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditContactModal
+                  siteId={site.id}
+                  initialFirstName={site.contact_first_name}
+                  initialLastName={site.contact_last_name}
+                  initialEmail={site.contact_email}
+                  initialPhone={site.contact_phone}
+                />
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                   <User className="h-5 w-5" />
                   Contact
