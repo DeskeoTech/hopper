@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient, getUser } from "@/lib/supabase/server"
+import { ensureSupabaseAuthUser } from "@/lib/actions/auth"
 
 export interface ContractHistoryItem {
   id: string
@@ -353,6 +354,12 @@ export async function createUserForContract(
 
   if (existingUser) {
     return { success: false, error: "Un utilisateur avec cet email existe déjà" }
+  }
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  const authResult = await ensureSupabaseAuthUser(data.email)
+  if (!authResult.success) {
+    return { success: false, error: authResult.error }
   }
 
   // Create the user with contract_id

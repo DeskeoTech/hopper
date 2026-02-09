@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { ensureSupabaseAuthUser } from "@/lib/actions/auth"
 import type { UserRole, UserStatus, User } from "@/lib/types/database"
 
 export async function getCompanyUsers(companyId: string): Promise<{ data: User[] | null; error: string | null }> {
@@ -141,6 +142,14 @@ export async function createUser(
   }
 ) {
   const supabase = await createClient()
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  if (data.email) {
+    const authResult = await ensureSupabaseAuthUser(data.email)
+    if (!authResult.success) {
+      return { error: authResult.error }
+    }
+  }
 
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
@@ -381,6 +390,14 @@ export async function createUserByAdmin(
 
   if (seatsInfo.data && seatsInfo.data.activeUsers >= seatsInfo.data.maxSeats) {
     return { success: false, error: "Quota de sièges atteint" }
+  }
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  if (data.email) {
+    const authResult = await ensureSupabaseAuthUser(data.email)
+    if (!authResult.success) {
+      return { success: false, error: authResult.error }
+    }
   }
 
   // Create the user
