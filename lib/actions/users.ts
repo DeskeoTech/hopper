@@ -300,6 +300,35 @@ export async function toggleHopperAdmin(
   return { success: true, error: null }
 }
 
+export async function deleteUser(
+  userId: string,
+  companyId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  if (authUser.email !== "tech@deskeo.fr") {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", userId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/clients")
+  return { success: true, error: null }
+}
+
 export async function createUserByAdmin(
   companyId: string,
   data: {

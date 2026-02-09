@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, ShieldCheck, ShieldOff, Pencil, UserCheck, UserX } from "lucide-react"
+import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, ShieldCheck, ShieldOff, Pencil, UserCheck, UserX, Trash2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -38,14 +38,14 @@ import {
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { AddUserModal } from "./add-user-modal"
 import { EditUserModal } from "./edit-user-modal"
-import { toggleUserStatus, toggleHopperAdmin } from "@/lib/actions/users"
+import { toggleUserStatus, toggleHopperAdmin, deleteUser } from "@/lib/actions/users"
 import { cn } from "@/lib/utils"
 import type { User } from "@/lib/types/database"
 
 type SortField = "name" | "email" | "phone" | "role" | "status"
 type SortOrder = "asc" | "desc"
 
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
 interface UsersListProps {
   companyId: string
@@ -62,6 +62,7 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
   const [currentPage, setCurrentPage] = useState(1)
   const [confirmUser, setConfirmUser] = useState<User | null>(null)
   const [confirmAdminToggle, setConfirmAdminToggle] = useState<User | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<User | null>(null)
   const [loading, setLoading] = useState(false)
 
   const handleSort = (field: SortField) => {
@@ -201,6 +202,14 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
     await toggleHopperAdmin(confirmAdminToggle.id, companyId, !confirmAdminToggle.is_hopper_admin)
     setLoading(false)
     setConfirmAdminToggle(null)
+  }
+
+  const handleDeleteUser = async () => {
+    if (!confirmDelete) return
+    setLoading(true)
+    await deleteUser(confirmDelete.id, companyId)
+    setLoading(false)
+    setConfirmDelete(null)
   }
 
   return (
@@ -412,6 +421,15 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
                                 </>
                               )}
                             </DropdownMenuItem>
+                            {isTechAdmin && (
+                              <DropdownMenuItem
+                                onClick={() => setConfirmDelete(user)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Supprimer
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -488,6 +506,24 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction onClick={handleToggleHopperAdmin} disabled={loading}>
               {loading ? "En cours..." : "Confirmer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Confirm delete user dialog */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l&apos;utilisateur</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment supprimer {confirmDelete ? getFullName(confirmDelete) : ""} ? Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser} disabled={loading} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {loading ? "Suppression..." : "Supprimer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

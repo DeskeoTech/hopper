@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { CompaniesTable } from "@/components/admin/companies-table"
 import { ClientsFilters } from "@/components/admin/company-search"
 import { CreateCompanyModal } from "@/components/admin/company-edit/create-company-modal"
@@ -18,6 +18,8 @@ interface ClientsPageProps {
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const { search, status, period, site } = await searchParams
   const supabase = await createClient()
+  const authUser = await getUser()
+  const isTechAdmin = authUser?.email === "tech@deskeo.fr"
 
   // Build query for companies with main site
   let query = supabase.from("companies").select("*, main_site:sites!main_site_id(id, name)").order("name")
@@ -99,7 +101,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
 
       {/* Companies Table */}
       {transformedCompanies && transformedCompanies.length > 0 ? (
-        <CompaniesTable companies={transformedCompanies} />
+        <CompaniesTable companies={transformedCompanies} isTechAdmin={isTechAdmin} />
       ) : (
         <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
           <Briefcase className="mb-4 h-12 w-12 text-muted-foreground/50" />

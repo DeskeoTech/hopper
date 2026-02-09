@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { CompanyType, SubscriptionPeriod } from "@/lib/types/database"
 
 export async function updateCompanyHeader(
@@ -160,4 +161,31 @@ export async function createCompany(data: {
 
   revalidatePath("/admin/clients")
   return { success: true, companyId: company.id }
+}
+
+export async function deleteCompany(
+  companyId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  if (authUser.email !== "tech@deskeo.fr") {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .delete()
+    .eq("id", companyId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/admin/clients")
+  return { success: true, error: null }
 }

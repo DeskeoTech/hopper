@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle, Trash2 } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -21,6 +21,17 @@ import {
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { SubscriptionStatusBadge, getSubscriptionStatus, type SubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
 import { CancelSubscriptionModal } from "@/components/admin/abonnements/cancel-subscription-modal"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { deleteCompany } from "@/lib/actions/companies"
 import type { Company, SubscriptionPeriod } from "@/lib/types/database"
 
 type SortField = "name" | "userCount" | "mainSiteName" | "period" | "startDate" | "endDate" | "status"
@@ -36,13 +47,16 @@ interface CompanyWithCounts extends Company {
 
 interface CompaniesTableProps {
   companies: CompanyWithCounts[]
+  isTechAdmin?: boolean
 }
 
-export function CompaniesTable({ companies }: CompaniesTableProps) {
+export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTableProps) {
   const router = useRouter()
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
   const [currentPage, setCurrentPage] = useState(1)
+  const [confirmDelete, setConfirmDelete] = useState<CompanyWithCounts | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -134,6 +148,14 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
       month: "2-digit",
       year: "numeric",
     })
+  }
+
+  const handleDeleteCompany = async () => {
+    if (!confirmDelete) return
+    setLoading(true)
+    await deleteCompany(confirmDelete.id)
+    setLoading(false)
+    setConfirmDelete(null)
   }
 
   return (
@@ -269,6 +291,15 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
                       >
                         Voir détails
                       </DropdownMenuItem>
+                      {isTechAdmin && (
+                        <DropdownMenuItem
+                          onClick={() => setConfirmDelete(company)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Supprimer
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -293,6 +324,24 @@ export function CompaniesTable({ companies }: CompaniesTableProps) {
           />
         </div>
       )}
+
+      {/* Confirm delete company dialog */}
+      <AlertDialog open={!!confirmDelete} onOpenChange={(open) => !open && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer l&apos;entreprise</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment supprimer {confirmDelete?.name || "cette entreprise"} ? Cette action est irréversible et supprimera toutes les données associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCompany} disabled={loading} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {loading ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
