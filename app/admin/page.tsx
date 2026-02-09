@@ -8,8 +8,6 @@ import {
   Building2,
   Calendar,
   Briefcase,
-  Plus,
-  ArrowRight,
   Coffee,
   Package,
   ExternalLink,
@@ -156,41 +154,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
 
       {/* Accès rapide */}
       <CollapsibleSection title="Accès rapide">
-        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
-          {/* Nouvelle réservation */}
-          <Link href="/admin/reservations" className="group block">
-            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
-                  <Plus className="h-5 w-5 text-foreground/60" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
-                    Nouvelle réservation
-                  </h3>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </article>
-          </Link>
-
-          {/* Sites */}
-          <Link href="/admin/sites" className="group block">
-            <article className="rounded-lg bg-card p-4 transition-all hover:shadow-md">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
-                  <Building2 className="h-5 w-5 text-foreground/60" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-header text-base text-foreground group-hover:text-primary transition-colors">
-                    Sites
-                  </h3>
-                </div>
-                <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </div>
-            </article>
-          </Link>
-
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {/* Hopper Café */}
           <a
             href="https://hopper-cafe.softr.app/login"
