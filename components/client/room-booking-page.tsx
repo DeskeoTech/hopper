@@ -21,7 +21,6 @@ export function RoomBookingPage() {
         companyId={user.company_id || ""}
         mainSiteId={selectedSiteId}
         remainingCredits={credits?.remaining || 0}
-        allocatedCredits={credits?.allocated}
         sites={sites}
         userEmail={user.email || ""}
         hasActivePlan={!!plan}
