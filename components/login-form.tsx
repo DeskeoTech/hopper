@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { checkEmailExists } from "@/lib/actions/auth"
+import { checkEmailExists, ensureSupabaseAuthUser } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -90,6 +90,9 @@ export function LoginForm({ initialError }: LoginFormProps) {
       setIsLoading(false)
       return
     }
+
+    // Backfill : s'assurer que le compte Auth existe (pour les users pré-existants)
+    await ensureSupabaseAuthUser(email)
 
     const supabase = createClient()
 

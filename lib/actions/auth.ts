@@ -20,3 +20,28 @@ export async function checkEmailExists(email: string): Promise<{ exists: boolean
 
   return { exists: data !== null }
 }
+
+export async function ensureSupabaseAuthUser(
+  email: string
+): Promise<{ success: boolean; error: string | null }> {
+  if (!email || !email.includes("@")) {
+    return { success: false, error: "Email invalide" }
+  }
+
+  const adminClient = createAdminClient()
+
+  const { error } = await adminClient.auth.admin.createUser({
+    email: email.toLowerCase(),
+    email_confirm: true,
+  })
+
+  if (error) {
+    // Si l'utilisateur Auth existe déjà, c'est OK (idempotent)
+    if (error.message.includes("already been registered")) {
+      return { success: true, error: null }
+    }
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, error: null }
+}
