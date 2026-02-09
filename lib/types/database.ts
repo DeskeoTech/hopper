@@ -263,7 +263,7 @@ export interface ReservationItem {
 
 // User types
 export type UserRole = "admin" | "user"
-export type UserStatus = "active" | "disabled"
+export type UserStatus = "active" | "inactive"
 
 export interface User {
   id: string

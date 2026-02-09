@@ -115,7 +115,7 @@ export async function deactivateUserByAdmin(
   const { error } = await supabase
     .from("users")
     .update({
-      status: "disabled",
+      status: "inactive",
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId)

@@ -71,6 +71,21 @@ export async function completeOnboarding(data: OnboardingData) {
       console.error("Error updating company:", updateError)
       return { error: "Erreur lors de la mise à jour de l'entreprise" }
     }
+
+    // Mark user as onboarded and active
+    const { error: userUpdateError } = await supabase
+      .from("users")
+      .update({
+        Onboarding: true,
+        status: "active",
+        updated_at: now,
+      })
+      .eq("id", data.userId)
+
+    if (userUpdateError) {
+      console.error("Error updating user onboarding:", userUpdateError)
+      return { error: "Erreur lors de la mise à jour de l'utilisateur" }
+    }
   } else {
     // Create new company and link to user
     const { data: newCompany, error: createError } = await supabase
@@ -92,11 +107,13 @@ export async function completeOnboarding(data: OnboardingData) {
       return { error: "Erreur lors de la création de l'entreprise" }
     }
 
-    // Link company to user
+    // Link company to user and mark as onboarded and active
     const { error: linkError } = await supabase
       .from("users")
       .update({
         company_id: newCompany.id,
+        Onboarding: true,
+        status: "active",
         updated_at: now,
       })
       .eq("id", data.userId)

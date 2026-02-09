@@ -33,7 +33,7 @@ export function UserCard({ user, companyId }: UserCardProps) {
 
   const handleToggleStatus = async () => {
     setLoading(true)
-    await toggleUserStatus(user.id, companyId, isActive ? "disabled" : "active")
+    await toggleUserStatus(user.id, companyId, isActive ? "inactive" : "active")
     setLoading(false)
     setConfirmOpen(false)
   }

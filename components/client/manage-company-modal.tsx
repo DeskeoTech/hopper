@@ -116,7 +116,7 @@ export function ManageCompanyModal({
       setError(result.error)
     } else {
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: "disabled" } : u))
+        prev.map((u) => (u.id === userId ? { ...u, status: "inactive" } : u))
       )
       // Update seats info
       if (seatsInfo) {
@@ -169,10 +169,10 @@ export function ManageCompanyModal({
   }
 
   const getStatusBadge = (status: string | null) => {
-    if (status === "disabled") {
+    if (status === "inactive") {
       return (
         <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
-          Désactivé
+          Inactif
         </span>
       )
     }
@@ -255,7 +255,7 @@ export function ManageCompanyModal({
                 <TableBody>
                   {users.map((user, index) => {
                     const isCurrentUser = user.id === currentUserId
-                    const isDisabled = user.status === "disabled"
+                    const isDisabled = user.status === "inactive"
                     const isUpdating = updatingUserId === user.id
 
                     return (

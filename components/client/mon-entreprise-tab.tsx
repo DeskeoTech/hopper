@@ -100,7 +100,7 @@ export function MonEntrepriseTab() {
       setError(result.error)
     } else {
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, status: "disabled" } : u))
+        prev.map((u) => (u.id === userId ? { ...u, status: "inactive" } : u))
       )
       if (seatsInfo) {
         setSeatsInfo({
@@ -212,7 +212,7 @@ export function MonEntrepriseTab() {
             <div className="space-y-2">
               {users.map((user) => {
                 const isCurrentUser = user.id === currentUser.id
-                const isDisabled = user.status === "disabled"
+                const isDisabled = user.status === "inactive"
                 const isUpdating = updatingUserId === user.id
                 const userName = [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"
 

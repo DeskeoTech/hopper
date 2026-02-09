@@ -55,7 +55,7 @@ interface UsersListProps {
 
 export function UsersList({ companyId, initialUsers, isTechAdmin = false }: UsersListProps) {
   const [search, setSearch] = useState("")
-  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "disabled">("all")
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all")
   const [sortField, setSortField] = useState<SortField>("name")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
@@ -191,7 +191,7 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
     if (!confirmUser) return
     setLoading(true)
     const isActive = confirmUser.status === "active"
-    await toggleUserStatus(confirmUser.id, companyId, isActive ? "disabled" : "active")
+    await toggleUserStatus(confirmUser.id, companyId, isActive ? "inactive" : "active")
     setLoading(false)
     setConfirmUser(null)
   }
@@ -236,14 +236,14 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
           />
         </div>
 
-        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "active" | "disabled")}>
+        <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "active" | "inactive")}>
           <SelectTrigger className="w-full sm:w-[140px]">
             <SelectValue placeholder="Statut" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous</SelectItem>
             <SelectItem value="active">Actifs</SelectItem>
-            <SelectItem value="disabled">Désactivés</SelectItem>
+            <SelectItem value="inactive">Inactifs</SelectItem>
           </SelectContent>
         </Select>
 
