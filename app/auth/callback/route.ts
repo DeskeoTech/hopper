@@ -20,7 +20,7 @@ export async function GET(request: Request) {
         // Check if user exists in users table
         const { data: existingUser } = await supabase
           .from("users")
-          .select("id, role, company_id, contract_id")
+          .select("id, role, company_id, contract_id, is_hopper_admin")
           .eq("email", user.email)
           .single()
 
@@ -48,6 +48,11 @@ export async function GET(request: Request) {
                   .eq("id", existingUser.id)
               }
             }
+          }
+
+          // Redirect hopper admins to admin dashboard
+          if (existingUser.is_hopper_admin) {
+            return NextResponse.redirect(`${origin}/admin`)
           }
 
           // Redirect based on role

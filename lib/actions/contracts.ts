@@ -357,12 +357,6 @@ export async function createUserForContract(
     return { success: false, error: "Un utilisateur avec cet email existe déjà" }
   }
 
-  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
-  const authResult = await ensureSupabaseAuthUser(data.email)
-  if (!authResult.success) {
-    return { success: false, error: authResult.error }
-  }
-
   // Create the user with contract_id
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
@@ -376,6 +370,14 @@ export async function createUserForContract(
 
   if (error) {
     return { success: false, error: error.message }
+  }
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  // (après l'INSERT pour que la vérification interne passe)
+  const authResult = await ensureSupabaseAuthUser(data.email)
+  if (!authResult.success) {
+    await supabase.from("users").delete().eq("email", data.email)
+    return { success: false, error: authResult.error }
   }
 
   return { success: true, error: null }

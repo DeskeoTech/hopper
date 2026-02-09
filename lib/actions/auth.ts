@@ -30,6 +30,18 @@ export async function ensureSupabaseAuthUser(
 
   const adminClient = createAdminClient()
 
+  // Guard: only create Auth accounts for emails that exist in the users table
+  const { data: existingUser } = await adminClient
+    .from("users")
+    .select("id")
+    .eq("email", email.toLowerCase())
+    .limit(1)
+    .maybeSingle()
+
+  if (!existingUser) {
+    return { success: false, error: "Utilisateur non trouvé" }
+  }
+
   const { error } = await adminClient.auth.admin.createUser({
     email: email.toLowerCase(),
     email_confirm: true,

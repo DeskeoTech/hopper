@@ -143,14 +143,6 @@ export async function createUser(
 ) {
   const supabase = await createClient()
 
-  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
-  if (data.email) {
-    const authResult = await ensureSupabaseAuthUser(data.email)
-    if (!authResult.success) {
-      return { error: authResult.error }
-    }
-  }
-
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
     first_name: data.first_name || null,
@@ -163,6 +155,16 @@ export async function createUser(
 
   if (error) {
     return { error: error.message }
+  }
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  // (après l'INSERT pour que la vérification interne passe)
+  if (data.email) {
+    const authResult = await ensureSupabaseAuthUser(data.email)
+    if (!authResult.success) {
+      await supabase.from("users").delete().eq("email", data.email)
+      return { error: authResult.error }
+    }
   }
 
   revalidatePath(`/admin/clients/${companyId}`)
@@ -392,14 +394,6 @@ export async function createUserByAdmin(
     return { success: false, error: "Quota de sièges atteint" }
   }
 
-  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
-  if (data.email) {
-    const authResult = await ensureSupabaseAuthUser(data.email)
-    if (!authResult.success) {
-      return { success: false, error: authResult.error }
-    }
-  }
-
   // Create the user
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
@@ -413,6 +407,16 @@ export async function createUserByAdmin(
 
   if (error) {
     return { success: false, error: error.message }
+  }
+
+  // Pré-créer le compte Auth pour que signInWithOtp envoie le magic link
+  // (après l'INSERT pour que la vérification interne passe)
+  if (data.email) {
+    const authResult = await ensureSupabaseAuthUser(data.email)
+    if (!authResult.success) {
+      await supabase.from("users").delete().eq("email", data.email)
+      return { success: false, error: authResult.error }
+    }
   }
 
   revalidatePath("/compte")
