@@ -203,7 +203,7 @@ export function CreateUserForContractModal({
           </button>
 
           <p className="text-xs text-center text-foreground/50">
-            L'utilisateur sera automatiquement assigné à ce contrat.
+            L'utilisateur sera automatiquement assigné à ce pass.
           </p>
         </form>
       </div>

@@ -24,13 +24,13 @@ export function NoContractModal({ open }: NoContractModalProps) {
 
           {/* Title */}
           <h2 className="mt-4 font-header text-xl font-bold uppercase tracking-tight">
-            Aucun contrat actif
+            Aucun pass actif
           </h2>
 
           {/* Description */}
           <p className="mt-3 text-sm text-foreground/70">
-            Votre compte n&apos;est lié à aucun contrat actif.
-            Veuillez contacter l&apos;administrateur de votre entreprise pour être assigné à un contrat.
+            Votre compte n&apos;est lié à aucun pass actif.
+            Veuillez contacter l&apos;administrateur de votre entreprise pour être assigné à un pass.
           </p>
         </div>
       </div>

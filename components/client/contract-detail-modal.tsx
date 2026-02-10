@@ -185,7 +185,7 @@ export function ContractDetailModal({
             ) : users.length === 0 ? (
               <div className="rounded-[12px] bg-card p-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Aucun utilisateur assigné à ce contrat
+                  Aucun utilisateur assigné à ce pass
                 </p>
               </div>
             ) : (

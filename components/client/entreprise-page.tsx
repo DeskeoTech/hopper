@@ -237,12 +237,12 @@ export function EntreprisePage({
               <FileText className="h-5 w-5 text-foreground/70" />
             </div>
             <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-              Contrats
+              Pass
             </h2>
           </div>
 
           {contracts.length === 0 ? (
-            <p className="text-sm text-foreground/50">Aucun contrat actif</p>
+            <p className="text-sm text-foreground/50">Aucun pass actif</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {contracts.map((contract) => {
@@ -405,7 +405,7 @@ export function EntreprisePage({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Retirer du contrat</SelectItem>
+                            <SelectItem value="none">Retirer du pass</SelectItem>
                             {contracts.map((contract) => {
                               const isAssignedToThis = user.contract_id === contract.id
                               const hasSpace =
@@ -437,7 +437,7 @@ export function EntreprisePage({
                           ) : (
                             <>
                               <FileText className="h-3 w-3" />
-                              Lier à un contrat
+                              Lier à un pass
                             </>
                           )}
                         </button>
@@ -524,11 +524,11 @@ export function EntreprisePage({
       <Dialog open={linkContractOpen} onOpenChange={setLinkContractOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lier à un contrat</DialogTitle>
+            <DialogTitle>Lier à un pass</DialogTitle>
             <DialogDescription>
               {userToLink && (
                 <>
-                  Sélectionnez un contrat pour{" "}
+                  Sélectionnez un pass pour{" "}
                   <span className="font-medium">
                     {[userToLink.first_name, userToLink.last_name].filter(Boolean).join(" ") ||
                       userToLink.email ||
@@ -541,7 +541,7 @@ export function EntreprisePage({
           <div className="py-4 space-y-2">
             {contracts.length === 0 ? (
               <p className="text-sm text-foreground/50 text-center py-4">
-                Aucun contrat disponible
+                Aucun pass disponible
               </p>
             ) : (
               contracts.map((contract) => {
@@ -602,8 +602,8 @@ export function EntreprisePage({
           <DialogHeader>
             <DialogTitle>Quota de sièges atteint</DialogTitle>
             <DialogDescription>
-              Vous avez atteint le nombre maximum d&apos;utilisateurs pour vos contrats actuels.
-              Pour ajouter plus d&apos;utilisateurs, veuillez souscrire à un nouveau contrat.
+              Vous avez atteint le nombre maximum d&apos;utilisateurs pour vos pass actuels.
+              Pour ajouter plus d&apos;utilisateurs, veuillez souscrire à un nouveau pass.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -623,7 +623,7 @@ export function EntreprisePage({
               }}
               className="flex items-center gap-2 rounded-full bg-[#1B1918] px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
             >
-              Souscrire un contrat
+              Souscrire un pass
             </button>
           </DialogFooter>
         </DialogContent>
