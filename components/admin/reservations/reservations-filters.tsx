@@ -33,7 +33,6 @@ const resourceTypes = [
 const statusOptions = [
   { value: "confirmed", label: "Confirmee" },
   { value: "pending", label: "En attente" },
-  { value: "cancelled", label: "Annulee" },
 ]
 
 export function ReservationsFilters({
