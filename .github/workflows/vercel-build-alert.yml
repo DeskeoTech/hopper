@@ -1,21 +1,177 @@
-name: Vercel Build Failure Alert
+name: Vercel Deployment Notifications
 
 on:
   deployment_status:
 
 jobs:
+  notify-success:
+    if: github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch commit and PR info
+        id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.event.deployment.sha }}"
+
+          # Get commit message (first line only)
+          COMMIT_MSG=$(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message' | head -1)
+          echo "commit_msg=${COMMIT_MSG}" >> "$GITHUB_OUTPUT"
+
+          # Get associated PR (if any)
+          PR_URL=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].html_url // empty')
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Send Slack success notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          COMMIT_MSG: ${{ steps.info.outputs.commit_msg }}
+          PR_URL: ${{ steps.info.outputs.pr_url }}
+          DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
+          BRANCH: ${{ github.event.deployment.ref }}
+          ENVIRONMENT: ${{ github.event.deployment_status.environment }}
+          AUTHOR: ${{ github.event.deployment.creator.login }}
+        run: |
+          # Build actions buttons
+          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir le déploiement"},"url":"'"${DEPLOY_URL}"'"}'
+          if [ -n "$PR_URL" ]; then
+            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR"},"url":"'"${PR_URL}"'"}'
+          fi
+          BUTTONS="${BUTTONS}]"
+
+          # Build payload
+          PAYLOAD=$(jq -n \
+            --arg commit_msg "$COMMIT_MSG" \
+            --arg branch "$BRANCH" \
+            --arg environment "$ENVIRONMENT" \
+            --arg author "$AUTHOR" \
+            --argjson buttons "$BUTTONS" \
+            '{
+              "attachments": [
+                {
+                  "color": "#22C55E",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ":white_check_mark: *Déploiement Vercel réussi*"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Branche :* " + $branch)
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Environnement :* " + $environment)
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Auteur :* " + $author)
+                        }
+                      ]
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ("*Modifications :*\n" + $commit_msg)
+                      }
+                    },
+                    {
+                      "type": "actions",
+                      "elements": $buttons
+                    }
+                  ]
+                }
+              ]
+            }')
+
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d "$PAYLOAD"
+
   notify-failure:
     if: github.event.deployment_status.state == 'error' || github.event.deployment_status.state == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - name: Send Slack @here notification
+      - name: Fetch PR info
+        id: info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA="${{ github.event.deployment.sha }}"
+
+          # Get associated PR (if any)
+          PR_URL=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].html_url // empty')
+          echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Send Slack failure notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          PR_URL: ${{ steps.info.outputs.pr_url }}
+          DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
+          BRANCH: ${{ github.event.deployment.ref }}
+          ENVIRONMENT: ${{ github.event.deployment_status.environment }}
+          AUTHOR: ${{ github.event.deployment.creator.login }}
         run: |
+          # Build actions buttons
+          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir les logs"},"url":"'"${DEPLOY_URL}"'"}'
+          if [ -n "$PR_URL" ]; then
+            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR"},"url":"'"${PR_URL}"'"}'
+          fi
+          BUTTONS="${BUTTONS}]"
+
+          # Build payload
+          PAYLOAD=$(jq -n \
+            --arg branch "$BRANCH" \
+            --arg environment "$ENVIRONMENT" \
+            --arg author "$AUTHOR" \
+            --argjson buttons "$BUTTONS" \
+            '{
+              "text": "<!here> :rotating_light: Build Vercel échoué !",
+              "attachments": [
+                {
+                  "color": "#EF4444",
+                  "blocks": [
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ":rotating_light: *Build Vercel échoué !*"
+                      }
+                    },
+                    {
+                      "type": "section",
+                      "fields": [
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Branche :* " + $branch)
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Environnement :* " + $environment)
+                        },
+                        {
+                          "type": "mrkdwn",
+                          "text": ("*Auteur :* " + $author)
+                        }
+                      ]
+                    },
+                    {
+                      "type": "actions",
+                      "elements": $buttons
+                    }
+                  ]
+                }
+              ]
+            }')
+
           curl -X POST "$SLACK_WEBHOOK_URL" \
             -H 'Content-Type: application/json' \
-            -d @- <<'EOF'
-          {
-            "text": "<!here> :rotating_light: *Build Vercel échoué !*\n\n*Branche :* ${{ github.event.deployment.ref }}\n*Environnement :* ${{ github.event.deployment_status.environment }}\n*URL :* ${{ github.event.deployment_status.target_url }}\n*Auteur :* ${{ github.event.deployment.creator.login }}"
-          }
-          EOF
+            -d "$PAYLOAD"
