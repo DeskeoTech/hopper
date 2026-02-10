@@ -91,6 +91,7 @@ export default async function ReservationsPage({
     .gte("start_date", startDate.toISOString())
     .lte("start_date", endDate.toISOString())
     .order("start_date")
+    .neq("status", "cancelled")
 
   // Apply filters
   if (params.status && params.status !== "all") {

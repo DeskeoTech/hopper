@@ -98,6 +98,7 @@ export async function ReservationsSection({
     .gte("start_date", startDate.toISOString())
     .lte("start_date", endDate.toISOString())
     .order("start_date")
+    .neq("status", "cancelled")
 
   // Fetch filter options
   const [sitesResult, companiesResult, usersResult] = await Promise.all([
