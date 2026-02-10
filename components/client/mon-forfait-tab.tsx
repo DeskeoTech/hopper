@@ -142,10 +142,10 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
 
       {/* Contract History */}
       <div className="rounded-[16px] bg-card p-5 sm:p-6">
-        <h3 className="mb-5 font-header text-lg font-bold uppercase tracking-tight">Historique des contrats</h3>
+        <h3 className="mb-5 font-header text-lg font-bold uppercase tracking-tight">Historique des pass</h3>
 
         {!initialContractHistory || initialContractHistory.length === 0 ? (
-          <p className="text-lg text-muted-foreground">Aucun historique de contrat</p>
+          <p className="text-lg text-muted-foreground">Aucun historique de pass</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
             <Table>

@@ -50,7 +50,7 @@ export function AllContractsModal({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-4 md:rounded-t-[20px]">
           <h1 className="font-header text-xl font-bold uppercase tracking-tight">
-            Tous les contrats
+            Tous les pass
           </h1>
           <button
             type="button"
