@@ -1,0 +1,21 @@
+name: Vercel Build Failure Alert
+
+on:
+  deployment_status:
+
+jobs:
+  notify-failure:
+    if: github.event.deployment_status.state == 'error' || github.event.deployment_status.state == 'failure'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Slack @here notification
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          curl -X POST "$SLACK_WEBHOOK_URL" \
+            -H 'Content-Type: application/json' \
+            -d @- <<'EOF'
+          {
+            "text": "<!here> :rotating_light: *Build Vercel échoué !*\n\n*Branche :* ${{ github.event.deployment.ref }}\n*Environnement :* ${{ github.event.deployment_status.environment }}\n*URL :* ${{ github.event.deployment_status.target_url }}\n*Auteur :* ${{ github.event.deployment.creator.login }}"
+          }
+          EOF
