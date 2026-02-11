@@ -1,22 +1,17 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient, getUser } from "@/lib/supabase/server"
-import { ArrowLeft, Briefcase, Mail, Phone, MapPin, Calendar, CreditCard, Building2, Info } from "lucide-react"
+import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2 } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
-import { StripePortalButton, StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
+import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
+import { PassesSection } from "@/components/admin/company-passes/passes-section"
 import { cn } from "@/lib/utils"
-import type { CreditMovement } from "@/lib/types/database"
+import type { CreditMovement, AdminPassForDisplay, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
 interface CompanyDetailsPageProps {
   params: Promise<{ id: string }>
@@ -99,10 +94,52 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         .limit(100)
     : Promise.resolve({ data: [] })
 
-  const [{ data: creditTransactions }, { data: bookings }] = await Promise.all([
+  // Fetch company passes (contracts with plan details)
+  const passesPromise = supabase
+    .from("contracts")
+    .select(`
+      id,
+      status,
+      start_date,
+      end_date,
+      commitment_end_date,
+      renewal_end_date,
+      Number_of_seats,
+      plans (name, recurrence, price_per_seat_month)
+    `)
+    .eq("company_id", id)
+    .order("start_date", { ascending: false })
+
+  const [{ data: creditTransactions }, { data: bookings }, { data: passesData }] = await Promise.all([
     creditTransactionsPromise,
     bookingsPromise,
+    passesPromise,
   ])
+
+  // Transform passes for admin display
+  const contractUserCounts: Record<string, number> = {}
+  for (const user of users || []) {
+    if (user.contract_id) {
+      contractUserCounts[user.contract_id] = (contractUserCounts[user.contract_id] || 0) + 1
+    }
+  }
+
+  const adminPasses: AdminPassForDisplay[] = (passesData || []).map((c) => {
+    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null; price_per_seat_month: number | null } | null
+    return {
+      id: c.id,
+      status: c.status as ContractStatus,
+      start_date: c.start_date,
+      end_date: c.end_date,
+      commitment_end_date: c.commitment_end_date,
+      renewal_end_date: c.renewal_end_date,
+      plan_name: plan?.name || "Pass",
+      plan_recurrence: plan?.recurrence || null,
+      price_per_seat_month: plan?.price_per_seat_month ?? null,
+      number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
+      assigned_users_count: contractUserCounts[c.id] || 0,
+    }
+  })
 
   // Get booking IDs that already have credit_transactions
   const bookingIdsWithTransactions = new Set(
@@ -359,66 +396,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
             {/* Sidebar - Right Column */}
             <div className="space-y-6">
-              {/* Subscription */}
-              <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        <Info className="h-4 w-4" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-[250px]">
-                      <p>Le client doit se rendre sur son espace facturation pour modifier son abonnement ou ses informations de facturation.</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                  <Calendar className="h-5 w-5" />
-                  Abonnement
-                </h2>
-                <div className="space-y-3">
-                  {company.subscription_period && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Période</span>
-                      <p className="font-medium text-foreground">
-                        {company.subscription_period === "month" ? "Mensuel" : "Hebdomadaire"}
-                      </p>
-                    </div>
-                  )}
-                  {company.subscription_start_date && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Date de début</span>
-                      <p className="font-medium text-foreground">
-                        {new Date(company.subscription_start_date).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                  )}
-                  {company.subscription_end_date && (
-                    <div>
-                      <span className="text-sm text-muted-foreground">Date de fin</span>
-                      <p className="font-medium text-foreground">
-                        {new Date(company.subscription_end_date).toLocaleDateString("fr-FR")}
-                      </p>
-                    </div>
-                  )}
-                  {!company.subscription_period && !company.subscription_start_date && !company.subscription_end_date && (
-                    <p className="text-muted-foreground text-sm">Non renseigné</p>
-                  )}
-                  {company.customer_id_stripe && (
-                    <div className="mt-4 pt-4 border-t border-border">
-                      <StripePortalButton
-                        customerId={company.customer_id_stripe}
-                        customerEmail={company.contact_email}
-                        companyName={company.name || undefined}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
+              {/* Pass */}
+              <PassesSection
+                passes={adminPasses}
+                stripeCustomerId={company.customer_id_stripe}
+                stripeCustomerEmail={company.contact_email}
+                companyName={company.name || undefined}
+              />
 
               {/* Stripe */}
               {company.customer_id_stripe && (
