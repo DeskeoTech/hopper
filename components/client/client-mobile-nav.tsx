@@ -54,6 +54,11 @@ export function ClientMobileNav() {
               </Link>
             )}
             <div className="text-xs text-brand-foreground/40">
+              <div className="mb-2 flex gap-2">
+                <Link href="/conditions-generales" onClick={() => setOpen(false)} className="transition-colors hover:text-brand-foreground/70">CGV/CGU</Link>
+                <span className="text-brand-foreground/20">|</span>
+                <Link href="/politique-de-confidentialite" onClick={() => setOpen(false)} className="transition-colors hover:text-brand-foreground/70">Confidentialité</Link>
+              </div>
               <p>Hopper Coworking</p>
               <p>&copy; 2026 Deskeo</p>
             </div>
