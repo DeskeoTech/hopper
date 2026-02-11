@@ -245,6 +245,21 @@ export interface ContractForDisplay {
   number_of_seats: number | null
 }
 
+// Admin pass display (enriched contract for admin views)
+export interface AdminPassForDisplay {
+  id: string
+  status: ContractStatus
+  start_date: string | null
+  end_date: string | null
+  commitment_end_date: string | null
+  renewal_end_date: string | null
+  plan_name: string
+  plan_recurrence: PlanRecurrence | null
+  price_per_seat_month: number | null
+  number_of_seats: number | null
+  assigned_users_count: number
+}
+
 // Unified reservation item (booking or contract)
 export type ReservationItemType = "meeting_room" | "pass_day" | "pass_week" | "pass_month"
 
