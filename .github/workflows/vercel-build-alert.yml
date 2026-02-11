@@ -5,7 +5,7 @@ on:
 
 jobs:
   notify-success:
-    if: github.event.deployment_status.state == 'success'
+    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production'
     runs-on: ubuntu-latest
     steps:
       - name: Fetch commit and PR info
@@ -31,8 +31,8 @@ jobs:
 
           # Get commits list
           if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" \
-              --jq '[.[].commit.message | split("\n") | .[0]] | map("• " + .) | join("\n")' | head -10)
+            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" | \
+              jq -r --arg title "$PR_TITLE" '[.[].commit.message | split("\n") | .[0]] | map(select(. != $title)) | map("• " + .) | join("\n")' | head -10)
           else
             COMMITS="• $(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message | split("\n") | .[0]')"
           fi
@@ -63,7 +63,7 @@ jobs:
 
           # Build modifications text
           if [ -n "$PR_TITLE" ]; then
-            MODIFICATIONS="*${PR_TITLE}*\n${COMMITS}"
+            MODIFICATIONS=$(printf "*%s*\n%s" "$PR_TITLE" "$COMMITS")
           else
             MODIFICATIONS="${COMMITS}"
           fi
@@ -155,8 +155,8 @@ jobs:
 
           # Get commits list
           if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" \
-              --jq '[.[].commit.message | split("\n") | .[0]] | map("• " + .) | join("\n")' | head -10)
+            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" | \
+              jq -r --arg title "$PR_TITLE" '[.[].commit.message | split("\n") | .[0]] | map(select(. != $title)) | map("• " + .) | join("\n")' | head -10)
           else
             COMMITS="• $(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message | split("\n") | .[0]')"
           fi
@@ -187,7 +187,7 @@ jobs:
 
           # Build modifications text
           if [ -n "$PR_TITLE" ]; then
-            MODIFICATIONS="*${PR_TITLE}*\n${COMMITS}"
+            MODIFICATIONS=$(printf "*%s*\n%s" "$PR_TITLE" "$COMMITS")
           else
             MODIFICATIONS="${COMMITS}"
           fi
