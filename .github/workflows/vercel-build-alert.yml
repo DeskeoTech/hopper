@@ -52,7 +52,6 @@ jobs:
           AUTHOR: ${{ steps.info.outputs.author }}
           COMMITS: ${{ steps.info.outputs.commits }}
           DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
-          BRANCH: ${{ github.event.deployment.ref }}
           ENVIRONMENT: ${{ github.event.deployment_status.environment }}
         run: |
           # Environment emoji
@@ -80,8 +79,6 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg env_emoji "$ENV_EMOJI" \
             --arg environment "$ENVIRONMENT" \
-            --arg deploy_url "$DEPLOY_URL" \
-            --arg branch "$BRANCH" \
             --arg author "$AUTHOR" \
             --arg modifications "$MODIFICATIONS" \
             --argjson buttons "$BUTTONS" \
@@ -99,30 +96,17 @@ jobs:
                       }
                     },
                     {
-                      "type": "divider"
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": ("*" + $env_emoji + " " + $environment + "*\n<" + $deploy_url + "|Voir le déploiement>")
-                      }
-                    },
-                    {
                       "type": "section",
                       "fields": [
                         {
                           "type": "mrkdwn",
-                          "text": ("*Branche*\n`" + $branch + "`")
+                          "text": ("*Environnement*\n" + $env_emoji + " " + $environment)
                         },
                         {
                           "type": "mrkdwn",
                           "text": ("*Auteur*\n" + $author)
                         }
                       ]
-                    },
-                    {
-                      "type": "divider"
                     },
                     {
                       "type": "section",
@@ -192,7 +176,6 @@ jobs:
           AUTHOR: ${{ steps.info.outputs.author }}
           COMMITS: ${{ steps.info.outputs.commits }}
           DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
-          BRANCH: ${{ github.event.deployment.ref }}
           ENVIRONMENT: ${{ github.event.deployment_status.environment }}
         run: |
           # Environment emoji
@@ -220,8 +203,6 @@ jobs:
           PAYLOAD=$(jq -n \
             --arg env_emoji "$ENV_EMOJI" \
             --arg environment "$ENVIRONMENT" \
-            --arg deploy_url "$DEPLOY_URL" \
-            --arg branch "$BRANCH" \
             --arg author "$AUTHOR" \
             --arg modifications "$MODIFICATIONS" \
             --argjson buttons "$BUTTONS" \
@@ -240,30 +221,17 @@ jobs:
                       }
                     },
                     {
-                      "type": "divider"
-                    },
-                    {
-                      "type": "section",
-                      "text": {
-                        "type": "mrkdwn",
-                        "text": ("*" + $env_emoji + " " + $environment + "*\n<" + $deploy_url + "|Voir les logs>")
-                      }
-                    },
-                    {
                       "type": "section",
                       "fields": [
                         {
                           "type": "mrkdwn",
-                          "text": ("*Branche*\n`" + $branch + "`")
+                          "text": ("*Environnement*\n" + $env_emoji + " " + $environment)
                         },
                         {
                           "type": "mrkdwn",
                           "text": ("*Auteur*\n" + $author)
                         }
                       ]
-                    },
-                    {
-                      "type": "divider"
                     },
                     {
                       "type": "section",
