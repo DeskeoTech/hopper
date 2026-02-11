@@ -71,6 +71,22 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // Redirect hopper admins from root to admin dashboard
+  if (user && request.nextUrl.pathname === "/") {
+    const { data: userData } = await supabase
+      .from("users")
+      .select("is_hopper_admin")
+      .eq("email", user.email)
+      .limit(1)
+      .maybeSingle()
+
+    if (userData?.is_hopper_admin) {
+      const url = request.nextUrl.clone()
+      url.pathname = "/admin"
+      return NextResponse.redirect(url)
+    }
+  }
+
   // If user is authenticated, check is_hopper_admin flag
   if (user && request.nextUrl.pathname.startsWith("/admin")) {
     const { data: userData } = await supabase
