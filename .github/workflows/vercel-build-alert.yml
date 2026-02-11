@@ -15,37 +15,72 @@ jobs:
         run: |
           SHA="${{ github.event.deployment.sha }}"
 
-          # Get commit message (first line only)
-          COMMIT_MSG=$(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message' | head -1)
-          echo "commit_msg=${COMMIT_MSG}" >> "$GITHUB_OUTPUT"
+          # Fetch PR data associated with this commit
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" 2>/dev/null || echo "[]")
+          PR_URL=$(echo "$PR_JSON" | jq -r '.[0].html_url // empty')
+          PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.[0].user.login // empty')
+          PR_TITLE=$(echo "$PR_JSON" | jq -r '.[0].title // empty')
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.[0].number // empty')
 
-          # Get associated PR (if any)
-          PR_URL=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].html_url // empty')
+          # Get real author (fallback to commit author if no PR)
+          if [ -n "$PR_AUTHOR" ]; then
+            AUTHOR="$PR_AUTHOR"
+          else
+            AUTHOR=$(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.author.login // .commit.author.name')
+          fi
+
+          # Get commits list
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" \
+              --jq '[.[].commit.message | split("\n") | .[0]] | map("• " + .) | join("\n")' | head -10)
+          else
+            COMMITS="• $(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message | split("\n") | .[0]')"
+          fi
+
           echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "pr_title=${PR_TITLE}" >> "$GITHUB_OUTPUT"
+          echo "author=${AUTHOR}" >> "$GITHUB_OUTPUT"
+          echo "commits<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMITS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Send Slack success notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          COMMIT_MSG: ${{ steps.info.outputs.commit_msg }}
           PR_URL: ${{ steps.info.outputs.pr_url }}
+          PR_TITLE: ${{ steps.info.outputs.pr_title }}
+          AUTHOR: ${{ steps.info.outputs.author }}
+          COMMITS: ${{ steps.info.outputs.commits }}
           DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
-          BRANCH: ${{ github.event.deployment.ref }}
           ENVIRONMENT: ${{ github.event.deployment_status.environment }}
-          AUTHOR: ${{ github.event.deployment.creator.login }}
         run: |
-          # Build actions buttons
-          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir le déploiement"},"url":"'"${DEPLOY_URL}"'"}'
+          # Environment emoji
+          case "$ENVIRONMENT" in
+            Production|production) ENV_EMOJI="🚀" ;;
+            Preview|preview) ENV_EMOJI="👁️" ;;
+            *) ENV_EMOJI="🔧" ;;
+          esac
+
+          # Build modifications text
+          if [ -n "$PR_TITLE" ]; then
+            MODIFICATIONS="*${PR_TITLE}*\n${COMMITS}"
+          else
+            MODIFICATIONS="${COMMITS}"
+          fi
+
+          # Build action buttons
+          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir le déploiement","emoji":true},"url":"'"${DEPLOY_URL}"'","style":"primary"}'
           if [ -n "$PR_URL" ]; then
-            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR"},"url":"'"${PR_URL}"'"}'
+            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR","emoji":true},"url":"'"${PR_URL}"'"}'
           fi
           BUTTONS="${BUTTONS}]"
 
           # Build payload
           PAYLOAD=$(jq -n \
-            --arg commit_msg "$COMMIT_MSG" \
-            --arg branch "$BRANCH" \
+            --arg env_emoji "$ENV_EMOJI" \
             --arg environment "$ENVIRONMENT" \
             --arg author "$AUTHOR" \
+            --arg modifications "$MODIFICATIONS" \
             --argjson buttons "$BUTTONS" \
             '{
               "attachments": [
@@ -53,10 +88,11 @@ jobs:
                   "color": "#22C55E",
                   "blocks": [
                     {
-                      "type": "section",
+                      "type": "header",
                       "text": {
-                        "type": "mrkdwn",
-                        "text": ":white_check_mark: *Déploiement Vercel réussi*"
+                        "type": "plain_text",
+                        "text": "✅ Déploiement Vercel réussi",
+                        "emoji": true
                       }
                     },
                     {
@@ -64,15 +100,11 @@ jobs:
                       "fields": [
                         {
                           "type": "mrkdwn",
-                          "text": ("*Branche :* " + $branch)
+                          "text": ("*Environnement*\n" + $env_emoji + " " + $environment)
                         },
                         {
                           "type": "mrkdwn",
-                          "text": ("*Environnement :* " + $environment)
-                        },
-                        {
-                          "type": "mrkdwn",
-                          "text": ("*Auteur :* " + $author)
+                          "text": ("*Auteur*\n" + $author)
                         }
                       ]
                     },
@@ -80,7 +112,7 @@ jobs:
                       "type": "section",
                       "text": {
                         "type": "mrkdwn",
-                        "text": ("*Modifications :*\n" + $commit_msg)
+                        "text": ("*📝 Modifications*\n" + $modifications)
                       }
                     },
                     {
@@ -100,50 +132,92 @@ jobs:
     if: github.event.deployment_status.state == 'error' || github.event.deployment_status.state == 'failure'
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch PR info
+      - name: Fetch commit and PR info
         id: info
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           SHA="${{ github.event.deployment.sha }}"
 
-          # Get associated PR (if any)
-          PR_URL=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" --jq '.[0].html_url // empty')
+          # Fetch PR data associated with this commit
+          PR_JSON=$(gh api "repos/${{ github.repository }}/commits/${SHA}/pulls" 2>/dev/null || echo "[]")
+          PR_URL=$(echo "$PR_JSON" | jq -r '.[0].html_url // empty')
+          PR_AUTHOR=$(echo "$PR_JSON" | jq -r '.[0].user.login // empty')
+          PR_TITLE=$(echo "$PR_JSON" | jq -r '.[0].title // empty')
+          PR_NUMBER=$(echo "$PR_JSON" | jq -r '.[0].number // empty')
+
+          # Get real author (fallback to commit author if no PR)
+          if [ -n "$PR_AUTHOR" ]; then
+            AUTHOR="$PR_AUTHOR"
+          else
+            AUTHOR=$(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.author.login // .commit.author.name')
+          fi
+
+          # Get commits list
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            COMMITS=$(gh api "repos/${{ github.repository }}/pulls/${PR_NUMBER}/commits" \
+              --jq '[.[].commit.message | split("\n") | .[0]] | map("• " + .) | join("\n")' | head -10)
+          else
+            COMMITS="• $(gh api "repos/${{ github.repository }}/commits/${SHA}" --jq '.commit.message | split("\n") | .[0]')"
+          fi
+
           echo "pr_url=${PR_URL}" >> "$GITHUB_OUTPUT"
+          echo "pr_title=${PR_TITLE}" >> "$GITHUB_OUTPUT"
+          echo "author=${AUTHOR}" >> "$GITHUB_OUTPUT"
+          echo "commits<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$COMMITS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Send Slack failure notification
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           PR_URL: ${{ steps.info.outputs.pr_url }}
+          PR_TITLE: ${{ steps.info.outputs.pr_title }}
+          AUTHOR: ${{ steps.info.outputs.author }}
+          COMMITS: ${{ steps.info.outputs.commits }}
           DEPLOY_URL: ${{ github.event.deployment_status.target_url }}
-          BRANCH: ${{ github.event.deployment.ref }}
           ENVIRONMENT: ${{ github.event.deployment_status.environment }}
-          AUTHOR: ${{ github.event.deployment.creator.login }}
         run: |
-          # Build actions buttons
-          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir les logs"},"url":"'"${DEPLOY_URL}"'"}'
+          # Environment emoji
+          case "$ENVIRONMENT" in
+            Production|production) ENV_EMOJI="🚀" ;;
+            Preview|preview) ENV_EMOJI="👁️" ;;
+            *) ENV_EMOJI="🔧" ;;
+          esac
+
+          # Build modifications text
+          if [ -n "$PR_TITLE" ]; then
+            MODIFICATIONS="*${PR_TITLE}*\n${COMMITS}"
+          else
+            MODIFICATIONS="${COMMITS}"
+          fi
+
+          # Build action buttons
+          BUTTONS='[{"type":"button","text":{"type":"plain_text","text":"Voir les logs","emoji":true},"url":"'"${DEPLOY_URL}"'","style":"danger"}'
           if [ -n "$PR_URL" ]; then
-            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR"},"url":"'"${PR_URL}"'"}'
+            BUTTONS="${BUTTONS}"',{"type":"button","text":{"type":"plain_text","text":"Voir la PR","emoji":true},"url":"'"${PR_URL}"'"}'
           fi
           BUTTONS="${BUTTONS}]"
 
           # Build payload
           PAYLOAD=$(jq -n \
-            --arg branch "$BRANCH" \
+            --arg env_emoji "$ENV_EMOJI" \
             --arg environment "$ENVIRONMENT" \
             --arg author "$AUTHOR" \
+            --arg modifications "$MODIFICATIONS" \
             --argjson buttons "$BUTTONS" \
             '{
-              "text": "<!here> :rotating_light: Build Vercel échoué !",
+              "text": "<!here> 🚨 Build Vercel échoué !",
               "attachments": [
                 {
                   "color": "#EF4444",
                   "blocks": [
                     {
-                      "type": "section",
+                      "type": "header",
                       "text": {
-                        "type": "mrkdwn",
-                        "text": ":rotating_light: *Build Vercel échoué !*"
+                        "type": "plain_text",
+                        "text": "🚨 Build Vercel échoué !",
+                        "emoji": true
                       }
                     },
                     {
@@ -151,17 +225,20 @@ jobs:
                       "fields": [
                         {
                           "type": "mrkdwn",
-                          "text": ("*Branche :* " + $branch)
+                          "text": ("*Environnement*\n" + $env_emoji + " " + $environment)
                         },
                         {
                           "type": "mrkdwn",
-                          "text": ("*Environnement :* " + $environment)
-                        },
-                        {
-                          "type": "mrkdwn",
-                          "text": ("*Auteur :* " + $author)
+                          "text": ("*Auteur*\n" + $author)
                         }
                       ]
+                    },
+                    {
+                      "type": "section",
+                      "text": {
+                        "type": "mrkdwn",
+                        "text": ("*📝 Modifications*\n" + $modifications)
+                      }
                     },
                     {
                       "type": "actions",
