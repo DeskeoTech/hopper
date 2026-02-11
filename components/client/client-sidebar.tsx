@@ -72,6 +72,11 @@ export function ClientSidebar() {
           </Link>
         )}
         <div className="text-xs text-[#F0E8DC]/50">
+          <div className="mb-2 flex gap-2">
+            <Link href="/conditions-generales" className="transition-colors hover:text-[#F0E8DC]/80">CGV/CGU</Link>
+            <span className="text-[#F0E8DC]/20">|</span>
+            <Link href="/politique-de-confidentialite" className="transition-colors hover:text-[#F0E8DC]/80">Confidentialité</Link>
+          </div>
           <p>Hopper Coworking</p>
           <p>&copy; 2026 Deskeo</p>
           <p className="mt-1">v0.1.0</p>
