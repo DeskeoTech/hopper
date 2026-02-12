@@ -15,7 +15,6 @@ async function getSitesWithPhotos() {
     .from("sites")
     .select("*")
     .eq("status", "open")
-    .eq("is_nomad", true)
     .order("name")
 
   if (sitesError || !sites) {
@@ -31,7 +30,7 @@ async function getSitesWithPhotos() {
       "site_id",
       sites.map((s) => s.id)
     )
-    .order("order")
+    .order("created_at")
 
   // Fetch resources to get capacity per site
   const { data: resources } = await supabase
