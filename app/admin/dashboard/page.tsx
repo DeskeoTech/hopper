@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { LayoutDashboard, TrendingUp, TrendingDown, Headphones } from "lucide-react"
+import { LayoutDashboard, TrendingUp, TrendingDown, Headphones, Building2, Calendar, Briefcase } from "lucide-react"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addWeeks, addMonths, format, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -250,6 +250,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     contractsThisMonthResult,
     contractsLastMonthResult,
 
+    // KPI réservations semaine
+    weeklyBookingsCountResult,
+
     // Prévisions - bookings futurs
     bookingsNextWeekResult,
     bookingsWeekAfterNextResult,
@@ -311,6 +314,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .gte("created_at", lastMonthStart.toISOString())
       .lte("created_at", lastMonthEnd.toISOString()),
 
+    // Réservations confirmées cette semaine (count pour KPI)
+    supabase
+      .from("bookings")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "confirmed")
+      .gte("start_date", weekStart.toISOString())
+      .lte("start_date", weekEnd.toISOString()),
+
     // Réservations semaine n+1
     supabase
       .from("bookings")
@@ -340,6 +351,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const sitesCount = sitesResult.count || 0
   const companiesCount = companiesResult.count || 0
   const activeUsersCount = activeUsersResult.count || 0
+  const weeklyBookingsCount = weeklyBookingsCountResult.count || 0
 
   const todayBookings = todayBookingsResult.data || []
 
@@ -633,6 +645,51 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             <DateNavigator currentDate={selectedDate} basePath="/admin/dashboard" />
           </Suspense>
         </div>
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-3 gap-4">
+        <Link href="/admin/sites" className="group block">
+          <div className="rounded-[20px] bg-card p-4 sm:p-5 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Building2 className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{sitesCount}</p>
+                <p className="text-sm text-muted-foreground">Sites ouverts</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/reservations" className="group block">
+          <div className="rounded-[20px] bg-card p-4 sm:p-5 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Calendar className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{weeklyBookingsCount}</p>
+                <p className="text-sm text-muted-foreground">Réservations / semaine</p>
+              </div>
+            </div>
+          </div>
+        </Link>
+
+        <Link href="/admin/clients" className="group block">
+          <div className="rounded-[20px] bg-card p-4 sm:p-5 transition-all hover:shadow-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-sm bg-muted">
+                <Briefcase className="h-5 w-5 text-foreground/60" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">{companiesCount}</p>
+                <p className="text-sm text-muted-foreground">Entreprises</p>
+              </div>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Section principale : Occupation + Réservations */}
