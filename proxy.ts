@@ -42,24 +42,30 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // If user is not authenticated and trying to access /admin, redirect to login
-  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
+  // If user is not authenticated and trying to access admin or reservation, redirect to login
+  const adminRoutes = ["/admin", "/reservation"]
+  const isAdminRoute = adminRoutes.some(
+    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+  )
+  if (!user && isAdminRoute) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
     return NextResponse.redirect(url)
   }
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/reservation", "/login", "/auth"]
+  const publicRoutes = ["/", "/login", "/auth"]
   const isPublicRoute = publicRoutes.some(
-    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+    (route) =>
+      request.nextUrl.pathname === route ||
+      (route !== "/" && request.nextUrl.pathname.startsWith(route + "/"))
   )
   if (isPublicRoute) {
     return supabaseResponse
   }
 
   // Protected client routes
-  const protectedClientRoutes = ["/", "/salles", "/postes", "/compte", "/actualites"]
+  const protectedClientRoutes = ["/compte", "/salles", "/postes", "/actualites"]
   const isProtectedClientRoute = protectedClientRoutes.some(
     (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
   )
@@ -71,24 +77,8 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Redirect hopper admins from root to admin dashboard
-  if (user && request.nextUrl.pathname === "/") {
-    const { data: userData } = await supabase
-      .from("users")
-      .select("is_hopper_admin")
-      .eq("email", user.email)
-      .limit(1)
-      .maybeSingle()
-
-    if (userData?.is_hopper_admin) {
-      const url = request.nextUrl.clone()
-      url.pathname = "/admin"
-      return NextResponse.redirect(url)
-    }
-  }
-
-  // If user is authenticated, check is_hopper_admin flag
-  if (user && request.nextUrl.pathname.startsWith("/admin")) {
+  // If user is authenticated, check is_hopper_admin flag for admin routes
+  if (user && isAdminRoute) {
     const { data: userData } = await supabase
       .from("users")
       .select("is_hopper_admin")

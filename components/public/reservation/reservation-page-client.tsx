@@ -7,6 +7,7 @@ import { SitesList } from "./sites-list"
 import { SitesMapView } from "./sites-map-view"
 import { BookingDialog } from "./booking-dialog"
 import { SiteDetailsDialog } from "./site-details-dialog"
+import { PaymentSuccessModal } from "./payment-success-modal"
 import { MobileToggle } from "./mobile-toggle"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
@@ -29,6 +30,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
   const [bookingDialogOpen, setBookingDialogOpen] = useState(false)
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [mobileView, setMobileView] = useState<"list" | "map">("list")
+  const [paymentSuccessOpen, setPaymentSuccessOpen] = useState(false)
 
   // Handle success/cancel from Stripe
   useEffect(() => {
@@ -36,7 +38,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
     const canceled = searchParams.get("canceled")
 
     if (success === "true") {
-      toast.success("Paiement réussi ! Vous recevrez un email de confirmation.")
+      setPaymentSuccessOpen(true)
       window.history.replaceState({}, "", "/reservation")
     } else if (canceled === "true") {
       toast.info("Paiement annulé")
@@ -123,6 +125,12 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
         site={selectedSite}
         open={bookingDialogOpen}
         onOpenChange={setBookingDialogOpen}
+      />
+
+      {/* Payment Success Modal */}
+      <PaymentSuccessModal
+        open={paymentSuccessOpen}
+        onOpenChange={setPaymentSuccessOpen}
       />
     </div>
   )

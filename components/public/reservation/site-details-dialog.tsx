@@ -32,6 +32,7 @@ import {
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Button } from "@/components/ui/button"
+import { HopperResidenceModal } from "./hopper-residence-modal"
 import { cn } from "@/lib/utils"
 import type { Site, Equipment, DayOfWeek } from "@/lib/types/database"
 
@@ -164,6 +165,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [fullscreenPhoto, setFullscreenPhoto] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
+  const [residenceModalOpen, setResidenceModalOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
@@ -439,10 +441,29 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                   )}
                 </div>
               </Accordion>
+
+              {/* Hopper Residence CTA */}
+              <div
+                className="mt-4 rounded-2xl p-5 cursor-pointer transition-all hover:opacity-90"
+                style={{ backgroundColor: "#D4C4B0" }}
+                onClick={() => setResidenceModalOpen(true)}
+              >
+                <h3 className="font-heading text-lg font-bold text-foreground mb-1">
+                  HOPPER RESIDENCE
+                </h3>
+                <p className="font-editorial text-base text-foreground mb-3">
+                  Votre poste fixe, en illimité
+                </p>
+                <Button size="sm" className="font-bold">
+                  En savoir plus
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <HopperResidenceModal open={residenceModalOpen} onOpenChange={setResidenceModalOpen} />
 
       {/* Fullscreen Photo Gallery */}
       {fullscreenPhoto && (
