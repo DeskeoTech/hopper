@@ -13,6 +13,7 @@ interface OnboardingData {
     address: string
     contact_email: string
   }
+  cguAccepted?: boolean
 }
 
 export async function completeOnboarding(data: OnboardingData) {
@@ -78,6 +79,7 @@ export async function completeOnboarding(data: OnboardingData) {
       .update({
         Onboarding: true,
         status: "active",
+        ...(data.cguAccepted ? { cgu_accepted_at: now } : {}),
         updated_at: now,
       })
       .eq("id", data.userId)
@@ -114,6 +116,7 @@ export async function completeOnboarding(data: OnboardingData) {
         company_id: newCompany.id,
         Onboarding: true,
         status: "active",
+        ...(data.cguAccepted ? { cgu_accepted_at: now } : {}),
         updated_at: now,
       })
       .eq("id", data.userId)

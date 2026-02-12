@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -57,6 +58,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
     contact_email: existingCompany?.contact_email || "",
   })
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [cguAccepted, setCguAccepted] = useState(false)
 
   const needsKbis = companyType === "multi_employee"
   const actualSteps = needsKbis ? 4 : 3 // Skip KBIS step for self_employed
@@ -229,6 +231,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
         address: companyInfo.address.trim(),
         contact_email: companyInfo.contact_email.trim(),
       },
+      cguAccepted,
     })
 
     if (result.error) {
@@ -270,7 +273,8 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
     companyInfo.name.trim() &&
     companyInfo.address.trim() &&
     companyInfo.contact_email.trim() &&
-    isEmailValid
+    isEmailValid &&
+    cguAccepted
 
   const animationClass =
     direction === "forward"
@@ -614,6 +618,39 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                       </p>
                     )}
                   </div>
+                </div>
+
+                {/* CGU Acceptance */}
+                <div className="flex items-start gap-3">
+                  <Checkbox
+                    id="cgu-accept"
+                    checked={cguAccepted}
+                    onCheckedChange={(checked) => setCguAccepted(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <Label
+                    htmlFor="cgu-accept"
+                    className="cursor-pointer text-sm leading-relaxed text-muted-foreground"
+                  >
+                    J&apos;accepte les{" "}
+                    <a
+                      href="/conditions-generales"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 text-foreground hover:text-primary"
+                    >
+                      Conditions Générales
+                    </a>{" "}
+                    et la{" "}
+                    <a
+                      href="/politique-de-confidentialite"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 text-foreground hover:text-primary"
+                    >
+                      Politique de confidentialité
+                    </a>
+                  </Label>
                 </div>
 
                 {error && (

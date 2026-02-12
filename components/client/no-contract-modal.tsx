@@ -1,13 +1,25 @@
 "use client"
 
-import { AlertCircle } from "lucide-react"
+import { useState } from "react"
+import { AlertCircle, LogOut, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/supabase/client"
 
 interface NoContractModalProps {
   open: boolean
 }
 
 export function NoContractModal({ open }: NoContractModalProps) {
+  const [loggingOut, setLoggingOut] = useState(false)
+
   if (!open) return null
+
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    window.location.href = "/login"
+  }
 
   return (
     <>
@@ -32,6 +44,26 @@ export function NoContractModal({ open }: NoContractModalProps) {
             Votre compte n&apos;est lié à aucun pass actif.
             Veuillez contacter l&apos;administrateur de votre entreprise pour être assigné à un pass.
           </p>
+
+          {/* Logout button */}
+          <Button
+            variant="outline"
+            onClick={handleLogout}
+            disabled={loggingOut}
+            className="mt-6"
+          >
+            {loggingOut ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Déconnexion...
+              </>
+            ) : (
+              <>
+                <LogOut className="mr-2 h-4 w-4" />
+                Se déconnecter
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </>

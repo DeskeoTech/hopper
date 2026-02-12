@@ -5,6 +5,7 @@ import { Loader2, Building2, User, Upload, FileText, X, Mail } from "lucide-reac
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -25,6 +26,7 @@ import {
   updateCompanyProfile,
   uploadCompanyKbis,
 } from "@/lib/actions/user-company-info"
+import { acceptCgu } from "@/lib/actions/cgu"
 import { isCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { User as UserType, Company } from "@/lib/types/database"
 
@@ -57,13 +59,17 @@ export function CompleteProfileModal({
   const [kbisFile, setKbisFile] = useState<File | null>(null)
   const [existingKbis, setExistingKbis] = useState(company.kbis_storage_path)
 
+  // CGU acceptance state (only show if not already accepted)
+  const [cguAccepted, setCguAccepted] = useState(!!user.cgu_accepted_at)
+  const needsCguAcceptance = !user.cgu_accepted_at
+
   // If company info is already complete (e.g. invited user), skip company fields
   const companyAlreadyComplete = isCompanyInfoComplete(company)
 
   const needsKbis = companyType === "multi_employee"
   const hasKbis = !!kbisFile || !!existingKbis
 
-  const isFormValid = companyAlreadyComplete
+  const isFormValid = (companyAlreadyComplete
     ? firstName.trim() && lastName.trim() && phone.trim()
     : firstName.trim() &&
       lastName.trim() &&
@@ -71,7 +77,8 @@ export function CompleteProfileModal({
       companyName.trim() &&
       address.trim() &&
       companyType &&
-      (!needsKbis || hasKbis)
+      (!needsKbis || hasKbis)) &&
+    cguAccepted
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -132,6 +139,16 @@ export function CompleteProfileModal({
           setLoading(false)
           return
         }
+      }
+    }
+
+    // Accept CGU if needed
+    if (needsCguAcceptance && cguAccepted) {
+      const cguResult = await acceptCgu()
+      if (cguResult.error) {
+        setError(cguResult.error)
+        setLoading(false)
+        return
       }
     }
 
@@ -326,6 +343,41 @@ export function CompleteProfileModal({
                 </div>
               )}
             </>
+          )}
+
+          {/* CGU Acceptance */}
+          {needsCguAcceptance && (
+            <div className="flex items-start gap-3">
+              <Checkbox
+                id="cgu-accept"
+                checked={cguAccepted}
+                onCheckedChange={(checked) => setCguAccepted(checked === true)}
+                className="mt-0.5"
+              />
+              <Label
+                htmlFor="cgu-accept"
+                className="cursor-pointer text-sm leading-relaxed text-muted-foreground"
+              >
+                J&apos;accepte les{" "}
+                <a
+                  href="/conditions-generales"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 text-foreground hover:text-primary"
+                >
+                  Conditions Générales
+                </a>{" "}
+                et la{" "}
+                <a
+                  href="/politique-de-confidentialite"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 text-foreground hover:text-primary"
+                >
+                  Politique de confidentialité
+                </a>
+              </Label>
+            </div>
           )}
 
           {/* Error message */}
