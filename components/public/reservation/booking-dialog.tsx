@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns"
 import { fr } from "date-fns/locale"
 import type { Site } from "@/lib/types/database"
+import { createCheckoutSession } from "@/lib/actions/stripe"
 
 interface SiteWithPhotos extends Site {
   photos: string[]
@@ -188,27 +189,20 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
     setError(null)
     startTransition(async () => {
       try {
-        const response = await fetch("/api/stripe/checkout", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            siteId: site.id,
-            siteName: site.name,
-            passType,
-            seats,
-            dates: selectedDates.map((d) => d.toISOString()),
-            priceHT: pricing.priceHT,
-          }),
+        const result = await createCheckoutSession({
+          siteId: site.id,
+          siteName: site.name,
+          passType,
+          seats,
+          dates: selectedDates.map((d) => d.toISOString()),
         })
 
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || "Erreur lors de la création du paiement")
+        if ("error" in result) {
+          throw new Error(result.error)
         }
 
-        if (data.url) {
-          window.location.href = data.url
+        if (result.url) {
+          window.location.href = result.url
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Une erreur est survenue")
