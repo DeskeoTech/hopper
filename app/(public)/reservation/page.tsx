@@ -32,7 +32,7 @@ async function getSitesWithPhotos() {
         "site_id",
         sites.map((s) => s.id)
       )
-      .order("order"),
+      .order("created_at"),
     supabase
       .from("resources")
       .select("site_id, capacity, type")
