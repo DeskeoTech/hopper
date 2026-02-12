@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { getNewsPosts } from "@/lib/actions/news"
 import { ActiveClientsTable } from "@/components/admin/accueil/active-clients-table"
-import { CollapsibleSection } from "@/components/admin/accueil/collapsible-section"
+
 import { NewsFeedSection } from "@/components/admin/accueil/news-feed-section"
 import {
   Coffee,
@@ -80,7 +80,8 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       <ActiveClientsTable clients={activeClients} sites={allSites} selectedDate={selectedDate} />
 
       {/* Accès rapide */}
-      <CollapsibleSection title="Accès rapide">
+      <section className="space-y-4">
+        <h2 className="type-h3 text-foreground">Accès rapide</h2>
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
           {/* Hopper Café */}
           <a
@@ -126,12 +127,13 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
             </article>
           </a>
         </div>
-      </CollapsibleSection>
+      </section>
 
       {/* Fil d'actualité */}
-      <CollapsibleSection title="Fil d'actualité">
+      <section className="space-y-4">
+        <h2 className="type-h3 text-foreground">Fil d&apos;actualité</h2>
         <NewsFeedSection posts={newsPosts} />
-      </CollapsibleSection>
+      </section>
     </div>
   )
 }
