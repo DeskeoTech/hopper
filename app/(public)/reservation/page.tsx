@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { ReservationPageClient } from "@/components/public/reservation/reservation-page-client"
 
 export const metadata = {
-  title: "Réservation | Hopper Coworking",
-  description: "Réservez votre espace de coworking à Paris ou Lyon. Dès 30€/jour, sans engagement.",
+  title: "Hopper Coworking | Réservez votre espace de coworking",
+  description:
+    "Bienvenue dans l'univers HOPPER, une offre exclusive de coworking qui réinvente votre manière de travailler. Dès 30€/jour, sans engagement.",
 }
 
 async function getSitesWithPhotos() {
@@ -22,31 +23,32 @@ async function getSitesWithPhotos() {
     return []
   }
 
-  // Fetch photos for all sites
-  const { data: photos } = await supabase
-    .from("site_photos")
-    .select("site_id, storage_path")
-    .in(
-      "site_id",
-      sites.map((s) => s.id)
-    )
-    .order("created_at")
-
-  // Fetch resources to get capacity per site
-  const { data: resources } = await supabase
-    .from("resources")
-    .select("site_id, capacity, type")
-    .in(
-      "site_id",
-      sites.map((s) => s.id)
-    )
-    .eq("status", "available")
+  // Fetch photos and resources in parallel
+  const [{ data: photos }, { data: resources }] = await Promise.all([
+    supabase
+      .from("site_photos")
+      .select("site_id, storage_path")
+      .in(
+        "site_id",
+        sites.map((s) => s.id)
+      )
+      .order("created_at"),
+    supabase
+      .from("resources")
+      .select("site_id, capacity, type")
+      .in(
+        "site_id",
+        sites.map((s) => s.id)
+      )
+      .eq("status", "available"),
+  ])
 
   // Combine sites with photos and capacity
   return sites.map((site) => {
     const sitePhotos = photos?.filter((p) => p.site_id === site.id) || []
     const siteResources = resources?.filter((r) => r.site_id === site.id) || []
     const totalCapacity = siteResources.reduce((sum, r) => sum + (r.capacity || 0), 0)
+    const meetingRoomsCount = siteResources.filter((r) => r.type === "meeting_room").length
 
     // Build full URLs for photos from Supabase storage
     const photoUrls = sitePhotos.map(
@@ -57,6 +59,7 @@ async function getSitesWithPhotos() {
       ...site,
       photos: photoUrls,
       capacity: totalCapacity,
+      meetingRoomsCount,
     }
   })
 }

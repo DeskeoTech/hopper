@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { ScrollableCalendar } from "./scrollable-calendar"
+import { CGVModal } from "./cgv-modal"
 import { cn } from "@/lib/utils"
 import { format, addDays, isWeekend, isBefore, startOfDay } from "date-fns"
 import { fr } from "date-fns/locale"
@@ -137,6 +138,8 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [passExpanded, setPassExpanded] = useState(true)
+  const [cgvAccepted, setCgvAccepted] = useState(false)
+  const [cgvModalOpen, setCgvModalOpen] = useState(false)
 
   const holidays = useMemo(() => {
     const year = new Date().getFullYear()
@@ -173,7 +176,7 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
     return { priceHT, tva, priceTTC }
   }, [passConfig.pricePerSeat, seats])
 
-  const canBook = selectedDates.length > 0 && site
+  const canBook = selectedDates.length > 0 && site && cgvAccepted
 
   const handlePassSelect = useCallback((type: "week" | "month") => {
     const firstDate = selectedDates.length > 0 ? selectedDates[0] : getFirstAvailableDate(holidays)
@@ -217,6 +220,7 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
       setSeats(1)
       setError(null)
       setPassExpanded(true)
+      setCgvAccepted(false)
     }
     onOpenChange(newOpen)
   }
@@ -224,6 +228,7 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
   if (!site) return null
 
   return (
+    <>
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl h-[100dvh] md:h-auto md:max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden">
         <VisuallyHidden>
@@ -383,6 +388,33 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
               </div>
             )}
 
+            {/* CGV Checkbox */}
+            <label className="flex items-start gap-2 mb-4 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={cgvAccepted}
+                onChange={(e) => setCgvAccepted(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border accent-foreground"
+              />
+              <span className="text-xs text-muted-foreground">
+                J&apos;accepte les{" "}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault()
+                    setCgvModalOpen(true)
+                  }}
+                  className="text-primary underline hover:no-underline"
+                >
+                  Conditions Générales de Vente
+                </button>
+              </span>
+            </label>
+
+            <p className="text-xs text-muted-foreground mb-4">
+              Des informations complémentaires vous seront demandées après le paiement.
+            </p>
+
             {error && <p className="mb-4 text-sm text-red-500">{error}</p>}
 
             <Button
@@ -407,5 +439,8 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
         </div>
       </DialogContent>
     </Dialog>
+
+    <CGVModal open={cgvModalOpen} onOpenChange={setCgvModalOpen} />
+  </>
   )
 }

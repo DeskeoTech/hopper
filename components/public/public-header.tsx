@@ -1,9 +1,11 @@
 "use client"
 
+import { useState } from "react"
 import Link from "next/link"
 import { User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CityFilter } from "@/components/public/reservation/city-filter"
+import { PricingModal } from "@/components/public/reservation/pricing-modal"
 
 interface PublicHeaderProps {
   selectedCity?: "paris" | "lyon" | null
@@ -11,6 +13,8 @@ interface PublicHeaderProps {
 }
 
 export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeaderProps) {
+  const [pricingOpen, setPricingOpen] = useState(false)
+
   return (
     <>
       {/* Promotional Banner - Black */}
@@ -39,14 +43,24 @@ export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeader
             <span className="text-[10px] text-muted-foreground tracking-wide">Coworking</span>
           </Link>
 
-          {/* Right - Login Button */}
-          <Link href="/login">
-            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
-              <User className="h-5 w-5" />
-            </Button>
-          </Link>
+          {/* Right - Pricing + Login */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPricingOpen(true)}
+              className="hidden sm:inline-flex text-xs font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+            >
+              Nos tarifs
+            </button>
+            <Link href="/login">
+              <Button variant="ghost" size="icon" className="rounded-full h-9 w-9">
+                <User className="h-5 w-5" />
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
+
+      <PricingModal open={pricingOpen} onOpenChange={setPricingOpen} />
     </>
   )
 }
