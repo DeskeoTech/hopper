@@ -8,6 +8,7 @@ import {
   Newspaper,
   Headphones,
   ShoppingCart,
+  FlaskConical,
   type LucideIcon,
 } from "lucide-react"
 
@@ -24,6 +25,7 @@ export const adminNavigation: NavItem[] = [
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Clients", href: "/admin/clients", icon: Briefcase },
   { name: "Tickets", href: "/admin/tickets", icon: Headphones },
+  { name: "Tests Stripe", href: "/admin/tests", icon: FlaskConical },
 ]
 
 export const clientNavigation: NavItem[] = [
