@@ -7,8 +7,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableHead,
-  TableHeader,
   TableRow,
 } from "@/components/ui/table"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -49,7 +47,7 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
         className="cursor-pointer hover:bg-muted/50"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <TableCell colSpan={3} className="md:hidden">
+        <TableCell colSpan={2}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ChevronDown
@@ -63,37 +61,30 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
                 ({group.clients.length})
               </span>
             </div>
-          </div>
-        </TableCell>
-        <TableCell className="hidden md:table-cell" colSpan={4}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ChevronDown
-                className={cn(
-                  "h-4 w-4 text-muted-foreground transition-transform duration-200",
-                  isOpen && "rotate-180"
-                )}
-              />
-              <span className="font-semibold">{group.companyName || "Sans entreprise"}</span>
-              <span className="text-xs text-muted-foreground">
-                ({group.clients.length})
-              </span>
-            </div>
-            <span className="text-sm text-muted-foreground">{group.siteName || "—"}</span>
+            <span className="text-sm text-muted-foreground hidden sm:inline">{group.siteName || "—"}</span>
           </div>
         </TableCell>
       </TableRow>
-      {isOpen &&
-        group.clients.map((client) => (
-          <TableRow key={client.id} className="bg-muted/20">
-            <TableCell className="pl-10 font-medium">
-              {client.lastName || "—"}
+      {isOpen && (
+        <>
+          <TableRow className="bg-muted/30">
+            <TableCell className="pl-10 text-xs font-semibold uppercase text-muted-foreground">
+              Nom
             </TableCell>
-            <TableCell>{client.firstName || "—"}</TableCell>
-            <TableCell className="hidden md:table-cell" />
-            <TableCell className="hidden md:table-cell" />
+            <TableCell className="text-xs font-semibold uppercase text-muted-foreground">
+              Prénom
+            </TableCell>
           </TableRow>
-        ))}
+          {group.clients.map((client) => (
+            <TableRow key={client.id} className="bg-muted/20">
+              <TableCell className="pl-10 font-medium">
+                {client.lastName || "—"}
+              </TableCell>
+              <TableCell>{client.firstName || "—"}</TableCell>
+            </TableRow>
+          ))}
+        </>
+      )}
     </>
   )
 }
@@ -168,14 +159,6 @@ export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClien
       ) : (
         <div className="rounded-lg bg-card overflow-x-auto">
           <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Prénom</TableHead>
-                <TableHead className="hidden md:table-cell">Entreprise</TableHead>
-                <TableHead className="hidden md:table-cell">Site</TableHead>
-              </TableRow>
-            </TableHeader>
             <TableBody>
               {companyGroups.map((group) => (
                 <CompanyGroupRow key={group.companyName} group={group} />
