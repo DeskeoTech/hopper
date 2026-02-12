@@ -7,6 +7,7 @@ import { CompleteProfileModal } from "@/components/client/complete-profile-modal
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
 import { NoContractModal } from "@/components/client/no-contract-modal"
+import { CguAcceptanceModal } from "@/components/client/cgu-acceptance-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
 
@@ -256,6 +257,9 @@ export default async function ClientLayout({
   // Determine selected site: URL param > main_site_id > first site
   const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
 
+  // Check if user has accepted CGU (must be checked FIRST, before all other modals)
+  const needsCguAcceptance = !userProfile.cgu_accepted_at
+
   // Check if user needs onboarding (no company or onboarding not done)
   const needsOnboarding =
     (userProfile.role === "user" || userProfile.role === "admin") &&
@@ -298,13 +302,18 @@ export default async function ClientLayout({
           existingCompany={userProfile.companies as Company | null}
         />
       )}
-      {needsProfileCompletion && (
+      {!needsOnboarding && needsProfileCompletion && (
         <CompleteProfileModal
           user={userProfile}
           company={userProfile.companies as Company}
         />
       )}
-      {needsContractAssignment && <NoContractModal open />}
+      {!needsOnboarding && !needsProfileCompletion && needsCguAcceptance && (
+        <CguAcceptanceModal />
+      )}
+      {!needsOnboarding && !needsProfileCompletion && !needsCguAcceptance && needsContractAssignment && (
+        <NoContractModal open />
+      )}
       <ExpiredContractBanner />
       <div className="min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
