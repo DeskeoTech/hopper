@@ -291,11 +291,23 @@ export interface User {
   status: UserStatus | null
   company_id: string | null
   contract_id: string | null
+  site_id: string | null
   photo_storage_path: string | null
   is_hopper_admin: boolean
   cgu_accepted_at: string | null
   created_at: string
   updated_at: string
+}
+
+// Admin profile (retour de getAdminProfile)
+export interface AdminProfile {
+  id: string
+  email: string | null
+  first_name: string | null
+  last_name: string | null
+  is_hopper_admin: boolean
+  site_id: string | null
+  sites: { id: string; name: string } | null
 }
 
 // Support ticket types

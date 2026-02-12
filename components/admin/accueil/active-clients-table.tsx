@@ -30,6 +30,7 @@ interface ActiveClientsTableProps {
   clients: ActiveClient[]
   sites: SiteOption[]
   selectedDate: string // YYYY-MM-DD
+  defaultSiteId?: string | null
 }
 
 interface CompanyGroup {
@@ -89,8 +90,8 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
   )
 }
 
-export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClientsTableProps) {
-  const [siteFilter, setSiteFilter] = useState("all")
+export function ActiveClientsTable({ clients, sites, selectedDate, defaultSiteId }: ActiveClientsTableProps) {
+  const [siteFilter, setSiteFilter] = useState(defaultSiteId || "all")
 
   const filteredClients = useMemo(() => {
     if (siteFilter === "all") return clients

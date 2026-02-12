@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getAdminProfile } from "@/lib/supabase/server"
 import { getNewsPosts } from "@/lib/actions/news"
 import { ActiveClientsTable } from "@/components/admin/accueil/active-clients-table"
 
@@ -24,6 +24,8 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   const [
     activeClientsResult,
     allSitesResult,
+    adminProfile,
+    newsPosts,
   ] = await Promise.all([
     // Clients avec un forfait actif à la date sélectionnée
     supabase
@@ -40,6 +42,12 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
 
     // Sites ouverts (pour le filtre)
     supabase.from("sites").select("id, name").eq("status", "open").order("name"),
+
+    // Profil admin (site par défaut)
+    getAdminProfile(),
+
+    // Derniers posts d'actualité
+    getNewsPosts({ limit: 20 }),
   ])
 
   // Transformer les clients actifs
@@ -60,9 +68,6 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     name: s.name,
   }))
 
-  // Fetch latest news posts (admin sees all posts)
-  const newsPosts = await getNewsPosts({ limit: 20 })
-
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
@@ -77,7 +82,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       </div>
 
       {/* Tableau des clients avec forfait actif */}
-      <ActiveClientsTable clients={activeClients} sites={allSites} selectedDate={selectedDate} />
+      <ActiveClientsTable clients={activeClients} sites={allSites} selectedDate={selectedDate} defaultSiteId={adminProfile?.site_id} />
 
       {/* Accès rapide */}
       <section className="space-y-4">
