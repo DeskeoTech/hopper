@@ -46,7 +46,7 @@ npm run dev
 | Variable | Description |
 |----------|-------------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clé publique Supabase |
 | `AIRTABLE_API_TOKEN` | Token API Airtable (pour vérification collaborateurs) |
 
 ### Commandes disponibles

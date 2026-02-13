@@ -441,7 +441,7 @@ export async function updateSite(id: string, data: UpdateData) {
 ### Supabase
 
 - **URL** : Variable d'environnement `NEXT_PUBLIC_SUPABASE_URL`
-- **Anon Key** : Variable d'environnement `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- **Publishable Key** : Variable d'environnement `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
 - **Storage Bucket** : `site-photos` pour les images de sites
 
 ### Airtable
@@ -463,7 +463,7 @@ export async function updateSite(id: string, data: UpdateData) {
 | Variable | Usage |
 |----------|-------|
 | `NEXT_PUBLIC_SUPABASE_URL` | URL du projet Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clé publique Supabase |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clé publique Supabase |
 | `AIRTABLE_API_TOKEN` | Token API Airtable |
 
 ---
