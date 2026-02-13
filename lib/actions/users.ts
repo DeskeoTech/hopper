@@ -143,6 +143,11 @@ export async function createUser(
 ) {
   const supabase = await createClient()
 
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { error: "Non authentifié" }
+  }
+
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
     first_name: data.first_name || null,
@@ -184,6 +189,11 @@ export async function updateUser(
 ) {
   const supabase = await createClient()
 
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { error: "Non authentifié" }
+  }
+
   const { error } = await supabase
     .from("users")
     .update({
@@ -206,6 +216,11 @@ export async function updateUser(
 
 export async function toggleUserStatus(userId: string, companyId: string, newStatus: UserStatus) {
   const supabase = await createClient()
+
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { error: "Non authentifié" }
+  }
 
   const { error } = await supabase
     .from("users")
@@ -295,12 +310,28 @@ export async function toggleHopperAdmin(
 
   const supabase = createAdminClient()
 
+  const updateData: Record<string, unknown> = {
+    is_hopper_admin: newValue,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Quand on active le flag admin, assigner le premier site ouvert par défaut
+  if (newValue) {
+    const { data: defaultSite } = await supabase
+      .from("sites")
+      .select("id")
+      .eq("status", "open")
+      .order("name")
+      .limit(1)
+      .single()
+    if (defaultSite) {
+      updateData.site_id = defaultSite.id
+    }
+  }
+
   const { error } = await supabase
     .from("users")
-    .update({
-      is_hopper_admin: newValue,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", userId)
 
   if (error) {

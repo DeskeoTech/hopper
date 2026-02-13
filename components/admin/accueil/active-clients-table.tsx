@@ -9,7 +9,6 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
 
 interface ActiveClient {
@@ -21,14 +20,8 @@ interface ActiveClient {
   siteName: string | null
 }
 
-interface SiteOption {
-  id: string
-  name: string
-}
-
 interface ActiveClientsTableProps {
   clients: ActiveClient[]
-  sites: SiteOption[]
   selectedDate: string // YYYY-MM-DD
 }
 
@@ -89,18 +82,11 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
   )
 }
 
-export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClientsTableProps) {
-  const [siteFilter, setSiteFilter] = useState("all")
-
-  const filteredClients = useMemo(() => {
-    if (siteFilter === "all") return clients
-    return clients.filter((c) => c.siteId === siteFilter)
-  }, [clients, siteFilter])
-
+export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTableProps) {
   // Grouper par entreprise
   const companyGroups = useMemo(() => {
     const groups = new Map<string, CompanyGroup>()
-    filteredClients.forEach((client) => {
+    clients.forEach((client) => {
       const key = client.companyName || "__none__"
       const existing = groups.get(key)
       if (existing) {
@@ -116,12 +102,7 @@ export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClien
     return Array.from(groups.values()).sort((a, b) =>
       a.companyName.localeCompare(b.companyName, "fr")
     )
-  }, [filteredClients])
-
-  const siteOptions = [
-    { value: "all", label: "Tous les sites" },
-    ...sites.map((s) => ({ value: s.id, label: s.name })),
-  ]
+  }, [clients])
 
   return (
     <section className="space-y-4">
@@ -129,22 +110,12 @@ export function ActiveClientsTable({ clients, sites, selectedDate }: ActiveClien
         <div className="flex items-center gap-3">
           <h2 className="type-h3 text-foreground">Clients présents</h2>
           <span className="inline-flex items-center rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            {filteredClients.length}
+            {clients.length}
           </span>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Suspense fallback={null}>
-            <DateNavigator currentDate={selectedDate} />
-          </Suspense>
-          <SearchableSelect
-            options={siteOptions}
-            value={siteFilter}
-            onValueChange={setSiteFilter}
-            placeholder="Filtrer par site"
-            searchPlaceholder="Rechercher un site..."
-            triggerClassName="w-full sm:w-[200px]"
-          />
-        </div>
+        <Suspense fallback={null}>
+          <DateNavigator currentDate={selectedDate} />
+        </Suspense>
       </div>
 
       {companyGroups.length === 0 ? (

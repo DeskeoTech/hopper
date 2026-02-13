@@ -1,5 +1,7 @@
+import { cache } from "react"
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import type { AdminProfile } from "@/lib/types/database"
 
 export async function createClient() {
   const cookieStore = await cookies()
@@ -26,3 +28,18 @@ export async function getUser() {
   const { data: { user } } = await supabase.auth.getUser()
   return user
 }
+
+export const getAdminProfile = cache(async (): Promise<AdminProfile | null> => {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return null
+
+  const { data } = await supabase
+    .from("users")
+    .select("id, email, first_name, last_name, is_hopper_admin, site_id, sites(id, name)")
+    .eq("email", user.email)
+    .eq("is_hopper_admin", true)
+    .maybeSingle()
+
+  return data as AdminProfile | null
+})
