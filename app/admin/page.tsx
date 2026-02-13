@@ -1,6 +1,7 @@
 import { createClient, getAdminProfile } from "@/lib/supabase/server"
 import { getNewsPosts } from "@/lib/actions/news"
 import { ActiveClientsTable } from "@/components/admin/accueil/active-clients-table"
+import { SiteSwitcher } from "@/components/admin/accueil/site-switcher"
 
 import { NewsFeedSection } from "@/components/admin/accueil/news-feed-section"
 import {
@@ -11,7 +12,7 @@ import {
 } from "lucide-react"
 
 interface AccueilPageProps {
-  searchParams: Promise<{ date?: string }>
+  searchParams: Promise<{ date?: string; site?: string }>
 }
 
 export default async function AccueilPage({ searchParams }: AccueilPageProps) {
@@ -19,12 +20,13 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   const supabase = await createClient()
   const today = new Date().toISOString().split("T")[0]
   const selectedDate = params.date || today
+  const adminProfile = await getAdminProfile()
+  const selectedSiteId = params.site || adminProfile?.site_id || "all"
 
   // Récupération des données en parallèle
   const [
     activeClientsResult,
     allSitesResult,
-    adminProfile,
     newsPosts,
   ] = await Promise.all([
     // Clients avec un forfait actif à la date sélectionnée
@@ -40,11 +42,8 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .or(`end_date.is.null,end_date.gte.${selectedDate}`, { referencedTable: "contracts" })
       .order("last_name", { ascending: true }),
 
-    // Sites ouverts (pour le filtre)
-    supabase.from("sites").select("id, name").eq("status", "open").order("name"),
-
-    // Profil admin (site par défaut)
-    getAdminProfile(),
+    // Tous les sites (pour le sélecteur)
+    supabase.from("sites").select("id, name").order("name"),
 
     // Derniers posts d'actualité
     getNewsPosts({ limit: 20 }),
@@ -68,6 +67,11 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     name: s.name,
   }))
 
+  // Filtrer les clients selon le site sélectionné
+  const filteredClients = selectedSiteId === "all"
+    ? activeClients
+    : activeClients.filter((c) => c.siteId === selectedSiteId)
+
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
@@ -79,10 +83,11 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
           <h1 className="type-h2 text-foreground">Accueil</h1>
           <p className="mt-1 text-muted-foreground">Bienvenue sur votre espace d&apos;administration</p>
         </div>
+        <SiteSwitcher sites={allSites} currentSiteId={selectedSiteId} />
       </div>
 
       {/* Tableau des clients avec forfait actif */}
-      <ActiveClientsTable clients={activeClients} sites={allSites} selectedDate={selectedDate} defaultSiteId={adminProfile?.site_id} />
+      <ActiveClientsTable clients={filteredClients} selectedDate={selectedDate} />
 
       {/* Accès rapide */}
       <section className="space-y-4">
