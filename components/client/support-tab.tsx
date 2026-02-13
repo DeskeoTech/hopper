@@ -1,16 +1,20 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Loader2,
   MessageCircle,
   Check,
-  Send,
   Clock,
   CheckCircle2,
   Circle,
   AlertCircle,
+  Paperclip,
+  X,
+  Mail,
+  Send,
 } from "lucide-react"
+import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
@@ -50,16 +54,29 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; icon: typeof Circle; 
   },
 }
 
+function parseTicketComment(comment: string | null) {
+  if (!comment) return { subject: null, description: "Pas de description" }
+  const match = comment.match(/^\[Sujet\] (.+?)\n\n([\s\S]*)$/)
+  if (match) {
+    return { subject: match[1], description: match[2] || "Pas de description" }
+  }
+  return { subject: null, description: comment }
+}
+
 export function SupportTab() {
-  const { user } = useClientLayout()
+  const { user, sites, selectedSiteId } = useClientLayout()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(true)
 
-  const [requestType, setRequestType] = useState<TicketRequestType>("issue")
+  const [requestType, setRequestType] = useState<TicketRequestType | "">("")
+  const [siteId, setSiteId] = useState(selectedSiteId || "")
+  const [subject, setSubject] = useState("")
   const [comment, setComment] = useState("")
+  const [attachedFile, setAttachedFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Fetch user tickets on mount
   useEffect(() => {
@@ -75,10 +92,30 @@ export function SupportTab() {
     fetchTickets()
   }, [user?.id])
 
+  const handleReset = () => {
+    setRequestType("")
+    setSiteId(selectedSiteId || "")
+    setSubject("")
+    setComment("")
+    setAttachedFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ""
+    setError(null)
+    setSuccess(false)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (!requestType) {
+      setError("Veuillez sélectionner un type de demande")
+      return
+    }
+    if (!subject.trim()) {
+      setError("Veuillez saisir un sujet")
+      return
+    }
     if (!comment.trim()) {
-      setError("Veuillez saisir un message")
+      setError("Veuillez saisir une description")
       return
     }
 
@@ -86,17 +123,26 @@ export function SupportTab() {
     setError(null)
     setSuccess(false)
 
+    const siteName = sites.find((s) => s.id === siteId)?.name
+    const siteInfo = siteName ? `[Site] ${siteName}\n` : ""
+    const combinedComment = `${siteInfo}[Sujet] ${subject.trim()}\n\n${comment.trim()}`
+
     const result = await createTicket({
       user_id: user?.id || null,
-      request_type: requestType,
-      comment: comment.trim(),
+      request_type: requestType as TicketRequestType,
+      comment: combinedComment,
     })
 
     if (result.error) {
       setError(result.error)
     } else {
       setSuccess(true)
+      setRequestType("")
+      setSiteId(selectedSiteId || "")
+      setSubject("")
       setComment("")
+      setAttachedFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ""
       // Refresh tickets list
       if (user?.id) {
         const ticketsResult = await getUserTickets(user.id)
@@ -121,28 +167,60 @@ export function SupportTab() {
 
   return (
     <div className="space-y-6">
-      {/* Contact Form */}
+      {/* Ticket Form */}
       <div className="rounded-[16px] bg-card p-6">
         <div className="mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <MessageCircle className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Contacter le support</h2>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Envoyer un ticket</h2>
         </div>
 
-        <p className="mb-6 text-sm text-muted-foreground">
-          Une question ? Un problème ? Notre équipe est à votre disposition pour vous aider.
-        </p>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Demandeur */}
           <div className="space-y-2">
-            <Label htmlFor="requestType">Type de demande</Label>
+            <Label>
+              Demandeur <span className="text-destructive">*</span>
+            </Label>
+            <div className="flex items-center gap-2 rounded-[8px] border border-input bg-foreground/[0.03] px-3 py-2.5">
+              <Mail className="h-4 w-4 shrink-0 text-foreground/40" />
+              <span className="text-sm text-foreground/70">{user?.email || ""}</span>
+            </div>
+          </div>
+
+          {/* Site */}
+          <div className="space-y-2">
+            <Label htmlFor="siteId">
+              Vous êtes actuellement dans le site
+            </Label>
+            <Select
+              value={siteId}
+              onValueChange={setSiteId}
+            >
+              <SelectTrigger id="siteId">
+                <SelectValue placeholder="Sélectionner un site..." />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((site) => (
+                  <SelectItem key={site.id} value={site.id}>
+                    {site.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Votre demande concerne */}
+          <div className="space-y-2">
+            <Label htmlFor="requestType">
+              Votre demande concerne <span className="text-destructive">*</span>
+            </Label>
             <Select
               value={requestType}
               onValueChange={(value) => setRequestType(value as TicketRequestType)}
             >
               <SelectTrigger id="requestType">
-                <SelectValue />
+                <SelectValue placeholder="Choisir..." />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(REQUEST_TYPE_LABELS).map(([value, label]) => (
@@ -154,18 +232,77 @@ export function SupportTab() {
             </Select>
           </div>
 
+          {/* Sujet */}
           <div className="space-y-2">
-            <Label htmlFor="comment">Votre message</Label>
+            <Label htmlFor="subject">
+              Sujet <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Résumez votre demande en quelques mots"
+            />
+          </div>
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="description">
+              Description <span className="text-destructive">*</span>
+            </Label>
             <Textarea
-              id="comment"
+              id="description"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Décrivez votre demande en détail..."
-              rows={4}
+              placeholder="Tapez quelque chose"
+              rows={5}
               className="resize-none"
             />
           </div>
 
+          {/* Pièce jointe */}
+          <div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) setAttachedFile(file)
+              }}
+              className="hidden"
+              id="ticket-attachment"
+            />
+            {attachedFile ? (
+              <div className="flex items-center gap-2 rounded-[8px] border border-input bg-foreground/[0.03] px-3 py-2.5">
+                <Paperclip className="h-4 w-4 shrink-0 text-foreground/40" />
+                <span className="flex-1 truncate text-sm text-foreground/70">
+                  {attachedFile.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAttachedFile(null)
+                    if (fileInputRef.current) fileInputRef.current.value = ""
+                  }}
+                  className="shrink-0 rounded-full p-1 text-foreground/50 transition-colors hover:bg-foreground/10 hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
+              >
+                <Paperclip className="h-4 w-4" />
+                Pièce jointe
+              </button>
+            )}
+          </div>
+
+          {/* Messages erreur / succès */}
           {error && (
             <div className="rounded-[12px] bg-destructive/10 p-4">
               <p className="text-sm text-destructive">{error}</p>
@@ -179,23 +316,30 @@ export function SupportTab() {
             </div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Envoi en cours...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4" />
-                Envoyer ma demande
-              </>
-            )}
-          </button>
+          {/* Boutons */}
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
+              Annuler
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex items-center gap-2 rounded-full bg-[#1B1918] px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Envoi...
+                </>
+              ) : (
+                "Envoyer"
+              )}
+            </button>
+          </div>
         </form>
       </div>
 
@@ -226,6 +370,7 @@ export function SupportTab() {
             {tickets.map((ticket) => {
               const statusConfig = STATUS_CONFIG[ticket.status || "todo"]
               const StatusIcon = statusConfig.icon
+              const parsed = parseTicketComment(ticket.comment)
               return (
                 <div
                   key={ticket.id}
@@ -241,8 +386,13 @@ export function SupportTab() {
                           {formatDate(ticket.created_at)}
                         </span>
                       </div>
-                      <p className="text-sm text-foreground line-clamp-2">
-                        {ticket.comment || "Pas de description"}
+                      {parsed.subject && (
+                        <p className="text-sm font-medium text-foreground mb-1">
+                          {parsed.subject}
+                        </p>
+                      )}
+                      <p className="text-sm text-foreground/70 line-clamp-2">
+                        {parsed.description}
                       </p>
                     </div>
                     <div
