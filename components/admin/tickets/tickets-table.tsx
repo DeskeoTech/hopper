@@ -23,7 +23,7 @@ import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
 import type { SupportTicketWithDetails, TicketStatus, TicketRequestType } from "@/lib/types/database"
 
-type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name"
+type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name" | "site_name"
 type SortOrder = "asc" | "desc"
 
 const PAGE_SIZE = 15
@@ -72,6 +72,10 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
         case "company_name":
           aValue = (a.company_name || "").toLowerCase()
           bValue = (b.company_name || "").toLowerCase()
+          break
+        case "site_name":
+          aValue = (a.site_name || "").toLowerCase()
+          bValue = (b.site_name || "").toLowerCase()
           break
         default:
           return 0
@@ -175,6 +179,15 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </div>
               </TableHead>
               <TableHead
+                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide lg:table-cell"
+                onClick={() => handleSort("site_name")}
+              >
+                <div className="flex items-center">
+                  Site
+                  <SortIcon field="site_name" />
+                </div>
+              </TableHead>
+              <TableHead
                 className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide sm:table-cell"
                 onClick={() => handleSort("request_type")}
               >
@@ -183,8 +196,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                   <SortIcon field="request_type" />
                 </div>
               </TableHead>
-              <TableHead className="hidden text-xs font-bold uppercase tracking-wide lg:table-cell">
-                Description
+              <TableHead className="hidden text-xs font-bold uppercase tracking-wide xl:table-cell">
+                Sujet
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
@@ -217,12 +230,15 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 <TableCell className="hidden font-semibold uppercase md:table-cell">
                   {ticket.company_name || "-"}
                 </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {ticket.site_name || "-"}
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   {getRequestTypeLabel(ticket.request_type)}
                 </TableCell>
-                <TableCell className="hidden max-w-[300px] lg:table-cell">
-                  <span className="line-clamp-2 text-sm text-muted-foreground">
-                    {ticket.comment || "-"}
+                <TableCell className="hidden max-w-[250px] xl:table-cell">
+                  <span className="line-clamp-1 text-sm font-medium">
+                    {ticket.subject || "-"}
                   </span>
                 </TableCell>
                 <TableCell>

@@ -54,13 +54,18 @@ const STATUS_CONFIG: Record<TicketStatus, { label: string; icon: typeof Circle; 
   },
 }
 
-function parseTicketComment(comment: string | null) {
-  if (!comment) return { subject: null, description: "Pas de description" }
-  const match = comment.match(/^\[Sujet\] (.+?)\n\n([\s\S]*)$/)
+function parseTicketComment(ticket: SupportTicket) {
+  // New format: subject is a dedicated field
+  if (ticket.subject) {
+    return { subject: ticket.subject, description: ticket.comment || "Pas de description" }
+  }
+  // Legacy format: subject was concatenated into comment
+  if (!ticket.comment) return { subject: null, description: "Pas de description" }
+  const match = ticket.comment.match(/^(?:\[Site\] .+?\n)?\[Sujet\] (.+?)\n\n([\s\S]*)$/)
   if (match) {
     return { subject: match[1], description: match[2] || "Pas de description" }
   }
-  return { subject: null, description: comment }
+  return { subject: null, description: ticket.comment }
 }
 
 export function SupportTab() {
@@ -123,14 +128,12 @@ export function SupportTab() {
     setError(null)
     setSuccess(false)
 
-    const siteName = sites.find((s) => s.id === siteId)?.name
-    const siteInfo = siteName ? `[Site] ${siteName}\n` : ""
-    const combinedComment = `${siteInfo}[Sujet] ${subject.trim()}\n\n${comment.trim()}`
-
     const result = await createTicket({
       user_id: user?.id || null,
+      site_id: siteId || null,
       request_type: requestType as TicketRequestType,
-      comment: combinedComment,
+      subject: subject.trim(),
+      comment: comment.trim(),
     })
 
     if (result.error) {
@@ -370,7 +373,7 @@ export function SupportTab() {
             {tickets.map((ticket) => {
               const statusConfig = STATUS_CONFIG[ticket.status || "todo"]
               const StatusIcon = statusConfig.icon
-              const parsed = parseTicketComment(ticket.comment)
+              const parsed = parseTicketComment(ticket)
               return (
                 <div
                   key={ticket.id}
