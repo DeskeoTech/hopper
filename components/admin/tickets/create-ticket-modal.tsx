@@ -23,12 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
 import { createTicket } from "@/lib/actions/tickets"
 import type { TicketRequestType } from "@/lib/types/database"
 
-interface UserOption {
+interface SelectOption {
   value: string
   label: string
 }
@@ -45,14 +46,19 @@ export function CreateTicketModal() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loadingUsers, setLoadingUsers] = useState(false)
-  const [users, setUsers] = useState<UserOption[]>([])
+  const [loadingSites, setLoadingSites] = useState(false)
+  const [users, setUsers] = useState<SelectOption[]>([])
+  const [sitesOptions, setSitesOptions] = useState<SelectOption[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>("")
+  const [selectedSiteId, setSelectedSiteId] = useState<string>("")
   const [requestType, setRequestType] = useState<TicketRequestType>("other")
+  const [subject, setSubject] = useState("")
   const [comment, setComment] = useState("")
 
   useEffect(() => {
-    if (open && users.length === 0) {
-      loadUsers()
+    if (open) {
+      if (users.length === 0) loadUsers()
+      if (sitesOptions.length === 0) loadSites()
     }
   }, [open])
 
@@ -75,6 +81,21 @@ export function CreateTicketModal() {
     setLoadingUsers(false)
   }
 
+  const loadSites = async () => {
+    setLoadingSites(true)
+    const supabase = createClient()
+    const { data } = await supabase
+      .from("sites")
+      .select("id, name")
+      .eq("status", "open")
+      .order("name", { ascending: true })
+
+    if (data) {
+      setSitesOptions(data.map((site) => ({ value: site.id, label: site.name })))
+    }
+    setLoadingSites(false)
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!comment.trim()) return
@@ -85,13 +106,17 @@ export function CreateTicketModal() {
     setLoading(true)
     const result = await createTicket({
       user_id: selectedUserId || null,
+      site_id: selectedSiteId || null,
       request_type: requestType,
+      subject: subject.trim() || null,
       comment: comment.trim(),
     })
     setLoading(false)
     if (result.success) {
       setSelectedUserId("")
+      setSelectedSiteId("")
       setRequestType("other")
+      setSubject("")
       setComment("")
       setOpen(false)
       setConfirmOpen(false)
@@ -127,6 +152,17 @@ export function CreateTicketModal() {
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="site">Site</Label>
+              <SearchableSelect
+                options={sitesOptions}
+                value={selectedSiteId}
+                onValueChange={setSelectedSiteId}
+                placeholder={loadingSites ? "Chargement..." : "Selectionner un site"}
+                searchPlaceholder="Rechercher un site..."
+                triggerClassName="w-full"
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="requestType">
                 Type de demande <span className="text-destructive">*</span>
               </Label>
@@ -137,6 +173,15 @@ export function CreateTicketModal() {
                 placeholder="Selectionner un type"
                 searchPlaceholder="Rechercher un type..."
                 triggerClassName="w-full"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="subject">Sujet</Label>
+              <Input
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Resumez la demande en quelques mots"
               />
             </div>
             <div className="space-y-2">

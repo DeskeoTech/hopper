@@ -6,7 +6,9 @@ import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types
 
 export async function createTicket(data: {
   user_id: string | null
+  site_id?: string | null
   request_type: TicketRequestType
+  subject?: string | null
   comment: string
   status?: TicketStatus
 }) {
@@ -16,7 +18,9 @@ export async function createTicket(data: {
     .from("support_tickets")
     .insert({
       user_id: data.user_id,
+      site_id: data.site_id || null,
       request_type: data.request_type,
+      subject: data.subject || null,
       comment: data.comment,
       status: data.status || "todo",
     })

@@ -26,6 +26,9 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
         company:companies!company_id (
           name
         )
+      ),
+      site:sites!site_id (
+        name
       )
     `)
     .order("created_at", { ascending: false })
@@ -70,7 +73,9 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     id: ticket.id,
     airtable_id: ticket.airtable_id,
     user_id: ticket.user_id,
+    site_id: ticket.site_id,
     request_type: ticket.request_type,
+    subject: ticket.subject,
     comment: ticket.comment,
     status: ticket.status,
     freshdesk_ticket_id: ticket.freshdesk_ticket_id,
@@ -81,6 +86,7 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     user_email: ticket.user?.email || null,
     company_id: ticket.user?.company_id || null,
     company_name: ticket.user?.company?.name || null,
+    site_name: ticket.site?.name || null,
   }))
 
   return (
