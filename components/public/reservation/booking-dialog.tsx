@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
+import { useTranslations, useLocale } from "next-intl"
 import { X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -9,7 +10,7 @@ import { ScrollableCalendar } from "./scrollable-calendar"
 import { CGVModal } from "./cgv-modal"
 import { cn } from "@/lib/utils"
 import { format, isSameDay } from "date-fns"
-import { fr } from "date-fns/locale"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { Site } from "@/lib/types/database"
 import { createCheckoutSession } from "@/lib/actions/stripe"
 
@@ -50,7 +51,6 @@ const PASS_CONFIG = {
     days: 5,
     discount: 33,
     stripeMode: "payment" as const,
-    description: "5 jours",
   },
   month: {
     label: "Pass Month",
@@ -58,7 +58,6 @@ const PASS_CONFIG = {
     days: 20,
     discount: 50,
     stripeMode: "subscription" as const,
-    description: "20 jours",
   },
 }
 
@@ -67,6 +66,9 @@ const TVA_RATE = 0.2
 export const BOOKING_STATE_KEY = "hopper_booking_state"
 
 export function BookingDialog({ site, open, onOpenChange, customerEmail, initialState }: BookingDialogProps) {
+  const t = useTranslations("reservation")
+  const locale = useLocale()
+  const dateFnsLocale = getDateLocale(locale)
   const [activeTab, setActiveTab] = useState<"coworking" | "residence">("coworking")
   const [passType, setPassType] = useState<PassType>("day")
   const [selectedDates, setSelectedDates] = useState<Date[]>([])
@@ -141,7 +143,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
           window.location.href = result.url
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Une erreur est survenue")
+        setError(err instanceof Error ? err.message : t("bookingDialog.error"))
       }
     })
   }, [canBook, site, passType, seats, selectedDates, customerEmail, cgvAccepted])
@@ -160,9 +162,12 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
 
   const dateRangeLabel = useMemo(() => {
     if (selectedDates.length === 0) return ""
-    if (selectedDates.length === 1) return format(selectedDates[0], "dd/MM/yyyy", { locale: fr })
-    return `${format(selectedDates[0], "dd/MM/yyyy", { locale: fr })} au ${format(selectedDates[selectedDates.length - 1], "dd/MM/yyyy", { locale: fr })}`
-  }, [selectedDates])
+    if (selectedDates.length === 1) return format(selectedDates[0], "dd/MM/yyyy", { locale: dateFnsLocale })
+    return t("bookingDialog.dateRangeTo", {
+      start: format(selectedDates[0], "dd/MM/yyyy", { locale: dateFnsLocale }),
+      end: format(selectedDates[selectedDates.length - 1], "dd/MM/yyyy", { locale: dateFnsLocale }),
+    })
+  }, [selectedDates, dateFnsLocale, t])
 
   if (!site) return null
 
@@ -171,7 +176,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl h-[100dvh] md:h-auto md:max-h-[90vh] p-0 gap-0 flex flex-col overflow-hidden rounded-3xl bg-[#F2E7DC]">
         <VisuallyHidden>
-          <DialogTitle>Réserver - {site.name}</DialogTitle>
+          <DialogTitle>{t("bookingDialog.title", { siteName: site.name })}</DialogTitle>
         </VisuallyHidden>
 
         {/* Close button */}
@@ -193,7 +198,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            Réservation Instantanée
+            {t("bookingDialog.tabInstant")}
           </button>
           <button
             onClick={() => setActiveTab("residence")}
@@ -204,7 +209,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            Offre Sur-Mesure
+            {t("bookingDialog.tabCustom")}
           </button>
         </div>
 
@@ -236,13 +241,13 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-semibold">
-                  {passConfig.label} ({selectedDates.length} jour{selectedDates.length > 1 ? "s" : ""})
+                  {t("bookingDialog.passSummary", { passLabel: passConfig.label, count: selectedDates.length })}
                 </p>
                 <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
               </div>
               <div className="text-right">
-                <p className="font-bold">{pricing.priceHT.toFixed(0)}€ HT</p>
-                <p className="text-sm text-muted-foreground">{pricing.priceTTC.toFixed(0)}€ TTC</p>
+                <p className="font-bold">{t("bookingDialog.priceHT", { price: pricing.priceHT.toFixed(0) })}</p>
+                <p className="text-sm text-muted-foreground">{t("bookingDialog.priceTTC", { price: pricing.priceTTC.toFixed(0) })}</p>
               </div>
             </div>
           )}
@@ -266,7 +271,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
               )}
             </button>
             <span className="text-sm text-muted-foreground">
-              J&apos;accepte les{" "}
+              {t("bookingDialog.cgvAccept")}{" "}
               <button
                 type="button"
                 onClick={(e) => {
@@ -275,7 +280,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
                 }}
                 className="text-foreground underline hover:no-underline"
               >
-                conditions générales de vente
+                {t("bookingDialog.cgvLink")}
               </button>
             </span>
           </label>
@@ -291,15 +296,15 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
             {isPending ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Chargement...
+                {t("bookingDialog.loading")}
               </>
             ) : (
-              <>Réserver maintenant{canBook ? ` : ${pricing.priceTTC.toFixed(0)}€ TTC` : ""}</>
+              <>{canBook ? t("bookingDialog.bookNowPrice", { price: pricing.priceTTC.toFixed(0) }) : t("bookingDialog.bookNow")}</>
             )}
           </Button>
 
           <p className="text-center text-xs text-muted-foreground">
-            Des informations complémentaires vous seront demandées après le paiement sur votre espace personnel Hopper
+            {t("bookingDialog.postPaymentInfo")}
           </p>
         </div>
       </DialogContent>

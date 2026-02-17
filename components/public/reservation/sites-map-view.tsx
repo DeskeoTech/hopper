@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import type { Site } from "@/lib/types/database"
 import { mapStyles, loadGoogleMapsScript } from "@/lib/google-maps"
 import { filterByCity } from "@/lib/utils/site-filters"
@@ -42,6 +43,7 @@ export function SitesMapView({
   onSiteClick,
   selectedCity,
 }: SitesMapViewProps) {
+  const t = useTranslations("common")
   const mapRef = useRef<HTMLDivElement>(null)
   const googleMapRef = useRef<google.maps.Map | null>(null)
   const markersRef = useRef<Map<string, google.maps.Marker>>(new Map())
@@ -193,10 +195,10 @@ export function SitesMapView({
       <div className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/50">
         <div className="text-center p-6">
           <p className="text-muted-foreground">
-            Carte non disponible
+            {t("map.unavailable")}
           </p>
           <p className="text-xs text-muted-foreground mt-2">
-            Configurez NEXT_PUBLIC_GOOGLE_MAPS_API_KEY pour afficher la carte
+            {t("map.configureKey")}
           </p>
         </div>
       </div>

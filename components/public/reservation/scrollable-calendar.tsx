@@ -18,8 +18,10 @@ import {
   startOfDay,
   addDays,
   getDay,
+  type Locale,
 } from "date-fns"
-import { fr } from "date-fns/locale"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 
 interface ScrollableCalendarProps {
   selectedDates: Date[]
@@ -39,6 +41,8 @@ interface MonthGridProps {
   minDate: Date
   passType: "day" | "week" | "month"
   onDateClick: (date: Date) => void
+  daysShort: string[]
+  dateFnsLocale: Locale
 }
 
 // Calculate Easter date using Anonymous Gregorian algorithm
@@ -103,8 +107,6 @@ function getNextBusinessDays(startDate: Date, count: number, holidays: Date[]): 
   return dates
 }
 
-const DAYS_SHORT = ["L", "M", "M", "J", "V", "S", "D"]
-
 // Get stable initial date for SSR (start of current day, without time component that could differ)
 function getStableDate(): Date {
   const now = new Date()
@@ -119,6 +121,8 @@ const MonthGrid = memo(function MonthGrid({
   minDate,
   passType,
   onDateClick,
+  daysShort,
+  dateFnsLocale,
 }: MonthGridProps) {
   const monthStart = startOfMonth(monthDate)
   const monthEnd = endOfMonth(monthDate)
@@ -130,11 +134,11 @@ const MonthGrid = memo(function MonthGrid({
   return (
     <div className="flex-1 min-w-[280px]">
       <h3 className="mb-3 text-center text-sm font-semibold capitalize">
-        {format(monthDate, "MMMM yyyy", { locale: fr })}
+        {format(monthDate, "MMMM yyyy", { locale: dateFnsLocale })}
       </h3>
 
       <div className="grid grid-cols-7 gap-1 mb-2">
-        {DAYS_SHORT.map((day, i) => (
+        {daysShort.map((day, i) => (
           <div
             key={i}
             className={cn(
@@ -207,6 +211,11 @@ export function ScrollableCalendar({
   seats,
   onSeatsChange,
 }: ScrollableCalendarProps) {
+  const t = useTranslations("calendar")
+  const locale = useLocale()
+  const dateFnsLocale = getDateLocale(locale)
+  const daysShort = t.raw("daysShort") as string[]
+
   const [mounted, setMounted] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(() => getStableDate())
   const [today, setToday] = useState(() => getStableDate())
@@ -282,7 +291,7 @@ export function ScrollableCalendar({
       <div>
         <div className="flex items-center justify-between pb-3">
           <span className="text-sm font-medium text-muted-foreground">
-            Sélectionnez vos dates
+            {t("selectDates")}
           </span>
         </div>
         <div className="h-[300px] flex items-center justify-center">
@@ -298,14 +307,14 @@ export function ScrollableCalendar({
       <div className="flex items-center justify-between pb-3">
         <span className="text-sm font-medium text-muted-foreground">
           {passType === "week"
-            ? "Sélectionnez le début de votre semaine"
+            ? t("selectWeekStart")
             : passType === "month"
-            ? "Sélectionnez le début de votre mois"
-            : "Sélectionnez vos dates"}
+            ? t("selectMonthStart")
+            : t("selectDates")}
         </span>
         {selectedDates.length > 0 && (
           <button onClick={handleReset} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Réinitialiser
+            {t("reset")}
           </button>
         )}
       </div>
@@ -340,6 +349,8 @@ export function ScrollableCalendar({
           minDate={minDate}
           passType={passType}
           onDateClick={handleDateClick}
+          daysShort={daysShort}
+          dateFnsLocale={dateFnsLocale}
         />
         <MonthGrid
           monthDate={addMonths(currentMonth, 1)}
@@ -349,13 +360,15 @@ export function ScrollableCalendar({
           minDate={minDate}
           passType={passType}
           onDateClick={handleDateClick}
+          daysShort={daysShort}
+          dateFnsLocale={dateFnsLocale}
         />
       </div>
 
       {/* Mobile: Sticky weekdays header + 12 months scroll */}
       <div className="sm:hidden">
         <div className="sticky top-0 z-10 grid grid-cols-7 gap-1 py-2 bg-white border-b border-black/10">
-          {DAYS_SHORT.map((day, i) => (
+          {daysShort.map((day, i) => (
             <div
               key={i}
               className={cn(
@@ -378,6 +391,8 @@ export function ScrollableCalendar({
                 minDate={minDate}
                 passType={passType}
                 onDateClick={handleDateClick}
+                daysShort={daysShort}
+                dateFnsLocale={dateFnsLocale}
               />
             </div>
           ))}
@@ -387,7 +402,7 @@ export function ScrollableCalendar({
       {/* Seats selector */}
       <div className="border-t border-black/10 py-4 mt-2">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">Nombre de postes</span>
+          <span className="text-sm font-medium">{t("seats")}</span>
           <div className="flex items-center gap-3">
             <button
               className={cn(
@@ -420,14 +435,14 @@ export function ScrollableCalendar({
         {seats >= 6 && (
           <div className="mt-3 rounded-lg bg-muted/50 p-3">
             <p className="text-xs text-muted-foreground">
-              Pour plus de 6 postes, contactez-nous pour un devis personnalisé ou découvrez nos{" "}
+              {t("seatsMax")}{" "}
               <a
                 href="https://www.deskeo.com/fr/work-spaces/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline"
               >
-                bureaux opérés
+                {t("seatsMaxLink")}
               </a>
               .
             </p>
@@ -447,7 +462,7 @@ export function ScrollableCalendar({
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
               <Ticket className="h-4 w-4 text-foreground/70" />
             </div>
-            <span className="text-sm font-semibold">Restez plus, payez moins.</span>
+            <span className="text-sm font-semibold">{t("stayMore")}</span>
           </div>
           <ChevronDown
             className={cn(
@@ -494,10 +509,10 @@ export function ScrollableCalendar({
                       : "bg-foreground/10 text-foreground/50"
                   )}
                 >
-                  -33%
+                  {t("discountWeek")}
                 </span>
               </div>
-              <span className="text-sm font-semibold">Pass Week</span>
+              <span className="text-sm font-semibold">{t("passWeek")}</span>
             </button>
 
             {/* Pass Month */}
@@ -529,10 +544,10 @@ export function ScrollableCalendar({
                       : "bg-foreground/10 text-foreground/50"
                   )}
                 >
-                  -50%
+                  {t("discountMonth")}
                 </span>
               </div>
-              <span className="text-sm font-semibold">Pass Month</span>
+              <span className="text-sm font-semibold">{t("passMonth")}</span>
             </button>
           </div>
         </div>

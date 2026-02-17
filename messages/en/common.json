@@ -1,0 +1,19 @@
+{
+  "cities": {
+    "paris": "Paris",
+    "parisRegion": "Paris & Île-de-France",
+    "lyon": "Lyon",
+    "lyonRegion": "Lyon & Greater Lyon"
+  },
+  "mobileToggle": {
+    "listView": "List view",
+    "mapView": "Map view"
+  },
+  "map": {
+    "unavailable": "Map unavailable",
+    "configureKey": "Configure NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to display the map"
+  },
+  "language": {
+    "switchTo": "FR"
+  }
+}

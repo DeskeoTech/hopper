@@ -1,10 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { ReservationPageClient } from "@/components/public/reservation/reservation-page-client"
+import { getTranslations } from "next-intl/server"
 
-export const metadata = {
-  title: "Hopper Coworking | Réservez votre espace de coworking",
-  description:
-    "Bienvenue dans l'univers HOPPER, une offre exclusive de coworking qui réinvente votre manière de travailler. Dès 30€/jour, sans engagement.",
+export async function generateMetadata() {
+  const t = await getTranslations("reservation")
+  return {
+    title: t("metadata.title"),
+    description: t("metadata.description"),
+  }
 }
 
 async function getSitesWithPhotos() {

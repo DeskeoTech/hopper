@@ -1,0 +1,17 @@
+{
+  "calendar": {
+    "daysShort": ["L", "M", "M", "J", "V", "S", "D"],
+    "selectDates": "Sélectionnez vos dates",
+    "selectWeekStart": "Sélectionnez le début de votre semaine",
+    "selectMonthStart": "Sélectionnez le début de votre mois",
+    "reset": "Réinitialiser",
+    "seats": "Nombre de postes",
+    "seatsMax": "Pour plus de 6 postes, contactez-nous pour un devis personnalisé ou découvrez nos",
+    "seatsMaxLink": "bureaux opérés",
+    "stayMore": "Restez plus, payez moins.",
+    "passWeek": "Pass Week",
+    "passMonth": "Pass Month",
+    "discountWeek": "-33%",
+    "discountMonth": "-50%"
+  }
+}

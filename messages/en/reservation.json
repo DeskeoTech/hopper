@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "title": "Hopper Coworking | Book your coworking space",
+    "description": "Welcome to the HOPPER universe, an exclusive coworking offer that reinvents the way you work. From €30/day, no commitment."
+  },
+  "siteCard": {
+    "priceFrom": "From {price}€/day",
+    "book": "Book",
+    "moreEquipment": "+{count} more"
+  },
+  "sitesList": {
+    "noResults": "No spaces available in this area."
+  },
+  "toast": {
+    "paymentCanceled": "Payment canceled"
+  },
+  "district": {
+    "first": "{city} 1st",
+    "nth": "{city} {n}th",
+    "ileDeFrance": "Île-de-France"
+  },
+  "bookingDialog": {
+    "title": "Book - {siteName}",
+    "tabInstant": "Instant Booking",
+    "tabCustom": "Custom Offer",
+    "passDay": "Day Pass",
+    "passWeek": "Week Pass",
+    "passMonth": "Month Pass",
+    "passWeekDays": "5 days",
+    "passMonthDays": "20 days",
+    "passSummary": "{passLabel} ({count} {count, plural, one {day} other {days}})",
+    "priceHT": "{price}€ excl. VAT",
+    "priceTTC": "{price}€ incl. VAT",
+    "cgvAccept": "I accept the",
+    "cgvLink": "terms and conditions",
+    "loading": "Loading...",
+    "bookNow": "Book now",
+    "bookNowPrice": "Book now: {price}€ incl. VAT",
+    "error": "An error occurred",
+    "postPaymentInfo": "Additional information will be requested after payment on your personal Hopper space",
+    "dateRangeTo": "{start} to {end}"
+  },
+  "siteDetails": {
+    "title": "{siteName} - Site details",
+    "back": "Back",
+    "bookButton": "BOOK",
+    "tabAbout": "About",
+    "tabAccess": "Access & Equipment",
+    "tabWorkspace": "Workspaces",
+    "showPhotos": "Show all {count} photos",
+    "showMore": "Show more",
+    "showLess": "Show less",
+    "openingHours": "Opening hours",
+    "location": "Location",
+    "metroAccess": "Metro access",
+    "includedServices": "Included services",
+    "workspaces": "Workspaces",
+    "seats": "{count} seats",
+    "meetingRooms": "{count} meeting rooms",
+    "residenceTitle": "HOPPER RESIDENCE",
+    "residenceTagline": "Your dedicated desk, unlimited",
+    "learnMore": "Learn more"
+  },
+  "days": {
+    "lundi": "Monday",
+    "mardi": "Tuesday",
+    "mercredi": "Wednesday",
+    "jeudi": "Thursday",
+    "vendredi": "Friday",
+    "samedi": "Saturday",
+    "dimanche": "Sunday"
+  }
+}

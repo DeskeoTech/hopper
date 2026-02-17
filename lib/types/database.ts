@@ -32,11 +32,13 @@ export interface Site {
   longitude: number | null
   latitude: number | null
   instructions: string | null
+  instructions_en: string | null
   opening_days: DayOfWeek[] | null
   opening_hours: string | null
   wifi_ssid: string | null
   wifi_password: string | null
   access: string | null
+  access_en: string | null
   transportation_lines: TransportationStop[] | null
   equipments: Equipment[] | null
   contact_first_name: string | null

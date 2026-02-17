@@ -38,18 +38,24 @@ import type { TransportationStop, TransportLine } from "@/lib/types/database"
 interface EditInstructionsModalProps {
   siteId: string
   initialInstructions: string | null
+  initialInstructionsEn: string | null
+  initialAccessEn: string | null
   initialTransportation: TransportationStop[] | null
 }
 
 export function EditInstructionsModal({
   siteId,
   initialInstructions,
+  initialInstructionsEn,
+  initialAccessEn,
   initialTransportation,
 }: EditInstructionsModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [instructions, setInstructions] = useState(initialInstructions || "")
+  const [instructionsEn, setInstructionsEn] = useState(initialInstructionsEn || "")
+  const [accessEn, setAccessEn] = useState(initialAccessEn || "")
   const [stops, setStops] = useState<TransportationStop[]>(initialTransportation || [])
 
   // Form state for adding new stop
@@ -82,6 +88,8 @@ export function EditInstructionsModal({
     setLoading(true)
     const result = await updateSiteInstructionsAndTransportation(siteId, {
       instructions: instructions || null,
+      instructions_en: instructionsEn || null,
+      access_en: accessEn || null,
       transportation_lines: stops.length > 0 ? stops : null,
     })
     setLoading(false)
@@ -99,6 +107,8 @@ export function EditInstructionsModal({
     if (newOpen) {
       // Reset to initial state when opening
       setInstructions(initialInstructions || "")
+      setInstructionsEn(initialInstructionsEn || "")
+      setAccessEn(initialAccessEn || "")
       setStops(initialTransportation || [])
       setSelectedLine("")
       setStationName("")
@@ -119,13 +129,35 @@ export function EditInstructionsModal({
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="instructions">Instructions</Label>
+              <Label htmlFor="instructions">Instructions (FR)</Label>
               <Textarea
                 id="instructions"
                 value={instructions}
                 onChange={(e) => setInstructions(e.target.value)}
-                rows={4}
+                rows={3}
                 placeholder="Instructions pour les utilisateurs..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="instructions-en">Instructions (EN)</Label>
+              <Textarea
+                id="instructions-en"
+                value={instructionsEn}
+                onChange={(e) => setInstructionsEn(e.target.value)}
+                rows={3}
+                placeholder="Instructions for users (English)..."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="access-en">Accès (EN)</Label>
+              <Textarea
+                id="access-en"
+                value={accessEn}
+                onChange={(e) => setAccessEn(e.target.value)}
+                rows={2}
+                placeholder="Access instructions (English)..."
               />
             </div>
 

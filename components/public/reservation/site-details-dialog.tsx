@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useRef, useEffect, useCallback } from "react"
+import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
+import { useTranslations, useLocale } from "next-intl"
 import {
   ChevronLeft,
   ChevronRight,
@@ -35,7 +36,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Button } from "@/components/ui/button"
 import { HopperResidenceModal } from "./hopper-residence-modal"
 import { cn } from "@/lib/utils"
-import type { Site, Equipment, DayOfWeek } from "@/lib/types/database"
+import type { Site, DayOfWeek } from "@/lib/types/database"
 
 const SiteLocationMap = dynamic(
   () => import("./site-location-map").then((m) => ({ default: m.SiteLocationMap })),
@@ -58,12 +59,6 @@ interface SiteDetailsDialogProps {
   onBook: (site: SiteWithPhotos) => void
 }
 
-const TABS = [
-  { id: "about", label: "À propos" },
-  { id: "access", label: "Accès & équipements" },
-  { id: "workspace", label: "Espaces de travail" },
-]
-
 const METRO_COLORS: Record<string, string> = {
   "1": "#FFCD00",
   "2": "#003CA6",
@@ -84,15 +79,6 @@ const METRO_COLORS: Record<string, string> = {
 }
 
 const DAYS_ORDER: DayOfWeek[] = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
-const DAYS_LABELS: Record<DayOfWeek, string> = {
-  lundi: "Lundi",
-  mardi: "Mardi",
-  mercredi: "Mercredi",
-  jeudi: "Jeudi",
-  vendredi: "Vendredi",
-  samedi: "Samedi",
-  dimanche: "Dimanche",
-}
 
 function getEquipmentIcon(equipment: string): React.ReactNode {
   const eq = equipment.toLowerCase()
@@ -108,16 +94,6 @@ function getEquipmentIcon(equipment: string): React.ReactNode {
   if (eq.includes("fontaine") || eq.includes("eau") || eq.includes("water") || eq.includes("douche")) return <Droplets className="h-4 w-4" />
   if (eq.includes("sport") || eq.includes("gym")) return <Dumbbell className="h-4 w-4" />
   return <Zap className="h-4 w-4" />
-}
-
-const equipmentLabels: Record<Equipment, string> = {
-  barista: "Barista / Café",
-  stationnement_velo: "Parking vélo",
-  impression: "Imprimante",
-  douches: "Douches",
-  salle_sport: "Salle de sport",
-  terrasse: "Terrasse",
-  rooftop: "Rooftop",
 }
 
 function extractMetroLines(access: string | null): string[] {
@@ -170,6 +146,9 @@ function Accordion({
 }
 
 export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDetailsDialogProps) {
+  const t = useTranslations("reservation")
+  const tEquip = useTranslations("equipmentDetails")
+  const locale = useLocale()
   const [activeTab, setActiveTab] = useState("about")
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [fullscreenPhoto, setFullscreenPhoto] = useState(false)
@@ -177,6 +156,12 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
   const [residenceModalOpen, setResidenceModalOpen] = useState(false)
   const contentRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
+
+  const TABS = useMemo(() => [
+    { id: "about", label: t("siteDetails.tabAbout") },
+    { id: "access", label: t("siteDetails.tabAccess") },
+    { id: "workspace", label: t("siteDetails.tabWorkspace") },
+  ], [t])
 
   const photos = site?.photos.length ? site.photos : []
 
@@ -201,7 +186,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
     const content = contentRef.current
     content?.addEventListener("scroll", handleScroll)
     return () => content?.removeEventListener("scroll", handleScroll)
-  }, [])
+  }, [TABS])
 
   const scrollToSection = useCallback((sectionId: string) => {
     setActiveTab(sectionId)
@@ -224,8 +209,9 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   if (!site) return null
 
-  const description = site.instructions || ""
+  const description = (locale === 'en' && site.instructions_en) ? site.instructions_en : (site.instructions || "")
   const truncatedDescription = description.length > 200 ? description.slice(0, 200) + "..." : description
+  const accessText = (locale === 'en' && site.access_en) ? site.access_en : site.access
   const metroLines = extractMetroLines(site.access)
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
 
@@ -234,17 +220,17 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
       <Dialog open={open && !fullscreenPhoto} onOpenChange={handleClose}>
         <DialogContent className="flex flex-col max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
           <VisuallyHidden>
-            <DialogTitle>{site.name} - Détails du site</DialogTitle>
+            <DialogTitle>{t("siteDetails.title", { siteName: site.name })}</DialogTitle>
           </VisuallyHidden>
 
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border px-4 md:px-6 py-3 md:py-4">
             <Button variant="ghost" size="sm" onClick={handleClose} className="gap-1">
               <ChevronLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Retour</span>
+              <span className="hidden sm:inline">{t("siteDetails.back")}</span>
             </Button>
             <Button size="lg" className="font-bold" onClick={() => onBook(site)}>
-              RÉSERVER
+              {t("siteDetails.bookButton")}
             </Button>
           </div>
 
@@ -292,7 +278,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                         className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-sm px-4 py-2 text-sm font-medium shadow-sm"
                       >
                         <ImageIcon className="h-4 w-4" />
-                        Afficher les {photos.length} photos
+                        {t("siteDetails.showPhotos", { count: photos.length })}
                       </button>
                     )}
                   </div>
@@ -339,7 +325,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                       onClick={() => setShowFullDescription(!showFullDescription)}
                       className="mt-2 text-sm text-primary hover:underline"
                     >
-                      {showFullDescription ? "Afficher moins" : "Afficher plus"}
+                      {showFullDescription ? t("siteDetails.showLess") : t("siteDetails.showMore")}
                     </button>
                   )}
                 </div>
@@ -353,11 +339,11 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
             >
               {/* Opening Hours */}
               {site.opening_hours && (
-                <Accordion icon={<Clock className="h-5 w-5" />} label="Heures d'ouverture">
+                <Accordion icon={<Clock className="h-5 w-5" />} label={t("siteDetails.openingHours")}>
                   <div className="space-y-2 md:max-w-[240px]">
                     {(site.opening_days || DAYS_ORDER.slice(0, 5)).map((day) => (
                       <div key={day} className="flex justify-between text-sm">
-                        <span>{DAYS_LABELS[day]}</span>
+                        <span>{t(`days.${day}`)}</span>
                         <span className="text-muted-foreground">{site.opening_hours}</span>
                       </div>
                     ))}
@@ -366,7 +352,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
               )}
 
               {/* Location */}
-              <Accordion icon={<MapPin className="h-5 w-5" />} label="Localisation">
+              <Accordion icon={<MapPin className="h-5 w-5" />} label={t("siteDetails.location")}>
                 <div className="space-y-3">
                   {site.latitude && site.longitude && (
                     <div className="h-48 md:h-64 rounded-2xl overflow-hidden bg-muted">
@@ -387,7 +373,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
               {/* Metro Access */}
               {metroLines.length > 0 && (
-                <Accordion icon={<TrainFront className="h-5 w-5" />} label="Accès Métro">
+                <Accordion icon={<TrainFront className="h-5 w-5" />} label={t("siteDetails.metroAccess")}>
                   <div className="flex flex-wrap gap-2">
                     {metroLines.map((line) => (
                       <div
@@ -402,20 +388,20 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                       </div>
                     ))}
                   </div>
-                  {site.access && (
-                    <p className="mt-2 text-sm text-muted-foreground">{site.access}</p>
+                  {accessText && (
+                    <p className="mt-2 text-sm text-muted-foreground">{accessText}</p>
                   )}
                 </Accordion>
               )}
 
               {/* Services */}
               {site.equipments && site.equipments.length > 0 && (
-                <Accordion icon={<Star className="h-5 w-5" />} label="Services inclus">
+                <Accordion icon={<Star className="h-5 w-5" />} label={t("siteDetails.includedServices")}>
                   <div className="space-y-1">
                     {site.equipments.map((equipment) => (
                       <div key={equipment} className="flex items-center gap-2 py-2 text-sm">
                         <span className="text-muted-foreground">{getEquipmentIcon(equipment)}</span>
-                        {equipmentLabels[equipment] || equipment}
+                        {tEquip(equipment)}
                       </div>
                     ))}
                   </div>
@@ -428,18 +414,18 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
               ref={(el) => { sectionRefs.current["workspace"] = el }}
               className="p-4 md:p-6"
             >
-              <Accordion icon={<Briefcase className="h-5 w-5" />} label="Espaces de travail">
+              <Accordion icon={<Briefcase className="h-5 w-5" />} label={t("siteDetails.workspaces")}>
                 <div className="flex flex-wrap gap-2">
                   {site.capacity > 0 && (
                     <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
                       <Users className="h-4 w-4" />
-                      {site.capacity} postes
+                      {t("siteDetails.seats", { count: site.capacity })}
                     </div>
                   )}
                   {(site.meetingRoomsCount ?? 0) > 0 && (
                     <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
                       <Building className="h-4 w-4" />
-                      {site.meetingRoomsCount} salles de réunion
+                      {t("siteDetails.meetingRooms", { count: site.meetingRoomsCount ?? 0 })}
                     </div>
                   )}
                 </div>
@@ -452,13 +438,13 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                 onClick={() => setResidenceModalOpen(true)}
               >
                 <h3 className="font-heading text-lg font-bold text-foreground mb-1">
-                  HOPPER RESIDENCE
+                  {t("siteDetails.residenceTitle")}
                 </h3>
                 <p className="font-editorial text-base text-foreground mb-3">
-                  Votre poste fixe, en illimité
+                  {t("siteDetails.residenceTagline")}
                 </p>
                 <Button size="sm" className="font-bold">
-                  En savoir plus
+                  {t("siteDetails.learnMore")}
                 </Button>
               </div>
             </div>

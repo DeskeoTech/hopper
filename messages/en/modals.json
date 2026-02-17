@@ -1,0 +1,18 @@
+{
+  "paymentSuccess": {
+    "title": "Payment confirmed",
+    "heading": "Payment confirmed!",
+    "description": "Your booking is confirmed. You will receive a confirmation email with all the necessary information.",
+    "accessPortal": "Access my portal",
+    "continueExploring": "Continue exploring",
+    "meetingRoomCta": "Need meeting rooms? Purchase credits to book meeting rooms in all Hopper spaces.",
+    "buyCredits": "Buy meeting room credits"
+  },
+  "hopperResidence": {
+    "title": "Hopper Residence",
+    "heading": "HOPPER RESIDENCE",
+    "tagline": "Your dedicated desk, unlimited",
+    "description": "Enjoy a dedicated workstation in Hopper Residence spaces, with access to all Hopper Lounge spaces. Your subscription includes two complimentary drinks per day and a personal locker. Perfect for settling in, creating your routine, and feeling at home at the office.",
+    "contact": "Contact"
+  }
+}

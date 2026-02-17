@@ -1,0 +1,73 @@
+{
+  "metadata": {
+    "title": "Hopper Coworking | Réservez votre espace de coworking",
+    "description": "Bienvenue dans l'univers HOPPER, une offre exclusive de coworking qui réinvente votre manière de travailler. Dès 30€/jour, sans engagement."
+  },
+  "siteCard": {
+    "priceFrom": "Dès {price}€/jour",
+    "book": "Réserver",
+    "moreEquipment": "+{count} autres"
+  },
+  "sitesList": {
+    "noResults": "Aucun espace disponible dans cette zone."
+  },
+  "toast": {
+    "paymentCanceled": "Paiement annulé"
+  },
+  "district": {
+    "first": "{city} 1er",
+    "nth": "{city} {n}ème",
+    "ileDeFrance": "Île-de-France"
+  },
+  "bookingDialog": {
+    "title": "Réserver - {siteName}",
+    "tabInstant": "Réservation Instantanée",
+    "tabCustom": "Offre Sur-Mesure",
+    "passDay": "Day Pass",
+    "passWeek": "Pass Week",
+    "passMonth": "Pass Month",
+    "passWeekDays": "5 jours",
+    "passMonthDays": "20 jours",
+    "passSummary": "{passLabel} ({count} {count, plural, one {jour} other {jours}})",
+    "priceHT": "{price}€ HT",
+    "priceTTC": "{price}€ TTC",
+    "cgvAccept": "J'accepte les",
+    "cgvLink": "conditions générales de vente",
+    "loading": "Chargement...",
+    "bookNow": "Réserver maintenant",
+    "bookNowPrice": "Réserver maintenant : {price}€ TTC",
+    "error": "Une erreur est survenue",
+    "postPaymentInfo": "Des informations complémentaires vous seront demandées après le paiement sur votre espace personnel Hopper",
+    "dateRangeTo": "{start} au {end}"
+  },
+  "siteDetails": {
+    "title": "{siteName} - Détails du site",
+    "back": "Retour",
+    "bookButton": "RÉSERVER",
+    "tabAbout": "À propos",
+    "tabAccess": "Accès & équipements",
+    "tabWorkspace": "Espaces de travail",
+    "showPhotos": "Afficher les {count} photos",
+    "showMore": "Afficher plus",
+    "showLess": "Afficher moins",
+    "openingHours": "Heures d'ouverture",
+    "location": "Localisation",
+    "metroAccess": "Accès Métro",
+    "includedServices": "Services inclus",
+    "workspaces": "Espaces de travail",
+    "seats": "{count} postes",
+    "meetingRooms": "{count} salles de réunion",
+    "residenceTitle": "HOPPER RESIDENCE",
+    "residenceTagline": "Votre poste fixe, en illimité",
+    "learnMore": "En savoir plus"
+  },
+  "days": {
+    "lundi": "Lundi",
+    "mardi": "Mardi",
+    "mercredi": "Mercredi",
+    "jeudi": "Jeudi",
+    "vendredi": "Vendredi",
+    "samedi": "Samedi",
+    "dimanche": "Dimanche"
+  }
+}

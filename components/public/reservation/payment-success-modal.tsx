@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,8 @@ interface PaymentSuccessModalProps {
 const MEETING_ROOM_CREDITS_URL = "https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01"
 
 export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSuccessModalProps) {
+  const t = useTranslations("paymentSuccess")
+
   const handleAccessPortal = () => {
     window.open("https://app.hopper-coworking.com", "_blank")
     onOpenChange(false)
@@ -30,7 +33,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md text-center p-8">
         <VisuallyHidden>
-          <DialogTitle>Paiement confirmé</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </VisuallyHidden>
 
         <div className="mx-auto mb-6">
@@ -41,11 +44,10 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
 
         <div>
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            Paiement confirmé !
+            {t("heading")}
           </h2>
           <p className="text-muted-foreground mb-6">
-            Votre réservation est confirmée. Vous allez recevoir un email de
-            confirmation avec toutes les informations nécessaires.
+            {t("description")}
           </p>
 
           <div className="space-y-3">
@@ -54,7 +56,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
               className="w-full gap-2"
               size="lg"
             >
-              Accéder à mon espace
+              {t("accessPortal")}
               <ExternalLink className="h-4 w-4" />
             </Button>
 
@@ -63,15 +65,14 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
               onClick={() => onOpenChange(false)}
               className="w-full"
             >
-              Continuer à explorer
+              {t("continueExploring")}
             </Button>
           </div>
 
           {/* Meeting Room Credits CTA */}
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-sm text-muted-foreground mb-3">
-              Besoin de salles de réunion ? Achetez des crédits pour réserver
-              des salles dans tous les espaces Hopper.
+              {t("meetingRoomCta")}
             </p>
             <Button
               onClick={handleBuyMeetingRoomCredits}
@@ -80,7 +81,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
               size="lg"
             >
               <CreditCard className="h-4 w-4" />
-              Acheter des crédits salle de réunion
+              {t("buyCredits")}
               <ExternalLink className="h-4 w-4" />
             </Button>
           </div>
