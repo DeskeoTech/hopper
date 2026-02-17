@@ -42,8 +42,8 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // If user is not authenticated and trying to access admin or reservation, redirect to login
-  const adminRoutes = ["/admin", "/reservation"]
+  // If user is not authenticated and trying to access admin, redirect to login
+  const adminRoutes = ["/admin"]
   const isAdminRoute = adminRoutes.some(
     (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
   )
@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/auth"]
+  const publicRoutes = ["/", "/login", "/auth", "/reservation"]
   const isPublicRoute = publicRoutes.some(
     (route) =>
       request.nextUrl.pathname === route ||
