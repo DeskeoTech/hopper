@@ -194,7 +194,7 @@ export function SupportTab() {
           {/* Site */}
           <div className="space-y-2">
             <Label htmlFor="siteId">
-              Vous êtes actuellement dans le site
+              Vous êtes actuellement sur le site
             </Label>
             <Select
               value={siteId}
