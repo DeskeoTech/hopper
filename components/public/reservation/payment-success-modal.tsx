@@ -8,18 +8,22 @@ import { CheckCircle, ExternalLink, CreditCard } from "lucide-react"
 interface PaymentSuccessModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  userEmail?: string
 }
 
 const MEETING_ROOM_CREDITS_URL = "https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01"
 
-export function PaymentSuccessModal({ open, onOpenChange }: PaymentSuccessModalProps) {
+export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSuccessModalProps) {
   const handleAccessPortal = () => {
     window.open("https://app.hopper-coworking.com", "_blank")
     onOpenChange(false)
   }
 
   const handleBuyMeetingRoomCredits = () => {
-    window.open(MEETING_ROOM_CREDITS_URL, "_blank")
+    const url = userEmail
+      ? `${MEETING_ROOM_CREDITS_URL}?prefilled_email=${encodeURIComponent(userEmail)}`
+      : MEETING_ROOM_CREDITS_URL
+    window.open(url, "_blank")
   }
 
   return (

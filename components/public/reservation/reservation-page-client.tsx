@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation"
 import { PublicHeader } from "@/components/public/public-header"
 import { SitesList } from "./sites-list"
 import { SitesMapView } from "./sites-map-view"
-import { BookingDialog } from "./booking-dialog"
+import { BookingDialog, BOOKING_STATE_KEY, type SavedBookingState } from "./booking-dialog"
 import { SiteDetailsDialog } from "./site-details-dialog"
 import { PaymentSuccessModal } from "./payment-success-modal"
 import { MobileToggle } from "./mobile-toggle"
@@ -31,20 +31,44 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
   const [mobileView, setMobileView] = useState<"list" | "map">("list")
   const [paymentSuccessOpen, setPaymentSuccessOpen] = useState(false)
+  const [restoredBookingState, setRestoredBookingState] = useState<SavedBookingState | null>(null)
+
+  const customerEmail = searchParams.get("email_user") || undefined
 
   // Handle success/cancel from Stripe
   useEffect(() => {
     const success = searchParams.get("success")
     const canceled = searchParams.get("canceled")
 
+    // Preserve email_user when cleaning URL params
+    const emailParam = customerEmail ? `?email_user=${encodeURIComponent(customerEmail)}` : ""
+    const cleanUrl = `/reservation${emailParam}`
+
     if (success === "true") {
       setPaymentSuccessOpen(true)
-      window.history.replaceState({}, "", "/reservation")
+      localStorage.removeItem(BOOKING_STATE_KEY)
+      window.history.replaceState({}, "", cleanUrl)
     } else if (canceled === "true") {
+      // Restore booking state from localStorage
+      try {
+        const saved = localStorage.getItem(BOOKING_STATE_KEY)
+        if (saved) {
+          const state: SavedBookingState = JSON.parse(saved)
+          const site = initialSites.find((s) => s.id === state.siteId)
+          if (site) {
+            setSelectedSite(site)
+            setRestoredBookingState(state)
+            setBookingDialogOpen(true)
+          }
+          localStorage.removeItem(BOOKING_STATE_KEY)
+        }
+      } catch {
+        // Ignore parse errors
+      }
       toast.info("Paiement annulé")
-      window.history.replaceState({}, "", "/reservation")
+      window.history.replaceState({}, "", cleanUrl)
     }
-  }, [searchParams])
+  }, [searchParams, initialSites, customerEmail])
 
   const handleHover = useCallback((siteId: string | null) => {
     setHoveredSiteId(siteId)
@@ -125,12 +149,15 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
         site={selectedSite}
         open={bookingDialogOpen}
         onOpenChange={setBookingDialogOpen}
+        customerEmail={customerEmail}
+        initialState={restoredBookingState}
       />
 
       {/* Payment Success Modal */}
       <PaymentSuccessModal
         open={paymentSuccessOpen}
         onOpenChange={setPaymentSuccessOpen}
+        userEmail={customerEmail}
       />
     </div>
   )

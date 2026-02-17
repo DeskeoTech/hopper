@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback, useTransition } from "react"
+import { useState, useMemo, useCallback, useTransition, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -18,10 +18,20 @@ interface SiteWithPhotos extends Site {
   capacity: number
 }
 
+export interface SavedBookingState {
+  siteId: string
+  passType: PassType
+  seats: number
+  selectedDates: string[]
+  cgvAccepted: boolean
+}
+
 interface BookingDialogProps {
   site: SiteWithPhotos | null
   open: boolean
   onOpenChange: (open: boolean) => void
+  customerEmail?: string
+  initialState?: SavedBookingState | null
 }
 
 type PassType = "day" | "week" | "month"
@@ -54,7 +64,9 @@ const PASS_CONFIG = {
 
 const TVA_RATE = 0.2
 
-export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) {
+export const BOOKING_STATE_KEY = "hopper_booking_state"
+
+export function BookingDialog({ site, open, onOpenChange, customerEmail, initialState }: BookingDialogProps) {
   const [activeTab, setActiveTab] = useState<"coworking" | "residence">("coworking")
   const [passType, setPassType] = useState<PassType>("day")
   const [selectedDates, setSelectedDates] = useState<Date[]>([])
@@ -63,6 +75,16 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
   const [error, setError] = useState<string | null>(null)
   const [cgvAccepted, setCgvAccepted] = useState(false)
   const [cgvModalOpen, setCgvModalOpen] = useState(false)
+
+  // Restore state from initialState (e.g. after Stripe cancel)
+  useEffect(() => {
+    if (initialState) {
+      setPassType(initialState.passType)
+      setSeats(initialState.seats)
+      setSelectedDates(initialState.selectedDates.map((d) => new Date(d)))
+      setCgvAccepted(initialState.cgvAccepted)
+    }
+  }, [initialState])
 
   const passConfig = PASS_CONFIG[passType]
 
@@ -97,6 +119,10 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
           passType,
           seats,
           dates: selectedDates.map((d) => d.toISOString()),
+          days: passType === "day" ? selectedDates.length : undefined,
+          weeks: passType === "week" ? 1 : undefined,
+          includeTax: true,
+          customerEmail,
         })
 
         if ("error" in result) {
@@ -104,13 +130,21 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
         }
 
         if (result.url) {
+          // Save booking state before redirecting to Stripe
+          localStorage.setItem(BOOKING_STATE_KEY, JSON.stringify({
+            siteId: site.id,
+            passType,
+            seats,
+            selectedDates: selectedDates.map((d) => d.toISOString()),
+            cgvAccepted,
+          }))
           window.location.href = result.url
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Une erreur est survenue")
       }
     })
-  }, [canBook, site, passType, seats, selectedDates])
+  }, [canBook, site, passType, seats, selectedDates, customerEmail, cgvAccepted])
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
     if (!newOpen) {
@@ -124,13 +158,13 @@ export function BookingDialog({ site, open, onOpenChange }: BookingDialogProps) 
     onOpenChange(newOpen)
   }, [onOpenChange])
 
-  if (!site) return null
-
   const dateRangeLabel = useMemo(() => {
     if (selectedDates.length === 0) return ""
     if (selectedDates.length === 1) return format(selectedDates[0], "dd/MM/yyyy", { locale: fr })
     return `${format(selectedDates[0], "dd/MM/yyyy", { locale: fr })} au ${format(selectedDates[selectedDates.length - 1], "dd/MM/yyyy", { locale: fr })}`
   }, [selectedDates])
+
+  if (!site) return null
 
   return (
     <>
