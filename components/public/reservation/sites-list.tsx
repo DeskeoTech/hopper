@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import { SiteCard } from "./site-card"
+import { filterByCity } from "@/lib/utils/site-filters"
 import type { Site } from "@/lib/types/database"
 
 interface SiteWithPhotos extends Site {
@@ -16,29 +17,6 @@ interface SitesListProps {
   onBook: (site: SiteWithPhotos) => void
   onViewDetails: (site: SiteWithPhotos) => void
   selectedCity: "paris" | "lyon" | null
-}
-
-function filterByCity(sites: SiteWithPhotos[], city: "paris" | "lyon" | null): SiteWithPhotos[] {
-  if (!city) return sites
-
-  return sites.filter((site) => {
-    const address = site.address.toLowerCase()
-
-    if (city === "paris") {
-      const parisRegex = /\b75\d{3}\b/
-      const idfRegex = /\b(77|78|91|92|93|94|95)\d{3}\b/
-      const idfCities = ["neuilly", "boulogne", "levallois", "issy", "puteaux", "courbevoie", "vincennes", "montreuil", "saint-denis", "nanterre"]
-      const isInIdf = idfCities.some((c) => address.includes(c))
-      return parisRegex.test(address) || idfRegex.test(address) || address.includes("paris") || isInIdf
-    }
-
-    if (city === "lyon") {
-      const lyonRegex = /\b69\d{3}\b/
-      return lyonRegex.test(address) || address.includes("lyon")
-    }
-
-    return true
-  })
 }
 
 export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails, selectedCity }: SitesListProps) {
@@ -56,7 +34,7 @@ export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails
   }
 
   return (
-    <div className="grid gap-4 md:gap-5 grid-cols-1 md:grid-cols-2">
+    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
       {filteredSites.map((site) => (
         <SiteCard
           key={site.id}

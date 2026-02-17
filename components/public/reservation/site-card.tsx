@@ -110,15 +110,15 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
   return (
     <div
       className={cn(
-        "group cursor-pointer overflow-hidden rounded-2xl border bg-card transition-all duration-300",
-        isHovered ? "border-foreground/30 shadow-xl" : "border-border shadow-sm"
+        "group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border bg-background transition-all duration-300",
+        isHovered ? "border-foreground shadow-xl" : "border-black/10"
       )}
       onMouseEnter={() => onHover(site.id)}
       onMouseLeave={() => onHover(null)}
       onClick={handleCardClick}
     >
       {/* Photo Carousel */}
-      <div className="relative h-44 overflow-hidden bg-muted">
+      <div className="relative h-56 overflow-hidden bg-muted">
         <div
           className="flex h-full transition-transform duration-300 ease-out"
           style={{ transform: `translateX(-${currentPhotoIndex * 100}%)` }}
@@ -157,13 +157,13 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
         {/* Location Badge - Bottom Left */}
         <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-[#D4C4B0] px-2.5 py-1">
           <MapPin className="h-3 w-3" />
-          <span className="text-[10px] font-semibold">{district}</span>
+          <span className="text-xs font-semibold">{district}</span>
         </div>
 
         {/* Capacity Badge - Top Right */}
         <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full border border-white/20 bg-white px-2 py-0.5 shadow-sm">
           <Users className="h-3 w-3 text-muted-foreground" />
-          <span className="text-[11px] font-medium">{site.capacity}</span>
+          <span className="text-xs font-medium">{site.capacity}</span>
         </div>
 
         {/* Photo Indicators - Bottom Center */}
@@ -189,40 +189,42 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
       </div>
 
       {/* Content */}
-      <div className="p-4">
+      <div className="flex flex-1 flex-col p-5">
         {/* Title */}
-        <h3 className="font-heading text-lg font-bold uppercase tracking-tight">{site.name}</h3>
+        <h3 className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</h3>
 
         {/* Price */}
-        <p className="mt-0.5 text-xs text-muted-foreground">Dès 30€/jour</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">Dès 30€/jour</p>
 
         {/* Equipment Tags */}
         {site.equipments && site.equipments.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {site.equipments.slice(0, 4).map((equipment) => (
+            {site.equipments.slice(0, 3).map((equipment) => (
               <span
                 key={equipment}
-                className="flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-medium"
+                className="flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium"
               >
                 {equipmentIcons[equipment]}
                 {equipmentLabels[equipment]}
               </span>
             ))}
-            {site.equipments.length > 4 && (
-              <span className="flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-[11px] font-medium">
-                +{site.equipments.length - 4}
+            {site.equipments.length > 3 && (
+              <span className="flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium">
+                +{site.equipments.length - 3} autres
               </span>
             )}
           </div>
         )}
 
         {/* Book Button */}
-        <Button
-          className="mt-4 w-full rounded-full bg-[#1B1918] font-semibold uppercase tracking-wide hover:bg-[#1B1918]/90"
-          onClick={handleBookClick}
-        >
-          Réserver
-        </Button>
+        <div className="mt-auto pt-4">
+          <Button
+            className="w-full rounded-full bg-[#1B1918] font-semibold uppercase tracking-wide hover:bg-[#1B1918]/90"
+            onClick={handleBookClick}
+          >
+            Réserver
+          </Button>
+        </div>
       </div>
     </div>
   )

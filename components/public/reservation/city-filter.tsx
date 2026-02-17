@@ -27,15 +27,15 @@ export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="gap-1.5 rounded-full border-border bg-background px-3 py-1.5 text-sm font-medium"
+          className="gap-1.5 rounded-full border-0 bg-transparent px-3 py-1.5 text-sm font-medium hover:bg-transparent"
         >
           <span>{displayLabel}</span>
           <ChevronDown className="h-3.5 w-3.5 opacity-60" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-52 p-1.5" align="start">
+      <PopoverContent className="w-auto min-w-0 p-1.5" align="start">
         <div className="space-y-0.5">
           {cities.map((city) => (
             <button
@@ -49,7 +49,7 @@ export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
                 selectedCity === city.id && "bg-muted"
               )}
             >
-              <span>{city.fullLabel}</span>
+              <span>{city.label}</span>
               {selectedCity === city.id && <Check className="h-4 w-4" />}
             </button>
           ))}

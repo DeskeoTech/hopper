@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
-import { ChevronLeft, ChevronRight, RotateCcw, Minus, Plus } from "lucide-react"
+import { useState, useMemo, useCallback, useEffect, memo } from "react"
+import { ChevronLeft, ChevronRight, ChevronDown, Minus, Plus, Ticket, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
@@ -18,16 +18,27 @@ import {
   startOfDay,
   addDays,
   getDay,
-  isAfter,
 } from "date-fns"
 import { fr } from "date-fns/locale"
 
 interface ScrollableCalendarProps {
   selectedDates: Date[]
   onDatesChange: (dates: Date[]) => void
+  onToggleDate: (date: Date) => void
   passType: "day" | "week" | "month"
+  onPassTypeChange: (passType: "day" | "week" | "month") => void
   seats: number
   onSeatsChange: (seats: number) => void
+}
+
+interface MonthGridProps {
+  monthDate: Date
+  selectedDates: Date[]
+  holidays: Date[]
+  today: Date
+  minDate: Date
+  passType: "day" | "week" | "month"
+  onDateClick: (date: Date) => void
 }
 
 // Calculate Easter date using Anonymous Gregorian algorithm
@@ -80,16 +91,15 @@ function isBusinessDay(date: Date, holidays: Date[]): boolean {
   return !isWeekend(date) && !isHoliday(date, holidays)
 }
 
-function getBusinessDaysInRange(startDate: Date, endDate: Date, holidays: Date[]): Date[] {
+function getNextBusinessDays(startDate: Date, count: number, holidays: Date[]): Date[] {
   const dates: Date[] = []
-  const allDays = eachDayOfInterval({ start: startDate, end: endDate })
-
-  for (const day of allDays) {
-    if (isBusinessDay(day, holidays)) {
-      dates.push(day)
+  let current = startDate
+  while (dates.length < count) {
+    if (isBusinessDay(current, holidays)) {
+      dates.push(current)
     }
+    current = addDays(current, 1)
   }
-
   return dates
 }
 
@@ -101,10 +111,99 @@ function getStableDate(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
+const MonthGrid = memo(function MonthGrid({
+  monthDate,
+  selectedDates,
+  holidays,
+  today,
+  minDate,
+  passType,
+  onDateClick,
+}: MonthGridProps) {
+  const monthStart = startOfMonth(monthDate)
+  const monthEnd = endOfMonth(monthDate)
+  const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
+
+  const firstDayOfWeek = getDay(monthStart)
+  const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
+
+  return (
+    <div className="flex-1 min-w-[280px]">
+      <h3 className="mb-3 text-center text-sm font-semibold capitalize">
+        {format(monthDate, "MMMM yyyy", { locale: fr })}
+      </h3>
+
+      <div className="grid grid-cols-7 gap-1 mb-2">
+        {DAYS_SHORT.map((day, i) => (
+          <div
+            key={i}
+            className={cn(
+              "aspect-square flex items-center justify-center text-xs font-semibold",
+              i >= 5 && "text-muted-foreground/50"
+            )}
+          >
+            {day}
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {Array.from({ length: startOffset }).map((_, i) => (
+          <div key={`empty-${i}`} className="aspect-square" />
+        ))}
+
+        {days.map((day) => {
+          const isDisabled = isBefore(day, minDate)
+          const isWeekendDay = isWeekend(day)
+          const isHolidayDay = isHoliday(day, holidays)
+          const isSelected = selectedDates.some((d) => isSameDay(d, day))
+          const isTodayDay = isSameDay(day, today)
+          const isUnavailable = isDisabled || isWeekendDay || isHolidayDay
+
+          // Range styling only for week/month passes
+          const isRangeMode = passType !== "day" && selectedDates.length > 1
+          const sortedDates = isRangeMode
+            ? [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
+            : []
+          const isStart = isRangeMode && sortedDates.length > 0 && isSameDay(day, sortedDates[0])
+          const isEnd = isRangeMode && sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
+          const isMiddle = isRangeMode && isSelected && !isStart && !isEnd
+
+          return (
+            <button
+              key={day.toISOString()}
+              onClick={() => !isUnavailable && onDateClick(day)}
+              disabled={isUnavailable}
+              className={cn(
+                "aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-lg",
+                !isUnavailable && !isSelected && "hover:bg-muted cursor-pointer",
+                isUnavailable && "text-muted-foreground/30 cursor-not-allowed",
+                (isWeekendDay || isHolidayDay) && "line-through decoration-muted-foreground/40",
+                isTodayDay && !isSelected && "border-2 border-foreground",
+                // Day mode: all selected dates get same style
+                passType === "day" && isSelected && "bg-foreground text-background font-bold",
+                // Range mode: start/end get dark bg, middle get beige
+                (isStart || isEnd) && "bg-foreground text-background font-bold",
+                isStart && "rounded-r-none",
+                isEnd && "rounded-l-none",
+                isMiddle && "rounded-none bg-[#F1E8DC] text-foreground"
+              )}
+            >
+              {format(day, "d")}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+})
+
 export function ScrollableCalendar({
   selectedDates,
   onDatesChange,
+  onToggleDate,
   passType,
+  onPassTypeChange,
   seats,
   onSeatsChange,
 }: ScrollableCalendarProps) {
@@ -112,7 +211,7 @@ export function ScrollableCalendar({
   const [currentMonth, setCurrentMonth] = useState(() => getStableDate())
   const [today, setToday] = useState(() => getStableDate())
   const [minDate, setMinDate] = useState(() => getStableDate())
-  const [rangeStart, setRangeStart] = useState<Date | null>(null)
+  const [passExpanded, setPassExpanded] = useState(true)
 
   // Initialize dates on client only to avoid hydration mismatch
   useEffect(() => {
@@ -143,114 +242,45 @@ export function ScrollableCalendar({
       if (isHoliday(date, holidays)) return
 
       if (passType === "day") {
-        // Single day selection
-        onDatesChange([date])
-        setRangeStart(null)
-      } else {
-        // Range selection mode
-        if (!rangeStart) {
-          // First click: set range start
-          setRangeStart(date)
-          onDatesChange([date])
-        } else {
-          // Second click: complete range
-          const start = isBefore(date, rangeStart) ? date : rangeStart
-          const end = isAfter(date, rangeStart) ? date : rangeStart
-
-          const businessDays = getBusinessDaysInRange(start, end, holidays)
-          onDatesChange(businessDays)
-          setRangeStart(null)
-        }
+        // Use stable toggle callback from parent (no selectedDates dependency)
+        onToggleDate(date)
+      } else if (passType === "week") {
+        // Auto-select 5 business days from clicked date
+        const businessDays = getNextBusinessDays(date, 5, holidays)
+        onDatesChange(businessDays)
+      } else if (passType === "month") {
+        // Auto-select 20 business days from clicked date
+        const businessDays = getNextBusinessDays(date, 20, holidays)
+        onDatesChange(businessDays)
       }
     },
-    [passType, holidays, minDate, onDatesChange, rangeStart]
+    [passType, holidays, minDate, onDatesChange, onToggleDate]
   )
 
   const handleReset = useCallback(() => {
     onDatesChange([])
-    setRangeStart(null)
   }, [onDatesChange])
 
-  const renderMonth = useCallback(
-    (monthDate: Date) => {
-      const monthStart = startOfMonth(monthDate)
-      const monthEnd = endOfMonth(monthDate)
-      const days = eachDayOfInterval({ start: monthStart, end: monthEnd })
-
-      const firstDayOfWeek = getDay(monthStart)
-      const startOffset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1
-
-      return (
-        <div className="flex-1 min-w-[280px]">
-          <h3 className="mb-3 text-center text-sm font-semibold capitalize">
-            {format(monthDate, "MMMM yyyy", { locale: fr })}
-          </h3>
-
-          <div className="grid grid-cols-7 gap-1 mb-2">
-            {DAYS_SHORT.map((day, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "aspect-square flex items-center justify-center text-xs font-semibold",
-                  i >= 5 && "text-muted-foreground/50"
-                )}
-              >
-                {day}
-              </div>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: startOffset }).map((_, i) => (
-              <div key={`empty-${i}`} className="aspect-square" />
-            ))}
-
-            {days.map((day) => {
-              const isDisabled = isBefore(day, minDate)
-              const isWeekendDay = isWeekend(day)
-              const isHolidayDay = isHoliday(day, holidays)
-              const isSelected = selectedDates.some((d) => isSameDay(d, day))
-              const isTodayDay = isSameDay(day, today)
-              const isUnavailable = isDisabled || isWeekendDay || isHolidayDay
-
-              const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
-              const isStart = sortedDates.length > 0 && isSameDay(day, sortedDates[0])
-              const isEnd = sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
-              const isMiddle = isSelected && !isStart && !isEnd
-
-              return (
-                <button
-                  key={day.toISOString()}
-                  onClick={() => !isUnavailable && handleDateClick(day)}
-                  disabled={isUnavailable}
-                  className={cn(
-                    "aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-lg",
-                    !isUnavailable && !isSelected && "hover:bg-muted cursor-pointer",
-                    isUnavailable && "text-muted-foreground/30 cursor-not-allowed",
-                    (isWeekendDay || isHolidayDay) && "line-through decoration-muted-foreground/40",
-                    isTodayDay && !isSelected && "border-2 border-foreground",
-                    (isStart || isEnd) && "bg-foreground text-background font-bold",
-                    isStart && selectedDates.length > 1 && "rounded-r-none",
-                    isEnd && selectedDates.length > 1 && "rounded-l-none",
-                    isMiddle && "rounded-none bg-[#F1E8DC] text-foreground"
-                  )}
-                >
-                  {format(day, "d")}
-                </button>
-              )
-            })}
-          </div>
-        </div>
-      )
+  const handlePassToggle = useCallback(
+    (type: "week" | "month") => {
+      if (passType === type) {
+        // Deselect: revert to day mode
+        onPassTypeChange("day")
+        onDatesChange([])
+      } else {
+        // Select this pass
+        onPassTypeChange(type)
+        onDatesChange([])
+      }
     },
-    [selectedDates, holidays, today, minDate, handleDateClick]
+    [passType, onPassTypeChange, onDatesChange]
   )
 
   // Show loading state until client-side hydration is complete
   if (!mounted) {
     return (
-      <div className="rounded-2xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div>
+        <div className="flex items-center justify-between pb-3">
           <span className="text-sm font-medium text-muted-foreground">
             Sélectionnez vos dates
           </span>
@@ -263,24 +293,25 @@ export function ScrollableCalendar({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card">
+    <div>
       {/* Header */}
-      <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-4 py-3">
+      <div className="flex items-center justify-between pb-3">
         <span className="text-sm font-medium text-muted-foreground">
-          {rangeStart && passType !== "day"
-            ? "Sélectionnez la date de fin"
+          {passType === "week"
+            ? "Sélectionnez le début de votre semaine"
+            : passType === "month"
+            ? "Sélectionnez le début de votre mois"
             : "Sélectionnez vos dates"}
         </span>
         {selectedDates.length > 0 && (
-          <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs text-muted-foreground">
-            <RotateCcw className="mr-1 h-3 w-3" />
+          <button onClick={handleReset} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
             Réinitialiser
-          </Button>
+          </button>
         )}
       </div>
 
       {/* Desktop: Navigation + 2 months */}
-      <div className="hidden sm:flex items-center justify-between px-4 py-2">
+      <div className="hidden sm:flex items-center justify-between py-2">
         <Button
           variant="ghost"
           size="sm"
@@ -300,14 +331,30 @@ export function ScrollableCalendar({
         </Button>
       </div>
 
-      <div className="hidden sm:flex gap-6 px-4 pb-4">
-        {renderMonth(currentMonth)}
-        {renderMonth(addMonths(currentMonth, 1))}
+      <div className="hidden sm:flex gap-6 pb-4">
+        <MonthGrid
+          monthDate={currentMonth}
+          selectedDates={selectedDates}
+          holidays={holidays}
+          today={today}
+          minDate={minDate}
+          passType={passType}
+          onDateClick={handleDateClick}
+        />
+        <MonthGrid
+          monthDate={addMonths(currentMonth, 1)}
+          selectedDates={selectedDates}
+          holidays={holidays}
+          today={today}
+          minDate={minDate}
+          passType={passType}
+          onDateClick={handleDateClick}
+        />
       </div>
 
       {/* Mobile: Sticky weekdays header + 12 months scroll */}
       <div className="sm:hidden">
-        <div className="sticky top-[53px] z-10 grid grid-cols-7 gap-1 px-4 py-2 bg-card border-b border-border">
+        <div className="sticky top-0 z-10 grid grid-cols-7 gap-1 py-2 bg-white border-b border-black/10">
           {DAYS_SHORT.map((day, i) => (
             <div
               key={i}
@@ -320,47 +367,53 @@ export function ScrollableCalendar({
             </div>
           ))}
         </div>
-        <div className="max-h-[280px] overflow-y-auto px-4 pb-4 space-y-6">
+        <div className="max-h-[280px] overflow-y-auto pb-4 space-y-6">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i}>{renderMonth(addMonths(today, i))}</div>
+            <div key={i}>
+              <MonthGrid
+                monthDate={addMonths(today, i)}
+                selectedDates={selectedDates}
+                holidays={holidays}
+                today={today}
+                minDate={minDate}
+                passType={passType}
+                onDateClick={handleDateClick}
+              />
+            </div>
           ))}
         </div>
       </div>
 
-      {/* Selected info */}
-      {selectedDates.length > 0 && (
-        <div className="border-t border-border px-4 py-3">
-          <p className="text-sm">
-            <span className="font-semibold">{selectedDates.length} jour{selectedDates.length > 1 ? "s" : ""}</span>
-            {" ouvré"}{selectedDates.length > 1 ? "s" : ""} sélectionné{selectedDates.length > 1 ? "s" : ""}
-          </p>
-        </div>
-      )}
-
       {/* Seats selector */}
-      <div className="border-t border-border px-4 py-4">
+      <div className="border-t border-black/10 py-4 mt-2">
         <div className="flex items-center justify-between">
           <span className="text-sm font-medium">Nombre de postes</span>
           <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full"
+            <button
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                seats <= 1
+                  ? "bg-[#E6D5C3]/50 text-foreground/30 cursor-not-allowed"
+                  : "bg-[#E6D5C3] text-foreground hover:bg-[#D4C4B0] cursor-pointer"
+              )}
               onClick={() => onSeatsChange(Math.max(1, seats - 1))}
               disabled={seats <= 1}
             >
               <Minus className="h-4 w-4" />
-            </Button>
+            </button>
             <span className="w-8 text-center text-lg font-bold">{seats}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full"
+            <button
+              className={cn(
+                "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                seats >= 6
+                  ? "bg-[#E6D5C3]/50 text-foreground/30 cursor-not-allowed"
+                  : "bg-[#E6D5C3] text-foreground hover:bg-[#D4C4B0] cursor-pointer"
+              )}
               onClick={() => onSeatsChange(seats + 1)}
               disabled={seats >= 6}
             >
               <Plus className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -380,6 +433,110 @@ export function ScrollableCalendar({
             </p>
           </div>
         )}
+      </div>
+
+      {/* Pass selector */}
+      <div className="border-t border-black/10 pt-4">
+        <div className="rounded-[20px] bg-[#F2E7DC] p-4">
+        {/* Header - collapsible toggle */}
+        <button
+          onClick={() => setPassExpanded(!passExpanded)}
+          className="flex w-full items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
+              <Ticket className="h-4 w-4 text-foreground/70" />
+            </div>
+            <span className="text-sm font-semibold">Restez plus, payez moins.</span>
+          </div>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              passExpanded && "rotate-180"
+            )}
+          />
+        </button>
+
+        {/* Collapsible pass cards */}
+        <div
+          className={cn(
+            "overflow-hidden transition-all duration-200",
+            passExpanded ? "max-h-[200px] opacity-100 mt-3" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="grid grid-cols-2 gap-3 p-0.5">
+            {/* Pass Week */}
+            <button
+              onClick={() => handlePassToggle("week")}
+              className={cn(
+                "relative flex flex-col items-start gap-2 rounded-[16px] p-3 text-left transition-all",
+                passType === "week"
+                  ? "bg-white ring-2 ring-foreground"
+                  : "bg-white hover:bg-white/80"
+              )}
+            >
+              <div className="flex w-full items-center justify-between">
+                <div
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors",
+                    passType === "week"
+                      ? "border-foreground bg-foreground"
+                      : "border-muted-foreground/30"
+                  )}
+                >
+                  {passType === "week" && <Check className="h-3 w-3 text-background" />}
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                    passType === "week"
+                      ? "bg-green-600 text-white"
+                      : "bg-foreground/10 text-foreground/50"
+                  )}
+                >
+                  -33%
+                </span>
+              </div>
+              <span className="text-sm font-semibold">Pass Week</span>
+            </button>
+
+            {/* Pass Month */}
+            <button
+              onClick={() => handlePassToggle("month")}
+              className={cn(
+                "relative flex flex-col items-start gap-2 rounded-[16px] p-3 text-left transition-all",
+                passType === "month"
+                  ? "bg-white ring-2 ring-foreground"
+                  : "bg-white hover:bg-white/80"
+              )}
+            >
+              <div className="flex w-full items-center justify-between">
+                <div
+                  className={cn(
+                    "flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors",
+                    passType === "month"
+                      ? "border-foreground bg-foreground"
+                      : "border-muted-foreground/30"
+                  )}
+                >
+                  {passType === "month" && <Check className="h-3 w-3 text-background" />}
+                </div>
+                <span
+                  className={cn(
+                    "rounded-full px-2 py-0.5 text-[10px] font-bold",
+                    passType === "month"
+                      ? "bg-green-600 text-white"
+                      : "bg-foreground/10 text-foreground/50"
+                  )}
+                >
+                  -50%
+                </span>
+              </div>
+              <span className="text-sm font-semibold">Pass Month</span>
+            </button>
+          </div>
+        </div>
+        </div>
       </div>
     </div>
   )

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useMemo } from "react"
 import type { Site } from "@/lib/types/database"
+import { mapStyles, loadGoogleMapsScript } from "@/lib/google-maps"
+import { filterByCity } from "@/lib/utils/site-filters"
 
 interface SiteWithPhotos extends Site {
   photos: string[]
@@ -16,64 +18,6 @@ interface SitesMapViewProps {
   selectedCity: "paris" | "lyon" | null
 }
 
-const mapStyles = [
-  {
-    featureType: "all",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#E5E0DA" }],
-  },
-  {
-    featureType: "all",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#616161" }],
-  },
-  {
-    featureType: "administrative",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#d8d6cc" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry.fill",
-    stylers: [{ visibility: "on" }, { color: "#E0DACD" }],
-  },
-  {
-    featureType: "poi.attraction",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "poi.business",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "poi.medical",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#ffffff" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#d8d6cc" }],
-  },
-  {
-    featureType: "transit",
-    elementType: "all",
-    stylers: [{ visibility: "off" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#D3C9BE" }],
-  },
-]
-
 function createMarkerSvg(isHovered: boolean): string {
   const size = isHovered ? 32 : 24
   const color = isHovered ? "#f97316" : "#000000"
@@ -87,51 +31,9 @@ function createMarkerSvg(isHovered: boolean): string {
   `)}`
 }
 
-function filterByCity(sites: SiteWithPhotos[], city: "paris" | "lyon" | null): SiteWithPhotos[] {
-  if (!city) return sites
-
-  return sites.filter((site) => {
-    const address = site.address.toLowerCase()
-
-    if (city === "paris") {
-      const parisRegex = /\b75\d{3}\b/
-      const idfRegex = /\b(77|78|91|92|93|94|95)\d{3}\b/
-      return parisRegex.test(address) || idfRegex.test(address) || address.includes("paris")
-    }
-
-    if (city === "lyon") {
-      const lyonRegex = /\b69\d{3}\b/
-      return lyonRegex.test(address) || address.includes("lyon")
-    }
-
-    return true
-  })
-}
-
-// Load Google Maps script dynamically
-function loadGoogleMapsScript(apiKey: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (typeof google !== "undefined" && google.maps) {
-      resolve()
-      return
-    }
-
-    const existingScript = document.getElementById("google-maps-script")
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve())
-      return
-    }
-
-    const script = document.createElement("script")
-    script.id = "google-maps-script"
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=marker&v=weekly`
-    script.async = true
-    script.defer = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error("Failed to load Google Maps"))
-    document.head.appendChild(script)
-  })
-}
+// Pre-compute the two possible marker SVGs to avoid recalculating on every hover
+const MARKER_SVG_DEFAULT = createMarkerSvg(false)
+const MARKER_SVG_HOVERED = createMarkerSvg(true)
 
 export function SitesMapView({
   sites,
@@ -142,7 +44,8 @@ export function SitesMapView({
 }: SitesMapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null)
   const googleMapRef = useRef<google.maps.Map | null>(null)
-  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map())
+  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map())
+  const prevHoveredRef = useRef<string | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(true)
 
@@ -175,7 +78,6 @@ export function SitesMapView({
           fullscreenControl: true,
           mapTypeControl: false,
           streetViewControl: false,
-          mapId: "hopper-reservation-map",
         })
 
         googleMapRef.current = map
@@ -186,86 +88,104 @@ export function SitesMapView({
       })
 
     return () => {
-      markersRef.current.forEach((marker) => (marker.map = null))
+      markersRef.current.forEach((marker) => marker.setMap(null))
       markersRef.current.clear()
     }
   }, [])
 
-  // Update markers when sites or hover state changes
+  // Update markers when sites change
   useEffect(() => {
     if (!isLoaded || !googleMapRef.current) return
 
     const map = googleMapRef.current
 
     // Remove old markers
-    markersRef.current.forEach((marker) => (marker.map = null))
+    markersRef.current.forEach((marker) => marker.setMap(null))
     markersRef.current.clear()
 
     // Add new markers
-    const bounds = new google.maps.LatLngBounds()
-
     filteredSites.forEach((site) => {
       if (!site.latitude || !site.longitude) return
 
       const position = { lat: site.latitude, lng: site.longitude }
-      const isHovered = site.id === hoveredSiteId
 
-      const img = document.createElement("img")
-      img.src = createMarkerSvg(isHovered)
-      img.style.cursor = "pointer"
-      img.style.transition = "transform 0.2s ease"
-      if (isHovered) {
-        img.style.transform = "scale(1.2)"
-      }
-
-      const marker = new google.maps.marker.AdvancedMarkerElement({
+      const marker = new google.maps.Marker({
         position,
         map,
-        content: img,
         title: site.name,
+        icon: {
+          url: MARKER_SVG_DEFAULT,
+          scaledSize: new google.maps.Size(24, 24),
+          anchor: new google.maps.Point(12, 12),
+        },
       })
 
       marker.addListener("click", () => {
         onSiteClick(site)
       })
 
-      const element = marker.element
-      if (element) {
-        element.addEventListener("mouseenter", () => onHover(site.id))
-        element.addEventListener("mouseleave", () => onHover(null))
-      }
+      marker.addListener("mouseover", () => onHover(site.id))
+      marker.addListener("mouseout", () => onHover(null))
 
       markersRef.current.set(site.id, marker)
-      bounds.extend(position)
+    })
+  }, [isLoaded, filteredSites, onHover, onSiteClick])
+
+  // Center map on filtered sites only when city changes
+  useEffect(() => {
+    if (!isLoaded || !googleMapRef.current) return
+    if (filteredSites.length === 0) return
+
+    const map = googleMapRef.current
+    const bounds = new google.maps.LatLngBounds()
+
+    filteredSites.forEach((site) => {
+      if (site.latitude && site.longitude) {
+        bounds.extend({ lat: site.latitude, lng: site.longitude })
+      }
     })
 
-    // Fit bounds if we have sites
-    if (filteredSites.length > 0) {
-      map.fitBounds(bounds)
+    map.fitBounds(bounds)
 
-      // Don't zoom in too much
-      const listener = google.maps.event.addListener(map, "idle", () => {
-        const zoom = map.getZoom()
-        if (zoom && zoom > 15) {
-          map.setZoom(15)
-        }
-        google.maps.event.removeListener(listener)
-      })
-    }
-  }, [isLoaded, filteredSites, hoveredSiteId, onHover, onSiteClick])
+    // Don't zoom in too much
+    const listener = google.maps.event.addListener(map, "idle", () => {
+      const zoom = map.getZoom()
+      if (zoom && zoom > 15) {
+        map.setZoom(15)
+      }
+      google.maps.event.removeListener(listener)
+    })
+  }, [isLoaded, filteredSites])
 
-  // Update marker appearance on hover
+  // Update marker appearance on hover (only update the 2 affected markers)
   useEffect(() => {
     if (!isLoaded) return
 
-    markersRef.current.forEach((marker, siteId) => {
-      const img = marker.content as HTMLImageElement
-      if (img) {
-        const isHovered = siteId === hoveredSiteId
-        img.src = createMarkerSvg(isHovered)
-        img.style.transform = isHovered ? "scale(1.2)" : "scale(1)"
+    // Reset previous hovered marker
+    if (prevHoveredRef.current) {
+      const prev = markersRef.current.get(prevHoveredRef.current)
+      if (prev) {
+        prev.setIcon({
+          url: MARKER_SVG_DEFAULT,
+          scaledSize: new google.maps.Size(24, 24),
+          anchor: new google.maps.Point(12, 12),
+        })
       }
-    })
+    }
+
+    // Set new hovered marker
+    if (hoveredSiteId) {
+      const curr = markersRef.current.get(hoveredSiteId)
+      if (curr) {
+        curr.setIcon({
+          url: MARKER_SVG_HOVERED,
+          scaledSize: new google.maps.Size(32, 32),
+          anchor: new google.maps.Point(16, 16),
+        })
+      }
+    }
+
+    prevHoveredRef.current = hoveredSiteId
   }, [hoveredSiteId, isLoaded])
 
   if (!hasApiKey) {
