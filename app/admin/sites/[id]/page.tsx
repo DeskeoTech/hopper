@@ -134,11 +134,18 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
                 <EditInstructionsModal
                   siteId={site.id}
                   initialInstructions={site.instructions}
+                  initialInstructionsEn={site.instructions_en}
+                  initialAccessEn={site.access_en}
                   initialTransportation={transportationLines}
                 />
                 <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
                   <FileText className="h-5 w-5" />
                   Instructions & Accès
+                  {site.instructions_en ? (
+                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700">EN</span>
+                  ) : (
+                    <span className="rounded-full bg-orange-100 px-2 py-0.5 text-xs font-medium text-orange-700">EN manquant</span>
+                  )}
                 </h2>
                 {site.instructions || (transportationLines && transportationLines.length > 0) ? (
                   <div className="space-y-4">

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Button } from "@/components/ui/button"
@@ -11,11 +12,13 @@ interface HopperResidenceModalProps {
 }
 
 export function HopperResidenceModal({ open, onOpenChange }: HopperResidenceModalProps) {
+  const t = useTranslations("hopperResidence")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden rounded-2xl [&>button]:hidden">
         <VisuallyHidden>
-          <DialogTitle>Hopper Residence</DialogTitle>
+          <DialogTitle>{t("title")}</DialogTitle>
         </VisuallyHidden>
 
         <button
@@ -28,21 +31,17 @@ export function HopperResidenceModal({ open, onOpenChange }: HopperResidenceModa
         <div className="p-6 sm:p-8 bg-[#D4C4B0]">
           {/* Header */}
           <h2 className="font-heading text-2xl sm:text-3xl font-bold text-foreground mb-4">
-            HOPPER RESIDENCE
+            {t("heading")}
           </h2>
 
           {/* Tagline */}
           <p className="font-editorial text-2xl sm:text-3xl text-foreground mb-6">
-            Votre poste fixe, en illimité
+            {t("tagline")}
           </p>
 
           {/* Description */}
           <p className="text-base text-foreground leading-relaxed mb-8 text-justify">
-            Profitez d&apos;un poste de travail attitré dans les espaces Hopper
-            Residence, avec accès à tous les espaces Hopper Lounge. Votre
-            abonnement inclut deux boissons offertes par jour et un casier
-            personnel. Parfait pour s&apos;installer durablement, créer votre
-            routine et vous sentir &quot;chez vous&quot; au bureau.
+            {t("description")}
           </p>
 
           {/* CTA Button */}
@@ -50,7 +49,7 @@ export function HopperResidenceModal({ open, onOpenChange }: HopperResidenceModa
             className="w-full h-12 text-base font-bold"
             onClick={() => window.open("https://www.deskeo.com/fr/contact/", "_blank")}
           >
-            Contact
+            {t("contact")}
           </Button>
         </div>
       </DialogContent>

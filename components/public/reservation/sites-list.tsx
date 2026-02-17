@@ -3,6 +3,7 @@
 import { useMemo } from "react"
 import { SiteCard } from "./site-card"
 import { filterByCity } from "@/lib/utils/site-filters"
+import { useTranslations } from "next-intl"
 import type { Site } from "@/lib/types/database"
 
 interface SiteWithPhotos extends Site {
@@ -20,6 +21,8 @@ interface SitesListProps {
 }
 
 export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails, selectedCity }: SitesListProps) {
+  const t = useTranslations("reservation")
+
   const filteredSites = useMemo(() => {
     const filtered = filterByCity(sites, selectedCity)
     return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
@@ -28,7 +31,7 @@ export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails
   if (filteredSites.length === 0) {
     return (
       <div className="flex h-64 items-center justify-center text-muted-foreground">
-        <p>Aucun espace disponible dans cette zone.</p>
+        <p>{t("sitesList.noResults")}</p>
       </div>
     )
   }

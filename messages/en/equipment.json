@@ -1,0 +1,20 @@
+{
+  "equipment": {
+    "barista": "Barista",
+    "stationnement_velo": "Bike Parking",
+    "impression": "Printer",
+    "douches": "Showers",
+    "salle_sport": "Gym",
+    "terrasse": "Terrace",
+    "rooftop": "Rooftop"
+  },
+  "equipmentDetails": {
+    "barista": "Barista / Coffee",
+    "stationnement_velo": "Bike Parking",
+    "impression": "Printer",
+    "douches": "Showers",
+    "salle_sport": "Gym",
+    "terrasse": "Terrace",
+    "rooftop": "Rooftop"
+  }
+}

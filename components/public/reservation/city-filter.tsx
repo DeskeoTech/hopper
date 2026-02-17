@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -11,17 +12,18 @@ interface CityFilterProps {
   onCityChange: (city: "paris" | "lyon" | null) => void
 }
 
-const cities = [
-  { id: "paris" as const, label: "Paris", fullLabel: "Paris & Île-de-France" },
-  { id: "lyon" as const, label: "Lyon", fullLabel: "Lyon & Métropole" },
-]
-
 export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
+  const t = useTranslations("common")
   const [open, setOpen] = useState(false)
+
+  const cities = [
+    { id: "paris" as const, label: t("cities.paris"), fullLabel: t("cities.parisRegion") },
+    { id: "lyon" as const, label: t("cities.lyon"), fullLabel: t("cities.lyonRegion") },
+  ]
 
   const displayLabel = selectedCity
     ? cities.find((c) => c.id === selectedCity)?.label
-    : "Paris"
+    : t("cities.paris")
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -30,6 +32,7 @@ export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
           variant="ghost"
           size="sm"
           className="gap-1.5 rounded-full border-0 bg-transparent px-3 py-1.5 text-sm font-medium hover:bg-transparent"
+          suppressHydrationWarning
         >
           <span>{displayLabel}</span>
           <ChevronDown className="h-3.5 w-3.5 opacity-60" />

@@ -11,6 +11,7 @@ import { PaymentSuccessModal } from "./payment-success-modal"
 import { MobileToggle } from "./mobile-toggle"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import type { Site } from "@/lib/types/database"
 
 interface SiteWithPhotos extends Site {
@@ -24,6 +25,7 @@ interface ReservationPageClientProps {
 
 export function ReservationPageClient({ initialSites }: ReservationPageClientProps) {
   const searchParams = useSearchParams()
+  const t = useTranslations("reservation")
   const [selectedCity, setSelectedCity] = useState<"paris" | "lyon" | null>("paris")
   const [hoveredSiteId, setHoveredSiteId] = useState<string | null>(null)
   const [selectedSite, setSelectedSite] = useState<SiteWithPhotos | null>(null)
@@ -65,7 +67,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
       } catch {
         // Ignore parse errors
       }
-      toast.info("Paiement annulé")
+      toast.info(t("toast.paymentCanceled"))
       window.history.replaceState({}, "", cleanUrl)
     }
   }, [searchParams, initialSites, customerEmail])

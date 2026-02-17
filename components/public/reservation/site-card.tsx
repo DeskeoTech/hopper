@@ -5,6 +5,7 @@ import Image from "next/image"
 import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useTranslations, useLocale } from "next-intl"
 import type { Site, Equipment } from "@/lib/types/database"
 
 interface SiteWithPhotos extends Site {
@@ -30,30 +31,20 @@ const equipmentIcons: Record<Equipment, React.ReactNode> = {
   rooftop: <Building className="h-3 w-3" />,
 }
 
-const equipmentLabels: Record<Equipment, string> = {
-  barista: "Barista",
-  stationnement_velo: "Le Coin Vélo",
-  impression: "Imprimante",
-  douches: "Douches",
-  salle_sport: "Salle de sport",
-  terrasse: "Terrasse",
-  rooftop: "Rooftop",
-}
-
-function extractDistrict(address: string): string {
+function extractDistrict(address: string, locale: string): string {
   const parisMatch = address.match(/75(\d{3})/)
   if (parisMatch) {
     const arr = parseInt(parisMatch[1], 10)
-    if (arr === 1) return "Paris 1er"
-    return `Paris ${arr}ème`
+    if (arr === 1) return locale === "en" ? "Paris 1st" : "Paris 1er"
+    return locale === "en" ? `Paris ${arr}th` : `Paris ${arr}ème`
   }
 
   const lyonMatch = address.match(/69(\d{3})/)
   if (lyonMatch) {
     const arr = parseInt(lyonMatch[1], 10)
     if (arr <= 9) {
-      if (arr === 1) return "Lyon 1er"
-      return `Lyon ${arr}ème`
+      if (arr === 1) return locale === "en" ? "Lyon 1st" : "Lyon 1er"
+      return locale === "en" ? `Lyon ${arr}th` : `Lyon ${arr}ème`
     }
   }
 
@@ -74,6 +65,9 @@ function extractDistrict(address: string): string {
 
 export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBook, onViewDetails }: SiteCardProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const t = useTranslations("reservation")
+  const tEquip = useTranslations("equipment")
+  const locale = useLocale()
 
   const photos = site.photos.length > 0 ? site.photos : ["/placeholder-site.jpg"]
 
@@ -105,7 +99,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
     [site, onBook]
   )
 
-  const district = extractDistrict(site.address)
+  const district = extractDistrict(site.address, locale)
 
   return (
     <div
@@ -194,23 +188,23 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
         <h3 className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</h3>
 
         {/* Price */}
-        <p className="mt-0.5 text-sm text-muted-foreground">Dès 30€/jour</p>
+        <p className="mt-0.5 text-sm text-muted-foreground">{t("siteCard.priceFrom", { price: 30 })}</p>
 
         {/* Equipment Tags */}
         {site.equipments && site.equipments.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {site.equipments.slice(0, 3).map((equipment) => (
+            {site.equipments.slice(0, 3).map((eq) => (
               <span
-                key={equipment}
+                key={eq}
                 className="flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium"
               >
-                {equipmentIcons[equipment]}
-                {equipmentLabels[equipment]}
+                {equipmentIcons[eq]}
+                {tEquip(eq)}
               </span>
             ))}
             {site.equipments.length > 3 && (
               <span className="flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium">
-                +{site.equipments.length - 3} autres
+                {t("siteCard.moreEquipment", { count: site.equipments.length - 3 })}
               </span>
             )}
           </div>
@@ -222,7 +216,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
             className="w-full rounded-full bg-[#1B1918] font-semibold uppercase tracking-wide hover:bg-[#1B1918]/90"
             onClick={handleBookClick}
           >
-            Réserver
+            {t("siteCard.book")}
           </Button>
         </div>
       </div>

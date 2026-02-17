@@ -1,0 +1,17 @@
+{
+  "calendar": {
+    "daysShort": ["M", "T", "W", "T", "F", "S", "S"],
+    "selectDates": "Select your dates",
+    "selectWeekStart": "Select the start of your week",
+    "selectMonthStart": "Select the start of your month",
+    "reset": "Reset",
+    "seats": "Number of seats",
+    "seatsMax": "For more than 6 seats, contact us for a custom quote or discover our",
+    "seatsMaxLink": "managed offices",
+    "stayMore": "Stay more, pay less.",
+    "passWeek": "Week Pass",
+    "passMonth": "Month Pass",
+    "discountWeek": "-33%",
+    "discountMonth": "-50%"
+  }
+}

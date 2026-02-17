@@ -1,0 +1,20 @@
+{
+  "equipment": {
+    "barista": "Barista",
+    "stationnement_velo": "Le Coin Vélo",
+    "impression": "Imprimante",
+    "douches": "Douches",
+    "salle_sport": "Salle de sport",
+    "terrasse": "Terrasse",
+    "rooftop": "Rooftop"
+  },
+  "equipmentDetails": {
+    "barista": "Barista / Café",
+    "stationnement_velo": "Parking vélo",
+    "impression": "Imprimante",
+    "douches": "Douches",
+    "salle_sport": "Salle de sport",
+    "terrasse": "Terrasse",
+    "rooftop": "Rooftop"
+  }
+}

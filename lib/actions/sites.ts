@@ -53,7 +53,12 @@ export async function updateSiteInstructions(
 
 export async function updateSiteInstructionsAndTransportation(
   siteId: string,
-  data: { instructions: string | null; transportation_lines: TransportationStop[] | null }
+  data: {
+    instructions: string | null
+    instructions_en: string | null
+    access_en: string | null
+    transportation_lines: TransportationStop[] | null
+  }
 ) {
   const supabase = await createClient()
 
@@ -61,6 +66,8 @@ export async function updateSiteInstructionsAndTransportation(
     .from("sites")
     .update({
       instructions: data.instructions || null,
+      instructions_en: data.instructions_en || null,
+      access_en: data.access_en || null,
       transportation_lines: data.transportation_lines && data.transportation_lines.length > 0
         ? data.transportation_lines
         : null,

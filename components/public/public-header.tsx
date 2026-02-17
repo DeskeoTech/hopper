@@ -2,8 +2,8 @@
 
 import Link from "next/link"
 import { User } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { CityFilter } from "@/components/public/reservation/city-filter"
+import { LanguageSwitcher } from "@/components/public/language-switcher"
 
 interface PublicHeaderProps {
   selectedCity?: "paris" | "lyon" | null
@@ -16,8 +16,11 @@ export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeader
   return (
     <header className="sticky top-0 z-50 border-b border-black/10 bg-background">
       <div className="flex h-16 md:h-20 items-center justify-between px-4 lg:px-6 xl:px-8">
-        {/* Left - Filter Button */}
-        <CityFilter selectedCity={selectedCity} onCityChange={onCityChange || NOOP_CITY_CHANGE} />
+        {/* Left - Language Switcher + Filter */}
+        <div className="flex items-center gap-1">
+          <LanguageSwitcher />
+          <CityFilter selectedCity={selectedCity} onCityChange={onCityChange || NOOP_CITY_CHANGE} />
+        </div>
 
         {/* Center - Logo */}
         <Link href="/reservation" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-none">

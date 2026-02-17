@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <clipPath id="gb-clip">
+    <circle cx="256" cy="256" r="256"/>
+  </clipPath>
+  <g clip-path="url(#gb-clip)">
+    <rect width="512" height="512" fill="#012169"/>
+    <path d="M0 0L512 512M512 0L0 512" stroke="#fff" stroke-width="76.8"/>
+    <path d="M0 0L512 512M512 0L0 512" stroke="#C8102E" stroke-width="51.2" clip-path="url(#gb-diag)"/>
+    <clipPath id="gb-diag">
+      <path d="M256 0H512V256L0 512H0V256Z"/>
+    </clipPath>
+    <path d="M256 0V512M0 256H512" stroke="#fff" stroke-width="102.4"/>
+    <path d="M256 0V512M0 256H512" stroke="#C8102E" stroke-width="61.44"/>
+  </g>
+</svg>

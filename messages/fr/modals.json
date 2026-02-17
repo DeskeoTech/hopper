@@ -1,0 +1,18 @@
+{
+  "paymentSuccess": {
+    "title": "Paiement confirmé",
+    "heading": "Paiement confirmé !",
+    "description": "Votre réservation est confirmée. Vous allez recevoir un email de confirmation avec toutes les informations nécessaires.",
+    "accessPortal": "Accéder à mon espace",
+    "continueExploring": "Continuer à explorer",
+    "meetingRoomCta": "Besoin de salles de réunion ? Achetez des crédits pour réserver des salles dans tous les espaces Hopper.",
+    "buyCredits": "Acheter des crédits salle de réunion"
+  },
+  "hopperResidence": {
+    "title": "Hopper Residence",
+    "heading": "HOPPER RESIDENCE",
+    "tagline": "Votre poste fixe, en illimité",
+    "description": "Profitez d'un poste de travail attitré dans les espaces Hopper Residence, avec accès à tous les espaces Hopper Lounge. Votre abonnement inclut deux boissons offertes par jour et un casier personnel. Parfait pour s'installer durablement, créer votre routine et vous sentir \"chez vous\" au bureau.",
+    "contact": "Contact"
+  }
+}
