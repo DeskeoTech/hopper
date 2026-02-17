@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
+import dynamic from "next/dynamic"
 import Image from "next/image"
 import {
   ChevronLeft,
@@ -35,6 +36,14 @@ import { Button } from "@/components/ui/button"
 import { HopperResidenceModal } from "./hopper-residence-modal"
 import { cn } from "@/lib/utils"
 import type { Site, Equipment, DayOfWeek } from "@/lib/types/database"
+
+const SiteLocationMap = dynamic(
+  () => import("./site-location-map").then((m) => ({ default: m.SiteLocationMap })),
+  {
+    ssr: false,
+    loading: () => <div className="h-full w-full rounded-2xl bg-muted animate-pulse" />,
+  }
+)
 
 interface SiteWithPhotos extends Site {
   photos: string[]
@@ -195,6 +204,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
   }, [])
 
   const scrollToSection = useCallback((sectionId: string) => {
+    setActiveTab(sectionId)
     const section = sectionRefs.current[sectionId]
     if (section && contentRef.current) {
       contentRef.current.scrollTo({
@@ -222,7 +232,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
   return (
     <>
       <Dialog open={open && !fullscreenPhoto} onOpenChange={handleClose}>
-        <DialogContent className="max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+        <DialogContent className="flex flex-col max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
           <VisuallyHidden>
             <DialogTitle>{site.name} - Détails du site</DialogTitle>
           </VisuallyHidden>
@@ -360,14 +370,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                 <div className="space-y-3">
                   {site.latitude && site.longitude && (
                     <div className="h-48 md:h-64 rounded-2xl overflow-hidden bg-muted">
-                      <iframe
-                        src={`https://www.google.com/maps/embed/v1/place?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&q=${site.latitude},${site.longitude}&zoom=15`}
-                        width="100%"
-                        height="100%"
-                        style={{ border: 0 }}
-                        allowFullScreen={false}
-                        loading="lazy"
-                      />
+                      <SiteLocationMap lat={site.latitude} lng={site.longitude} />
                     </div>
                   )}
                   <a
@@ -433,7 +436,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                       {site.capacity} postes
                     </div>
                   )}
-                  {site.meetingRoomsCount && site.meetingRoomsCount > 0 && (
+                  {(site.meetingRoomsCount ?? 0) > 0 && (
                     <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
                       <Building className="h-4 w-4" />
                       {site.meetingRoomsCount} salles de réunion
