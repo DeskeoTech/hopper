@@ -1,5 +1,6 @@
 "use client"
 
+import Image from "next/image"
 import Link from "next/link"
 import { User } from "lucide-react"
 import { CityFilter } from "@/components/public/reservation/city-filter"
@@ -23,9 +24,15 @@ export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeader
         </div>
 
         {/* Center - Logo */}
-        <Link href="/reservation" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center leading-none">
-          <span className="font-heading text-2xl md:text-3xl font-black tracking-tight">HOPPER</span>
-          <span className="text-[10px] md:text-xs text-muted-foreground tracking-wide italic">Coworking</span>
+        <Link href="/reservation" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
+          <Image
+            src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
+            alt="Hopper Logo"
+            width={400}
+            height={160}
+            className="h-14 w-auto md:h-20"
+            priority
+          />
         </Link>
 
         {/* Right - Navigation + Contact + Profile */}

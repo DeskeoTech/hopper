@@ -165,35 +165,58 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   const photos = site?.photos.length ? site.photos : []
 
-  // Scroll spy effect
-  useEffect(() => {
+  // Scroll spy via callback ref — s'attache dès que le DOM est disponible
+  const scrollListenerRef = useRef<(() => void) | null>(null)
+
+  const setContentRef = useCallback((node: HTMLDivElement | null) => {
+    // Nettoyer l'ancien listener
+    if (scrollListenerRef.current && contentRef.current) {
+      contentRef.current.removeEventListener("scroll", scrollListenerRef.current)
+      scrollListenerRef.current = null
+    }
+
+    contentRef.current = node
+
+    if (!node) return
+
     const handleScroll = () => {
-      if (!contentRef.current) return
+      const containerRect = node.getBoundingClientRect()
+      const threshold = containerRect.top + 120
 
-      const scrollTop = contentRef.current.scrollTop
-      let currentSection = "about"
+      // Si on est scrollé tout en bas, activer le dernier onglet
+      if (Math.abs(node.scrollHeight - node.scrollTop - node.clientHeight) < 2) {
+        setActiveTab(TABS[TABS.length - 1].id)
+        return
+      }
 
+      let currentSection = TABS[0].id
       for (const tab of TABS) {
         const section = sectionRefs.current[tab.id]
-        if (section && section.offsetTop - 100 <= scrollTop) {
-          currentSection = tab.id
+        if (section) {
+          const sectionRect = section.getBoundingClientRect()
+          if (sectionRect.top <= threshold) {
+            currentSection = tab.id
+          }
         }
       }
 
       setActiveTab(currentSection)
     }
 
-    const content = contentRef.current
-    content?.addEventListener("scroll", handleScroll)
-    return () => content?.removeEventListener("scroll", handleScroll)
+    scrollListenerRef.current = handleScroll
+    node.addEventListener("scroll", handleScroll, { passive: true })
   }, [TABS])
 
   const scrollToSection = useCallback((sectionId: string) => {
     setActiveTab(sectionId)
     const section = sectionRefs.current[sectionId]
-    if (section && contentRef.current) {
-      contentRef.current.scrollTo({
-        top: section.offsetTop - 80,
+    const content = contentRef.current
+    if (section && content) {
+      const containerRect = content.getBoundingClientRect()
+      const sectionRect = section.getBoundingClientRect()
+      const scrollOffset = sectionRect.top - containerRect.top + content.scrollTop - 80
+      content.scrollTo({
+        top: scrollOffset,
         behavior: "smooth",
       })
     }
@@ -229,7 +252,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
               <ChevronLeft className="h-4 w-4" />
               <span className="hidden sm:inline">{t("siteDetails.back")}</span>
             </Button>
-            <Button size="lg" className="font-bold" onClick={() => onBook(site)}>
+            <Button size="lg" className="rounded-full font-bold" onClick={() => onBook(site)}>
               {t("siteDetails.bookButton")}
             </Button>
           </div>
@@ -241,10 +264,10 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                 key={tab.id}
                 onClick={() => scrollToSection(tab.id)}
                 className={cn(
-                  "whitespace-nowrap border-b-2 py-3 text-xs md:text-sm transition-colors",
+                  "whitespace-nowrap border-b-2 py-3 text-xs md:text-sm transition-colors duration-200",
                   activeTab === tab.id
-                    ? "border-primary text-foreground font-medium"
-                    : "border-transparent text-muted-foreground hover:text-foreground"
+                    ? "border-foreground text-foreground font-medium"
+                    : "border-transparent text-muted-foreground/50 hover:text-muted-foreground"
                 )}
               >
                 {tab.label}
@@ -253,7 +276,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
           </div>
 
           {/* Scrollable Content */}
-          <div ref={contentRef} className="flex-1 overflow-y-auto">
+          <div ref={setContentRef} className="flex-1 overflow-y-auto">
             {/* Photo Gallery */}
             {photos.length > 0 && (
               <div className="p-4 md:p-6">
@@ -443,7 +466,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                 <p className="font-editorial text-base text-foreground mb-3">
                   {t("siteDetails.residenceTagline")}
                 </p>
-                <Button size="sm" className="font-bold">
+                <Button size="sm" className="rounded-full font-bold">
                   {t("siteDetails.learnMore")}
                 </Button>
               </div>

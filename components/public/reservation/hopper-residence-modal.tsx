@@ -46,7 +46,7 @@ export function HopperResidenceModal({ open, onOpenChange }: HopperResidenceModa
 
           {/* CTA Button */}
           <Button
-            className="w-full h-12 text-base font-bold"
+            className="w-full rounded-full h-12 text-base font-bold"
             onClick={() => window.open("https://www.deskeo.com/fr/contact/", "_blank")}
           >
             {t("contact")}
