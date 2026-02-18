@@ -28,18 +28,12 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
 import { createTicket } from "@/lib/actions/tickets"
 import type { TicketRequestType } from "@/lib/types/database"
+import { REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 
 interface SelectOption {
   value: string
   label: string
 }
-
-const requestTypeOptions = [
-  { value: "account_billing", label: "Compte / Facturation" },
-  { value: "issue", label: "Probleme" },
-  { value: "callback", label: "Rappel" },
-  { value: "other", label: "Autre" },
-]
 
 export function CreateTicketModal() {
   const [open, setOpen] = useState(false)
@@ -51,7 +45,8 @@ export function CreateTicketModal() {
   const [sitesOptions, setSitesOptions] = useState<SelectOption[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>("")
   const [selectedSiteId, setSelectedSiteId] = useState<string>("")
-  const [requestType, setRequestType] = useState<TicketRequestType>("other")
+  const [requestType, setRequestType] = useState<TicketRequestType>("autre")
+  const [requestSubtype, setRequestSubtype] = useState("")
   const [subject, setSubject] = useState("")
   const [comment, setComment] = useState("")
 
@@ -108,6 +103,7 @@ export function CreateTicketModal() {
       user_id: selectedUserId || null,
       site_id: selectedSiteId || null,
       request_type: requestType,
+      request_subtype: requestSubtype || null,
       subject: subject.trim() || null,
       comment: comment.trim(),
     })
@@ -115,7 +111,8 @@ export function CreateTicketModal() {
     if (result.success) {
       setSelectedUserId("")
       setSelectedSiteId("")
-      setRequestType("other")
+      setRequestType("autre")
+      setRequestSubtype("")
       setSubject("")
       setComment("")
       setOpen(false)
@@ -167,14 +164,32 @@ export function CreateTicketModal() {
                 Type de demande <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
-                options={requestTypeOptions}
+                options={REQUEST_TYPE_OPTIONS}
                 value={requestType}
-                onValueChange={(v) => setRequestType(v as TicketRequestType)}
+                onValueChange={(v) => {
+                  setRequestType(v as TicketRequestType)
+                  setRequestSubtype("")
+                }}
                 placeholder="Selectionner un type"
                 searchPlaceholder="Rechercher un type..."
                 triggerClassName="w-full"
               />
             </div>
+            {REQUEST_SUBTYPE_OPTIONS[requestType] && (
+              <div className="space-y-2">
+                <Label htmlFor="requestSubtype">
+                  Type de demande <span className="text-destructive">*</span>
+                </Label>
+                <SearchableSelect
+                  options={REQUEST_SUBTYPE_OPTIONS[requestType] || []}
+                  value={requestSubtype}
+                  onValueChange={setRequestSubtype}
+                  placeholder="Preciser le type..."
+                  searchPlaceholder="Rechercher..."
+                  triggerClassName="w-full"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="subject">Sujet</Label>
               <Input
@@ -218,7 +233,13 @@ export function CreateTicketModal() {
               <br />
               <strong>Utilisateur :</strong> {selectedUserLabel}
               <br />
-              <strong>Type :</strong> {requestTypeOptions.find((r) => r.value === requestType)?.label}
+              <strong>Type :</strong> {REQUEST_TYPE_OPTIONS.find((r) => r.value === requestType)?.label}
+              {requestSubtype && (
+                <>
+                  <br />
+                  <strong>Sous-type :</strong> {REQUEST_SUBTYPE_OPTIONS[requestType]?.find((r) => r.value === requestSubtype)?.label}
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

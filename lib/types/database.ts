@@ -10,6 +10,12 @@ export type Equipment =
   | "salle_sport"
   | "terrasse"
   | "rooftop"
+  | "cafe"
+  | "phonebooth"
+  | "fontaine_eau"
+  | "micro_ondes"
+  | "restauration"
+  | "wifi"
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
@@ -17,6 +23,7 @@ export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | 
 export type TransportLine =
   | "1" | "2" | "3" | "3bis" | "4" | "5" | "6" | "7" | "7bis"
   | "8" | "9" | "10" | "11" | "12" | "13" | "14"
+  | "A" | "B" | "C" | "D"
   | "RER A" | "RER B" | "RER C" | "RER D" | "RER E"
 
 export interface TransportationStop {
@@ -31,6 +38,7 @@ export interface Site {
   status: SiteStatus
   longitude: number | null
   latitude: number | null
+  description: string | null
   instructions: string | null
   instructions_en: string | null
   opening_days: DayOfWeek[] | null
@@ -39,6 +47,7 @@ export interface Site {
   wifi_password: string | null
   access: string | null
   access_en: string | null
+  description_en: string | null
   transportation_lines: TransportationStop[] | null
   equipments: Equipment[] | null
   contact_first_name: string | null
@@ -314,7 +323,35 @@ export interface AdminProfile {
 
 // Support ticket types
 export type TicketStatus = "todo" | "in_progress" | "done"
-export type TicketRequestType = "account_billing" | "issue" | "callback" | "other"
+export type TicketRequestType =
+  | "administratif"
+  | "ascenseurs"
+  | "audiovisuel"
+  | "autre"
+  | "badges"
+  | "catering"
+  | "chauffage"
+  | "climatisation"
+  | "code_acces"
+  | "electricite"
+  | "electromenager"
+  | "espaces_verts"
+  | "fenetres"
+  | "finance"
+  | "fontaine_eau"
+  | "immeuble"
+  | "imprimantes"
+  | "internet_reseau"
+  | "interphone"
+  | "isolation_phonique"
+  | "juridique"
+  | "menage"
+  | "nuisances"
+  | "nuisibles"
+  | "plomberie"
+  | "portes"
+  | "ssi"
+  | "videosurveillance_alarme"
 
 export interface SupportTicket {
   id: string
@@ -322,6 +359,7 @@ export interface SupportTicket {
   user_id: string | null
   site_id: string | null
   request_type: TicketRequestType | null
+  request_subtype: string | null
   subject: string | null
   comment: string | null
   status: TicketStatus | null

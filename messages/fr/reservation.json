@@ -43,7 +43,13 @@
     "bookNowPriceMonth": "Réserver maintenant : {price}€ TTC/mois",
     "error": "Une erreur est survenue",
     "postPaymentInfo": "Des informations complémentaires vous seront demandées après le paiement sur votre espace personnel Hopper",
-    "dateRangeTo": "{start} au {end}"
+    "dateRangeTo": "{start} au {end}",
+    "residenceTitle": "OFFRE SUR-MESURE",
+    "residenceTagline": "Votre poste fixe, en illimité",
+    "residenceDesc1": "Profitez d'un poste de travail attitré dans les espaces Hopper Residence, avec accès à tous les espaces Hopper Lounge.",
+    "residenceDesc2": "Votre abonnement inclut deux boissons offertes par jour et un casier personnel.",
+    "residenceDesc3": "Parfait pour s'installer durablement, créer votre routine et vous sentir \"chez vous\" au bureau.",
+    "residenceContact": "Contact"
   },
   "siteDetails": {
     "title": "{siteName} - Détails du site",

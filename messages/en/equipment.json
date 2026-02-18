@@ -6,7 +6,13 @@
     "douches": "Showers",
     "salle_sport": "Gym",
     "terrasse": "Terrace",
-    "rooftop": "Rooftop"
+    "rooftop": "Rooftop",
+    "cafe": "Coffee",
+    "phonebooth": "Phone Booth",
+    "fontaine_eau": "Water Fountain",
+    "micro_ondes": "Microwave",
+    "restauration": "On-site Dining",
+    "wifi": "Wifi"
   },
   "equipmentDetails": {
     "barista": "Barista / Coffee",
@@ -15,6 +21,12 @@
     "douches": "Showers",
     "salle_sport": "Gym",
     "terrasse": "Terrace",
-    "rooftop": "Rooftop"
+    "rooftop": "Rooftop",
+    "cafe": "Coffee",
+    "phonebooth": "Phone Booth",
+    "fontaine_eau": "Water Fountain",
+    "micro_ondes": "Microwave",
+    "restauration": "On-site Dining",
+    "wifi": "Wifi"
   }
 }

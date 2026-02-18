@@ -6,6 +6,7 @@ import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { REQUEST_TYPE_OPTIONS } from "@/lib/constants/ticket-options"
 
 export function TicketsSearch() {
   const router = useRouter()
@@ -78,10 +79,7 @@ export function TicketsSearch() {
   const requestTypeOptions = useMemo(
     () => [
       { value: "all", label: "Tous les types" },
-      { value: "account_billing", label: "Compte / Facturation" },
-      { value: "issue", label: "Problème" },
-      { value: "callback", label: "Rappel" },
-      { value: "other", label: "Autre" },
+      ...REQUEST_TYPE_OPTIONS,
     ],
     []
   )

@@ -36,6 +36,12 @@ const equipmentLabels: Record<Equipment, string> = {
   salle_sport: "Salle de sport",
   terrasse: "Terrasse",
   rooftop: "Rooftop",
+  cafe: "Café",
+  phonebooth: "Phonebooth",
+  fontaine_eau: "Fontaine à eau",
+  micro_ondes: "Micro-ondes",
+  restauration: "Restauration",
+  wifi: "Wifi",
 }
 
 export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoModalProps) {

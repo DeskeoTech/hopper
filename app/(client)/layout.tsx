@@ -160,7 +160,8 @@ export default async function ClientLayout({
       id, name, address, is_nomad,
       opening_hours, opening_days,
       wifi_ssid, wifi_password,
-      equipments, instructions, access, transportation_lines
+      equipments, description, description_en,
+      instructions, instructions_en, access, access_en, transportation_lines
     `)
     .eq("status", "open")
     .order("name")

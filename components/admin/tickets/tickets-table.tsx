@@ -22,6 +22,7 @@ import {
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
 import type { SupportTicketWithDetails, TicketStatus, TicketRequestType } from "@/lib/types/database"
+import { REQUEST_TYPE_LABELS, getSubtypeLabel } from "@/lib/constants/ticket-options"
 
 type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name" | "site_name"
 type SortOrder = "asc" | "desc"
@@ -128,14 +129,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
   }
 
   const getRequestTypeLabel = (type: TicketRequestType | null) => {
-    const typeLabels = {
-      account_billing: "Compte / Facturation",
-      issue: "Problème",
-      callback: "Rappel",
-      other: "Autre",
-    }
-
-    return type ? typeLabels[type] : "-"
+    return type ? (REQUEST_TYPE_LABELS[type] || type) : "-"
   }
 
   const getUserName = (ticket: SupportTicketWithDetails) => {
@@ -234,7 +228,14 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                   {ticket.site_name || "-"}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  {getRequestTypeLabel(ticket.request_type)}
+                  <div>
+                    <span>{getRequestTypeLabel(ticket.request_type)}</span>
+                    {ticket.request_subtype && (
+                      <span className="block text-xs text-muted-foreground">
+                        {getSubtypeLabel(ticket.request_type, ticket.request_subtype) || ticket.request_subtype}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell className="hidden max-w-[250px] xl:table-cell">
                   <span className="line-clamp-1 text-sm font-medium">
