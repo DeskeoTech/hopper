@@ -367,7 +367,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
             {/* Access & Equipment Section */}
             <div
               ref={(el) => { sectionRefs.current["access"] = el }}
-              className="border-b border-border p-4 md:p-6"
+              className="border-b border-border p-4 md:p-6 [&>div:last-child]:border-b-0"
             >
               {/* Opening Hours */}
               {site.opening_hours && (

@@ -241,13 +241,27 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
             <div className="flex items-start justify-between">
               <div>
                 <p className="font-semibold">
-                  {t("bookingDialog.passSummary", { passLabel: passConfig.label, count: selectedDates.length })}
+                  {passType === "month"
+                    ? t("bookingDialog.passSummaryMonth")
+                    : t("bookingDialog.passSummary", { passLabel: passConfig.label, count: selectedDates.length })}
                 </p>
-                <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
+                <p className="text-sm text-muted-foreground">
+                  {passType === "month"
+                    ? t("bookingDialog.passSummaryMonthDate", { startDate: format(selectedDates[0], "dd/MM/yyyy", { locale: dateFnsLocale }) })
+                    : dateRangeLabel}
+                </p>
               </div>
               <div className="text-right">
-                <p className="font-bold">{t("bookingDialog.priceHT", { price: pricing.priceHT.toFixed(0) })}</p>
-                <p className="text-sm text-muted-foreground">{t("bookingDialog.priceTTC", { price: pricing.priceTTC.toFixed(0) })}</p>
+                <p className="font-bold">
+                  {passType === "month"
+                    ? t("bookingDialog.priceHTMonth", { price: pricing.priceHT.toFixed(0) })
+                    : t("bookingDialog.priceHT", { price: pricing.priceHT.toFixed(0) })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {passType === "month"
+                    ? t("bookingDialog.priceTTCMonth", { price: pricing.priceTTC.toFixed(0) })
+                    : t("bookingDialog.priceTTC", { price: pricing.priceTTC.toFixed(0) })}
+                </p>
               </div>
             </div>
           )}
@@ -299,7 +313,11 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
                 {t("bookingDialog.loading")}
               </>
             ) : (
-              <>{canBook ? t("bookingDialog.bookNowPrice", { price: pricing.priceTTC.toFixed(0) }) : t("bookingDialog.bookNow")}</>
+              <>{selectedDates.length > 0
+              ? (passType === "month"
+                ? t("bookingDialog.bookNowPriceMonth", { price: pricing.priceTTC.toFixed(0) })
+                : t("bookingDialog.bookNowPrice", { price: pricing.priceTTC.toFixed(0) }))
+              : t("bookingDialog.bookNow")}</>
             )}
           </Button>
 
