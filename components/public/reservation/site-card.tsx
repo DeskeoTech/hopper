@@ -168,7 +168,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
 
         {/* Photo Indicators - Bottom Center */}
         {photos.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-1">
+          <div className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-1">
             {photos.slice(0, 5).map((_, index) => (
               <button
                 key={index}
