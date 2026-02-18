@@ -68,6 +68,7 @@
     "workspaces": "Workspaces",
     "seats": "{count} seats",
     "meetingRooms": "{count} meeting rooms",
+    "persons": "{count} {count, plural, one {person} other {persons}}",
     "residenceTitle": "HOPPER RESIDENCE",
     "residenceTagline": "Your dedicated desk, unlimited",
     "learnMore": "Learn more"

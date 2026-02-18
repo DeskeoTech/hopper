@@ -2,7 +2,7 @@
 
 import { useState, useCallback, memo } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets, Phone, Microwave, UtensilsCrossed, Wifi } from "lucide-react"
+import { ChevronLeft, ChevronRight, MapPin, Armchair, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets, Phone, Microwave, UtensilsCrossed, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
@@ -162,7 +162,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
 
         {/* Capacity Badge - Top Right */}
         <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full border border-white/20 bg-white px-2 py-0.5 shadow-sm">
-          <Users className="h-3 w-3 text-muted-foreground" />
+          <Armchair className="h-3 w-3 text-muted-foreground" />
           <span className="text-xs font-medium">{site.capacity}</span>
         </div>
 
@@ -199,7 +199,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
         {/* Equipment Tags */}
         {site.equipments && site.equipments.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {site.equipments.slice(0, 3).map((eq) => (
+            {site.equipments.slice(0, 5).map((eq) => (
               <span
                 key={eq}
                 className="flex items-center gap-1 rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium"
@@ -208,9 +208,9 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
                 {tEquip(eq)}
               </span>
             ))}
-            {site.equipments.length > 3 && (
+            {site.equipments.length > 5 && (
               <span className="flex items-center rounded-full bg-muted/60 px-2.5 py-1 text-xs font-medium">
-                {t("siteCard.moreEquipment", { count: site.equipments.length - 3 })}
+                {t("siteCard.moreEquipment", { count: site.equipments.length - 5 })}
               </span>
             )}
           </div>

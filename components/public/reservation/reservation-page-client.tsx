@@ -14,9 +14,18 @@ import { toast } from "sonner"
 import { useTranslations } from "next-intl"
 import type { Site } from "@/lib/types/database"
 
+interface MeetingRoom {
+  id: string
+  name: string
+  capacity: number | null
+  photoUrls: string[]
+}
+
 interface SiteWithPhotos extends Site {
   photos: string[]
   capacity: number
+  meetingRoomsCount?: number
+  meetingRooms?: MeetingRoom[]
 }
 
 interface ReservationPageClientProps {

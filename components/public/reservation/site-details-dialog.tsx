@@ -30,6 +30,7 @@ import {
   Users,
   Dumbbell,
   Building,
+  Armchair,
 } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
@@ -48,10 +49,18 @@ const SiteLocationMap = dynamic(
   }
 )
 
+interface MeetingRoom {
+  id: string
+  name: string
+  capacity: number | null
+  photoUrls: string[]
+}
+
 interface SiteWithPhotos extends Site {
   photos: string[]
   capacity: number
   meetingRoomsCount?: number
+  meetingRooms?: MeetingRoom[]
 }
 
 interface SiteDetailsDialogProps {
@@ -63,6 +72,20 @@ interface SiteDetailsDialogProps {
 
 
 const DAYS_ORDER: DayOfWeek[] = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
+
+// Convert French time format (9h00 - 19h00) to English AM/PM format
+function formatHoursForLocale(hours: string, locale: string): string {
+  if (locale !== "en") return hours
+  const timeRegex = /(\d{1,2})h(\d{2})?/g
+  return hours.replace(timeRegex, (_match, hour, minutes) => {
+    const h = parseInt(hour, 10)
+    const m = minutes || "00"
+    if (h === 0) return `12:${m} AM`
+    if (h === 12) return `12:${m} PM`
+    if (h < 12) return `${h}:${m} AM`
+    return `${h - 12}:${m} PM`
+  })
+}
 
 function getEquipmentIcon(equipment: string): React.ReactNode {
   const eq = equipment.toLowerCase()
@@ -353,7 +376,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                     {(site.opening_days || DAYS_ORDER.slice(0, 5)).map((day) => (
                       <div key={day} className="flex justify-between text-sm">
                         <span>{t(`days.${day}`)}</span>
-                        <span className="text-muted-foreground">{site.opening_hours}</span>
+                        <span className="text-muted-foreground">{formatHoursForLocale(site.opening_hours!, locale)}</span>
                       </div>
                     ))}
                   </div>
@@ -419,17 +442,53 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
               className="p-4 md:p-6"
             >
               <Accordion icon={<Briefcase className="h-5 w-5" />} label={t("siteDetails.workspaces")}>
-                <div className="flex flex-wrap gap-2">
-                  {site.capacity > 0 && (
-                    <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
-                      <Users className="h-4 w-4" />
-                      {t("siteDetails.seats", { count: site.capacity })}
-                    </div>
-                  )}
-                  {(site.meetingRoomsCount ?? 0) > 0 && (
-                    <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
-                      <Building className="h-4 w-4" />
-                      {t("siteDetails.meetingRooms", { count: site.meetingRoomsCount ?? 0 })}
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    {site.capacity > 0 && (
+                      <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
+                        <Armchair className="h-4 w-4" />
+                        {t("siteDetails.seats", { count: site.capacity })}
+                      </div>
+                    )}
+                    {(site.meetingRoomsCount ?? 0) > 0 && (
+                      <div className="flex items-center gap-2 rounded-xl bg-[#1B1918] px-3 py-2 text-[#F1E8DC] text-sm font-medium">
+                        <Building className="h-4 w-4" />
+                        {t("siteDetails.meetingRooms", { count: site.meetingRoomsCount ?? 0 })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Meeting Room Cards */}
+                  {site.meetingRooms && site.meetingRooms.length > 0 && (
+                    <div className="flex gap-3 overflow-x-auto pb-2 -mx-2 px-2">
+                      {site.meetingRooms.map((room) => (
+                        <div key={room.id} className="w-48 flex-shrink-0 overflow-hidden rounded-xl border border-border/50 bg-muted/30">
+                          <div className="relative h-24 bg-muted">
+                            {room.photoUrls.length > 0 ? (
+                              <Image
+                                src={room.photoUrls[0]}
+                                alt={room.name}
+                                fill
+                                className="object-cover"
+                                sizes="192px"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                                <Monitor className="h-8 w-8" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <h4 className="truncate text-sm font-semibold">{room.name}</h4>
+                            {room.capacity && (
+                              <div className="mt-1 flex items-center gap-1 text-muted-foreground">
+                                <Users className="h-3 w-3" />
+                                <span className="text-xs">{t("siteDetails.persons", { count: room.capacity })}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

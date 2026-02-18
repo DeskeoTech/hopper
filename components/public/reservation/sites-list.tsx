@@ -25,7 +25,7 @@ export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails
 
   const filteredSites = useMemo(() => {
     const filtered = filterByCity(sites, selectedCity)
-    return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+    return [...filtered].sort((a, b) => (b.capacity ?? 0) - (a.capacity ?? 0))
   }, [sites, selectedCity])
 
   if (filteredSites.length === 0) {

@@ -26,8 +26,8 @@ async function getSitesWithPhotos() {
     return []
   }
 
-  // Fetch photos and resources in parallel
-  const [{ data: photos }, { data: resources }] = await Promise.all([
+  // Fetch photos, resources and resource photos in parallel
+  const [{ data: photos }, { data: resources }, { data: resourcePhotos }] = await Promise.all([
     supabase
       .from("site_photos")
       .select("site_id, storage_path")
@@ -38,12 +38,16 @@ async function getSitesWithPhotos() {
       .order("created_at"),
     supabase
       .from("resources")
-      .select("site_id, capacity, type")
+      .select("id, site_id, name, capacity, type")
       .in(
         "site_id",
         sites.map((s) => s.id)
       )
       .eq("status", "available"),
+    supabase
+      .from("resource_photos")
+      .select("resource_id, storage_path, display_order")
+      .order("display_order"),
   ])
 
   // Combine sites with photos and capacity
@@ -53,18 +57,32 @@ async function getSitesWithPhotos() {
     const totalCapacity = siteResources
       .filter((r) => r.type !== "meeting_room")
       .reduce((sum, r) => sum + (r.capacity || 0), 0)
-    const meetingRoomsCount = siteResources.filter((r) => r.type === "meeting_room").length
+    const meetingRoomResources = siteResources.filter((r) => r.type === "meeting_room")
 
     // Build full URLs for photos from Supabase storage
     const photoUrls = sitePhotos.map(
       (p) => `${supabaseUrl}/storage/v1/object/public/site-photos/${p.storage_path}`
     )
 
+    // Build meeting rooms with their photos
+    const meetingRooms = meetingRoomResources.map((room) => {
+      const roomPhotos = resourcePhotos
+        ?.filter((rp) => rp.resource_id === room.id)
+        ?.map((rp) => `${supabaseUrl}/storage/v1/object/public/site-photos/${rp.storage_path}`) || []
+      return {
+        id: room.id,
+        name: room.name,
+        capacity: room.capacity,
+        photoUrls: roomPhotos,
+      }
+    })
+
     return {
       ...site,
       photos: photoUrls,
       capacity: totalCapacity,
-      meetingRoomsCount,
+      meetingRoomsCount: meetingRoomResources.length,
+      meetingRooms,
     }
   })
 }
