@@ -8,6 +8,7 @@ export async function createTicket(data: {
   user_id: string | null
   site_id?: string | null
   request_type: TicketRequestType
+  request_subtype?: string | null
   subject?: string | null
   comment: string
   status?: TicketStatus
@@ -20,6 +21,7 @@ export async function createTicket(data: {
       user_id: data.user_id,
       site_id: data.site_id || null,
       request_type: data.request_type,
+      request_subtype: data.request_subtype || null,
       subject: data.subject || null,
       comment: data.comment,
       status: data.status || "todo",
