@@ -240,6 +240,8 @@ export function ContractDetailModal({
             <AssignUserToContract
               contractId={contract.id}
               companyId={companyId}
+              numberOfSeats={contract.number_of_seats}
+              assignedUsersCount={users.length}
               onUserAssigned={refreshUsers}
             />
           )}
