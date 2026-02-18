@@ -37,7 +37,7 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-[#F1E8DC] px-4 md:h-20 md:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-[#f0e8dc] px-4 md:h-20 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav />
         <h1 className="type-h3 text-foreground">{title}</h1>

@@ -28,7 +28,7 @@ export function ClientHeader() {
   const remainingCredits = credits?.remaining ?? 0
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 items-center justify-end bg-background px-4 md:h-20">
+    <header className="sticky top-0 z-40 flex h-14 items-center justify-end bg-[#f0e8dc] px-4 md:h-20">
       {/* Centered Logo - Clickable to home */}
       <Link href="/compte" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
         <Image
