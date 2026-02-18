@@ -36,7 +36,9 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { Button } from "@/components/ui/button"
 import { HopperResidenceModal } from "./hopper-residence-modal"
 import { cn } from "@/lib/utils"
-import type { Site, DayOfWeek } from "@/lib/types/database"
+import { MetroLineBadge } from "@/components/ui/metro-line-badge"
+import { groupTransportByStation } from "@/lib/utils/transportation"
+import type { Site, DayOfWeek, TransportationStop } from "@/lib/types/database"
 
 const SiteLocationMap = dynamic(
   () => import("./site-location-map").then((m) => ({ default: m.SiteLocationMap })),
@@ -59,24 +61,6 @@ interface SiteDetailsDialogProps {
   onBook: (site: SiteWithPhotos) => void
 }
 
-const METRO_COLORS: Record<string, string> = {
-  "1": "#FFCD00",
-  "2": "#003CA6",
-  "3": "#9F9825",
-  "3bis": "#98D4E2",
-  "4": "#CF009E",
-  "5": "#F28E42",
-  "6": "#6ECA97",
-  "7": "#FA9ABA",
-  "7bis": "#6ECA97",
-  "8": "#E19BDF",
-  "9": "#B6BD00",
-  "10": "#C9910D",
-  "11": "#704B1C",
-  "12": "#007852",
-  "13": "#6EC4E8",
-  "14": "#62259D",
-}
 
 const DAYS_ORDER: DayOfWeek[] = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 
@@ -96,11 +80,6 @@ function getEquipmentIcon(equipment: string): React.ReactNode {
   return <Zap className="h-4 w-4" />
 }
 
-function extractMetroLines(access: string | null): string[] {
-  if (!access) return []
-  const matches = access.match(/\b(\d{1,2}(?:bis)?)\b/gi) || []
-  return [...new Set(matches.filter((m) => METRO_COLORS[m.toLowerCase()]))]
-}
 
 // Collapsible Accordion Component
 function Accordion({
@@ -243,8 +222,6 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   const description = (locale === 'en' && site.description_en) ? site.description_en : (site.description || "")
   const truncatedDescription = description.length > 200 ? description.slice(0, 200) + "..." : description
-  const accessText = (locale === 'en' && site.access_en) ? site.access_en : site.access
-  const metroLines = extractMetroLines(site.access)
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
 
   return (
@@ -404,25 +381,20 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
               </Accordion>
 
               {/* Metro Access */}
-              {metroLines.length > 0 && (
+              {site.transportation_lines && site.transportation_lines.length > 0 && (
                 <Accordion icon={<TrainFront className="h-5 w-5" />} label={t("siteDetails.metroAccess")}>
-                  <div className="flex flex-wrap gap-2">
-                    {metroLines.map((line) => (
-                      <div
-                        key={line}
-                        className="flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold"
-                        style={{
-                          backgroundColor: METRO_COLORS[line.toLowerCase()] || "#666",
-                          color: ["1", "9"].includes(line) ? "#000" : "#fff",
-                        }}
-                      >
-                        {line}
+                  <div className="space-y-2">
+                    {groupTransportByStation(site.transportation_lines as TransportationStop[]).map(({ station, lines }) => (
+                      <div key={station} className="flex items-center gap-2">
+                        <div className="flex gap-1">
+                          {lines.map((line) => (
+                            <MetroLineBadge key={line} line={line} size="sm" />
+                          ))}
+                        </div>
+                        <span className="text-sm">{station}</span>
                       </div>
                     ))}
                   </div>
-                  {accessText && (
-                    <p className="mt-2 text-sm text-muted-foreground">{accessText}</p>
-                  )}
                 </Accordion>
               )}
 
