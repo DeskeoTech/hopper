@@ -38,7 +38,13 @@
     "bookNowPrice": "Book now: {price}€ incl. VAT",
     "error": "An error occurred",
     "postPaymentInfo": "Additional information will be requested after payment on your personal Hopper space",
-    "dateRangeTo": "{start} to {end}"
+    "dateRangeTo": "{start} to {end}",
+    "residenceTitle": "CUSTOM OFFER",
+    "residenceTagline": "Your fixed desk, unlimited",
+    "residenceDesc1": "Enjoy a dedicated workstation in Hopper Residence spaces, with access to all Hopper Lounge areas.",
+    "residenceDesc2": "Your subscription includes two complimentary drinks per day and a personal locker.",
+    "residenceDesc3": "Perfect for settling in for the long term, creating your routine and feeling \"at home\" at the office.",
+    "residenceContact": "Contact"
   },
   "siteDetails": {
     "title": "{siteName} - Site details",
