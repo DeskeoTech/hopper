@@ -164,14 +164,20 @@ const MonthGrid = memo(function MonthGrid({
           const isTodayDay = isSameDay(day, today)
           const isUnavailable = isDisabled || isWeekendDay || isHolidayDay
 
-          // Range styling only for week/month passes
-          const isRangeMode = passType !== "day" && selectedDates.length > 1
-          const sortedDates = isRangeMode
+          // Month mode: visually select all business days from start date
+          const isMonthMode = passType === "month" && selectedDates.length === 1
+          const monthStartDate = isMonthMode ? selectedDates[0] : null
+          const isMonthStart = isMonthMode && isSameDay(day, monthStartDate!)
+          const isMonthContinuation = isMonthMode && !isMonthStart && !isUnavailable && !isBefore(day, monthStartDate!)
+
+          // Range styling for week pass
+          const isWeekRange = passType === "week" && selectedDates.length > 1
+          const sortedDates = isWeekRange
             ? [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
             : []
-          const isStart = isRangeMode && sortedDates.length > 0 && isSameDay(day, sortedDates[0])
-          const isEnd = isRangeMode && sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
-          const isMiddle = isRangeMode && isSelected && !isStart && !isEnd
+          const isStart = isWeekRange && sortedDates.length > 0 && isSameDay(day, sortedDates[0])
+          const isEnd = isWeekRange && sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
+          const isMiddle = isWeekRange && isSelected && !isStart && !isEnd
 
           return (
             <button
@@ -180,13 +186,16 @@ const MonthGrid = memo(function MonthGrid({
               disabled={isUnavailable}
               className={cn(
                 "aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-lg",
-                !isUnavailable && !isSelected && "hover:bg-muted cursor-pointer",
-                isUnavailable && "text-muted-foreground/30 cursor-not-allowed",
-                (isWeekendDay || isHolidayDay) && "line-through decoration-muted-foreground/40",
-                isTodayDay && !isSelected && "border-2 border-foreground",
+                !isUnavailable && !isSelected && !isMonthContinuation && "hover:bg-muted cursor-pointer",
+                isUnavailable && !isMonthContinuation && "text-muted-foreground/30 cursor-not-allowed",
+                (isWeekendDay || isHolidayDay) && !isMonthContinuation && "line-through decoration-muted-foreground/40",
+                isTodayDay && !isSelected && !isMonthStart && !isMonthContinuation && "border-2 border-foreground",
                 // Day mode: all selected dates get same style
                 passType === "day" && isSelected && "bg-foreground text-background font-bold",
-                // Range mode: start/end get dark bg, middle get beige
+                // Month mode: start date dark, continuation beige
+                isMonthStart && "bg-foreground text-background font-bold rounded-r-none",
+                isMonthContinuation && "rounded-none bg-[#F1E8DC] text-foreground",
+                // Week range mode: start/end get dark bg, middle get beige
                 (isStart || isEnd) && "bg-foreground text-background font-bold",
                 isStart && "rounded-r-none",
                 isEnd && "rounded-l-none",
@@ -258,9 +267,8 @@ export function ScrollableCalendar({
         const businessDays = getNextBusinessDays(date, 5, holidays)
         onDatesChange(businessDays)
       } else if (passType === "month") {
-        // Auto-select 20 business days from clicked date
-        const businessDays = getNextBusinessDays(date, 20, holidays)
-        onDatesChange(businessDays)
+        // Store only the start date — visual rendering handles the rest
+        onDatesChange([date])
       }
     },
     [passType, holidays, minDate, onDatesChange, onToggleDate]
@@ -273,16 +281,29 @@ export function ScrollableCalendar({
   const handlePassToggle = useCallback(
     (type: "week" | "month") => {
       if (passType === type) {
-        // Deselect: revert to day mode
+        // Désélection du pass → retour en mode day
         onPassTypeChange("day")
-        onDatesChange([])
+        if (selectedDates.length > 0) {
+          const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
+          onDatesChange([sorted[0]])
+        }
       } else {
-        // Select this pass
+        // Changement vers un autre type de pass
         onPassTypeChange(type)
-        onDatesChange([])
+        if (selectedDates.length > 0) {
+          const sorted = [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
+          const startDate = sorted[0]
+          if (type === "month") {
+            // Month: store only start date
+            onDatesChange([startDate])
+          } else {
+            const businessDays = getNextBusinessDays(startDate, 5, holidays)
+            onDatesChange(businessDays)
+          }
+        }
       }
     },
-    [passType, onPassTypeChange, onDatesChange]
+    [passType, selectedDates, holidays, onPassTypeChange, onDatesChange]
   )
 
   // Show loading state until client-side hydration is complete
