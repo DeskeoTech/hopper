@@ -241,7 +241,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   if (!site) return null
 
-  const description = (locale === 'en' && site.instructions_en) ? site.instructions_en : (site.instructions || "")
+  const description = (locale === 'en' && site.description_en) ? site.description_en : (site.description || "")
   const truncatedDescription = description.length > 200 ? description.slice(0, 200) + "..." : description
   const accessText = (locale === 'en' && site.access_en) ? site.access_en : site.access
   const metroLines = extractMetroLines(site.access)
