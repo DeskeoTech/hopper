@@ -50,7 +50,9 @@ async function getSitesWithPhotos() {
   return sites.map((site) => {
     const sitePhotos = photos?.filter((p) => p.site_id === site.id) || []
     const siteResources = resources?.filter((r) => r.site_id === site.id) || []
-    const totalCapacity = siteResources.reduce((sum, r) => sum + (r.capacity || 0), 0)
+    const totalCapacity = siteResources
+      .filter((r) => r.type !== "meeting_room")
+      .reduce((sum, r) => sum + (r.capacity || 0), 0)
     const meetingRoomsCount = siteResources.filter((r) => r.type === "meeting_room").length
 
     // Build full URLs for photos from Supabase storage
