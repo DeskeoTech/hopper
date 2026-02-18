@@ -10,6 +10,12 @@ export type Equipment =
   | "salle_sport"
   | "terrasse"
   | "rooftop"
+  | "cafe"
+  | "phonebooth"
+  | "fontaine_eau"
+  | "micro_ondes"
+  | "restauration"
+  | "wifi"
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
@@ -17,6 +23,7 @@ export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | 
 export type TransportLine =
   | "1" | "2" | "3" | "3bis" | "4" | "5" | "6" | "7" | "7bis"
   | "8" | "9" | "10" | "11" | "12" | "13" | "14"
+  | "A" | "B" | "C" | "D"
   | "RER A" | "RER B" | "RER C" | "RER D" | "RER E"
 
 export interface TransportationStop {
@@ -39,6 +46,7 @@ export interface Site {
   wifi_password: string | null
   access: string | null
   access_en: string | null
+  description_en: string | null
   transportation_lines: TransportationStop[] | null
   equipments: Equipment[] | null
   contact_first_name: string | null
