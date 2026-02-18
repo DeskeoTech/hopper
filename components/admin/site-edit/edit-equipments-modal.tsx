@@ -34,6 +34,12 @@ const EQUIPMENT_OPTIONS: { id: Equipment; label: string }[] = [
   { id: "salle_sport", label: "Salle de sport" },
   { id: "terrasse", label: "Terrasse" },
   { id: "rooftop", label: "Rooftop" },
+  { id: "cafe", label: "Café" },
+  { id: "phonebooth", label: "Phonebooth" },
+  { id: "fontaine_eau", label: "Fontaine à eau" },
+  { id: "micro_ondes", label: "Micro-ondes" },
+  { id: "restauration", label: "Restauration" },
+  { id: "wifi", label: "Wifi" },
 ]
 
 interface EditEquipmentsModalProps {

@@ -2,7 +2,7 @@
 
 import { useState, useCallback, memo } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets } from "lucide-react"
+import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbell, Sun, Building, Droplets, Phone, Microwave, UtensilsCrossed, Wifi } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
@@ -29,6 +29,12 @@ const equipmentIcons: Record<Equipment, React.ReactNode> = {
   salle_sport: <Dumbbell className="h-3 w-3" />,
   terrasse: <Sun className="h-3 w-3" />,
   rooftop: <Building className="h-3 w-3" />,
+  cafe: <Coffee className="h-3 w-3" />,
+  phonebooth: <Phone className="h-3 w-3" />,
+  fontaine_eau: <Droplets className="h-3 w-3" />,
+  micro_ondes: <Microwave className="h-3 w-3" />,
+  restauration: <UtensilsCrossed className="h-3 w-3" />,
+  wifi: <Wifi className="h-3 w-3" />,
 }
 
 function extractDistrict(address: string, locale: string): string {

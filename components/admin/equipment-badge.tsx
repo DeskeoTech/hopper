@@ -1,6 +1,6 @@
 import type React from "react"
 import type { Equipment } from "@/lib/types/database"
-import { Coffee, Bike, Printer, ShowerHead, Dumbbell, TreePine, Building } from "lucide-react"
+import { Coffee, Bike, Printer, ShowerHead, Dumbbell, TreePine, Building, Phone, Droplets, Microwave, UtensilsCrossed, Wifi } from "lucide-react"
 
 const equipmentConfig: Record<Equipment, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   barista: { label: "Barista", icon: Coffee },
@@ -10,6 +10,12 @@ const equipmentConfig: Record<Equipment, { label: string; icon: React.ComponentT
   salle_sport: { label: "Salle de sport", icon: Dumbbell },
   terrasse: { label: "Terrasse", icon: TreePine },
   rooftop: { label: "Rooftop", icon: Building },
+  cafe: { label: "Café", icon: Coffee },
+  phonebooth: { label: "Phonebooth", icon: Phone },
+  fontaine_eau: { label: "Fontaine à eau", icon: Droplets },
+  micro_ondes: { label: "Micro-ondes", icon: Microwave },
+  restauration: { label: "Restauration", icon: UtensilsCrossed },
+  wifi: { label: "Wifi", icon: Wifi },
 }
 
 interface EquipmentBadgeProps {
