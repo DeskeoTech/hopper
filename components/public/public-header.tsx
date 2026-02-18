@@ -15,7 +15,7 @@ const NOOP_CITY_CHANGE = () => {}
 
 export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 border-b border-black/10 bg-background">
+    <header className="sticky top-0 z-50 border-b border-black/10 bg-[#f0e8dc]">
       <div className="flex h-16 md:h-20 items-center justify-between px-4 lg:px-6 xl:px-8">
         {/* Left - Language Switcher + Filter */}
         <div className="flex items-center gap-1">

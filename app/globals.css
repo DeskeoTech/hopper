@@ -6,27 +6,27 @@
      DESIGN SYSTEM - HOPPER
      ========================================
      Palette: 3 couleurs principales + 1 erreur
-     - bg-primary: #F2E7DC (beige - fond principal)
+     - bg-primary: #f1e8dc (beige - fond principal)
      - text-primary: #1B1918 (dark - texte, bordures, CTAs)
      - bg-secondary: #D9D0C4 (beige foncé - cards, panels)
      - error: rouge pastel (validation uniquement)
   ======================================== */
 
   /* Design System Colors */
-  --color-bg-primary: #F2E7DC;
+  --color-bg-primary: #f1e8dc;
   --color-text-primary: #1B1918;
   --color-bg-secondary: #D9D0C4;
   --color-error: oklch(0.7 0.15 25);
 
   /* Mappings shadcn/ui */
-  --background: #F2E7DC;
+  --background: #f1e8dc;
   --foreground: #1B1918;
   --card: #F5F0E8;
   --card-foreground: #1B1918;
-  --popover: #F2E7DC;
+  --popover: #f1e8dc;
   --popover-foreground: #1B1918;
   --primary: #1B1918;
-  --primary-foreground: #F2E7DC;
+  --primary-foreground: #f1e8dc;
   --secondary: transparent;
   --secondary-foreground: #1B1918;
   --muted: #D9D0C4;
@@ -49,9 +49,9 @@
 
   /* Sidebar */
   --sidebar: #1B1918;
-  --sidebar-foreground: #F2E7DC;
+  --sidebar-foreground: #f1e8dc;
   --sidebar-primary: #1B1918;
-  --sidebar-primary-foreground: #F2E7DC;
+  --sidebar-primary-foreground: #f1e8dc;
   --sidebar-accent: #D9D0C4;
   --sidebar-accent-foreground: #1B1918;
   --sidebar-border: #1B1918;
@@ -59,7 +59,7 @@
 
   /* Brand */
   --brand: #1B1918;
-  --brand-foreground: #F2E7DC;
+  --brand-foreground: #f1e8dc;
   --brand-accent: #D9D0C4;
   --brand-accent-foreground: #1B1918;
   --brand-muted: #D9D0C4;
