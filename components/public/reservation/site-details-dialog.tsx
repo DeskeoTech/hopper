@@ -167,6 +167,8 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   // Scroll spy via callback ref — s'attache dès que le DOM est disponible
   const scrollListenerRef = useRef<(() => void) | null>(null)
+  const isScrollingRef = useRef(false)
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const setContentRef = useCallback((node: HTMLDivElement | null) => {
     // Nettoyer l'ancien listener
@@ -180,6 +182,8 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
     if (!node) return
 
     const handleScroll = () => {
+      if (isScrollingRef.current) return
+
       const containerRect = node.getBoundingClientRect()
       const threshold = containerRect.top + 120
 
@@ -209,6 +213,8 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   const scrollToSection = useCallback((sectionId: string) => {
     setActiveTab(sectionId)
+    if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current)
+    isScrollingRef.current = true
     const section = sectionRefs.current[sectionId]
     const content = contentRef.current
     if (section && content) {
@@ -220,6 +226,9 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
         behavior: "smooth",
       })
     }
+    scrollTimeoutRef.current = setTimeout(() => {
+      isScrollingRef.current = false
+    }, 800)
   }, [])
 
   const handleClose = useCallback(() => {
