@@ -38,6 +38,7 @@ export interface Site {
   status: SiteStatus
   longitude: number | null
   latitude: number | null
+  description: string | null
   instructions: string | null
   instructions_en: string | null
   opening_days: DayOfWeek[] | null
