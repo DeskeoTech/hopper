@@ -213,100 +213,130 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
           </button>
         </div>
 
-        {/* Site info */}
-        <div className="px-6 pt-4 pb-4">
-          <h2 className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</h2>
-          <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
-        </div>
+        {activeTab === "coworking" && (
+          <>
+            {/* Site info */}
+            <div className="px-6 pt-4 pb-4">
+              <h2 className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">{site.address}</p>
+            </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-6">
-          <div className="rounded-2xl bg-white p-4 md:p-5">
-            <ScrollableCalendar
-              selectedDates={selectedDates}
-              onDatesChange={setSelectedDates}
-              onToggleDate={handleToggleDate}
-              passType={passType}
-              onPassTypeChange={setPassType}
-              seats={seats}
-              onSeatsChange={setSeats}
-            />
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="bg-white border-t border-border/40 px-6 py-4 space-y-4">
-          {/* Pass summary */}
-          {selectedDates.length > 0 && (
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-semibold">
-                  {t("bookingDialog.passSummary", { passLabel: passConfig.label, count: selectedDates.length })}
-                </p>
-                <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
-              </div>
-              <div className="text-right">
-                <p className="font-bold">{t("bookingDialog.priceHT", { price: pricing.priceHT.toFixed(0) })}</p>
-                <p className="text-sm text-muted-foreground">{t("bookingDialog.priceTTC", { price: pricing.priceTTC.toFixed(0) })}</p>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto px-6">
+              <div className="rounded-2xl bg-white p-4 md:p-5">
+                <ScrollableCalendar
+                  selectedDates={selectedDates}
+                  onDatesChange={setSelectedDates}
+                  onToggleDate={handleToggleDate}
+                  passType={passType}
+                  onPassTypeChange={setPassType}
+                  seats={seats}
+                  onSeatsChange={setSeats}
+                />
               </div>
             </div>
-          )}
 
-          {/* CGV Checkbox */}
-          <label className="flex items-center gap-2 cursor-pointer">
-            <button
-              type="button"
-              onClick={() => setCgvAccepted(prev => !prev)}
-              className={cn(
-                "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                cgvAccepted
-                  ? "border-foreground bg-foreground"
-                  : "border-muted-foreground/40"
+            {/* Footer */}
+            <div className="bg-white border-t border-border/40 px-6 py-4 space-y-4">
+              {/* Pass summary */}
+              {selectedDates.length > 0 && (
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold">
+                      {t("bookingDialog.passSummary", { passLabel: passConfig.label, count: selectedDates.length })}
+                    </p>
+                    <p className="text-sm text-muted-foreground">{dateRangeLabel}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">{t("bookingDialog.priceHT", { price: pricing.priceHT.toFixed(0) })}</p>
+                    <p className="text-sm text-muted-foreground">{t("bookingDialog.priceTTC", { price: pricing.priceTTC.toFixed(0) })}</p>
+                  </div>
+                </div>
               )}
-            >
-              {cgvAccepted && (
-                <svg className="h-3 w-3 text-background" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </button>
-            <span className="text-sm text-muted-foreground">
-              {t("bookingDialog.cgvAccept")}{" "}
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault()
-                  setCgvModalOpen(true)
-                }}
-                className="text-foreground underline hover:no-underline"
+
+              {/* CGV Checkbox */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <button
+                  type="button"
+                  onClick={() => setCgvAccepted(prev => !prev)}
+                  className={cn(
+                    "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                    cgvAccepted
+                      ? "border-foreground bg-foreground"
+                      : "border-muted-foreground/40"
+                  )}
+                >
+                  {cgvAccepted && (
+                    <svg className="h-3 w-3 text-background" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  {t("bookingDialog.cgvAccept")}{" "}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setCgvModalOpen(true)
+                    }}
+                    className="text-foreground underline hover:no-underline"
+                  >
+                    {t("bookingDialog.cgvLink")}
+                  </button>
+                </span>
+              </label>
+
+              {error && <p className="text-sm text-red-500">{error}</p>}
+
+              {/* CTA Button */}
+              <Button
+                className="w-full rounded-full bg-[#1B1918] text-white font-bold text-base tracking-wide hover:bg-[#2D2B2A] h-12"
+                disabled={!canBook || isPending}
+                onClick={handleBook}
               >
-                {t("bookingDialog.cgvLink")}
-              </button>
-            </span>
-          </label>
+                {isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("bookingDialog.loading")}
+                  </>
+                ) : (
+                  <>{canBook ? t("bookingDialog.bookNowPrice", { price: pricing.priceTTC.toFixed(0) }) : t("bookingDialog.bookNow")}</>
+                )}
+              </Button>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+              <p className="text-center text-xs text-muted-foreground">
+                {t("bookingDialog.postPaymentInfo")}
+              </p>
+            </div>
+          </>
+        )}
 
-          {/* CTA Button */}
-          <Button
-            className="w-full rounded-full bg-[#1B1918] text-white font-bold text-base tracking-wide hover:bg-[#2D2B2A] h-12"
-            disabled={!canBook || isPending}
-            onClick={handleBook}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("bookingDialog.loading")}
-              </>
-            ) : (
-              <>{canBook ? t("bookingDialog.bookNowPrice", { price: pricing.priceTTC.toFixed(0) }) : t("bookingDialog.bookNow")}</>
-            )}
-          </Button>
-
-          <p className="text-center text-xs text-muted-foreground">
-            {t("bookingDialog.postPaymentInfo")}
-          </p>
-        </div>
+        {activeTab === "residence" && (
+          <div className="flex-1 flex items-center justify-center overflow-y-auto">
+            <div className="p-6 sm:p-8 w-full max-w-md mx-auto">
+              <h2 className="text-2xl sm:text-3xl font-heading font-bold text-foreground text-center mb-4">
+                {t("bookingDialog.residenceTitle")}
+              </h2>
+              <p className="text-2xl sm:text-3xl font-serif italic text-foreground mb-6 text-center">
+                {t("bookingDialog.residenceTagline")}
+              </p>
+              <p className="text-base text-foreground leading-relaxed mb-8 text-center">
+                {t("bookingDialog.residenceDesc1")}
+                <br /><br />
+                {t("bookingDialog.residenceDesc2")}
+                <br /><br />
+                {t("bookingDialog.residenceDesc3")}
+              </p>
+              <Button
+                className="w-full rounded-full bg-[#1B1918] text-white font-bold text-base tracking-wide hover:bg-[#2D2B2A] h-12"
+                onClick={() => window.open("https://www.deskeo.com/fr/contact/", "_blank")}
+              >
+                {t("bookingDialog.residenceContact")}
+              </Button>
+            </div>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
 
