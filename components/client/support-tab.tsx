@@ -24,17 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useClientLayout } from "./client-layout-provider"
 import { createTicket, getUserTickets } from "@/lib/actions/tickets"
 import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
+import { REQUEST_TYPE_LABELS, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
-
-const REQUEST_TYPE_LABELS: Record<TicketRequestType, string> = {
-  account_billing: "Compte & Facturation",
-  issue: "Signaler un problème",
-  callback: "Demande de rappel",
-  other: "Autre",
-}
 
 const STATUS_CONFIG: Record<TicketStatus, { label: string; icon: typeof Circle; className: string }> = {
   todo: {
@@ -77,6 +72,7 @@ export function SupportTab() {
   const [loadingTickets, setLoadingTickets] = useState(true)
 
   const [requestType, setRequestType] = useState<TicketRequestType | "">("")
+  const [requestSubtype, setRequestSubtype] = useState("")
   const [siteId, setSiteId] = useState(selectedSiteId || "")
   const [subject, setSubject] = useState("")
   const [comment, setComment] = useState("")
@@ -99,6 +95,7 @@ export function SupportTab() {
 
   const handleReset = () => {
     setRequestType("")
+    setRequestSubtype("")
     setSiteId(selectedSiteId || "")
     setSubject("")
     setComment("")
@@ -113,6 +110,11 @@ export function SupportTab() {
 
     if (!requestType) {
       setError("Veuillez sélectionner un type de demande")
+      return
+    }
+    const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType]
+    if (subtypeOptions && subtypeOptions.length > 0 && !requestSubtype) {
+      setError("Veuillez sélectionner un type de demande précis")
       return
     }
     if (!subject.trim()) {
@@ -132,6 +134,7 @@ export function SupportTab() {
       user_id: user?.id || null,
       site_id: siteId || null,
       request_type: requestType as TicketRequestType,
+      request_subtype: requestSubtype || null,
       subject: subject.trim(),
       comment: comment.trim(),
     })
@@ -141,6 +144,7 @@ export function SupportTab() {
     } else {
       setSuccess(true)
       setRequestType("")
+      setRequestSubtype("")
       setSiteId(selectedSiteId || "")
       setSubject("")
       setComment("")
@@ -218,22 +222,35 @@ export function SupportTab() {
             <Label htmlFor="requestType">
               Votre demande concerne <span className="text-destructive">*</span>
             </Label>
-            <Select
+            <SearchableSelect
+              options={REQUEST_TYPE_OPTIONS}
               value={requestType}
-              onValueChange={(value) => setRequestType(value as TicketRequestType)}
-            >
-              <SelectTrigger id="requestType">
-                <SelectValue placeholder="Choisir..." />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(REQUEST_TYPE_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              onValueChange={(value) => {
+                setRequestType(value as TicketRequestType)
+                setRequestSubtype("")
+              }}
+              placeholder="Choisir..."
+              searchPlaceholder="Rechercher..."
+              triggerClassName="w-full"
+            />
           </div>
+
+          {/* Type de demande (sous-catégorie) */}
+          {requestType && REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] && (
+            <div className="space-y-2 overflow-hidden transition-all duration-200">
+              <Label htmlFor="requestSubtype">
+                Type de demande <span className="text-destructive">*</span>
+              </Label>
+              <SearchableSelect
+                options={REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] || []}
+                value={requestSubtype}
+                onValueChange={setRequestSubtype}
+                placeholder="Précisez votre demande..."
+                searchPlaceholder="Rechercher..."
+                triggerClassName="w-full"
+              />
+            </div>
+          )}
 
           {/* Sujet */}
           <div className="space-y-2">
@@ -320,7 +337,7 @@ export function SupportTab() {
           )}
 
           {/* Boutons */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center justify-end gap-3">
             <button
               type="button"
               onClick={handleReset}
@@ -383,7 +400,7 @@ export function SupportTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="text-xs font-medium text-muted-foreground">
-                          {REQUEST_TYPE_LABELS[ticket.request_type || "other"]}
+                          {REQUEST_TYPE_LABELS[ticket.request_type || "autre"]}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(ticket.created_at)}
