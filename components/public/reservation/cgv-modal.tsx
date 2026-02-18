@@ -180,7 +180,7 @@ export function CGVModal({ open, onOpenChange }: CGVModalProps) {
         </ScrollArea>
 
         <div className="px-6 py-4 border-t border-border">
-          <Button onClick={() => onOpenChange(false)} className="w-full">
+          <Button onClick={() => onOpenChange(false)} className="w-full rounded-full">
             Fermer
           </Button>
         </div>

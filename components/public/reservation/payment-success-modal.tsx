@@ -53,7 +53,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
           <div className="space-y-3">
             <Button
               onClick={handleAccessPortal}
-              className="w-full gap-2"
+              className="w-full rounded-full gap-2"
               size="lg"
             >
               {t("accessPortal")}
@@ -63,7 +63,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
             <Button
               variant="ghost"
               onClick={() => onOpenChange(false)}
-              className="w-full"
+              className="w-full rounded-full"
             >
               {t("continueExploring")}
             </Button>
@@ -77,7 +77,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
             <Button
               onClick={handleBuyMeetingRoomCredits}
               variant="outline"
-              className="w-full gap-2"
+              className="w-full rounded-full gap-2"
               size="lg"
             >
               <CreditCard className="h-4 w-4" />

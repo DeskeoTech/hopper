@@ -35,10 +35,10 @@ export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
           suppressHydrationWarning
         >
           <span>{displayLabel}</span>
-          <ChevronDown className="h-3.5 w-3.5 opacity-60" />
+          <ChevronDown className={cn("h-3.5 w-3.5 opacity-60 transition-transform", open && "rotate-180")} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto min-w-0 p-1.5" align="start">
+      <PopoverContent className="w-auto min-w-0 border-0 p-1.5" align="start">
         <div className="space-y-0.5">
           {cities.map((city) => (
             <button
