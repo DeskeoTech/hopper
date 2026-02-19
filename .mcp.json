@@ -22,6 +22,10 @@
       "env": {
         "AIRTABLE_API_KEY": "${AIRTABLE_API_KEY}"
       }
+    },
+    "n8n": {
+      "type": "http",
+      "url": "https://n8n.srv901924.hstgr.cloud/mcp-server/http"
     }
   }
 }
