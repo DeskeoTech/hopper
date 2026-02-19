@@ -39,23 +39,16 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     query = query.eq("main_site_id", site)
   }
 
-  const { data: companies, error } = await query
+  // Fetch companies, user counts, and sites in parallel
+  const [companiesResult, userCountsResult, sitesResult] = await Promise.all([
+    query,
+    supabase.from("users").select("company_id").not("company_id", "is", null),
+    supabase.from("sites").select("id, name").order("name"),
+  ])
 
-  // Fetch user counts per company
-  const { data: userCounts } = await supabase
-    .from("users")
-    .select("company_id")
-
-  // Fetch all sites for the filter
-  const { data: sites } = await supabase.from("sites").select("id, name").order("name")
-
-  // Build user count map
-  const userCountMap: Record<string, number> = {}
-  userCounts?.forEach((user) => {
-    if (user.company_id) {
-      userCountMap[user.company_id] = (userCountMap[user.company_id] || 0) + 1
-    }
-  })
+  const { data: companies, error } = companiesResult
+  const { data: userCounts } = userCountsResult
+  const { data: sites } = sitesResult
 
   if (error) {
     return (
@@ -64,6 +57,12 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       </div>
     )
   }
+
+  // Build user count map
+  const userCountMap: Record<string, number> = {}
+  userCounts?.forEach((user) => {
+    userCountMap[user.company_id] = (userCountMap[user.company_id] || 0) + 1
+  })
 
   // Transform companies with subscription status and apply status filter client-side
   let transformedCompanies = (companies || []).map((company) => ({
@@ -91,7 +90,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
             <p className="mt-1 text-muted-foreground">Gérez vos entreprises clientes et leurs abonnements</p>
           </div>
         </div>
-        <CreateCompanyModal />
+        <CreateCompanyModal sites={sites || []} />
       </div>
 
       {/* Filters */}

@@ -5,6 +5,8 @@ import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { CompanyType, SubscriptionPeriod } from "@/lib/types/database"
 
+const HOPPER_RESIDENCE_PLAN_ID = "62ccff00-36a8-45b2-85bc-82c32d26dc62"
+
 export async function updateCompanyHeader(
   companyId: string,
   data: { name: string | null; company_type: CompanyType | null }
@@ -140,7 +142,15 @@ export async function createCompany(data: {
   contact_email: string | null
   phone: string | null
   address: string | null
+  main_site_id?: string | null
+  numberOfSeats?: number | null
+  initialCredits?: number | null
 }) {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { error: "Non authentifié" }
+  }
+
   const supabase = await createClient()
 
   const { data: company, error } = await supabase
@@ -151,6 +161,7 @@ export async function createCompany(data: {
       contact_email: data.contact_email || null,
       phone: data.phone || null,
       address: data.address || null,
+      main_site_id: data.main_site_id || null,
     })
     .select("id")
     .single()
@@ -159,8 +170,66 @@ export async function createCompany(data: {
     return { error: error.message }
   }
 
+  const companyId = company.id
+
+  // Créer le contrat "Hopper Résidence" si des postes sont définis
+  if (data.numberOfSeats && data.numberOfSeats > 0) {
+    const { error: contractError } = await supabase.from("contracts").insert({
+      company_id: companyId,
+      plan_id: HOPPER_RESIDENCE_PLAN_ID,
+      Number_of_seats: data.numberOfSeats,
+      start_date: new Date().toISOString().split("T")[0],
+      status: "active",
+    })
+
+    if (contractError) {
+      return { error: contractError.message }
+    }
+  }
+
+  // Attribuer les crédits initiaux si définis
+  if (data.initialCredits && data.initialCredits > 0) {
+    const adminClient = createAdminClient()
+    const reason = "Attribution initiale"
+
+    const { data: currentBalance } = await adminClient.rpc("get_company_valid_credits", {
+      p_company_id: companyId,
+    })
+    const balanceBefore = currentBalance ?? 0
+
+    const { data: creditRecord, error: creditError } = await adminClient
+      .from("credits")
+      .insert({
+        company_id: companyId,
+        allocated_credits: data.initialCredits,
+        remaining_balance: data.initialCredits,
+        expiration: null,
+        reason,
+      })
+      .select("id")
+      .single()
+
+    if (creditError) {
+      return { error: creditError.message }
+    }
+
+    const { error: txError } = await adminClient.from("credit_transactions").insert({
+      credit_id: creditRecord.id,
+      company_id: companyId,
+      transaction_type: "allocation",
+      amount: data.initialCredits,
+      balance_before: balanceBefore,
+      balance_after: balanceBefore + data.initialCredits,
+      reason,
+    })
+
+    if (txError) {
+      return { error: txError.message }
+    }
+  }
+
   revalidatePath("/admin/clients")
-  return { success: true, companyId: company.id }
+  return { success: true, companyId }
 }
 
 export async function deleteCompany(

@@ -1,6 +1,8 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -30,10 +32,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createCompany } from "@/lib/actions/companies"
 import type { CompanyType } from "@/lib/types/database"
 
-export function CreateCompanyModal() {
+interface CreateCompanyModalProps {
+  sites: { id: string; name: string | null }[]
+}
+
+export function CreateCompanyModal({ sites }: CreateCompanyModalProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -42,11 +50,27 @@ export function CreateCompanyModal() {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [address, setAddress] = useState("")
+  const [mainSiteId, setMainSiteId] = useState("")
+  const [numberOfSeats, setNumberOfSeats] = useState("")
+  const [initialCredits, setInitialCredits] = useState("")
+
+  const siteOptions = sites.map((s) => ({ value: s.id, label: s.name || "Sans nom" }))
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!name.trim()) return
     setConfirmOpen(true)
+  }
+
+  const resetForm = () => {
+    setName("")
+    setCompanyType("none")
+    setEmail("")
+    setPhone("")
+    setAddress("")
+    setMainSiteId("")
+    setNumberOfSeats("")
+    setInitialCredits("")
   }
 
   const handleConfirm = async () => {
@@ -57,17 +81,18 @@ export function CreateCompanyModal() {
       contact_email: email || null,
       phone: phone || null,
       address: address || null,
+      main_site_id: mainSiteId || null,
+      numberOfSeats: numberOfSeats ? parseInt(numberOfSeats, 10) : null,
+      initialCredits: initialCredits ? parseInt(initialCredits, 10) : null,
     })
     setLoading(false)
-    if (result.success) {
-      // Reset form
-      setName("")
-      setCompanyType("none")
-      setEmail("")
-      setPhone("")
-      setAddress("")
+    if (result.success && result.companyId) {
+      resetForm()
       setOpen(false)
       setConfirmOpen(false)
+      router.push(`/admin/clients/${result.companyId}`)
+    } else if (result.error) {
+      toast.error(result.error)
     }
   }
 
@@ -140,6 +165,41 @@ export function CreateCompanyModal() {
                 placeholder="Adresse de l'entreprise"
               />
             </div>
+            <div className="space-y-2">
+              <Label>Site principal</Label>
+              <SearchableSelect
+                options={siteOptions}
+                value={mainSiteId}
+                onValueChange={setMainSiteId}
+                placeholder="Sélectionner un site"
+                searchPlaceholder="Rechercher un site..."
+                emptyMessage="Aucun site trouvé"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="seats">Nombre de postes</Label>
+                <Input
+                  id="seats"
+                  type="number"
+                  min="0"
+                  value={numberOfSeats}
+                  onChange={(e) => setNumberOfSeats(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="credits">Crédits initiaux</Label>
+                <Input
+                  id="credits"
+                  type="number"
+                  min="0"
+                  value={initialCredits}
+                  onChange={(e) => setInitialCredits(e.target.value)}
+                  placeholder="0"
+                />
+              </div>
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                 Annuler
@@ -158,6 +218,12 @@ export function CreateCompanyModal() {
             <AlertDialogTitle>Confirmer la création</AlertDialogTitle>
             <AlertDialogDescription>
               Voulez-vous vraiment créer l'entreprise "{name}" ?
+              {numberOfSeats && parseInt(numberOfSeats) > 0 && (
+                <> Un contrat Hopper Résidence avec {numberOfSeats} poste{parseInt(numberOfSeats) > 1 ? "s" : ""} sera automatiquement créé.</>
+              )}
+              {initialCredits && parseInt(initialCredits) > 0 && (
+                <> {initialCredits} crédit{parseInt(initialCredits) > 1 ? "s" : ""} seront attribués.</>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
