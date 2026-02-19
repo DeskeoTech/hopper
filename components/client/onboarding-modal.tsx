@@ -49,8 +49,18 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
   const [isComplete, setIsComplete] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Check if company info was already filled by admin
+  const companyAlreadySetup = !!(
+    existingCompany?.name &&
+    existingCompany?.address &&
+    existingCompany?.contact_email &&
+    existingCompany?.company_type
+  )
+
   // Form state
-  const [companyType, setCompanyType] = useState<CompanyType | null>(null)
+  const [companyType, setCompanyType] = useState<CompanyType | null>(
+    (existingCompany?.company_type as CompanyType) || null
+  )
   const [kbisFile, setKbisFile] = useState<File | null>(null)
   const [companyInfo, setCompanyInfo] = useState({
     name: existingCompany?.name || "",
@@ -61,7 +71,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
   const [cguAccepted, setCguAccepted] = useState(false)
 
   const needsKbis = companyType === "multi_employee"
-  const actualSteps = needsKbis ? 4 : 3 // Skip KBIS step for self_employed
+  const actualSteps = companyAlreadySetup ? 2 : needsKbis ? 4 : 3
 
   // Trigger confetti when complete
   useEffect(() => {
@@ -114,8 +124,10 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
     setDirection("forward")
     setError(null)
 
-    // Skip KBIS step if self_employed
-    if (step === 1 && skipKbis) {
+    // Skip company steps if already set up by admin
+    if (step === 0 && companyAlreadySetup) {
+      setStep(3) // Jump directly to CGU step
+    } else if (step === 1 && skipKbis) {
       setStep(3) // Jump to info step
     } else if (step === 1 && !needsKbis) {
       setStep(3) // Jump to info step
@@ -123,14 +135,16 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
       setStep((s) => s + 1)
     }
     setIsTransitioning(false)
-  }, [step, needsKbis])
+  }, [step, needsKbis, companyAlreadySetup])
 
   const goBack = () => {
     setDirection("back")
     setError(null)
 
-    // Skip KBIS step if self_employed when going back
-    if (step === 3 && !needsKbis) {
+    // Skip company steps if already set up by admin
+    if (step === 3 && companyAlreadySetup) {
+      setStep(0) // Jump back to welcome
+    } else if (step === 3 && !needsKbis) {
       setStep(1) // Jump back to type step
     } else {
       setStep((s) => s - 1)
@@ -210,8 +224,8 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
   const handleSubmit = async () => {
     if (!companyType) return
 
-    // Validate email before submitting
-    if (!validateEmail(companyInfo.contact_email)) {
+    // Validate email before submitting (skip if company already set up by admin)
+    if (!companyAlreadySetup && !validateEmail(companyInfo.contact_email)) {
       return
     }
 
@@ -269,12 +283,13 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
   }
 
   const isEmailValid = EMAIL_REGEX.test(companyInfo.contact_email)
-  const isInfoValid =
-    companyInfo.name.trim() &&
-    companyInfo.address.trim() &&
-    companyInfo.contact_email.trim() &&
-    isEmailValid &&
-    cguAccepted
+  const isInfoValid = companyAlreadySetup
+    ? cguAccepted
+    : companyInfo.name.trim() &&
+      companyInfo.address.trim() &&
+      companyInfo.contact_email.trim() &&
+      isEmailValid &&
+      cguAccepted
 
   const animationClass =
     direction === "forward"
@@ -368,7 +383,9 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                 </div>
 
                 <p className="text-sm text-muted-foreground">
-                  Pour commencer, nous avons besoin de quelques informations sur votre entreprise.
+                  {companyAlreadySetup
+                    ? "Avant de continuer, veuillez accepter nos conditions d'utilisation."
+                    : "Pour commencer, nous avons besoin de quelques informations sur votre entreprise."}
                 </p>
 
                 <Button onClick={() => goNext()} className="w-full" size="lg">
@@ -558,67 +575,71 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
               </div>
             )}
 
-            {/* Step 3: Company Info */}
+            {/* Step 3: Company Info + CGU (or CGU only if company already set up) */}
             {step === 3 && (
               <div className={cn("space-y-6", animationClass)}>
                 <div className="space-y-2 text-center">
                   <h2 className="font-header text-xl font-bold uppercase tracking-tight">
-                    Complétez votre profil
+                    {companyAlreadySetup ? "Conditions d'utilisation" : "Complétez votre profil"}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Plus que quelques informations et c&apos;est terminé !
+                    {companyAlreadySetup
+                      ? "Veuillez accepter les conditions pour accéder à votre espace."
+                      : "Plus que quelques informations et c'est terminé !"}
                   </p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="companyName">
-                      Nom de l&apos;entreprise <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="companyName"
-                      value={companyInfo.name}
-                      onChange={(e) =>
-                        setCompanyInfo((prev) => ({ ...prev, name: e.target.value }))
-                      }
-                      placeholder="Nom de votre entreprise"
-                    />
-                  </div>
+                {!companyAlreadySetup && (
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="companyName">
+                        Nom de l&apos;entreprise <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="companyName"
+                        value={companyInfo.name}
+                        onChange={(e) =>
+                          setCompanyInfo((prev) => ({ ...prev, name: e.target.value }))
+                        }
+                        placeholder="Nom de votre entreprise"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="address">
-                      Adresse <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="address"
-                      value={companyInfo.address}
-                      onChange={(e) =>
-                        setCompanyInfo((prev) => ({ ...prev, address: e.target.value }))
-                      }
-                      placeholder="Adresse de l'entreprise"
-                    />
-                  </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address">
+                        Adresse <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="address"
+                        value={companyInfo.address}
+                        onChange={(e) =>
+                          setCompanyInfo((prev) => ({ ...prev, address: e.target.value }))
+                        }
+                        placeholder="Adresse de l'entreprise"
+                      />
+                    </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_email">
-                      Email de contact <span className="text-destructive">*</span>
-                    </Label>
-                    <Input
-                      id="contact_email"
-                      type="email"
-                      value={companyInfo.contact_email}
-                      onChange={handleEmailChange}
-                      onBlur={handleEmailBlur}
-                      placeholder="contact@entreprise.com"
-                      className={cn(emailError && "border-destructive focus-visible:ring-destructive")}
-                    />
-                    {emailError && (
-                      <p className="text-sm text-destructive animate-in fade-in-0 slide-in-from-top-1 duration-200">
-                        {emailError}
-                      </p>
-                    )}
+                    <div className="space-y-2">
+                      <Label htmlFor="contact_email">
+                        Email de contact <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id="contact_email"
+                        type="email"
+                        value={companyInfo.contact_email}
+                        onChange={handleEmailChange}
+                        onBlur={handleEmailBlur}
+                        placeholder="contact@entreprise.com"
+                        className={cn(emailError && "border-destructive focus-visible:ring-destructive")}
+                      />
+                      {emailError && (
+                        <p className="text-sm text-destructive animate-in fade-in-0 slide-in-from-top-1 duration-200">
+                          {emailError}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* CGU Acceptance */}
                 <div className="flex items-start gap-3">
