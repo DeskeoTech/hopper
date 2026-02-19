@@ -40,7 +40,7 @@
     "loading": "Chargement...",
     "bookNow": "Réserver maintenant",
     "bookNowPrice": "Réserver maintenant : {price}€ TTC",
-    "bookNowPriceMonth": "Réserver maintenant : {price}€ TTC/mois",
+    "bookNowPriceMonth": "S'abonner maintenant : {price}€ TTC/mois",
     "error": "Une erreur est survenue",
     "postPaymentInfo": "Des informations complémentaires vous seront demandées après le paiement sur votre espace personnel Hopper",
     "dateRangeTo": "{start} au {end}",

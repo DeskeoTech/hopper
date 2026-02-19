@@ -40,7 +40,7 @@
     "loading": "Loading...",
     "bookNow": "Book now",
     "bookNowPrice": "Book now: {price}€ incl. VAT",
-    "bookNowPriceMonth": "Book now: {price}€ incl. VAT/mo",
+    "bookNowPriceMonth": "Subscribe now: {price}€ incl. VAT/mo",
     "error": "An error occurred",
     "postPaymentInfo": "Additional information will be requested after payment on your personal Hopper space",
     "dateRangeTo": "{start} to {end}",
