@@ -1,14 +1,16 @@
 {
   "metadata": {
-    "title": "Hopper Coworking | Book your coworking space",
-    "description": "Welcome to the HOPPER universe, an exclusive coworking offer that reinvents the way you work. From €30/day, no commitment."
+    "title": "Daily coworking space: 100% flexible",
+    "description": "Rent a nomad desk in our coworking spaces and enjoy a flexible offer in 2026. Book your workspace by the day, week or month."
   },
   "siteCard": {
+    "h2Title": "Coworking space {district} - {siteName}",
     "priceFrom": "From {price}€/day",
     "book": "Book",
     "moreEquipment": "+{count} more"
   },
   "sitesList": {
+    "h1Title": "Daily coworking spaces",
     "noResults": "No spaces available in this area."
   },
   "toast": {

@@ -1,14 +1,16 @@
 {
   "metadata": {
-    "title": "Hopper Coworking | Réservez votre espace de coworking",
-    "description": "Bienvenue dans l'univers HOPPER, une offre exclusive de coworking qui réinvente votre manière de travailler. Dès 30€/jour, sans engagement."
+    "title": "Espace de coworking à la journée : 100 % flexible",
+    "description": "Louez un poste nomade dans nos espaces de coworking et profitez d'une offre flexible en 2026. Réservez votre poste de travail à la journée, à la semaine ou au mois."
   },
   "siteCard": {
+    "h2Title": "Espace de coworking {district} - {siteName}",
     "priceFrom": "Dès {price}€/jour",
     "book": "Réserver",
     "moreEquipment": "+{count} autres"
   },
   "sitesList": {
+    "h1Title": "Espace de coworking à la journée",
     "noResults": "Aucun espace disponible dans cette zone."
   },
   "toast": {

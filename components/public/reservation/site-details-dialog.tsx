@@ -38,6 +38,7 @@ import { HopperResidenceModal } from "./hopper-residence-modal"
 import { cn } from "@/lib/utils"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import { groupTransportByStation } from "@/lib/utils/transportation"
+import { extractDistrict } from "@/lib/utils/extract-district"
 import type { Site, DayOfWeek, TransportationStop } from "@/lib/types/database"
 
 const SiteLocationMap = dynamic(
@@ -220,6 +221,10 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   if (!site) return null
 
+  const district = extractDistrict(site.address, locale)
+  const siteAltPrefix = locale === "en"
+    ? `Coworking space ${district} - ${site.name}`
+    : `Espace de coworking ${district} - ${site.name}`
   const description = (locale === 'en' && site.description_en) ? site.description_en : (site.description || "")
   const truncatedDescription = description.length > 200 ? description.slice(0, 200) + "..." : description
   const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(site.address)}`
@@ -274,7 +279,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                   >
                     <Image
                       src={photos[0]}
-                      alt={`${site.name} - Photo principale`}
+                      alt={locale === "en" ? `${siteAltPrefix} - Main photo` : `${siteAltPrefix} - Photo principale`}
                       fill
                       className="object-cover"
                     />
@@ -304,7 +309,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                           }}
                           className="relative flex-1 rounded-2xl overflow-hidden bg-muted"
                         >
-                          <Image src={photo} alt="" fill className="object-cover" />
+                          <Image src={photo} alt={`${siteAltPrefix} - Photo ${index + 2}`} fill className="object-cover" />
                           {index === 2 && photos.length > 4 && (
                             <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-lg font-bold">
                               +{photos.length - 4}
@@ -490,7 +495,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
           <div className="relative h-[70vh] w-[80vw]">
             <Image
               src={photos[currentPhotoIndex]}
-              alt={`Photo ${currentPhotoIndex + 1}`}
+              alt={`${siteAltPrefix} - Photo ${currentPhotoIndex + 1}`}
               fill
               className="object-contain"
             />
@@ -513,7 +518,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                     currentPhotoIndex === index && "ring-2 ring-white"
                   )}
                 >
-                  <Image src={photo} alt="" fill className="object-cover" />
+                  <Image src={photo} alt={`${siteAltPrefix} - Photo ${index + 1}`} fill className="object-cover" />
                 </button>
               ))}
             </div>

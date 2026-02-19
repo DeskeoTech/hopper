@@ -37,17 +37,20 @@ export function SitesList({ sites, hoveredSiteId, onHover, onBook, onViewDetails
   }
 
   return (
-    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-      {filteredSites.map((site) => (
-        <SiteCard
-          key={site.id}
-          site={site}
-          isHovered={hoveredSiteId === site.id}
-          onHover={onHover}
-          onBook={onBook}
-          onViewDetails={onViewDetails}
-        />
-      ))}
-    </div>
+    <>
+      <h1 className="sr-only">{t("sitesList.h1Title")}</h1>
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+        {filteredSites.map((site) => (
+          <SiteCard
+            key={site.id}
+            site={site}
+            isHovered={hoveredSiteId === site.id}
+            onHover={onHover}
+            onBook={onBook}
+            onViewDetails={onViewDetails}
+          />
+        ))}
+      </div>
+    </>
   )
 }

@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, MapPin, Users, Coffee, Bike, Printer, Dumbbe
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
+import { extractDistrict } from "@/lib/utils/extract-district"
 import type { Site, Equipment } from "@/lib/types/database"
 
 interface SiteWithPhotos extends Site {
@@ -35,38 +36,6 @@ const equipmentIcons: Record<Equipment, React.ReactNode> = {
   micro_ondes: <Microwave className="h-3 w-3" />,
   restauration: <UtensilsCrossed className="h-3 w-3" />,
   wifi: <Wifi className="h-3 w-3" />,
-}
-
-function extractDistrict(address: string, locale: string): string {
-  const parisMatch = address.match(/75(\d{3})/)
-  if (parisMatch) {
-    const arr = parseInt(parisMatch[1], 10)
-    if (arr === 1) return locale === "en" ? "Paris 1st" : "Paris 1er"
-    return locale === "en" ? `Paris ${arr}th` : `Paris ${arr}ème`
-  }
-
-  const lyonMatch = address.match(/69(\d{3})/)
-  if (lyonMatch) {
-    const arr = parseInt(lyonMatch[1], 10)
-    if (arr <= 9) {
-      if (arr === 1) return locale === "en" ? "Lyon 1st" : "Lyon 1er"
-      return locale === "en" ? `Lyon ${arr}th` : `Lyon ${arr}ème`
-    }
-  }
-
-  const addressLower = address.toLowerCase()
-  if (addressLower.includes("neuilly")) return "Neuilly-sur-Seine"
-  if (addressLower.includes("boulogne")) return "Boulogne-Billancourt"
-  if (addressLower.includes("levallois")) return "Levallois-Perret"
-  if (addressLower.includes("issy")) return "Issy-les-Moulineaux"
-
-  const parts = address.split(",")
-  if (parts.length >= 2) {
-    const cityPart = parts[parts.length - 1].trim()
-    return cityPart.replace(/\d{5}\s*/, "").trim() || "Île-de-France"
-  }
-
-  return "Île-de-France"
 }
 
 export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBook, onViewDetails }: SiteCardProps) {
@@ -127,7 +96,7 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
             <div key={index} className="relative h-full w-full flex-shrink-0">
               <Image
                 src={photo}
-                alt={`${site.name} - Photo ${index + 1}`}
+                alt={t("siteCard.h2Title", { district, siteName: site.name }) + ` - Photo ${index + 1}`}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
@@ -191,7 +160,10 @@ export const SiteCard = memo(function SiteCard({ site, isHovered, onHover, onBoo
       {/* Content */}
       <div className="flex flex-1 flex-col p-5">
         {/* Title */}
-        <h3 className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</h3>
+        <h2 className="sr-only">
+          {t("siteCard.h2Title", { district, siteName: site.name })}
+        </h2>
+        <span className="font-heading text-xl font-bold uppercase tracking-tight">{site.name}</span>
 
         {/* Price */}
         <p className="mt-0.5 text-sm text-muted-foreground">{t("siteCard.priceFrom", { price: 30 })}</p>
