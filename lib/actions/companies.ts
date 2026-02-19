@@ -162,6 +162,7 @@ export async function createCompany(data: {
       phone: data.phone || null,
       address: data.address || null,
       main_site_id: data.main_site_id || null,
+      onboarding_done: true,
     })
     .select("id")
     .single()
