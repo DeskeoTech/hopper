@@ -19,11 +19,7 @@ export function SiteSwitcher({ sites, currentSiteId }: SiteSwitcherProps) {
 
   const handleChange = (value: string) => {
     const params = new URLSearchParams(searchParams.toString())
-    if (value === "all") {
-      params.delete("site")
-    } else {
-      params.set("site", value)
-    }
+    params.set("site", value)
     const query = params.toString()
     router.push(`/admin${query ? `?${query}` : ""}`)
   }
