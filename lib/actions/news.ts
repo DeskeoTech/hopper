@@ -127,6 +127,86 @@ export async function createNewsPost(formData: FormData) {
   return { success: true }
 }
 
+export async function updateNewsPost(postId: string, formData: FormData) {
+  if (!postId) {
+    return { error: "ID de l'actualité requis" }
+  }
+
+  const content = formData.get("content") as string
+  const siteId = formData.get("site_id") as string | null
+  const removeImage = formData.get("remove_image") === "true"
+
+  if (!content?.trim()) {
+    return { error: "Le contenu est requis" }
+  }
+
+  const supabase = createAdminClient()
+
+  // Fetch current post to get existing image path
+  const { data: currentPost } = await supabase
+    .from("news_posts")
+    .select("image_storage_path")
+    .eq("id", postId)
+    .single()
+
+  let imageStoragePath: string | null | undefined = undefined
+
+  // Handle new image upload
+  const imageFile = formData.get("image") as File | null
+  if (imageFile && imageFile.size > 0) {
+    const ext = imageFile.name.split(".").pop()
+    const fileName = `${crypto.randomUUID()}.${ext}`
+
+    await supabase.storage.createBucket("news-photos", { public: true })
+
+    const { error: uploadError } = await supabase.storage
+      .from("news-photos")
+      .upload(fileName, imageFile)
+
+    if (uploadError) {
+      return { error: uploadError.message }
+    }
+
+    // Remove old image if it existed
+    if (currentPost?.image_storage_path) {
+      await supabase.storage.from("news-photos").remove([currentPost.image_storage_path])
+    }
+
+    imageStoragePath = fileName
+  } else if (removeImage && currentPost?.image_storage_path) {
+    // Remove existing image without replacing
+    await supabase.storage.from("news-photos").remove([currentPost.image_storage_path])
+    imageStoragePath = null
+  }
+
+  const postTitle = content.trim().slice(0, 80)
+  const excerpt = content.trim().length > 150 ? content.trim().slice(0, 150) + "..." : null
+
+  const updateData: Record<string, unknown> = {
+    title: postTitle,
+    content: content.trim(),
+    excerpt,
+    site_id: siteId || null,
+  }
+
+  if (imageStoragePath !== undefined) {
+    updateData.image_storage_path = imageStoragePath
+  }
+
+  const { error } = await supabase
+    .from("news_posts")
+    .update(updateData)
+    .eq("id", postId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/actualites")
+  return { success: true }
+}
+
 export async function deleteNewsPost(postId: string) {
   if (!postId) {
     return { error: "ID de l'actualité requis" }
