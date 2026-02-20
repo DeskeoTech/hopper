@@ -2,7 +2,7 @@
 
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MapPin, Newspaper, Pin, Trash2 } from "lucide-react"
+import { MapPin, Newspaper, Pencil, Pin, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
@@ -18,10 +18,11 @@ function formatRelativeDate(dateStr: string): string {
 interface NewsCardProps {
   post: NewsPostWithSite
   variant?: "compact" | "full"
+  onEdit?: (postId: string) => void
   onDelete?: (postId: string) => void
 }
 
-export function NewsCard({ post, variant = "compact", onDelete }: NewsCardProps) {
+export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCardProps) {
   const formattedDate = post.published_at ? formatRelativeDate(post.published_at) : null
 
   if (variant === "compact") {
@@ -67,15 +68,29 @@ export function NewsCard({ post, variant = "compact", onDelete }: NewsCardProps)
             </div>
           </div>
         </div>
-        {onDelete && (
-          <button
-            type="button"
-            onClick={() => onDelete(post.id)}
-            className="absolute bottom-3 right-3 rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
-            title="Supprimer l'actualité"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+        {(onEdit || onDelete) && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-1">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={() => onEdit(post.id)}
+                className="rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-primary/10 hover:text-primary"
+                title="Modifier l'actualité"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                type="button"
+                onClick={() => onDelete(post.id)}
+                className="rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
+                title="Supprimer l'actualité"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         )}
       </article>
     )

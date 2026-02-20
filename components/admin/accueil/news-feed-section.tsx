@@ -5,6 +5,7 @@ import { ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import { NewsCard } from "@/components/client/news-card"
 import { deleteNewsPost } from "@/lib/actions/news"
+import { EditNewsPostDialog } from "@/components/admin/accueil/edit-news-post-dialog"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,15 +22,19 @@ const POSTS_PER_PAGE = 3
 
 interface NewsFeedSectionProps {
   posts: NewsPostWithSite[]
+  sites: Array<{ id: string; name: string | null }>
 }
 
-export function NewsFeedSection({ posts }: NewsFeedSectionProps) {
+export function NewsFeedSection({ posts, sites }: NewsFeedSectionProps) {
   const [visibleCount, setVisibleCount] = useState(POSTS_PER_PAGE)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
 
   const visiblePosts = posts.slice(0, visibleCount)
   const hasMore = visibleCount < posts.length
+
+  const editingPost = editingId ? posts.find((p) => p.id === editingId) ?? null : null
 
   async function handleConfirmDelete() {
     if (!deletingId) return
@@ -64,6 +69,7 @@ export function NewsFeedSection({ posts }: NewsFeedSectionProps) {
               key={post.id}
               post={post}
               variant="compact"
+              onEdit={(id) => setEditingId(id)}
               onDelete={(id) => setDeletingId(id)}
             />
           ))}
@@ -81,6 +87,15 @@ export function NewsFeedSection({ posts }: NewsFeedSectionProps) {
         )}
       </div>
 
+      {/* Edit dialog */}
+      <EditNewsPostDialog
+        post={editingPost}
+        sites={sites}
+        open={!!editingId}
+        onOpenChange={(open) => { if (!open) setEditingId(null) }}
+      />
+
+      {/* Delete confirmation */}
       <AlertDialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null) }}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -85,7 +85,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       <section className="space-y-4">
         <h2 className="type-h3 text-foreground">Fil d&apos;actualité</h2>
         <CreateNewsPostForm sites={allSites} defaultSiteId={adminProfile?.site_id || null} />
-        <NewsFeedSection posts={newsPosts} />
+        <NewsFeedSection posts={newsPosts} sites={allSites} />
       </section>
     </div>
   )
