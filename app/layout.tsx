@@ -55,7 +55,12 @@ export const metadata: Metadata = {
     ],
     apple: '/favicon/apple-touch-icon.png',
   },
-    generator: 'v0.app'
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Hopper',
+  },
+  generator: 'v0.app',
 }
 
 export default async function RootLayout({

@@ -21,7 +21,7 @@ export function NavigationItems({ onItemClick, className }: NavigationItemsProps
           (item.href !== "/admin" && pathname.startsWith(item.href))
         return (
           <Link
-            key={item.name}
+            key={item.href}
             href={item.href}
             onClick={onItemClick}
             className={cn(

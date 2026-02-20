@@ -32,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { deleteCompany } from "@/lib/actions/companies"
+import { toast } from "sonner"
 import type { Company, SubscriptionPeriod } from "@/lib/types/database"
 
 type SortField = "name" | "userCount" | "mainSiteName" | "period" | "startDate" | "endDate" | "status"
@@ -153,9 +154,14 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
   const handleDeleteCompany = async () => {
     if (!confirmDelete) return
     setLoading(true)
-    await deleteCompany(confirmDelete.id)
+    const result = await deleteCompany(confirmDelete.id)
     setLoading(false)
     setConfirmDelete(null)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Entreprise supprimée avec succès")
+    }
   }
 
   return (

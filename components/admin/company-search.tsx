@@ -17,7 +17,7 @@ export function ClientsFilters({ sites }: ClientsFiltersProps) {
   const [isPending, startTransition] = useTransition()
 
   const [search, setSearch] = useState(searchParams.get("search") || "")
-  const [status, setStatus] = useState(searchParams.get("status") || "all")
+  const [status, setStatus] = useState(searchParams.get("status") ?? "actif")
   const [period, setPeriod] = useState(searchParams.get("period") || "all")
   const [site, setSite] = useState(searchParams.get("site") || "all")
 
@@ -65,7 +65,7 @@ export function ClientsFilters({ sites }: ClientsFiltersProps) {
     setPeriod("all")
     setSite("all")
     startTransition(() => {
-      router.push("/admin/clients")
+      router.push("/admin/clients?status=all")
     })
   }
 

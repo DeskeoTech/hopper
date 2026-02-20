@@ -16,7 +16,9 @@ interface ClientsPageProps {
 }
 
 export default async function ClientsPage({ searchParams }: ClientsPageProps) {
-  const { search, status, period, site } = await searchParams
+  const { search, status: statusParam, period, site } = await searchParams
+  // Par défaut, afficher uniquement les clients actifs
+  const status = statusParam ?? "actif"
   const supabase = await createClient()
   const authUser = await getUser()
   const isTechAdmin = authUser?.email === "tech@deskeo.fr"

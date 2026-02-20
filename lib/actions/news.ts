@@ -1,6 +1,8 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
 interface GetNewsPostsOptions {
@@ -64,4 +66,63 @@ export async function getNewsPosts(
       ? `${supabaseUrl}/storage/v1/object/public/news-photos/${post.image_storage_path}`
       : null,
   }))
+}
+
+export async function createNewsPost(formData: FormData) {
+  const content = formData.get("content") as string
+  const title = formData.get("title") as string | null
+  const siteId = formData.get("site_id") as string | null
+
+  if (!content?.trim()) {
+    return { error: "Le contenu est requis" }
+  }
+
+  const supabase = createAdminClient()
+
+  // Upload image if provided
+  let imageStoragePath: string | null = null
+  const imageFile = formData.get("image") as File | null
+  if (imageFile && imageFile.size > 0) {
+    const ext = imageFile.name.split(".").pop()
+    const fileName = `${crypto.randomUUID()}.${ext}`
+
+    // Ensure the bucket exists (idempotent)
+    await supabase.storage.createBucket("news-photos", { public: true })
+
+    const { error: uploadError } = await supabase.storage
+      .from("news-photos")
+      .upload(fileName, imageFile)
+
+    if (uploadError) {
+      return { error: uploadError.message }
+    }
+    imageStoragePath = fileName
+  }
+
+  // Generate title from content if not provided
+  const postTitle = title?.trim() || content.trim().slice(0, 80)
+  // Generate excerpt from content
+  const excerpt = content.trim().length > 150 ? content.trim().slice(0, 150) + "..." : null
+
+  const { error } = await supabase.from("news_posts").insert({
+    title: postTitle,
+    content: content.trim(),
+    excerpt,
+    site_id: siteId || null,
+    image_storage_path: imageStoragePath,
+    published_at: new Date().toISOString(),
+    is_pinned: false,
+  })
+
+  if (error) {
+    // Cleanup uploaded image if insert fails
+    if (imageStoragePath) {
+      await supabase.storage.from("news-photos").remove([imageStoragePath])
+    }
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/actualites")
+  return { success: true }
 }
