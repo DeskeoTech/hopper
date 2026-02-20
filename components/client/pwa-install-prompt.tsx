@@ -82,18 +82,18 @@ export function PwaInstallPrompt() {
   // iOS prompt: instructions to use Share > Add to Home Screen
   if (showIOSPrompt) {
     return (
-      <div className="fixed bottom-4 left-3 right-3 z-50 animate-in slide-in-from-bottom-4 duration-300 sm:left-4 sm:right-auto sm:max-w-sm">
-        <div className="rounded-[16px] bg-[#1B1918] p-4 text-white shadow-lg">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">
-                <Download className="h-5 w-5" />
+      <div className="fixed bottom-4 left-3 z-50 max-w-[240px] animate-in slide-in-from-bottom-4 duration-300">
+        <div className="rounded-[12px] bg-[#1B1918] p-2.5 text-white shadow-lg">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-start gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10">
+                <Download className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-semibold">Installer Hopper</p>
-                <p className="mt-1 text-xs text-white/70 leading-relaxed">
+                <p className="text-xs font-semibold">Installer Hopper</p>
+                <p className="mt-0.5 text-[11px] text-white/70 leading-relaxed">
                   Appuyez sur{" "}
-                  <Share className="inline h-3.5 w-3.5 -mt-0.5" />{" "}
+                  <Share className="inline h-3 w-3 -mt-0.5" />{" "}
                   puis <span className="font-medium text-white/90">&quot;Sur l&apos;écran d&apos;accueil&quot;</span>
                 </p>
               </div>
@@ -101,9 +101,9 @@ export function PwaInstallPrompt() {
             <button
               type="button"
               onClick={handleDismiss}
-              className="shrink-0 rounded-full p-1 hover:bg-white/10 transition-colors"
+              className="shrink-0 rounded-full p-0.5 hover:bg-white/10 transition-colors"
             >
-              <X className="h-4 w-4 text-white/60" />
+              <X className="h-3.5 w-3.5 text-white/60" />
             </button>
           </div>
         </div>
@@ -113,32 +113,32 @@ export function PwaInstallPrompt() {
 
   // Android/Chrome prompt
   return (
-    <div className="fixed bottom-4 left-3 right-3 z-50 animate-in slide-in-from-bottom-4 duration-300 sm:left-4 sm:right-auto sm:max-w-sm">
-      <div className="rounded-[16px] bg-[#1B1918] p-4 text-white shadow-lg">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10">
-              <Download className="h-5 w-5" />
+    <div className="fixed bottom-4 left-3 z-50 max-w-[240px] animate-in slide-in-from-bottom-4 duration-300">
+      <div className="rounded-[12px] bg-[#1B1918] p-2.5 text-white shadow-lg">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/10">
+              <Download className="h-3.5 w-3.5" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-semibold">Installer Hopper</p>
-              <p className="mt-1 text-xs text-white/70">
-                Accédez à l&apos;app directement depuis votre écran d&apos;accueil
+              <p className="text-xs font-semibold">Installer Hopper</p>
+              <p className="mt-0.5 text-[11px] text-white/70">
+                Accédez à l&apos;app depuis votre écran d&apos;accueil
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={handleDismiss}
-            className="shrink-0 rounded-full p-1 hover:bg-white/10 transition-colors"
+            className="shrink-0 rounded-full p-0.5 hover:bg-white/10 transition-colors"
           >
-            <X className="h-4 w-4 text-white/60" />
+            <X className="h-3.5 w-3.5 text-white/60" />
           </button>
         </div>
         <button
           type="button"
           onClick={handleInstall}
-          className="mt-3 w-full rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-[#1B1918] uppercase tracking-wide transition-colors hover:bg-white/90"
+          className="mt-2 w-full rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#1B1918] uppercase tracking-wide transition-colors hover:bg-white/90"
         >
           Installer
         </button>

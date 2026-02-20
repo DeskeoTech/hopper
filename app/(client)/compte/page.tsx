@@ -1,6 +1,7 @@
 import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AccountPage } from "@/components/client/account-page"
+import { getNewsPosts } from "@/lib/actions/news"
 import type { BookingWithDetails, ContractForDisplay, ResourceType, PlanRecurrence, FloorLevel } from "@/lib/types/database"
 
 export default async function ComptePage() {
@@ -15,7 +16,7 @@ export default async function ComptePage() {
   // Fetch user profile with company_id, role, contract_id, and company Spacebring fields
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id, company_id, role, contract_id, companies (from_spacebring, spacebring_plan_name, spacebring_seats, spacebring_start_date)")
+    .select("id, company_id, role, contract_id, companies (main_site_id, from_spacebring, spacebring_plan_name, spacebring_seats, spacebring_start_date)")
     .eq("email", authUser.email)
     .single()
 
@@ -91,7 +92,7 @@ export default async function ComptePage() {
   }
 
   // For Spacebring companies with no contracts, create a synthetic contract from Spacebring subscription
-  const company = userProfile.companies as { from_spacebring: boolean | null; spacebring_plan_name: string | null; spacebring_seats: number | null; spacebring_start_date: string | null } | null
+  const company = userProfile.companies as { main_site_id: string | null; from_spacebring: boolean | null; spacebring_plan_name: string | null; spacebring_seats: number | null; spacebring_start_date: string | null } | null
   if (contracts.length === 0 && company?.from_spacebring && company.spacebring_plan_name) {
     contracts = [{
       id: "spacebring",
@@ -104,6 +105,10 @@ export default async function ComptePage() {
       number_of_seats: company.spacebring_seats,
     }]
   }
+
+  // Fetch news posts for the user's main site
+  const mainSiteId = company?.main_site_id || null
+  const posts = await getNewsPosts({ mainSiteId })
 
   // Transform bookings to flat structure with details
   const transformedBookings: BookingWithDetails[] =
@@ -151,6 +156,7 @@ export default async function ComptePage() {
     <AccountPage
       bookings={transformedBookings}
       contracts={contracts}
+      posts={posts}
       isAdmin={isAdmin}
     />
   )
