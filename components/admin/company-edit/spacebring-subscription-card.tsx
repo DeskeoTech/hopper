@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Zap, CreditCard, Users, Coins } from "lucide-react"
+import { Pencil, Zap, CreditCard, Users, Coins, Calendar } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -32,6 +32,7 @@ interface SpacebringSubscriptionCardProps {
   monthlyPrice: number | null
   monthlyCredits: number | null
   seats: number | null
+  startDate: string | null
 }
 
 export function SpacebringSubscriptionCard({
@@ -40,6 +41,7 @@ export function SpacebringSubscriptionCard({
   monthlyPrice,
   monthlyCredits,
   seats,
+  startDate,
 }: SpacebringSubscriptionCardProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -49,8 +51,9 @@ export function SpacebringSubscriptionCard({
   const [formPrice, setFormPrice] = useState(monthlyPrice?.toString() || "")
   const [formCredits, setFormCredits] = useState(monthlyCredits?.toString() || "")
   const [formSeats, setFormSeats] = useState(seats?.toString() || "")
+  const [formStartDate, setFormStartDate] = useState(startDate || "")
 
-  const isConfigured = planName || monthlyPrice || monthlyCredits || seats
+  const isConfigured = planName || monthlyPrice || monthlyCredits || seats || startDate
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -64,6 +67,7 @@ export function SpacebringSubscriptionCard({
       spacebring_monthly_price: formPrice ? Number(formPrice) : null,
       spacebring_monthly_credits: formCredits ? Number(formCredits) : null,
       spacebring_seats: formSeats ? Number(formSeats) : null,
+      spacebring_start_date: formStartDate || null,
     })
     setLoading(false)
     if (result.error) {
@@ -133,6 +137,15 @@ export function SpacebringSubscriptionCard({
                   placeholder="0"
                 />
               </div>
+              <div className="space-y-2">
+                <Label htmlFor="sb-start-date">Date de début</Label>
+                <Input
+                  id="sb-start-date"
+                  type="date"
+                  value={formStartDate}
+                  onChange={(e) => setFormStartDate(e.target.value)}
+                />
+              </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                   Annuler
@@ -185,6 +198,21 @@ export function SpacebringSubscriptionCard({
                 <div>
                   <span className="text-muted-foreground">Postes</span>
                   <p className="text-foreground">{seats}</p>
+                </div>
+              </div>
+            )}
+            {startDate && (
+              <div className="flex items-start gap-3">
+                <Calendar className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                <div>
+                  <span className="text-muted-foreground">Date de début</span>
+                  <p className="text-foreground">
+                    {new Date(startDate).toLocaleDateString("fr-FR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </p>
                 </div>
               </div>
             )}

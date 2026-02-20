@@ -5,7 +5,7 @@ import { X, Calendar, Users, User, ExternalLink, Loader2 } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { getContractUsers, type ContractUser } from "@/lib/actions/contracts"
+import { getContractUsers, getSpacebringCompanyUsers, type ContractUser } from "@/lib/actions/contracts"
 import { createBillingPortalSession } from "@/lib/actions/billing"
 import { useClientLayout } from "./client-layout-provider"
 import { AssignUserToContract } from "./assign-user-to-contract"
@@ -33,15 +33,20 @@ export function ContractDetailModal({
 
   const companyId = user.companies?.id || null
 
+  const isSpacebring = contract?.id === "spacebring"
+
   const refreshUsers = useCallback(() => {
     if (contract) {
       setLoading(true)
-      getContractUsers(contract.id).then((result) => {
+      const fetchUsers = isSpacebring
+        ? getSpacebringCompanyUsers()
+        : getContractUsers(contract.id)
+      fetchUsers.then((result) => {
         setUsers(result.data || [])
         setLoading(false)
       })
     }
-  }, [contract])
+  }, [contract, isSpacebring])
 
   useEffect(() => {
     if (open && contract) {
@@ -174,9 +179,14 @@ export function ContractDetailModal({
 
           {/* Users section */}
           <div className="space-y-3">
-            <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
-              Utilisateurs assignés
-            </h3>
+            <div>
+              <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
+                Utilisateurs assignés
+              </h3>
+              <p className="mt-1 text-xs text-foreground/40">
+                Seuls les administrateurs peuvent ajouter ou supprimer des utilisateurs
+              </p>
+            </div>
 
             {loading ? (
               <div className="rounded-[12px] bg-card p-4 text-center">
@@ -206,9 +216,16 @@ export function ContractDetailModal({
                         <User className="h-4 w-4 text-foreground/60" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {contractUser.first_name} {contractUser.last_name}
-                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            {contractUser.first_name} {contractUser.last_name}
+                          </p>
+                          {contractUser.role === "admin" && (
+                            <span className="shrink-0 rounded-full bg-foreground/10 px-2 py-0.5 text-[10px] font-medium text-foreground/70">
+                              Admin
+                            </span>
+                          )}
+                        </div>
                         {contractUser.email && (
                           <p className="text-xs text-foreground/50 truncate">{contractUser.email}</p>
                         )}
@@ -235,8 +252,8 @@ export function ContractDetailModal({
             )}
           </div>
 
-          {/* Assign user section - only visible for admins */}
-          {isAdmin && companyId && (
+          {/* Assign user section - only visible for admins, not for Spacebring */}
+          {isAdmin && companyId && !isSpacebring && (
             <AssignUserToContract
               contractId={contract.id}
               companyId={companyId}
@@ -246,8 +263,8 @@ export function ContractDetailModal({
             />
           )}
 
-          {/* Stripe billing portal button - only visible for admins */}
-          {isAdmin && (
+          {/* Stripe billing portal button - only visible for admins, not for Spacebring */}
+          {isAdmin && !isSpacebring && (
             <button
               type="button"
               disabled={billingLoading}

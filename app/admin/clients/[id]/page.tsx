@@ -427,6 +427,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   monthlyPrice={company.spacebring_monthly_price}
                   monthlyCredits={company.spacebring_monthly_credits}
                   seats={company.spacebring_seats}
+                  startDate={company.spacebring_start_date}
                 />
               )}
 
