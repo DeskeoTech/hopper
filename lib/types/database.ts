@@ -305,6 +305,8 @@ export interface User {
   site_id: string | null
   photo_storage_path: string | null
   is_hopper_admin: boolean
+  badge_number: string | null
+  badge_returned: boolean
   cgu_accepted_at: string | null
   created_at: string
   updated_at: string

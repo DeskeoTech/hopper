@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { updateUser } from "@/lib/actions/users"
 import type { User, UserRole } from "@/lib/types/database"
 
@@ -48,6 +49,8 @@ export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) 
   const [email, setEmail] = useState(user.email || "")
   const [phone, setPhone] = useState(user.phone || "")
   const [role, setRole] = useState<UserRole>(user.role || "user")
+  const [badgeNumber, setBadgeNumber] = useState(user.badge_number || "")
+  const [badgeReturned, setBadgeReturned] = useState(user.badge_returned ?? false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -62,6 +65,8 @@ export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) 
       email: email || null,
       phone: phone || null,
       role,
+      badge_number: badgeNumber || null,
+      badge_returned: badgeReturned,
     })
     setLoading(false)
     if (result.success) {
@@ -136,6 +141,25 @@ export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) 
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="badgeNumber">N° de badge</Label>
+              <Input
+                id="badgeNumber"
+                value={badgeNumber}
+                onChange={(e) => setBadgeNumber(e.target.value)}
+                placeholder="Numéro de badge"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="badgeReturned"
+                checked={badgeReturned}
+                onCheckedChange={(checked) => setBadgeReturned(checked === true)}
+              />
+              <Label htmlFor="badgeReturned" className="cursor-pointer">
+                Badge restitué
+              </Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>

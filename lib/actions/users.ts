@@ -139,6 +139,8 @@ export async function createUser(
     email: string | null
     phone: string | null
     role: UserRole | null
+    badge_number?: string | null
+    badge_returned?: boolean
   }
 ) {
   const supabase = await createClient()
@@ -156,6 +158,8 @@ export async function createUser(
     phone: data.phone || null,
     role: data.role || "user",
     status: "active",
+    badge_number: data.badge_number || null,
+    badge_returned: data.badge_returned ?? false,
   })
 
   if (error) {
@@ -185,6 +189,8 @@ export async function updateUser(
     email: string | null
     phone: string | null
     role: UserRole | null
+    badge_number?: string | null
+    badge_returned?: boolean
   }
 ) {
   const supabase = await createClient()
@@ -202,6 +208,8 @@ export async function updateUser(
       email: data.email || null,
       phone: data.phone || null,
       role: data.role,
+      badge_number: data.badge_number || null,
+      badge_returned: data.badge_returned ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId)
@@ -379,6 +387,8 @@ export async function createUserByAdmin(
     email: string | null
     phone: string | null
     role: UserRole | null
+    badge_number?: string | null
+    badge_returned?: boolean
   }
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient()
@@ -434,6 +444,8 @@ export async function createUserByAdmin(
     phone: data.phone || null,
     role: data.role || "user",
     status: "active",
+    badge_number: data.badge_number || null,
+    badge_returned: data.badge_returned ?? false,
   })
 
   if (error) {

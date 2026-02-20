@@ -405,7 +405,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
               </div>
 
               {/* Users */}
-              <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} />
+              <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} isDeskeoCompany={!!company.name?.toLowerCase().includes("deskeo")} />
             </div>
 
             {/* Sidebar - Right Column */}

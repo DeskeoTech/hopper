@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, ShieldCheck, ShieldOff, Pencil, UserCheck, UserX, Trash2 } from "lucide-react"
+import { Search, Users, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, Shield, ShieldCheck, ShieldOff, Pencil, UserCheck, UserX, Trash2, CreditCard } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -51,9 +51,11 @@ interface UsersListProps {
   companyId: string
   initialUsers: User[]
   isTechAdmin?: boolean
+  isDeskeoCompany?: boolean
 }
 
-export function UsersList({ companyId, initialUsers, isTechAdmin = false }: UsersListProps) {
+export function UsersList({ companyId, initialUsers, isTechAdmin = false, isDeskeoCompany = false }: UsersListProps) {
+  const showHopperAdmin = isTechAdmin && isDeskeoCompany
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all")
   const [roleFilter, setRoleFilter] = useState<"all" | "admin" | "user">("all")
@@ -318,7 +320,10 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
                       <SortIcon field="status" />
                     </div>
                   </TableHead>
-                  {isTechAdmin && (
+                  <TableHead className="hidden text-xs font-bold uppercase tracking-wide md:table-cell">
+                    Badge
+                  </TableHead>
+                  {showHopperAdmin && (
                     <TableHead className="hidden text-xs font-bold uppercase tracking-wide md:table-cell">
                       Hopper Admin
                     </TableHead>
@@ -348,7 +353,22 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
                       <TableCell>
                         {getStatusBadge(user.status)}
                       </TableCell>
-                      {isTechAdmin && (
+                      <TableCell className="hidden md:table-cell">
+                        {user.badge_number ? (
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-sm">{user.badge_number}</span>
+                            {user.badge_returned && (
+                              <span className="rounded-sm bg-orange-100 px-1.5 py-0.5 text-xs font-medium text-orange-700">
+                                Restitué
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">-</span>
+                        )}
+                      </TableCell>
+                      {showHopperAdmin && (
                         <TableCell className="hidden md:table-cell">
                           {user.is_hopper_admin ? (
                             <span className="inline-flex items-center gap-1 rounded-sm bg-purple-100 px-1.5 py-0.5 text-xs font-medium text-purple-700">
@@ -379,7 +399,7 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false }: User
                                 </DropdownMenuItem>
                               }
                             />
-                            {isTechAdmin && (
+                            {showHopperAdmin && (
                               <DropdownMenuItem
                                 onClick={() => setConfirmAdminToggle(user)}
                                 className={cn(
