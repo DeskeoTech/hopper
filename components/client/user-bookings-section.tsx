@@ -27,33 +27,31 @@ export function UserBookingsSection({
       .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
   }, [bookings])
 
-  return (
-    <section className="space-y-4">
-      <h2 className="font-header text-2xl text-foreground">Réservations</h2>
+  if (meetingRoomBookings.length === 0) {
+    return (
+      <div className="rounded-[16px] bg-card p-6 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
+          <CalendarX2 className="h-7 w-7 text-foreground/40" />
+        </div>
+        <p className="mt-4 text-base text-muted-foreground">
+          Aucune réservation de salle
+        </p>
+      </div>
+    )
+  }
 
-      {meetingRoomBookings.length === 0 ? (
-        <div className="rounded-[16px] bg-card p-6 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
-            <CalendarX2 className="h-7 w-7 text-foreground/40" />
-          </div>
-          <p className="mt-4 text-base text-muted-foreground">
-            Aucune réservation de salle
-          </p>
-        </div>
-      ) : (
-        <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-3 pb-2">
-            {meetingRoomBookings.map((booking) => (
-              <UserBookingCard
-                key={`booking-${booking.id}`}
-                booking={booking}
-                userId={userId}
-                isPast={false}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-    </section>
+  return (
+    <div className="-mx-4 px-4 overflow-x-auto scrollbar-hide">
+      <div className="flex gap-3 pb-2">
+        {meetingRoomBookings.map((booking) => (
+          <UserBookingCard
+            key={`booking-${booking.id}`}
+            booking={booking}
+            userId={userId}
+            isPast={false}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
