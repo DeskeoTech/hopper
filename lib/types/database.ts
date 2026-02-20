@@ -127,6 +127,11 @@ export interface Company {
   logo_storage_path: string | null
   kbis_storage_path: string | null
   onboarding_done: boolean | null
+  from_spacebring: boolean | null
+  spacebring_plan_name: string | null
+  spacebring_monthly_price: number | null
+  spacebring_monthly_credits: number | null
+  spacebring_seats: number | null
   created_at: string
   updated_at: string
 }

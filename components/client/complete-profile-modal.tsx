@@ -70,10 +70,9 @@ export function CompleteProfileModal({
   const hasKbis = !!kbisFile || !!existingKbis
 
   const isFormValid = (companyAlreadyComplete
-    ? firstName.trim() && lastName.trim() && phone.trim()
+    ? firstName.trim() && lastName.trim()
     : firstName.trim() &&
       lastName.trim() &&
-      phone.trim() &&
       companyName.trim() &&
       address.trim() &&
       companyType &&
@@ -105,7 +104,7 @@ export function CompleteProfileModal({
     const userResult = await updateUserProfile(user.id, {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
-      phone: phone.trim(),
+      phone: phone.trim() || null,
     })
 
     if (userResult.error) {
@@ -220,7 +219,7 @@ export function CompleteProfileModal({
 
             <div className="space-y-2.5">
               <Label htmlFor="phone">
-                Téléphone <span className="text-destructive">*</span>
+                Téléphone
               </Label>
               <Input
                 id="phone"

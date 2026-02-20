@@ -7,10 +7,12 @@ import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { StripePortalButton } from "@/components/admin/company-edit/stripe-actions"
 import { PassDetailModal } from "./pass-detail-modal"
+import { CreatePassModal } from "./create-pass-modal"
 import type { AdminPassForDisplay } from "@/lib/types/database"
 
 interface PassesSectionProps {
   passes: AdminPassForDisplay[]
+  companyId: string
   stripeCustomerId?: string | null
   stripeCustomerEmail?: string | null
   companyName?: string
@@ -20,6 +22,7 @@ const MAX_VISIBLE = 5
 
 export function PassesSection({
   passes,
+  companyId,
   stripeCustomerId,
   stripeCustomerEmail,
   companyName,
@@ -49,10 +52,13 @@ export function PassesSection({
   return (
     <>
       <div className="rounded-lg bg-card p-4 sm:p-6">
-        <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-          <FileText className="h-5 w-5" />
-          Pass
-        </h2>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-foreground">
+            <FileText className="h-5 w-5" />
+            Pass
+          </h2>
+          <CreatePassModal companyId={companyId} />
+        </div>
 
         {passes.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucun pass</p>
