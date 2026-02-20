@@ -232,6 +232,29 @@ export async function createCompany(data: {
   return { success: true, companyId }
 }
 
+export async function updateCompanyMainSite(
+  companyId: string,
+  mainSiteId: string | null
+) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      main_site_id: mainSiteId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/clients")
+  return { success: true }
+}
+
 export async function deleteCompany(
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
