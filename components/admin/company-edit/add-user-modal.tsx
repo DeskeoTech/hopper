@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { createUser } from "@/lib/actions/users"
 import type { UserRole } from "@/lib/types/database"
 
@@ -46,6 +47,8 @@ export function AddUserModal({ companyId }: AddUserModalProps) {
   const [email, setEmail] = useState("")
   const [phone, setPhone] = useState("")
   const [role, setRole] = useState<UserRole>("user")
+  const [badgeNumber, setBadgeNumber] = useState("")
+  const [badgeReturned, setBadgeReturned] = useState(false)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -60,6 +63,8 @@ export function AddUserModal({ companyId }: AddUserModalProps) {
       email: email || null,
       phone: phone || null,
       role,
+      badge_number: badgeNumber || null,
+      badge_returned: badgeReturned,
     })
     setLoading(false)
     if (result.success) {
@@ -69,6 +74,8 @@ export function AddUserModal({ companyId }: AddUserModalProps) {
       setEmail("")
       setPhone("")
       setRole("user")
+      setBadgeNumber("")
+      setBadgeReturned(false)
       setOpen(false)
       setConfirmOpen(false)
     }
@@ -139,6 +146,25 @@ export function AddUserModal({ companyId }: AddUserModalProps) {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="badgeNumber">N° de badge</Label>
+              <Input
+                id="badgeNumber"
+                value={badgeNumber}
+                onChange={(e) => setBadgeNumber(e.target.value)}
+                placeholder="Numéro de badge"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="badgeReturned"
+                checked={badgeReturned}
+                onCheckedChange={(checked) => setBadgeReturned(checked === true)}
+              />
+              <Label htmlFor="badgeReturned" className="cursor-pointer">
+                Badge restitué
+              </Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
