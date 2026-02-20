@@ -1,16 +1,18 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient, getUser } from "@/lib/supabase/server"
-import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2 } from "lucide-react"
+import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2, FileText } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
+import { DocumentsSection } from "@/components/admin/company-edit/documents-section"
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { PassesSection } from "@/components/admin/company-passes/passes-section"
+import { SpacebringSubscriptionCard } from "@/components/admin/company-edit/spacebring-subscription-card"
 import { cn } from "@/lib/utils"
 import type { CreditMovement, AdminPassForDisplay, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
@@ -368,6 +370,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                 )}
               </div>
 
+              {/* Documents */}
+              <DocumentsSection
+                companyId={company.id}
+                kbisStoragePath={company.kbis_storage_path}
+                companyType={company.company_type}
+              />
+
               {/* Site principal */}
               <div className="relative rounded-lg bg-card p-4 sm:p-6">
                 <EditMainSiteModal
@@ -410,16 +419,28 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
             {/* Sidebar - Right Column */}
             <div className="space-y-6">
+              {/* Spacebring Subscription */}
+              {company.from_spacebring && (
+                <SpacebringSubscriptionCard
+                  companyId={company.id}
+                  planName={company.spacebring_plan_name}
+                  monthlyPrice={company.spacebring_monthly_price}
+                  monthlyCredits={company.spacebring_monthly_credits}
+                  seats={company.spacebring_seats}
+                />
+              )}
+
               {/* Pass */}
               <PassesSection
                 passes={adminPasses}
+                companyId={company.id}
                 stripeCustomerId={company.customer_id_stripe}
                 stripeCustomerEmail={company.contact_email}
                 companyName={company.name || undefined}
               />
 
-              {/* Stripe */}
-              {company.customer_id_stripe && (
+              {/* Stripe - hidden for Spacebring clients */}
+              {company.customer_id_stripe && !company.from_spacebring && (
                 <div className="rounded-lg bg-card p-4 sm:p-6">
                   <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
                     <CreditCard className="h-5 w-5" />

@@ -35,7 +35,7 @@ export async function updateCompanyContact(
   companyId: string,
   data: { address: string | null; phone: string | null; contact_email: string | null }
 ) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("companies")
@@ -293,6 +293,162 @@ export async function reactivateCompany(companyId: string) {
 
   revalidatePath(`/admin/clients/${companyId}`)
   revalidatePath("/admin/clients")
+  return { success: true }
+}
+
+export async function getCompanyDocumentUrl(storagePath: string) {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase.storage
+    .from("company-documents")
+    .createSignedUrl(storagePath, 3600)
+
+  if (error || !data?.signedUrl) {
+    return { error: "Impossible de générer le lien du document" }
+  }
+
+  return { url: data.signedUrl }
+}
+
+export async function uploadCompanyKbisAdmin(companyId: string, formData: FormData) {
+  const supabase = createAdminClient()
+
+  const file = formData.get("file") as File
+  if (!file) {
+    return { error: "Aucun fichier fourni" }
+  }
+
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"]
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Format non accepté. Utilisez PDF, JPG ou PNG." }
+  }
+
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { error: "Le fichier est trop volumineux (max 10 Mo)" }
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "pdf"
+  const fileName = `${companyId}/kbis/${Date.now()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("company-documents")
+    .upload(fileName, file, { cacheControl: "3600", upsert: false })
+
+  if (uploadError) {
+    return { error: "Erreur lors de l'upload du fichier" }
+  }
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ kbis_storage_path: fileName, updated_at: new Date().toISOString() })
+    .eq("id", companyId)
+
+  if (updateError) {
+    await supabase.storage.from("company-documents").remove([fileName])
+    return { error: "Erreur lors de la mise à jour" }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
+export async function deleteCompanyKbis(companyId: string, storagePath: string) {
+  const supabase = createAdminClient()
+
+  const { error: removeError } = await supabase.storage
+    .from("company-documents")
+    .remove([storagePath])
+
+  if (removeError) {
+    return { error: "Erreur lors de la suppression du fichier" }
+  }
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ kbis_storage_path: null, updated_at: new Date().toISOString() })
+    .eq("id", companyId)
+
+  if (updateError) {
+    return { error: "Erreur lors de la mise à jour" }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
+export async function updateSpacebringSubscription(
+  companyId: string,
+  data: {
+    spacebring_plan_name: string | null
+    spacebring_monthly_price: number | null
+    spacebring_monthly_credits: number | null
+    spacebring_seats: number | null
+  }
+) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      spacebring_plan_name: data.spacebring_plan_name,
+      spacebring_monthly_price: data.spacebring_monthly_price,
+      spacebring_monthly_credits: data.spacebring_monthly_credits,
+      spacebring_seats: data.spacebring_seats,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
+export async function getAvailablePlans() {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id, name, recurrence, price_per_seat_month, service_type")
+    .eq("archived", false)
+    .eq("service_type", "plan")
+    .order("name")
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { data: data || [] }
+}
+
+export async function createCompanyContract(
+  companyId: string,
+  data: {
+    planId: string
+    numberOfSeats: number
+    startDate: string
+    endDate?: string | null
+  }
+) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase.from("contracts").insert({
+    company_id: companyId,
+    plan_id: data.planId,
+    Number_of_seats: data.numberOfSeats,
+    start_date: data.startDate,
+    end_date: data.endDate || null,
+    status: "active",
+  })
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
   return { success: true }
 }
 
