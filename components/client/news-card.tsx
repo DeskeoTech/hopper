@@ -2,7 +2,7 @@
 
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { fr } from "date-fns/locale"
-import { MapPin, Newspaper, Pin } from "lucide-react"
+import { MapPin, Newspaper, Pin, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
@@ -18,14 +18,15 @@ function formatRelativeDate(dateStr: string): string {
 interface NewsCardProps {
   post: NewsPostWithSite
   variant?: "compact" | "full"
+  onDelete?: (postId: string) => void
 }
 
-export function NewsCard({ post, variant = "compact" }: NewsCardProps) {
+export function NewsCard({ post, variant = "compact", onDelete }: NewsCardProps) {
   const formattedDate = post.published_at ? formatRelativeDate(post.published_at) : null
 
   if (variant === "compact") {
     return (
-      <article className="rounded-[16px] bg-card p-4">
+      <article className="relative rounded-[16px] bg-card p-4">
         <div className="flex gap-3">
           {post.image_url ? (
             <img
@@ -66,6 +67,16 @@ export function NewsCard({ post, variant = "compact" }: NewsCardProps) {
             </div>
           </div>
         </div>
+        {onDelete && (
+          <button
+            type="button"
+            onClick={() => onDelete(post.id)}
+            className="absolute bottom-3 right-3 rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
+            title="Supprimer l'actualité"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
       </article>
     )
   }
