@@ -87,7 +87,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
       )}
 
       <div className="mt-3 flex flex-col gap-3 border-t border-border/50 pt-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <input
             ref={fileInputRef}
             type="file"
@@ -100,7 +100,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
             variant="ghost"
             size="sm"
             onClick={() => fileInputRef.current?.click()}
-            className="gap-1.5 text-muted-foreground hover:text-foreground"
+            className="shrink-0 gap-1.5 text-muted-foreground hover:text-foreground"
           >
             <ImagePlus className="h-4 w-4" />
             <span className="hidden sm:inline">Photo</span>
@@ -111,7 +111,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
             onValueChange={setSiteId}
             placeholder="Site"
             searchPlaceholder="Rechercher un site..."
-            triggerClassName="w-full sm:w-[180px] h-8 text-xs"
+            triggerClassName="shrink min-w-0 w-full sm:w-[180px] h-8 text-xs"
           />
         </div>
         <Button
