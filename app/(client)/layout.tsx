@@ -99,6 +99,16 @@ export default async function ClientLayout({
       }
     }
 
+    // Fallback: use Spacebring subscription as plan if no contract-based plan
+    const company = userProfile.companies as Company | null
+    if (!userPlan && company?.from_spacebring && company.spacebring_plan_name) {
+      userPlan = {
+        name: company.spacebring_plan_name,
+        pricePerSeatMonth: company.spacebring_monthly_price,
+        creditsPerMonth: company.spacebring_monthly_credits,
+      }
+    }
+
     // Fetch credit movements from user's bookings
     const { data: bookings } = await supabase
       .from("bookings")
@@ -277,12 +287,15 @@ export default async function ClientLayout({
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
 
   // Check if regular user needs contract assignment (after onboarding and profile completion)
+  // Spacebring companies don't use the contracts table, so skip this check for them
+  const isFromSpacebring = (userProfile.companies as Company | null)?.from_spacebring === true
   const needsContractAssignment =
     !needsOnboarding &&
     !needsProfileCompletion &&
     userProfile.role === "user" &&
     userProfile.company_id &&
-    !userProfile.contract_id
+    !userProfile.contract_id &&
+    !isFromSpacebring
 
   return (
     <ClientLayoutProvider

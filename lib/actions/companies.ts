@@ -384,6 +384,7 @@ export async function updateSpacebringSubscription(
     spacebring_monthly_price: number | null
     spacebring_monthly_credits: number | null
     spacebring_seats: number | null
+    spacebring_start_date: string | null
   }
 ) {
   const supabase = createAdminClient()
@@ -395,6 +396,7 @@ export async function updateSpacebringSubscription(
       spacebring_monthly_price: data.spacebring_monthly_price,
       spacebring_monthly_credits: data.spacebring_monthly_credits,
       spacebring_seats: data.spacebring_seats,
+      spacebring_start_date: data.spacebring_start_date,
       updated_at: new Date().toISOString(),
     })
     .eq("id", companyId)

@@ -132,6 +132,7 @@ export interface Company {
   spacebring_monthly_price: number | null
   spacebring_monthly_credits: number | null
   spacebring_seats: number | null
+  spacebring_start_date: string | null
   created_at: string
   updated_at: string
 }

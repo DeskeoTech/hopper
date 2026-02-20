@@ -12,10 +12,10 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile with company_id, role, and contract_id
+  // Fetch user profile with company_id, role, contract_id, and company Spacebring fields
   const { data: userProfile } = await supabase
     .from("users")
-    .select("id, company_id, role, contract_id")
+    .select("id, company_id, role, contract_id, companies (from_spacebring, spacebring_plan_name, spacebring_seats, spacebring_start_date)")
     .eq("email", authUser.email)
     .single()
 
@@ -88,6 +88,21 @@ export default async function ComptePage() {
       }
     })
     // If user has no contract_id, contracts remains empty
+  }
+
+  // For Spacebring companies with no contracts, create a synthetic contract from Spacebring subscription
+  const company = userProfile.companies as { from_spacebring: boolean | null; spacebring_plan_name: string | null; spacebring_seats: number | null; spacebring_start_date: string | null } | null
+  if (contracts.length === 0 && company?.from_spacebring && company.spacebring_plan_name) {
+    contracts = [{
+      id: "spacebring",
+      status: "active",
+      start_date: company.spacebring_start_date,
+      end_date: null,
+      plan_name: company.spacebring_plan_name,
+      plan_recurrence: null,
+      site_name: null,
+      number_of_seats: company.spacebring_seats,
+    }]
   }
 
   // Transform bookings to flat structure with details

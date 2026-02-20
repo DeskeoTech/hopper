@@ -80,6 +80,7 @@ export interface ContractUser {
   photo_storage_path: string | null
   status: string | null
   Onboarding: boolean
+  role: string | null
 }
 
 export async function getContractUsers(contractId: string): Promise<{
@@ -124,8 +125,44 @@ export async function getContractUsers(contractId: string): Promise<{
   // Fetch users assigned to this contract
   const { data: users, error } = await supabase
     .from("users")
-    .select("id, first_name, last_name, email, photo_storage_path, status, Onboarding")
+    .select("id, first_name, last_name, email, photo_storage_path, status, Onboarding, role")
     .eq("contract_id", contractId)
+    .order("last_name")
+
+  if (error) {
+    return { data: null, error: error.message }
+  }
+
+  return { data: users || [], error: null }
+}
+
+export async function getSpacebringCompanyUsers(): Promise<{
+  data: ContractUser[] | null
+  error: string | null
+}> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { data: null, error: "Non authentifié" }
+  }
+
+  const supabase = await createClient()
+
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("company_id, role")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!currentUser?.company_id) {
+    return { data: null, error: "Utilisateur non trouvé" }
+  }
+
+  // Fetch all active users from the company
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name, email, photo_storage_path, status, Onboarding, role")
+    .eq("company_id", currentUser.company_id)
+    .eq("status", "active")
     .order("last_name")
 
   if (error) {
