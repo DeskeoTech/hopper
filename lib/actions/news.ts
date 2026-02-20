@@ -126,3 +126,37 @@ export async function createNewsPost(formData: FormData) {
   revalidatePath("/actualites")
   return { success: true }
 }
+
+export async function deleteNewsPost(postId: string) {
+  if (!postId) {
+    return { error: "ID de l'actualité requis" }
+  }
+
+  const supabase = createAdminClient()
+
+  // Fetch the post to get the image path for cleanup
+  const { data: post } = await supabase
+    .from("news_posts")
+    .select("image_storage_path")
+    .eq("id", postId)
+    .single()
+
+  // Delete the post
+  const { error } = await supabase
+    .from("news_posts")
+    .delete()
+    .eq("id", postId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  // Cleanup image from storage if it existed
+  if (post?.image_storage_path) {
+    await supabase.storage.from("news-photos").remove([post.image_storage_path])
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/actualites")
+  return { success: true }
+}
