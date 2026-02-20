@@ -30,25 +30,30 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { updateCompanyHeader } from "@/lib/actions/companies"
+import { updateCompanyHeader, deactivateCompany, reactivateCompany } from "@/lib/actions/companies"
+import { Switch } from "@/components/ui/switch"
+import { toast } from "sonner"
 import type { CompanyType } from "@/lib/types/database"
 
 interface EditHeaderModalProps {
   companyId: string
   initialName: string | null
   initialType: CompanyType | null
+  isActive?: boolean
 }
 
 export function EditHeaderModal({
   companyId,
   initialName,
   initialType,
+  isActive = true,
 }: EditHeaderModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [name, setName] = useState(initialName || "")
   const [companyType, setCompanyType] = useState<CompanyType | "none">(initialType || "none")
+  const [active, setActive] = useState(isActive)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -61,6 +66,19 @@ export function EditHeaderModal({
       name: name || null,
       company_type: companyType === "none" ? null : companyType,
     })
+
+    // Gérer le changement de statut actif/inactif
+    if (active !== isActive) {
+      const statusResult = active
+        ? await reactivateCompany(companyId)
+        : await deactivateCompany(companyId)
+      if (statusResult.error) {
+        toast.error(statusResult.error)
+        setLoading(false)
+        return
+      }
+    }
+
     setLoading(false)
     if (result.success) {
       setOpen(false)
@@ -102,6 +120,14 @@ export function EditHeaderModal({
                   <SelectItem value="multi_employee">Multi-employés</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <Label htmlFor="active-switch" className="cursor-pointer">Client actif</Label>
+              <Switch
+                id="active-switch"
+                checked={active}
+                onCheckedChange={setActive}
+              />
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>

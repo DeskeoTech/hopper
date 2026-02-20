@@ -90,8 +90,10 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     )
   }
 
-  // Filter sites based on search query
-  let filteredSites = sites || []
+  // Sort sites alphabetically (case-insensitive) and filter
+  let filteredSites = [...(sites || [])].sort((a, b) =>
+    (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
+  )
   if (searchQuery) {
     const searchLower = searchQuery.toLowerCase()
     filteredSites = filteredSites.filter(

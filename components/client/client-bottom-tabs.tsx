@@ -35,7 +35,7 @@ export function ClientBottomTabs() {
 
           return (
             <Link
-              key={item.name}
+              key={item.href}
               href={getHref(item.href)}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 transition-colors text-[#F0E8DC]",

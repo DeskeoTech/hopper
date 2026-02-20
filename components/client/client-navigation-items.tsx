@@ -30,7 +30,7 @@ export function ClientNavigationItems({ onItemClick, className }: ClientNavigati
         const isMobileOnly = item.href === "/mon-compte"
         return (
           <Link
-            key={item.name}
+            key={item.href}
             href={getHref(item.href)}
             onClick={onItemClick}
             className={cn(

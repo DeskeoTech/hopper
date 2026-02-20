@@ -255,6 +255,47 @@ export async function updateCompanyMainSite(
   return { success: true }
 }
 
+export async function deactivateCompany(companyId: string) {
+  const supabase = createAdminClient()
+  const today = new Date().toISOString().split("T")[0]
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      subscription_end_date: today,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/clients")
+  return { success: true }
+}
+
+export async function reactivateCompany(companyId: string) {
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("companies")
+    .update({
+      subscription_end_date: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", companyId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  revalidatePath("/admin/clients")
+  return { success: true }
+}
+
 export async function deleteCompany(
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
@@ -269,6 +310,47 @@ export async function deleteCompany(
 
   const supabase = createAdminClient()
 
+  // Dissocier les utilisateurs de l'entreprise
+  const { error: usersError } = await supabase
+    .from("users")
+    .update({ company_id: null, contract_id: null })
+    .eq("company_id", companyId)
+
+  if (usersError) {
+    return { success: false, error: usersError.message }
+  }
+
+  // Supprimer les transactions de crédits liées
+  const { error: txError } = await supabase
+    .from("credit_transactions")
+    .delete()
+    .eq("company_id", companyId)
+
+  if (txError) {
+    return { success: false, error: txError.message }
+  }
+
+  // Supprimer les crédits liés
+  const { error: creditsError } = await supabase
+    .from("credits")
+    .delete()
+    .eq("company_id", companyId)
+
+  if (creditsError) {
+    return { success: false, error: creditsError.message }
+  }
+
+  // Supprimer les contrats liés
+  const { error: contractsError } = await supabase
+    .from("contracts")
+    .delete()
+    .eq("company_id", companyId)
+
+  if (contractsError) {
+    return { success: false, error: contractsError.message }
+  }
+
+  // Supprimer l'entreprise
   const { error } = await supabase
     .from("companies")
     .delete()

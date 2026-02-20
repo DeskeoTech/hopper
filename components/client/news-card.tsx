@@ -1,10 +1,19 @@
 "use client"
 
-import { format, parseISO } from "date-fns"
+import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { fr } from "date-fns/locale"
 import { MapPin, Newspaper, Pin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { NewsPostWithSite } from "@/lib/types/database"
+
+function formatRelativeDate(dateStr: string): string {
+  const date = parseISO(dateStr)
+  const daysDiff = differenceInDays(new Date(), date)
+  if (daysDiff < 7) {
+    return formatDistanceToNow(date, { addSuffix: true, locale: fr })
+  }
+  return format(date, "d MMM yyyy", { locale: fr })
+}
 
 interface NewsCardProps {
   post: NewsPostWithSite
@@ -12,10 +21,7 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ post, variant = "compact" }: NewsCardProps) {
-  const publishedDate = post.published_at ? parseISO(post.published_at) : null
-  const formattedDate = publishedDate
-    ? format(publishedDate, "d MMM yyyy", { locale: fr })
-    : null
+  const formattedDate = post.published_at ? formatRelativeDate(post.published_at) : null
 
   if (variant === "compact") {
     return (

@@ -305,6 +305,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
               companyId={company.id}
               initialName={company.name}
               initialType={company.company_type}
+              isActive={isActive}
             />
           </div>
           {company.company_type && (

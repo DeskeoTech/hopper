@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useCallback } from "react"
 import { cn } from "@/lib/utils"
 
 interface TimeSlotPickerProps {
@@ -9,20 +10,15 @@ interface TimeSlotPickerProps {
   disabled?: boolean
 }
 
-const TIME_SLOTS = [
-  "08:00",
-  "09:00",
-  "10:00",
-  "11:00",
-  "12:00",
-  "13:00",
-  "14:00",
-  "15:00",
-  "16:00",
-  "17:00",
-  "18:00",
-  "19:00",
-]
+const HOURS = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+
+function hourToSlot(h: number): string {
+  return `${h.toString().padStart(2, "0")}:00`
+}
+
+function slotToHour(slot: string): number {
+  return parseInt(slot.split(":")[0])
+}
 
 export function TimeSlotPicker({
   selectedSlots,
@@ -30,84 +26,161 @@ export function TimeSlotPicker({
   unavailableSlots,
   disabled = false,
 }: TimeSlotPickerProps) {
-  const handleSlotClick = (slot: string) => {
-    if (disabled || unavailableSlots.includes(slot)) return
-
-    if (selectedSlots.includes(slot)) {
-      // Remove slot and any slots after it to keep selection consecutive
-      const slotIndex = TIME_SLOTS.indexOf(slot)
-      const newSlots = selectedSlots.filter((s) => {
-        const sIndex = TIME_SLOTS.indexOf(s)
-        return sIndex < slotIndex
-      })
-      onSlotsChange(newSlots)
-    } else {
-      // Add slot only if it's consecutive with existing selection
-      if (selectedSlots.length === 0) {
-        onSlotsChange([slot])
-      } else {
-        const sortedSelected = [...selectedSlots].sort(
-          (a, b) => TIME_SLOTS.indexOf(a) - TIME_SLOTS.indexOf(b)
-        )
-        const lastSelectedIndex = TIME_SLOTS.indexOf(
-          sortedSelected[sortedSelected.length - 1]
-        )
-        const clickedIndex = TIME_SLOTS.indexOf(slot)
-
-        // Allow adding only if consecutive (next slot after last selected)
-        if (clickedIndex === lastSelectedIndex + 1) {
-          // Check if any slot between would be unavailable
-          onSlotsChange([...selectedSlots, slot])
-        } else if (clickedIndex < TIME_SLOTS.indexOf(sortedSelected[0])) {
-          // Allow prepending if consecutive before first
-          const firstSelectedIndex = TIME_SLOTS.indexOf(sortedSelected[0])
-          if (clickedIndex === firstSelectedIndex - 1) {
-            onSlotsChange([slot, ...selectedSlots])
-          }
-        }
-      }
+  // Derive current start and end from selected slots
+  const { startHour, endHour } = useMemo(() => {
+    if (selectedSlots.length === 0) return { startHour: null, endHour: null }
+    const sorted = [...selectedSlots].sort()
+    return {
+      startHour: slotToHour(sorted[0]),
+      endHour: slotToHour(sorted[sorted.length - 1]) + 1,
     }
-  }
+  }, [selectedSlots])
 
-  const formatSlotLabel = (slot: string) => {
-    const hour = parseInt(slot.split(":")[0])
-    const nextHour = hour + 1
-    return `${hour}h - ${nextHour}h`
-  }
+  // Available end hours: consecutive available hours after start
+  const availableEnds = useMemo(() => {
+    if (startHour === null) return []
+    const ends: number[] = []
+    for (let h = startHour; h < 20; h++) {
+      // If this hour is unavailable (and not the start itself), stop
+      if (h > startHour && unavailableSlots.includes(hourToSlot(h))) break
+      ends.push(h + 1)
+    }
+    return ends
+  }, [startHour, unavailableSlots])
+
+  // Set start and auto-select 1 hour
+  const handleStartChange = useCallback(
+    (hour: number) => {
+      if (disabled) return
+      onSlotsChange([hourToSlot(hour)])
+    },
+    [disabled, onSlotsChange]
+  )
+
+  // Set end and fill all slots between start and end
+  const handleEndChange = useCallback(
+    (end: number) => {
+      if (disabled || startHour === null) return
+      const slots: string[] = []
+      for (let h = startHour; h < end; h++) {
+        slots.push(hourToSlot(h))
+      }
+      onSlotsChange(slots)
+    },
+    [disabled, startHour, onSlotsChange]
+  )
+
+  const duration =
+    startHour !== null && endHour !== null ? endHour - startHour : 0
 
   return (
-    <div className="space-y-3">
-      <p className="type-body-sm text-muted-foreground">
-        Sélectionnez des créneaux consécutifs
-      </p>
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-        {TIME_SLOTS.map((slot) => {
-          const isSelected = selectedSlots.includes(slot)
-          const isUnavailable = unavailableSlots.includes(slot)
-
-          return (
-            <button
-              key={slot}
-              type="button"
-              onClick={() => handleSlotClick(slot)}
-              disabled={disabled || isUnavailable}
-              className={cn(
-                "rounded-lg border px-3 py-2 text-sm font-medium transition-colors",
-                isUnavailable && "cursor-not-allowed bg-muted text-muted-foreground opacity-50",
-                isSelected && !isUnavailable && "border-primary bg-primary text-primary-foreground",
-                !isSelected && !isUnavailable && "border-border bg-background hover:border-primary hover:bg-primary/5",
-                disabled && "pointer-events-none opacity-50"
-              )}
-            >
-              {formatSlotLabel(slot)}
-            </button>
-          )
-        })}
+    <div className="space-y-4">
+      {/* Start time */}
+      <div className="space-y-2">
+        <label className="text-xs font-medium text-muted-foreground">
+          Heure de début
+        </label>
+        <div className="flex flex-wrap gap-1.5">
+          {HOURS.map((h) => {
+            const isUnavailable = unavailableSlots.includes(hourToSlot(h))
+            const isSelected = h === startHour
+            return (
+              <button
+                key={h}
+                type="button"
+                onClick={() => handleStartChange(h)}
+                disabled={disabled || isUnavailable}
+                className={cn(
+                  "h-9 min-w-[44px] rounded-full px-2 text-sm font-medium transition-all",
+                  isUnavailable &&
+                    "cursor-not-allowed bg-muted text-muted-foreground/40 line-through",
+                  isSelected &&
+                    !isUnavailable &&
+                    "bg-[#1B1918] text-white",
+                  !isSelected &&
+                    !isUnavailable &&
+                    "bg-foreground/5 text-foreground hover:bg-foreground/10"
+                )}
+              >
+                {h}h
+              </button>
+            )
+          })}
+        </div>
       </div>
-      {selectedSlots.length > 0 && (
-        <p className="type-body-sm text-foreground">
-          {selectedSlots.length} heure{selectedSlots.length > 1 ? "s" : ""} sélectionnée{selectedSlots.length > 1 ? "s" : ""}
-        </p>
+
+      {/* End time */}
+      {startHour !== null && (
+        <div className="space-y-2">
+          <label className="text-xs font-medium text-muted-foreground">
+            Heure de fin
+          </label>
+          <div className="flex flex-wrap gap-1.5">
+            {availableEnds.map((h) => {
+              const isSelected = h === endHour
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => handleEndChange(h)}
+                  disabled={disabled}
+                  className={cn(
+                    "h-9 min-w-[44px] rounded-full px-2 text-sm font-medium transition-all",
+                    isSelected && "bg-[#1B1918] text-white",
+                    !isSelected &&
+                      "bg-foreground/5 text-foreground hover:bg-foreground/10"
+                  )}
+                >
+                  {h}h
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Visual timeline bar */}
+      {startHour !== null && (
+        <div className="space-y-1">
+          <div className="flex h-2 gap-0.5 overflow-hidden rounded-full">
+            {HOURS.map((h) => {
+              const isUnavailable = unavailableSlots.includes(hourToSlot(h))
+              const isSelected =
+                startHour !== null &&
+                endHour !== null &&
+                h >= startHour &&
+                h < endHour
+              return (
+                <div
+                  key={h}
+                  className={cn(
+                    "flex-1 transition-colors duration-200",
+                    isUnavailable && !isSelected && "bg-foreground/15",
+                    isSelected && "bg-[#1B1918]",
+                    !isSelected && !isUnavailable && "bg-foreground/5"
+                  )}
+                />
+              )
+            })}
+          </div>
+          <div className="flex justify-between px-0.5">
+            <span className="text-[10px] text-muted-foreground">8h</span>
+            <span className="text-[10px] text-muted-foreground">14h</span>
+            <span className="text-[10px] text-muted-foreground">20h</span>
+          </div>
+        </div>
+      )}
+
+      {/* Summary */}
+      {duration > 0 && (
+        <div className="rounded-[12px] bg-foreground/5 px-3 py-2">
+          <p className="text-sm font-medium text-foreground">
+            {startHour}h00 — {endHour}h00
+            <span className="ml-2 font-normal text-muted-foreground">
+              · {duration} heure{duration > 1 ? "s" : ""}
+            </span>
+          </p>
+        </div>
       )}
     </div>
   )
