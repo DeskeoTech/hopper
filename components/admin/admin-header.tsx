@@ -8,10 +8,13 @@ import { createClient } from "@/lib/supabase/client"
 import { MobileNav } from "./mobile-nav"
 
 const pageTitles: Record<string, string> = {
-  "/admin": "",
+  "/admin": "Accueil",
   "/admin/sites": "Sites",
   "/admin/reservations": "Réservations",
   "/admin/users": "Utilisateurs",
+  "/admin/clients": "Clients",
+  "/admin/tickets": "Tickets",
+  "/admin/tests": "Test Stripe",
 }
 
 interface AdminHeaderProps {
