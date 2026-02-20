@@ -78,15 +78,15 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       {/* Tableau des clients avec forfait actif */}
       <ActiveClientsTable clients={filteredClients} selectedDate={selectedDate} />
 
+      {/* Accès rapide (collapsible) */}
+      <QuickAccessSection />
+
       {/* Fil d'actualité */}
       <section className="space-y-4">
         <h2 className="type-h3 text-foreground">Fil d&apos;actualité</h2>
         <CreateNewsPostForm sites={allSites} defaultSiteId={adminProfile?.site_id || null} />
         <NewsFeedSection posts={newsPosts} />
       </section>
-
-      {/* Accès rapide (collapsible) */}
-      <QuickAccessSection />
     </div>
   )
 }
