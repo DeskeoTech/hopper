@@ -74,21 +74,35 @@ export function BookMeetingRoomModal({
         {!hasActivePlan && <ExpiredPassBanner userEmail={userEmail} />}
 
         {/* Header */}
-        <div className="shrink-0 relative flex items-center justify-between px-4 py-4 border-b border-foreground/10">
-          {/* Left section: Back button + Site selector */}
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => onOpenChange(false)}
-              className="flex items-center gap-1 px-3 py-2 -ml-3 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5" />
-              <span>Retour</span>
-            </button>
+        <div className="shrink-0 border-b border-foreground/10">
+          {/* Mobile header */}
+          <div className="sm:hidden px-3 py-3 space-y-2">
+            {/* Row 1: Back button + Title + Credits */}
+            <div className="flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-0.5 px-2 py-1.5 -ml-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                <span>Retour</span>
+              </button>
 
-            {/* Site selector */}
+              <DialogTitle className="text-sm font-semibold">
+                Réserver une salle
+              </DialogTitle>
+
+              <div className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
+                <Coins className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-xs font-medium">
+                  {remainingCredits}
+                </span>
+              </div>
+            </div>
+
+            {/* Row 2: Site selector (full width) */}
             <div className="flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
               <SearchableSelect
                 options={sortedSites.map((s) => ({
                   value: s.id,
@@ -98,27 +112,58 @@ export function BookMeetingRoomModal({
                 onValueChange={setSelectedSiteId}
                 placeholder="Site"
                 searchPlaceholder="Rechercher..."
-                triggerClassName="h-9 w-[280px] rounded-full border-0 bg-foreground/5"
+                triggerClassName="h-9 w-full rounded-full border-0 bg-foreground/5"
               />
             </div>
           </div>
 
-          {/* Title - centered */}
-          <DialogTitle className="absolute left-1/2 -translate-x-1/2">
-            Réserver une salle
-          </DialogTitle>
+          {/* Desktop header */}
+          <div className="hidden sm:flex relative items-center justify-between px-4 py-4">
+            {/* Left section: Back button + Site selector */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="flex items-center gap-1 px-3 py-2 -ml-3 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
+              >
+                <ChevronLeft className="h-5 w-5" />
+                <span>Retour</span>
+              </button>
 
-          {/* Credits badge - right */}
-          <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
-            <Coins className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">
-              {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
-            </span>
+              {/* Site selector */}
+              <div className="flex items-center gap-1.5">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <SearchableSelect
+                  options={sortedSites.map((s) => ({
+                    value: s.id,
+                    label: s.name,
+                  }))}
+                  value={selectedSiteId || ""}
+                  onValueChange={setSelectedSiteId}
+                  placeholder="Site"
+                  searchPlaceholder="Rechercher..."
+                  triggerClassName="h-9 w-[280px] rounded-full border-0 bg-foreground/5"
+                />
+              </div>
+            </div>
+
+            {/* Title - centered */}
+            <DialogTitle className="absolute left-1/2 -translate-x-1/2">
+              Réserver une salle
+            </DialogTitle>
+
+            {/* Credits badge - right */}
+            <div className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5">
+              <Coins className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium">
+                {remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}
+              </span>
+            </div>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-4 py-4">
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden px-3 py-3 sm:px-4 sm:py-4">
           {open && (
             <RoomBookingContent
               key={contentKey}

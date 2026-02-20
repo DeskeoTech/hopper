@@ -6,6 +6,7 @@ import { ClientFooter } from "@/components/client/client-footer"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
+import { PwaInstallPrompt } from "@/components/client/pwa-install-prompt"
 import { NoContractModal } from "@/components/client/no-contract-modal"
 import { CguAcceptanceModal } from "@/components/client/cgu-acceptance-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
@@ -316,6 +317,7 @@ export default async function ClientLayout({
         <NoContractModal open />
       )}
       <ExpiredContractBanner />
+      <PwaInstallPrompt />
       <div className="min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
           <ClientHeader />

@@ -455,48 +455,46 @@ export function RoomBookingContent({
       {/* Header controls - always visible in planning view */}
       {view === "planning" && (
         <div className={`space-y-3 ${isModal ? "shrink-0" : ""}`}>
-          {/* Modal: Capacity filter (left) + Day picker (centered absolutely) */}
+          {/* Modal: Capacity filter + Day picker */}
           {isModal && (
-            <div className="relative flex items-center justify-between h-[52px]">
-              {/* Capacity filter - left */}
-              {capacityOptions.length > 0 ? (
-                <div className="flex items-center gap-1.5">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex gap-1">
-                    <Button
-                      variant={capacityFilter === null ? "default" : "outline"}
-                      size="sm"
-                      className="h-7 px-2 text-xs rounded-full"
-                      onClick={() => setCapacityFilter(null)}
-                    >
-                      Toutes
-                    </Button>
-                    {capacityOptions.map((cap) => (
+            <div className="space-y-2 sm:space-y-0">
+              {/* Day picker - full width on mobile, centered on desktop */}
+              <div className="flex items-center justify-center gap-1 sm:relative sm:h-[52px]">
+                {/* On desktop, capacity filter is positioned left */}
+                {capacityOptions.length > 0 && (
+                  <div className="hidden sm:flex items-center gap-1.5 absolute left-0">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex gap-1">
                       <Button
-                        key={cap}
-                        variant={capacityFilter === cap ? "default" : "outline"}
+                        variant={capacityFilter === null ? "default" : "outline"}
                         size="sm"
                         className="h-7 px-2 text-xs rounded-full"
-                        onClick={() => setCapacityFilter(cap)}
+                        onClick={() => setCapacityFilter(null)}
                       >
-                        {cap}+
+                        Toutes
                       </Button>
-                    ))}
+                      {capacityOptions.map((cap) => (
+                        <Button
+                          key={cap}
+                          variant={capacityFilter === cap ? "default" : "outline"}
+                          size="sm"
+                          className="h-7 px-2 text-xs rounded-full"
+                          onClick={() => setCapacityFilter(cap)}
+                        >
+                          {cap}+
+                        </Button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div /> // Empty div for spacing when no capacity options
-              )}
+                )}
 
-              {/* Day picker - absolutely centered */}
-              <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
                 {/* Previous arrow */}
                 <button
                   type="button"
                   onClick={handlePrevDays}
                   disabled={!canNavigatePrev}
                   className={cn(
-                    "flex h-[52px] w-9 shrink-0 items-center justify-center rounded-[12px] transition-colors",
+                    "flex h-10 w-8 sm:h-[52px] sm:w-9 shrink-0 items-center justify-center rounded-[12px] transition-colors",
                     canNavigatePrev
                       ? "bg-foreground/5 hover:bg-foreground/10"
                       : "bg-foreground/5 opacity-50 cursor-not-allowed"
@@ -506,7 +504,7 @@ export function RoomBookingContent({
                 </button>
 
                 {/* Day buttons */}
-                <div className="flex gap-1">
+                <div className="flex gap-0.5 sm:gap-1">
                   {upcomingDays.map((day) => {
                     const isSelected = isSameDay(day, selectedDate)
                     const dayIsToday = isToday(day)
@@ -516,26 +514,26 @@ export function RoomBookingContent({
                         type="button"
                         onClick={() => handleDayClick(day)}
                         className={cn(
-                          "flex flex-col items-center justify-center min-w-[46px] h-[52px] rounded-[12px] transition-all",
+                          "flex flex-col items-center justify-center min-w-[40px] h-10 sm:min-w-[46px] sm:h-[52px] rounded-[10px] sm:rounded-[12px] transition-all",
                           isSelected
                             ? "bg-[#1B1918] text-white"
                             : "bg-foreground/5 hover:bg-foreground/10 text-foreground"
                         )}
                       >
                         <span className={cn(
-                          "text-[9px] font-medium uppercase tracking-wide",
+                          "text-[8px] sm:text-[9px] font-medium uppercase tracking-wide",
                           isSelected ? "text-white/80" : "text-muted-foreground"
                         )}>
                           {format(day, "EEE", { locale: fr })}
                         </span>
                         <span className={cn(
-                          "text-base font-semibold leading-tight",
+                          "text-sm sm:text-base font-semibold leading-tight",
                           isSelected ? "text-white" : "text-foreground"
                         )}>
                           {format(day, "d")}
                         </span>
                         <span className={cn(
-                          "text-[8px]",
+                          "text-[7px] sm:text-[8px]",
                           isSelected ? "text-white/70" : "text-muted-foreground/70"
                         )}>
                           {dayIsToday ? "Auj." : format(day, "MMM", { locale: fr })}
@@ -549,7 +547,7 @@ export function RoomBookingContent({
                 <button
                   type="button"
                   onClick={handleNextDays}
-                  className="flex h-[52px] w-9 shrink-0 items-center justify-center rounded-[12px] bg-foreground/5 hover:bg-foreground/10 transition-colors"
+                  className="flex h-10 w-8 sm:h-[52px] sm:w-9 shrink-0 items-center justify-center rounded-[12px] bg-foreground/5 hover:bg-foreground/10 transition-colors"
                 >
                   <ChevronRight className="h-4 w-4" />
                 </button>
@@ -560,7 +558,7 @@ export function RoomBookingContent({
                     <Button
                       variant="outline"
                       size="icon"
-                      className="h-[52px] w-9 shrink-0 rounded-[12px] border-0 bg-foreground/5 hover:bg-foreground/10"
+                      className="h-10 w-8 sm:h-[52px] sm:w-9 shrink-0 rounded-[12px] border-0 bg-foreground/5 hover:bg-foreground/10"
                     >
                       <CalendarIcon className="h-4 w-4" />
                     </Button>
@@ -575,6 +573,34 @@ export function RoomBookingContent({
                   </PopoverContent>
                 </Popover>
               </div>
+
+              {/* Capacity filter - separate row on mobile */}
+              {capacityOptions.length > 0 && (
+                <div className="flex items-center gap-1.5 sm:hidden overflow-x-auto">
+                  <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <div className="flex gap-1">
+                    <Button
+                      variant={capacityFilter === null ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 px-2 text-xs rounded-full shrink-0"
+                      onClick={() => setCapacityFilter(null)}
+                    >
+                      Toutes
+                    </Button>
+                    {capacityOptions.map((cap) => (
+                      <Button
+                        key={cap}
+                        variant={capacityFilter === cap ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 px-2 text-xs rounded-full shrink-0"
+                        onClick={() => setCapacityFilter(cap)}
+                      >
+                        {cap}+
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -765,9 +791,9 @@ export function RoomBookingContent({
 
           {/* Slots view */}
           {view === "slots" && selectedRoom && (
-            <div className="space-y-4 flex-1 overflow-y-auto min-h-0">
-              <div className="rounded-[16px] p-4 bg-foreground/5">
-                <div className="flex items-center justify-between">
+            <div className="space-y-3 sm:space-y-4 flex-1 overflow-y-auto min-h-0">
+              <div className="rounded-[16px] p-3 sm:p-4 bg-foreground/5">
+                <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="type-body font-medium truncate">{selectedRoom.name}</p>
                     <div className="flex items-center gap-2 type-body-sm text-muted-foreground">
@@ -780,7 +806,7 @@ export function RoomBookingContent({
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="sm:text-right">
                     <p className="type-body-sm text-muted-foreground">
                       {format(selectedDate, "EEEE d MMMM", { locale: fr })}
                     </p>
@@ -911,17 +937,17 @@ export function RoomBookingContent({
 
           {/* Navigation buttons (modal) */}
           {view !== "planning" && (
-            <div className="flex justify-end gap-3 pt-4 shrink-0 border-t border-foreground/5 mt-4">
-              <Button variant="outline" onClick={handleBack} className="rounded-full">
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-3 sm:pt-4 shrink-0 border-t border-foreground/5 mt-3 sm:mt-4">
+              <Button variant="outline" onClick={handleBack} className="rounded-full w-full sm:w-auto">
                 Retour
               </Button>
               {view === "confirm" ? (
-                <Button onClick={handleConfirm} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
+                <Button onClick={handleConfirm} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90 w-full sm:w-auto">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Confirmer la réservation
                 </Button>
               ) : (
-                <Button onClick={handleNext} disabled={!canProceed()} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90">
+                <Button onClick={handleNext} disabled={!canProceed()} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90 w-full sm:w-auto">
                   Continuer
                 </Button>
               )}
