@@ -3,6 +3,7 @@ import Link from "next/link"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2 } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
+import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
 import { UsersList } from "@/components/admin/company-edit/users-list"
@@ -110,10 +111,17 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     .eq("company_id", id)
     .order("start_date", { ascending: false })
 
-  const [{ data: creditTransactions }, { data: bookings }, { data: passesData }] = await Promise.all([
+  // Fetch all sites for the main site selector
+  const sitesPromise = supabase
+    .from("sites")
+    .select("id, name")
+    .order("name")
+
+  const [{ data: creditTransactions }, { data: bookings }, { data: passesData }, { data: allSites }] = await Promise.all([
     creditTransactionsPromise,
     bookingsPromise,
     passesPromise,
+    sitesPromise,
   ])
 
   // Transform passes for admin display
@@ -360,7 +368,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
               </div>
 
               {/* Site principal */}
-              <div className="rounded-lg bg-card p-4 sm:p-6">
+              <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                <EditMainSiteModal
+                  companyId={company.id}
+                  initialSiteId={company.main_site_id}
+                  sites={allSites || []}
+                />
                 <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
                   <Building2 className="h-5 w-5" />
                   Site principal
