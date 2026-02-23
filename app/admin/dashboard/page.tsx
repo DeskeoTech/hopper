@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 import { LayoutDashboard, TrendingUp, TrendingDown, Headphones, Building2, Calendar, Briefcase } from "lucide-react"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, addWeeks, addMonths, format, isToday } from "date-fns"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { OccupationCard } from "@/components/admin/occupation-card"
 import { GrowthCard } from "@/components/admin/growth-card"
 import { ReservationsCard } from "@/components/admin/reservations-card"
-import { ForecastCard } from "@/components/admin/forecast-card"
+import { DashboardForecast } from "@/components/admin/dashboard-forecast"
 import { DateNavigator } from "@/components/admin/accueil/date-navigator"
 import { Suspense } from "react"
 
@@ -220,14 +220,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const lastMonthStart = startOfMonth(subMonths(now, 1))
   const lastMonthEnd = endOfMonth(subMonths(now, 1))
 
-  // Dates pour les prévisions
-  const nextWeekStart = startOfWeek(addWeeks(now, 1), { weekStartsOn: 1 })
-  const nextWeekEnd = endOfWeek(addWeeks(now, 1), { weekStartsOn: 1 })
-  const weekAfterNextStart = startOfWeek(addWeeks(now, 2), { weekStartsOn: 1 })
-  const weekAfterNextEnd = endOfWeek(addWeeks(now, 2), { weekStartsOn: 1 })
-  const nextMonthStart = startOfMonth(addMonths(now, 1))
-  const nextMonthEnd = endOfMonth(addMonths(now, 1))
-
   // Récupération des données en parallèle
   const [
     // Métriques générales
@@ -252,11 +244,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
     // KPI réservations semaine
     weeklyBookingsCountResult,
-
-    // Prévisions - bookings futurs
-    bookingsNextWeekResult,
-    bookingsWeekAfterNextResult,
-    bookingsNextMonthResult,
   ] = await Promise.all([
     // Nombre de sites
     supabase.from("sites").select("*", { count: "exact", head: true }).eq("status", "open"),
@@ -321,30 +308,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .eq("status", "confirmed")
       .gte("start_date", weekStart.toISOString())
       .lte("start_date", weekEnd.toISOString()),
-
-    // Réservations semaine n+1
-    supabase
-      .from("bookings")
-      .select("id, resource_id, seats_count")
-      .eq("status", "confirmed")
-      .gte("start_date", nextWeekStart.toISOString())
-      .lte("start_date", nextWeekEnd.toISOString()),
-
-    // Réservations semaine n+2
-    supabase
-      .from("bookings")
-      .select("id, resource_id, seats_count")
-      .eq("status", "confirmed")
-      .gte("start_date", weekAfterNextStart.toISOString())
-      .lte("start_date", weekAfterNextEnd.toISOString()),
-
-    // Réservations mois m+1
-    supabase
-      .from("bookings")
-      .select("id, resource_id, seats_count")
-      .eq("status", "confirmed")
-      .gte("start_date", nextMonthStart.toISOString())
-      .lte("start_date", nextMonthEnd.toISOString()),
   ])
 
   // Calculs des métriques
@@ -550,76 +513,6 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   benchAvailabilityBySite.sort((a, b) => b.available - a.available)
   meetingRoomAvailabilityBySite.sort((a, b) => b.available - a.available)
 
-  // Calcul des prévisions
-  const bookingsNextWeek = bookingsNextWeekResult.data || []
-  const bookingsWeekAfterNext = bookingsWeekAfterNextResult.data || []
-  const bookingsNextMonth = bookingsNextMonthResult.data || []
-
-  // Calculer le nombre de jours ouvrés dans le mois prochain (approximation: 22 jours)
-  const workingDaysNextMonth = 22
-
-  // Fonction pour calculer les prévisions par site
-  function calculateForecastBySite(bookings: typeof bookingsNextWeek, periodDays: number) {
-    const siteBookings = new Map<string, number>()
-    bookings.forEach((b) => {
-      if (b.resource_id) {
-        const siteId = resourceToSite.get(b.resource_id)
-        if (siteId) {
-          siteBookings.set(siteId, (siteBookings.get(siteId) || 0) + (b.seats_count || 1))
-        }
-      }
-    })
-
-    const forecasts: { siteId: string; siteName: string; occupancyRate: number; bookedCount: number; totalCapacity: number }[] = []
-    siteCapacities.forEach((site, siteId) => {
-      const bookingCount = siteBookings.get(siteId) || 0
-      const maxPossible = site.capacity * periodDays
-      const occupancyRate = maxPossible > 0 ? Math.round((bookingCount / maxPossible) * 100) : 0
-      forecasts.push({
-        siteId,
-        siteName: site.name,
-        occupancyRate: Math.min(occupancyRate, 100),
-        bookedCount: bookingCount,
-        totalCapacity: maxPossible,
-      })
-    })
-
-    return forecasts.sort((a, b) => b.occupancyRate - a.occupancyRate)
-  }
-
-  // Calculer les prévisions pour chaque période
-  const forecastNextWeek = calculateForecastBySite(bookingsNextWeek, 5)
-  const forecastWeekAfterNext = calculateForecastBySite(bookingsWeekAfterNext, 5)
-  const forecastNextMonth = calculateForecastBySite(bookingsNextMonth, workingDaysNextMonth)
-
-  // Calculer les taux globaux pour chaque période
-  function calculateGlobalOccupancy(forecasts: typeof forecastNextWeek) {
-    const totalBooked = forecasts.reduce((sum, f) => sum + f.bookedCount, 0)
-    const totalCapacity = forecasts.reduce((sum, f) => sum + f.totalCapacity, 0)
-    return totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0
-  }
-
-  const forecastPeriods = [
-    {
-      label: `Semaine du ${format(nextWeekStart, "d MMM", { locale: fr })}`,
-      shortLabel: "S+1",
-      sites: forecastNextWeek,
-      globalOccupancy: calculateGlobalOccupancy(forecastNextWeek),
-    },
-    {
-      label: `Semaine du ${format(weekAfterNextStart, "d MMM", { locale: fr })}`,
-      shortLabel: "S+2",
-      sites: forecastWeekAfterNext,
-      globalOccupancy: calculateGlobalOccupancy(forecastWeekAfterNext),
-    },
-    {
-      label: format(nextMonthStart, "MMMM yyyy", { locale: fr }),
-      shortLabel: "M+1",
-      sites: forecastNextMonth,
-      globalOccupancy: calculateGlobalOccupancy(forecastNextMonth),
-    },
-  ]
-
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
@@ -774,8 +667,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         </div>
       </div>
 
-      {/* Section Prévisions */}
-      <ForecastCard periods={forecastPeriods} />
+      {/* Section Prévisions (streamed independently) */}
+      <Suspense fallback={<div className="h-56 rounded-[20px] bg-muted animate-pulse" />}>
+        <DashboardForecast selectedDate={selectedDate} />
+      </Suspense>
     </div>
   )
 }

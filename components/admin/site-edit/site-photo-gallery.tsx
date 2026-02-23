@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { ChevronLeft, ChevronRight, Upload, Trash2, Loader2, ImagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -108,11 +109,16 @@ export function SitePhotoGallery({ siteId, photos: initialPhotos, siteName }: Si
         {photos.length > 0 ? (
           <div className="relative">
             {/* Main image */}
-            <img
-              src={photos[currentIndex].url}
-              alt={photos[currentIndex].filename || siteName}
-              className="h-72 w-full object-cover"
-            />
+            <div className="relative h-72 w-full">
+              <Image
+                src={photos[currentIndex].url}
+                alt={photos[currentIndex].filename || siteName}
+                fill
+                sizes="(max-width: 1024px) 100vw, 66vw"
+                className="object-cover"
+                priority
+              />
+            </div>
 
             {/* Navigation arrows */}
             {photos.length > 1 && (
@@ -185,16 +191,18 @@ export function SitePhotoGallery({ siteId, photos: initialPhotos, siteName }: Si
                     <button
                       key={photo.id}
                       onClick={() => setCurrentIndex(index)}
-                      className={`h-12 w-16 flex-shrink-0 rounded-sm overflow-hidden border-2 transition-all ${
+                      className={`relative h-12 w-16 flex-shrink-0 rounded-sm overflow-hidden border-2 transition-all ${
                         index === currentIndex
                           ? "border-primary ring-2 ring-primary/50"
                           : "border-transparent opacity-70 hover:opacity-100"
                       }`}
                     >
-                      <img
+                      <Image
                         src={photo.url}
                         alt={photo.filename || `${siteName} - ${index + 1}`}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="64px"
+                        className="object-cover"
                       />
                     </button>
                   ))}

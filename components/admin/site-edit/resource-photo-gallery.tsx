@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import Image from "next/image"
 import { ChevronLeft, ChevronRight, Upload, Trash2, Loader2, ImagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -108,11 +109,16 @@ export function ResourcePhotoGallery({ resourceId, siteId, photos: initialPhotos
 
         {photos.length > 0 ? (
           <div className="relative">
-            <img
-              src={photos[currentIndex].url}
-              alt={photos[currentIndex].filename || resourceName}
-              className="h-56 w-full object-cover"
-            />
+            <div className="relative h-56 w-full">
+              <Image
+                src={photos[currentIndex].url}
+                alt={photos[currentIndex].filename || resourceName}
+                fill
+                sizes="(max-width: 1024px) 100vw, 33vw"
+                className="object-cover"
+                priority
+              />
+            </div>
 
             {photos.length > 1 && (
               <>
