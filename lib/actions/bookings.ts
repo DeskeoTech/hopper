@@ -222,6 +222,30 @@ export async function createMeetingRoomBooking(data: {
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
+  // 0. Check site closure for the booking date
+  const bookingDateStr = data.startDate.substring(0, 10)
+
+  const { data: resourceForSite, error: resourceSiteError } = await supabase
+    .from("resources")
+    .select("site_id")
+    .eq("id", data.resourceId)
+    .single()
+
+  if (resourceSiteError || !resourceForSite) {
+    return { error: "Ressource introuvable" }
+  }
+
+  const { data: closureCheck } = await supabase
+    .from("site_closures")
+    .select("id")
+    .eq("site_id", resourceForSite.site_id)
+    .eq("date", bookingDateStr)
+    .maybeSingle()
+
+  if (closureCheck) {
+    return { error: "Le site est fermé à cette date" }
+  }
+
   // 1. Check for conflicts (overlapping bookings)
   const { data: conflicts, error: conflictError } = await supabase
     .from("bookings")
@@ -476,15 +500,28 @@ export async function createBookingFromAdmin(data: {
     }
   }
 
-  // Get resource hourly credit rate
+  // Get resource hourly credit rate and site_id
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
-    .select("hourly_credit_rate")
+    .select("hourly_credit_rate, site_id")
     .eq("id", data.resourceId)
     .single()
 
   if (resourceError || !resource) {
     return { error: "Ressource introuvable" }
+  }
+
+  // Check site closure for the booking date
+  const adminBookingDateStr = data.startDate.substring(0, 10)
+  const { data: adminClosureCheck } = await supabase
+    .from("site_closures")
+    .select("id")
+    .eq("site_id", resource.site_id)
+    .eq("date", adminBookingDateStr)
+    .maybeSingle()
+
+  if (adminClosureCheck) {
+    return { error: "Le site est fermé à cette date" }
   }
 
   // Calculate credits needed

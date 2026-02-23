@@ -408,6 +408,15 @@ export interface NewsPostWithSite extends NewsPost {
   author_last_name: string | null
 }
 
+// Site closure types
+export interface SiteClosure {
+  id: string
+  site_id: string
+  date: string // "YYYY-MM-DD"
+  reason: string | null
+  created_at: string
+}
+
 export interface Database {
   public: {
     Tables: {

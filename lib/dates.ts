@@ -1,4 +1,4 @@
-import { isWeekend } from "date-fns"
+import { isWeekend, format } from "date-fns"
 
 /**
  * Calculate Easter Sunday using the Anonymous Gregorian algorithm
@@ -250,4 +250,19 @@ export function isSameDay(date1: Date, date2: Date): boolean {
     date1.getMonth() === date2.getMonth() &&
     date1.getDate() === date2.getDate()
   )
+}
+
+/**
+ * Create a site-aware date disabled matcher.
+ * Combines standard rules (past, weekend, holiday) with site-specific closure dates.
+ * Compatible with react-day-picker's `disabled` prop.
+ */
+export function createSiteAwareDisabledMatcher(
+  siteClosureDates: Set<string>
+): (date: Date) => boolean {
+  return (date: Date) => {
+    if (isDateDisabledForBooking(date)) return true
+    const dateStr = format(date, "yyyy-MM-dd")
+    return siteClosureDates.has(dateStr)
+  }
 }

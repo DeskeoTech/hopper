@@ -4,27 +4,29 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useCallback } from "react"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 
-interface DetailsTabsProps {
-  defaultTab: string
-  infoContent: React.ReactNode
-  reservationsContent: React.ReactNode
-  clientsContent?: React.ReactNode
+interface Tab {
+  value: string
+  label: string
+  content: React.ReactNode
 }
 
-export function DetailsTabs({
-  defaultTab,
-  infoContent,
-  reservationsContent,
-  clientsContent,
-}: DetailsTabsProps) {
+interface DetailsTabsProps {
+  defaultTab: string
+  tabs: Tab[]
+}
+
+export function DetailsTabs({ defaultTab, tabs }: DetailsTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
 
+  // First tab value is the default (no ?tab= param in URL)
+  const defaultTabValue = tabs[0]?.value
+
   const handleTabChange = useCallback(
     (value: string) => {
       const params = new URLSearchParams(searchParams.toString())
-      if (value === "info") {
+      if (value === defaultTabValue) {
         params.delete("tab")
       } else {
         params.set("tab", value)
@@ -32,27 +34,23 @@ export function DetailsTabs({
       const queryString = params.toString()
       router.push(queryString ? `${pathname}?${queryString}` : pathname)
     },
-    [router, pathname, searchParams]
+    [router, pathname, searchParams, defaultTabValue]
   )
 
   return (
     <Tabs value={defaultTab} onValueChange={handleTabChange}>
       <TabsList>
-        <TabsTrigger value="info">Informations générales</TabsTrigger>
-        <TabsTrigger value="reservations">Réservations</TabsTrigger>
-        {clientsContent && <TabsTrigger value="clients">Clients</TabsTrigger>}
+        {tabs.map((tab) => (
+          <TabsTrigger key={tab.value} value={tab.value}>
+            {tab.label}
+          </TabsTrigger>
+        ))}
       </TabsList>
-      <TabsContent value="info" className="mt-6">
-        {infoContent}
-      </TabsContent>
-      <TabsContent value="reservations" className="mt-6">
-        {reservationsContent}
-      </TabsContent>
-      {clientsContent && (
-        <TabsContent value="clients" className="mt-6">
-          {clientsContent}
+      {tabs.map((tab) => (
+        <TabsContent key={tab.value} value={tab.value} className="mt-6">
+          {tab.content}
         </TabsContent>
-      )}
+      ))}
     </Tabs>
   )
 }

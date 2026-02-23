@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import type { SiteStatus, Equipment, TransportationStop } from "@/lib/types/database"
+import type { SiteStatus, Equipment, TransportationStop, SiteClosure } from "@/lib/types/database"
 
 export async function updateSiteHeader(
   siteId: string,
@@ -365,4 +365,76 @@ export async function createSite(data: CreateSiteData) {
 
   revalidatePath("/admin/sites")
   return { success: true, siteId: site.id }
+}
+
+// --- Site Closures ---
+
+export async function getSiteClosures(
+  siteId: string
+): Promise<{ closures: SiteClosure[]; error?: string }> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("site_closures")
+    .select("*")
+    .eq("site_id", siteId)
+    .order("date", { ascending: true })
+
+  if (error) return { closures: [], error: error.message }
+  return { closures: (data as SiteClosure[]) || [] }
+}
+
+export async function addSiteClosure(
+  siteId: string,
+  date: string,
+  reason?: string
+): Promise<{ success?: boolean; error?: string; closure?: SiteClosure }> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from("site_closures")
+    .upsert(
+      { site_id: siteId, date, reason: reason || null },
+      { onConflict: "site_id,date" }
+    )
+    .select()
+    .single()
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/admin/sites/${siteId}`)
+  return { success: true, closure: data as SiteClosure }
+}
+
+export async function removeSiteClosure(
+  siteId: string,
+  closureId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("site_closures")
+    .delete()
+    .eq("id", closureId)
+    .eq("site_id", siteId)
+
+  if (error) return { error: error.message }
+
+  revalidatePath(`/admin/sites/${siteId}`)
+  return { success: true }
+}
+
+export async function getSiteClosureDates(
+  siteId: string
+): Promise<Set<string>> {
+  const supabase = await createClient()
+
+  const { data } = await supabase
+    .from("site_closures")
+    .select("date")
+    .eq("site_id", siteId)
+
+  const dates = new Set<string>()
+  data?.forEach((row: { date: string }) => dates.add(row.date))
+  return dates
 }

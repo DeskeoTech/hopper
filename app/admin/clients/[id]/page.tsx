@@ -306,187 +306,197 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       {/* Tabs */}
       <DetailsTabs
         defaultTab={activeTab}
-        infoContent={
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Main Content - Left Column */}
-            <div className="space-y-6 lg:col-span-2">
-              {/* Contact Info */}
-              <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                <EditContactModal
-                  companyId={company.id}
-                  initialAddress={company.address}
-                  initialPhone={company.phone}
-                  initialEmail={company.contact_email}
-                />
-                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                  <Mail className="h-5 w-5" />
-                  Informations de contact
-                </h2>
-                {company.address || company.phone || company.contact_email ? (
-                  <div className="space-y-3">
-                    {company.address && (
-                      <div className="flex items-start gap-3">
-                        <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                        <div>
-                          <span className="text-sm text-muted-foreground">Adresse</span>
-                          <p className="text-foreground">{company.address}</p>
-                        </div>
+        tabs={[
+          {
+            value: "info",
+            label: "Informations générales",
+            content: (
+              <div className="grid gap-6 lg:grid-cols-3">
+                {/* Main Content - Left Column */}
+                <div className="space-y-6 lg:col-span-2">
+                  {/* Contact Info */}
+                  <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                    <EditContactModal
+                      companyId={company.id}
+                      initialAddress={company.address}
+                      initialPhone={company.phone}
+                      initialEmail={company.contact_email}
+                    />
+                    <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+                      <Mail className="h-5 w-5" />
+                      Informations de contact
+                    </h2>
+                    {company.address || company.phone || company.contact_email ? (
+                      <div className="space-y-3">
+                        {company.address && (
+                          <div className="flex items-start gap-3">
+                            <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <span className="text-sm text-muted-foreground">Adresse</span>
+                              <p className="text-foreground">{company.address}</p>
+                            </div>
+                          </div>
+                        )}
+                        {company.phone && (
+                          <div className="flex items-start gap-3">
+                            <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <span className="text-sm text-muted-foreground">Téléphone</span>
+                              <p className="text-foreground">{company.phone}</p>
+                            </div>
+                          </div>
+                        )}
+                        {company.contact_email && (
+                          <div className="flex items-start gap-3">
+                            <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div>
+                              <span className="text-sm text-muted-foreground">Email</span>
+                              <p className="text-foreground">{company.contact_email}</p>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {company.phone && (
-                      <div className="flex items-start gap-3">
-                        <Phone className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div>
-                          <span className="text-sm text-muted-foreground">Téléphone</span>
-                          <p className="text-foreground">{company.phone}</p>
-                        </div>
-                      </div>
-                    )}
-                    {company.contact_email && (
-                      <div className="flex items-start gap-3">
-                        <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
-                        <div>
-                          <span className="text-sm text-muted-foreground">Email</span>
-                          <p className="text-foreground">{company.contact_email}</p>
-                        </div>
-                      </div>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Non renseigné</p>
                     )}
                   </div>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Non renseigné</p>
-                )}
-              </div>
 
-              {/* Documents */}
-              <DocumentsSection
-                companyId={company.id}
-                kbisStoragePath={company.kbis_storage_path}
-                companyType={company.company_type}
-              />
+                  {/* Documents */}
+                  <DocumentsSection
+                    companyId={company.id}
+                    kbisStoragePath={company.kbis_storage_path}
+                    companyType={company.company_type}
+                  />
 
-              {/* Site principal */}
-              <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                <EditMainSiteModal
-                  companyId={company.id}
-                  initialSiteId={company.main_site_id}
-                  sites={allSites || []}
-                />
-                <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                  <Building2 className="h-5 w-5" />
-                  Site principal
-                </h2>
-                {company.main_site ? (
-                  <Link
-                    href={`/admin/sites/${company.main_site.id}`}
-                    className="flex items-center justify-between rounded-sm border border-border p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <div>
-                      <p className="font-medium text-foreground">{company.main_site.name}</p>
-                      <p className="text-sm text-muted-foreground">{company.main_site.address}</p>
-                    </div>
-                    <span
-                      className={cn(
-                        "rounded-sm px-2 py-0.5 text-xs font-medium",
-                        company.main_site.status === "open"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-gray-100 text-gray-600"
-                      )}
-                    >
-                      {company.main_site.status === "open" ? "Ouvert" : "Fermé"}
-                    </span>
-                  </Link>
-                ) : (
-                  <p className="text-muted-foreground text-sm">Aucun site associé</p>
-                )}
-              </div>
-
-              {/* Users */}
-              <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} isDeskeoCompany={!!company.name?.toLowerCase().includes("deskeo")} />
-            </div>
-
-            {/* Sidebar - Right Column */}
-            <div className="space-y-6">
-              {/* Spacebring Subscription */}
-              {company.from_spacebring && (
-                <SpacebringSubscriptionCard
-                  companyId={company.id}
-                  planName={company.spacebring_plan_name}
-                  monthlyPrice={company.spacebring_monthly_price}
-                  monthlyCredits={company.spacebring_monthly_credits}
-                  seats={company.spacebring_seats}
-                  startDate={company.spacebring_start_date}
-                />
-              )}
-
-              {/* Pass */}
-              <PassesSection
-                passes={adminPasses}
-                companyId={company.id}
-                stripeCustomerId={company.customer_id_stripe}
-                stripeCustomerEmail={company.contact_email}
-                companyName={company.name || undefined}
-              />
-
-              {/* Stripe - hidden for Spacebring clients */}
-              {company.customer_id_stripe && !company.from_spacebring && (
-                <div className="rounded-lg bg-card p-4 sm:p-6">
-                  <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                    <CreditCard className="h-5 w-5" />
-                    Stripe
-                  </h2>
-                  <div className="space-y-4">
-                    <div>
-                      <span className="text-sm text-muted-foreground">Customer ID</span>
-                      <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
-                    </div>
-                    <StripeDashboardButton customerId={company.customer_id_stripe} />
+                  {/* Site principal */}
+                  <div className="relative rounded-lg bg-card p-4 sm:p-6">
+                    <EditMainSiteModal
+                      companyId={company.id}
+                      initialSiteId={company.main_site_id}
+                      sites={allSites || []}
+                    />
+                    <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
+                      <Building2 className="h-5 w-5" />
+                      Site principal
+                    </h2>
+                    {company.main_site ? (
+                      <Link
+                        href={`/admin/sites/${company.main_site.id}`}
+                        className="flex items-center justify-between rounded-sm border border-border p-3 hover:bg-muted/50 transition-colors"
+                      >
+                        <div>
+                          <p className="font-medium text-foreground">{company.main_site.name}</p>
+                          <p className="text-sm text-muted-foreground">{company.main_site.address}</p>
+                        </div>
+                        <span
+                          className={cn(
+                            "rounded-sm px-2 py-0.5 text-xs font-medium",
+                            company.main_site.status === "open"
+                              ? "bg-green-100 text-green-700"
+                              : "bg-gray-100 text-gray-600"
+                          )}
+                        >
+                          {company.main_site.status === "open" ? "Ouvert" : "Fermé"}
+                        </span>
+                      </Link>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Aucun site associé</p>
+                    )}
                   </div>
+
+                  {/* Users */}
+                  <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} isDeskeoCompany={!!company.name?.toLowerCase().includes("deskeo")} />
                 </div>
-              )}
 
-              {/* Registration Info */}
-              <div className="rounded-lg bg-card p-4 sm:p-6">
-                <h2 className="mb-4 text-lg font-semibold text-foreground">Informations</h2>
-                <div className="space-y-3 text-sm">
-                  {company.registration_date && (
-                    <div>
-                      <span className="text-muted-foreground">Date d'inscription</span>
-                      <p className="text-foreground">
-                        {new Date(company.registration_date).toLocaleDateString("fr-FR")}
-                      </p>
+                {/* Sidebar - Right Column */}
+                <div className="space-y-6">
+                  {/* Spacebring Subscription */}
+                  {company.from_spacebring && (
+                    <SpacebringSubscriptionCard
+                      companyId={company.id}
+                      planName={company.spacebring_plan_name}
+                      monthlyPrice={company.spacebring_monthly_price}
+                      monthlyCredits={company.spacebring_monthly_credits}
+                      seats={company.spacebring_seats}
+                      startDate={company.spacebring_start_date}
+                    />
+                  )}
+
+                  {/* Pass */}
+                  <PassesSection
+                    passes={adminPasses}
+                    companyId={company.id}
+                    stripeCustomerId={company.customer_id_stripe}
+                    stripeCustomerEmail={company.contact_email}
+                    companyName={company.name || undefined}
+                  />
+
+                  {/* Stripe - hidden for Spacebring clients */}
+                  {company.customer_id_stripe && !company.from_spacebring && (
+                    <div className="rounded-lg bg-card p-4 sm:p-6">
+                      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
+                        <CreditCard className="h-5 w-5" />
+                        Stripe
+                      </h2>
+                      <div className="space-y-4">
+                        <div>
+                          <span className="text-sm text-muted-foreground">Customer ID</span>
+                          <p className="font-mono text-sm text-foreground break-all">{company.customer_id_stripe}</p>
+                        </div>
+                        <StripeDashboardButton customerId={company.customer_id_stripe} />
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <span className="text-muted-foreground">Créé le</span>
-                    <p className="text-foreground">
-                      {new Date(company.created_at).toLocaleDateString("fr-FR")}
-                    </p>
+
+                  {/* Registration Info */}
+                  <div className="rounded-lg bg-card p-4 sm:p-6">
+                    <h2 className="mb-4 text-lg font-semibold text-foreground">Informations</h2>
+                    <div className="space-y-3 text-sm">
+                      {company.registration_date && (
+                        <div>
+                          <span className="text-muted-foreground">Date d'inscription</span>
+                          <p className="text-foreground">
+                            {new Date(company.registration_date).toLocaleDateString("fr-FR")}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-muted-foreground">Créé le</span>
+                        <p className="text-foreground">
+                          {new Date(company.created_at).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Dernière mise à jour</span>
+                        <p className="text-foreground">
+                          {new Date(company.updated_at).toLocaleDateString("fr-FR")}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground">Dernière mise à jour</span>
-                    <p className="text-foreground">
-                      {new Date(company.updated_at).toLocaleDateString("fr-FR")}
-                    </p>
-                  </div>
+
+                  {/* Credits */}
+                  <CreditsSection
+                    companyId={company.id}
+                    companyName={company.name || undefined}
+                    totalCredits={totalCredits}
+                    movements={movements}
+                  />
                 </div>
               </div>
-
-              {/* Credits */}
-              <CreditsSection
-                companyId={company.id}
-                companyName={company.name || undefined}
-                totalCredits={totalCredits}
-                movements={movements}
+            ),
+          },
+          {
+            value: "reservations",
+            label: "Réservations",
+            content: (
+              <ReservationsSection
+                context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
+                searchParams={resolvedSearchParams}
               />
-            </div>
-          </div>
-        }
-        reservationsContent={
-          <ReservationsSection
-            context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
-            searchParams={resolvedSearchParams}
-          />
-        }
+            ),
+          },
+        ]}
       />
     </div>
   )
