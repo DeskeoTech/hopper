@@ -30,7 +30,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     supabase
       .from("users")
       .select(`
-        id, first_name, last_name,
+        id, first_name, last_name, company_id,
         companies!inner(name, main_site_id, sites(id, name)),
         contracts!inner(id, status, start_date, end_date)
       `)
@@ -43,7 +43,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     supabase
       .from("users")
       .select(`
-        id, first_name, last_name,
+        id, first_name, last_name, company_id,
         companies!inner(name, main_site_id, from_spacebring, subscription_start_date, subscription_end_date, sites(id, name))
       `)
       .eq("companies.from_spacebring", true)
@@ -54,13 +54,16 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     // Tous les sites (pour le sélecteur)
     supabase.from("sites").select("id, name").order("name"),
 
-    // Derniers posts d'actualité
-    getNewsPosts({ limit: 20 }),
+    // Derniers posts d'actualité (filtrés par site)
+    getNewsPosts({
+      limit: 20,
+      ...(selectedSiteId !== "all" ? { siteId: selectedSiteId } : {}),
+    }),
   ])
 
   // Transformer les clients actifs (contrats + spacebring, dédupliqués)
   const seenUserIds = new Set<string>()
-  const activeClients: { id: string; firstName: string | null; lastName: string | null; companyName: string | null; siteId: string | null; siteName: string | null }[] = []
+  const activeClients: { id: string; firstName: string | null; lastName: string | null; companyId: string | null; companyName: string | null; siteId: string | null; siteName: string | null }[] = []
 
   for (const u of activeClientsResult.data || []) {
     if (seenUserIds.has(u.id)) continue
@@ -70,6 +73,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
+      companyId: u.company_id,
       companyName: company?.name || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,
@@ -84,6 +88,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
+      companyId: u.company_id,
       companyName: company?.name || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,

@@ -1,7 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
@@ -17,13 +17,14 @@ export async function getNewsPosts(
   const supabase = await createClient()
   const limit = options?.limit ?? 20
 
-  // Build query for published posts
+  // Build query for published posts with author info
   let query = supabase
     .from("news_posts")
     .select(
       `
       *,
-      sites(name)
+      sites(name),
+      author:users!news_posts_created_by_fkey(first_name, last_name)
     `
     )
     .not("published_at", "is", null)
@@ -50,22 +51,28 @@ export async function getNewsPosts(
   // Build image URLs
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
-  return (data || []).map((post) => ({
-    id: post.id,
-    title: post.title,
-    content: post.content,
-    excerpt: post.excerpt,
-    image_storage_path: post.image_storage_path,
-    site_id: post.site_id,
-    published_at: post.published_at,
-    is_pinned: post.is_pinned,
-    created_at: post.created_at,
-    updated_at: post.updated_at,
-    site_name: (post.sites as { name: string } | null)?.name || null,
-    image_url: post.image_storage_path
-      ? `${supabaseUrl}/storage/v1/object/public/news-photos/${post.image_storage_path}`
-      : null,
-  }))
+  return (data || []).map((post) => {
+    const author = post.author as { first_name: string | null; last_name: string | null } | null
+    return {
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      excerpt: post.excerpt,
+      image_storage_path: post.image_storage_path,
+      site_id: post.site_id,
+      created_by: post.created_by,
+      published_at: post.published_at,
+      is_pinned: post.is_pinned,
+      created_at: post.created_at,
+      updated_at: post.updated_at,
+      site_name: (post.sites as { name: string } | null)?.name || null,
+      image_url: post.image_storage_path
+        ? `${supabaseUrl}/storage/v1/object/public/news-photos/${post.image_storage_path}`
+        : null,
+      author_first_name: author?.first_name || null,
+      author_last_name: author?.last_name || null,
+    }
+  })
 }
 
 export async function createNewsPost(formData: FormData) {
@@ -104,6 +111,19 @@ export async function createNewsPost(formData: FormData) {
   // Generate excerpt from content
   const excerpt = content.trim().length > 150 ? content.trim().slice(0, 150) + "..." : null
 
+  // Get current user ID for author tracking
+  const authUser = await getUser()
+  let createdBy: string | null = null
+  if (authUser?.email) {
+    const readClient = await createClient()
+    const { data: dbUser } = await readClient
+      .from("users")
+      .select("id")
+      .eq("email", authUser.email)
+      .maybeSingle()
+    createdBy = dbUser?.id || null
+  }
+
   const { error } = await supabase.from("news_posts").insert({
     title: postTitle,
     content: content.trim(),
@@ -112,6 +132,7 @@ export async function createNewsPost(formData: FormData) {
     image_storage_path: imageStoragePath,
     published_at: new Date().toISOString(),
     is_pinned: false,
+    created_by: createdBy,
   })
 
   if (error) {
