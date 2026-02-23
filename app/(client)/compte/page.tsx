@@ -8,7 +8,7 @@ export default async function ComptePage() {
   const authUser = await getUser()
 
   if (!authUser?.email) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   const supabase = await createClient()

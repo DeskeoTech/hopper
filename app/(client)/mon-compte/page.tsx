@@ -6,7 +6,7 @@ import type { ContractForDisplay, PlanRecurrence } from "@/lib/types/database"
 export default async function MonComptePageRoute() {
   const authUser = await getUser()
   if (!authUser?.email) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   const supabase = await createClient()
@@ -18,7 +18,7 @@ export default async function MonComptePageRoute() {
     .single()
 
   if (!userProfile) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   // Fetch all company contracts for admin users (Forfait tab is admin-only)

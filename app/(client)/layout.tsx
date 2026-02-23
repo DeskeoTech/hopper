@@ -25,7 +25,7 @@ export default async function ClientLayout({
   const authUser = await getUser()
 
   if (!authUser?.email) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   const supabase = await createClient()

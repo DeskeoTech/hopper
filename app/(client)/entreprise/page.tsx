@@ -22,7 +22,7 @@ export default async function EntreprisePageRoute() {
   const authUser = await getUser()
 
   if (!authUser?.email) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   const supabase = await createClient()
@@ -35,7 +35,7 @@ export default async function EntreprisePageRoute() {
     .single()
 
   if (!userProfile) {
-    redirect("/login")
+    redirect("/login?error=not_connected")
   }
 
   // Check if user can manage company (admin with a company)
