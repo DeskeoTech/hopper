@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Pencil, Zap, CreditCard, Users, Coins, Calendar } from "lucide-react"
+import { Pencil, CreditCard, Users, Coins, Calendar, Info, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -23,6 +23,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { updateSpacebringSubscription } from "@/lib/actions/companies"
 import { toast } from "sonner"
 
@@ -75,7 +81,7 @@ export function SpacebringSubscriptionCard({
       setConfirmOpen(false)
       return
     }
-    toast.success("Abonnement Spacebring mis à jour")
+    toast.success("Abonnement hors plateforme mis à jour")
     setOpen(false)
     setConfirmOpen(false)
   }
@@ -91,7 +97,7 @@ export function SpacebringSubscriptionCard({
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Abonnement Spacebring</DialogTitle>
+              <DialogTitle>Abonnement hors plateforme</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
@@ -159,8 +165,18 @@ export function SpacebringSubscriptionCard({
         </Dialog>
 
         <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-          <Zap className="h-5 w-5" />
-          Abonnement Spacebring
+          <FileText className="h-5 w-5" />
+          Abonnement hors plateforme
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-[260px] text-center">
+                Client Spacebring ou client ne passant pas par la plateforme (ex : paiement par virement bancaire)
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </h2>
 
         {isConfigured ? (
@@ -219,7 +235,7 @@ export function SpacebringSubscriptionCard({
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">
-            Abonnement non configuré. Cliquez sur le crayon pour configurer.
+            Aucun abonnement configuré. Cliquez sur le crayon pour renseigner les informations.
           </p>
         )}
       </div>
@@ -229,7 +245,7 @@ export function SpacebringSubscriptionCard({
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer les modifications</AlertDialogTitle>
             <AlertDialogDescription>
-              Voulez-vous enregistrer ces informations d'abonnement Spacebring ?
+              Voulez-vous enregistrer ces informations d'abonnement hors plateforme ?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
