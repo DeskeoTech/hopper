@@ -8,12 +8,14 @@ interface DetailsTabsProps {
   defaultTab: string
   infoContent: React.ReactNode
   reservationsContent: React.ReactNode
+  clientsContent?: React.ReactNode
 }
 
 export function DetailsTabs({
   defaultTab,
   infoContent,
   reservationsContent,
+  clientsContent,
 }: DetailsTabsProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -38,6 +40,7 @@ export function DetailsTabs({
       <TabsList>
         <TabsTrigger value="info">Informations générales</TabsTrigger>
         <TabsTrigger value="reservations">Réservations</TabsTrigger>
+        {clientsContent && <TabsTrigger value="clients">Clients</TabsTrigger>}
       </TabsList>
       <TabsContent value="info" className="mt-6">
         {infoContent}
@@ -45,6 +48,11 @@ export function DetailsTabs({
       <TabsContent value="reservations" className="mt-6">
         {reservationsContent}
       </TabsContent>
+      {clientsContent && (
+        <TabsContent value="clients" className="mt-6">
+          {clientsContent}
+        </TabsContent>
+      )}
     </Tabs>
   )
 }
