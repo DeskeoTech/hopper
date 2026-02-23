@@ -59,11 +59,6 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        {siteName && (
-          <span className="hidden truncate rounded-sm bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground sm:block sm:max-w-[150px]">
-            {siteName}
-          </span>
-        )}
         {userEmail && (
           <span className="hidden truncate type-small text-muted-foreground sm:block sm:max-w-[200px]">
             {userEmail}
