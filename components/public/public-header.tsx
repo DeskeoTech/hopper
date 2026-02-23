@@ -24,7 +24,7 @@ export function PublicHeader({ selectedCity = null, onCityChange }: PublicHeader
         </div>
 
         {/* Center - Logo */}
-        <Link href="/reservation" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
+        <Link href="/" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
           <Image
             src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
             alt="Hopper Logo"

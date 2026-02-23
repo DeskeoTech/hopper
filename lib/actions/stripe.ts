@@ -116,7 +116,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
 
     // --- URLs ---
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-    const redirectPath = returnPath || "/reservation"
+    const redirectPath = returnPath || "/"
     const successUrl = `${baseUrl}${redirectPath}?success=true&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = `${baseUrl}${redirectPath}?canceled=true`
 

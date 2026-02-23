@@ -44,7 +44,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
 
     // Preserve email_user when cleaning URL params
     const emailParam = customerEmail ? `?email_user=${encodeURIComponent(customerEmail)}` : ""
-    const cleanUrl = `/reservation${emailParam}`
+    const cleanUrl = `/${emailParam}`
 
     if (success === "true") {
       setPaymentSuccessOpen(true)
