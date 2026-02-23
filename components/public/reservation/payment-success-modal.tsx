@@ -18,7 +18,7 @@ export function PaymentSuccessModal({ open, onOpenChange, userEmail }: PaymentSu
   const t = useTranslations("paymentSuccess")
 
   const handleAccessPortal = () => {
-    window.open("https://app.hopper-coworking.com", "_blank")
+    window.open("https://hopper-coworking.com", "_blank")
     onOpenChange(false)
   }
 
