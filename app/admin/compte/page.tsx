@@ -5,7 +5,7 @@ import {
   ShieldAlert,
   ExternalLink,
 } from "lucide-react"
-import { getAdminProfile } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 import { AccountForm } from "@/components/admin/account/account-form"
 
 const adminLevels = [
@@ -33,14 +33,41 @@ const adminLevels = [
 ] as const
 
 export default async function AdminComptePage() {
-  const profile = await getAdminProfile()
+  const supabase = await createClient()
+  const authUser = await getUser()
+
+  let profile: {
+    first_name: string | null
+    last_name: string | null
+    email: string | null
+    role: string | null
+    status: string | null
+    is_hopper_admin: boolean
+  } | null = null
+
+  if (authUser?.email) {
+    const { data } = await supabase
+      .from("users")
+      .select("first_name, last_name, email, role, status, is_hopper_admin")
+      .eq("email", authUser.email)
+      .eq("is_hopper_admin", true)
+      .single()
+    profile = data
+  }
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Informations personnelles */}
       <div className="rounded-lg bg-card p-4 sm:p-6">
         <h2 className="mb-4 text-lg font-semibold">Informations personnelles</h2>
-        <AccountForm firstName={profile?.first_name ?? null} email={profile?.email ?? null} />
+        <AccountForm
+          firstName={profile?.first_name ?? null}
+          lastName={profile?.last_name ?? null}
+          email={profile?.email ?? null}
+          role={profile?.role ?? null}
+          status={profile?.status ?? null}
+          isHopperAdmin={profile?.is_hopper_admin ?? false}
+        />
       </div>
 
       {/* Niveaux d'administration */}

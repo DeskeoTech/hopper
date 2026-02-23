@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 
-export async function updateAdminFirstName(
-  firstName: string
+export async function updateAdminProfile(
+  data: { first_name: string; last_name: string }
 ): Promise<{ success: boolean; error: string | null }> {
   const supabase = await createClient()
 
@@ -27,7 +27,8 @@ export async function updateAdminFirstName(
   const { error } = await supabase
     .from("users")
     .update({
-      first_name: firstName.trim() || null,
+      first_name: data.first_name.trim() || null,
+      last_name: data.last_name.trim() || null,
       updated_at: new Date().toISOString(),
     })
     .eq("id", currentUser.id)
