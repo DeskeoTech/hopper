@@ -22,6 +22,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   // Récupération des données en parallèle
   const [
     activeClientsResult,
+    spacebringClientsResult,
     allSitesResult,
     newsPosts,
   ] = await Promise.all([
@@ -38,6 +39,18 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .or(`end_date.is.null,end_date.gte.${selectedDate}`, { referencedTable: "contracts" })
       .order("last_name", { ascending: true }),
 
+    // Clients Spacebring avec abonnement actif
+    supabase
+      .from("users")
+      .select(`
+        id, first_name, last_name,
+        companies!inner(name, main_site_id, from_spacebring, subscription_start_date, subscription_end_date, sites(id, name))
+      `)
+      .eq("companies.from_spacebring", true)
+      .lte("companies.subscription_start_date", selectedDate)
+      .or(`subscription_end_date.is.null,subscription_end_date.gte.${selectedDate}`, { referencedTable: "companies" })
+      .order("last_name", { ascending: true }),
+
     // Tous les sites (pour le sélecteur)
     supabase.from("sites").select("id, name").order("name"),
 
@@ -45,18 +58,39 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     getNewsPosts({ limit: 20 }),
   ])
 
-  // Transformer les clients actifs
-  const activeClients = (activeClientsResult.data || []).map((u) => {
+  // Transformer les clients actifs (contrats + spacebring, dédupliqués)
+  const seenUserIds = new Set<string>()
+  const activeClients: { id: string; firstName: string | null; lastName: string | null; companyName: string | null; siteId: string | null; siteName: string | null }[] = []
+
+  for (const u of activeClientsResult.data || []) {
+    if (seenUserIds.has(u.id)) continue
+    seenUserIds.add(u.id)
     const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
-    return {
+    activeClients.push({
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
       companyName: company?.name || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,
-    }
-  })
+    })
+  }
+
+  for (const u of spacebringClientsResult.data || []) {
+    if (seenUserIds.has(u.id)) continue
+    seenUserIds.add(u.id)
+    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    activeClients.push({
+      id: u.id,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      companyName: company?.name || null,
+      siteId: company?.sites?.id || null,
+      siteName: company?.sites?.name || null,
+    })
+  }
+
+  activeClients.sort((a, b) => (a.lastName || "").localeCompare(b.lastName || "", "fr"))
 
   const allSites = (allSitesResult.data || []).map((s) => ({
     id: s.id,
