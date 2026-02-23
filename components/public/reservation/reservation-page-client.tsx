@@ -36,15 +36,30 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
   const [restoredBookingState, setRestoredBookingState] = useState<SavedBookingState | null>(null)
 
   const customerEmail = searchParams.get("email_user") || undefined
+  const referral = searchParams.get("referral") || undefined
+
+  // Auto-open booking dialog when site param is in URL (e.g. ?site=xxx&referral=yyy)
+  useEffect(() => {
+    const siteId = searchParams.get("site")
+    if (siteId && !bookingDialogOpen) {
+      const site = initialSites.find((s) => s.id === siteId)
+      if (site) {
+        setSelectedSite(site)
+        setBookingDialogOpen(true)
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Handle success/cancel from Stripe
   useEffect(() => {
     const success = searchParams.get("success")
     const canceled = searchParams.get("canceled")
 
-    // Preserve email_user when cleaning URL params
-    const emailParam = customerEmail ? `?email_user=${encodeURIComponent(customerEmail)}` : ""
-    const cleanUrl = `/${emailParam}`
+    // Preserve email_user and referral when cleaning URL params
+    const params = new URLSearchParams()
+    if (customerEmail) params.set("email_user", customerEmail)
+    if (referral) params.set("referral", referral)
+    const cleanUrl = params.size > 0 ? `/?${params.toString()}` : "/"
 
     if (success === "true") {
       setPaymentSuccessOpen(true)
@@ -70,7 +85,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
       toast.info(t("toast.paymentCanceled"))
       window.history.replaceState({}, "", cleanUrl)
     }
-  }, [searchParams, initialSites, customerEmail])
+  }, [searchParams, initialSites, customerEmail, referral])
 
   const handleHover = useCallback((siteId: string | null) => {
     setHoveredSiteId(siteId)
@@ -152,6 +167,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
         open={bookingDialogOpen}
         onOpenChange={setBookingDialogOpen}
         customerEmail={customerEmail}
+        referral={referral}
         initialState={restoredBookingState}
       />
 

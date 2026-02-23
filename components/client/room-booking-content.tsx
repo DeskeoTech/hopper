@@ -52,6 +52,7 @@ interface RoomBookingContentProps {
   sites: Array<{ id: string; name: string }>
   userEmail?: string
   hasActivePlan?: boolean
+  referral?: string
   // For modal usage
   isModal?: boolean
   selectedSiteIdProp?: string | null  // Controlled site selection from parent
@@ -68,6 +69,7 @@ export function RoomBookingContent({
   sites,
   userEmail = "",
   hasActivePlan = true,
+  referral,
   isModal = false,
   selectedSiteIdProp,
   onSiteChange,
@@ -289,6 +291,7 @@ export function RoomBookingContent({
       endDate,
       creditsToUse: creditsNeeded,
       companyId,
+      referral,
     })
 
     setSubmitting(false)

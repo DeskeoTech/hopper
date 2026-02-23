@@ -1,11 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { RoomBookingContent } from "./room-booking-content"
 import { useClientLayout } from "./client-layout-provider"
 
 export function RoomBookingPage() {
   const { user, credits, sites, selectedSiteId, plan } = useClientLayout()
+  const searchParams = useSearchParams()
+  const referral = searchParams.get("referral") || undefined
   // Key to reset the content when "Annuler" is clicked
   const [resetKey, setResetKey] = useState(0)
 
@@ -26,6 +29,7 @@ export function RoomBookingPage() {
         hasActivePlan={!!plan}
         isModal={true}
         onClose={handleReset}
+        referral={referral}
       />
     </div>
   )

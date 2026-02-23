@@ -230,6 +230,7 @@ export interface Booking {
   notes: string | null
   hubspot_deal_id: string | null
   netsuite_invoice_id: string | null
+  referral: string | null
   created_at: string
   updated_at: string
 }
