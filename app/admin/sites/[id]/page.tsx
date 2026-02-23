@@ -19,6 +19,9 @@ import type { TransportationStop, Resource, Equipment } from "@/lib/types/databa
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
+import { SiteClientsSection } from "@/components/admin/site-clients-section"
+import { getSubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
+import { getUser } from "@/lib/supabase/server"
 
 interface SiteDetailsPageProps {
   params: Promise<{ id: string }>
@@ -49,6 +52,32 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const { data: resourcePhotos } = resourceIds.length > 0
     ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("display_order")
     : { data: null }
+
+  // Fetch companies for this site and user counts
+  const authUser = await getUser()
+  const isTechAdmin = authUser?.email === "tech@deskeo.fr"
+
+  const [companiesResult, userCountsResult] = await Promise.all([
+    supabase.from("companies").select("*").eq("main_site_id", id).order("name"),
+    supabase.from("users").select("company_id").not("company_id", "is", null),
+  ])
+
+  const { data: siteCompanies } = companiesResult
+  const { data: userCounts } = userCountsResult
+
+  // Build user count map
+  const userCountMap: Record<string, number> = {}
+  userCounts?.forEach((user) => {
+    userCountMap[user.company_id] = (userCountMap[user.company_id] || 0) + 1
+  })
+
+  // Transform companies with subscription status
+  const transformedCompanies = (siteCompanies || []).map((company) => ({
+    ...company,
+    userCount: userCountMap[company.id] || 0,
+    mainSiteName: site.name,
+    subscriptionStatus: getSubscriptionStatus(company.subscription_end_date),
+  }))
 
   // Build public URLs for photos
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -361,6 +390,12 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           <ReservationsSection
             context={{ type: "site", siteId: site.id, siteName: site.name }}
             searchParams={resolvedSearchParams}
+          />
+        }
+        clientsContent={
+          <SiteClientsSection
+            companies={transformedCompanies}
+            isTechAdmin={isTechAdmin}
           />
         }
       />
