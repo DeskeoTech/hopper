@@ -50,11 +50,12 @@ export async function proxy(request: NextRequest) {
   if (!user && isAdminRoute) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
+    url.searchParams.set("error", "not_connected")
     return NextResponse.redirect(url)
   }
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/auth"]
+  const publicRoutes = ["/", "/login", "/auth", "/reservation", "/conditions-generales", "/politique-de-confidentialite"]
   const isPublicRoute = publicRoutes.some(
     (route) =>
       request.nextUrl.pathname === route ||
@@ -64,16 +65,11 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Protected client routes
-  const protectedClientRoutes = ["/compte", "/salles", "/postes", "/actualites"]
-  const isProtectedClientRoute = protectedClientRoutes.some(
-    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
-  )
-
-  // If user is not authenticated and trying to access protected client routes, redirect to login
-  if (!user && isProtectedClientRoute) {
+  // All non-public routes require authentication
+  if (!user) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
+    url.searchParams.set("error", "not_connected")
     return NextResponse.redirect(url)
   }
 

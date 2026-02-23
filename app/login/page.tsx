@@ -12,6 +12,7 @@ export default async function LoginPage({
 }) {
   const user = await getUser()
   const { error } = await searchParams
+  const isNotConnected = error === "not_connected"
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -51,8 +52,17 @@ export default async function LoginPage({
                 />
               </div>
 
+              {/* Not connected message */}
+              {isNotConnected && (
+                <div className="mb-4 rounded-lg bg-orange-50 border border-orange-200 p-3 text-center">
+                  <p className="text-sm font-medium text-orange-800">
+                    Vous devez être connecté pour accéder à cette page.
+                  </p>
+                </div>
+              )}
+
               {/* Login Form */}
-              <LoginForm initialError={error} />
+              <LoginForm initialError={isNotConnected ? undefined : error} />
             </div>
 
             {/* CTA Link below card */}
