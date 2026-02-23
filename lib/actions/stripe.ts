@@ -41,13 +41,14 @@ interface CheckoutParams {
   returnPath?: string
   includeTax?: boolean
   customerEmail?: string
+  referral?: string
 }
 
 export async function createCheckoutSession(params: CheckoutParams): Promise<{ url: string; sessionId: string } | { error: string }> {
   try {
     const stripe = getStripe()
 
-    const { siteId, siteName, passType, seats, dates, days, weeks, returnPath, includeTax, customerEmail } = params
+    const { siteId, siteName, passType, seats, dates, days, weeks, returnPath, includeTax, customerEmail, referral } = params
 
     if (!siteId || !siteName || !passType || !seats || !dates || dates.length === 0) {
       return { error: "Paramètres manquants" }
@@ -112,6 +113,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
       start_date: startDate,
       end_date: endDate,
       ...(returnPath === "/admin/tests" ? { source: "test-page" } : {}),
+      ...(referral ? { referral } : {}),
     }
 
     // --- URLs ---

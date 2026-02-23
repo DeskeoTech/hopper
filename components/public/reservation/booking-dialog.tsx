@@ -32,6 +32,7 @@ interface BookingDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   customerEmail?: string
+  referral?: string
   initialState?: SavedBookingState | null
 }
 
@@ -65,7 +66,7 @@ const TVA_RATE = 0.2
 
 export const BOOKING_STATE_KEY = "hopper_booking_state"
 
-export function BookingDialog({ site, open, onOpenChange, customerEmail, initialState }: BookingDialogProps) {
+export function BookingDialog({ site, open, onOpenChange, customerEmail, referral, initialState }: BookingDialogProps) {
   const t = useTranslations("reservation")
   const locale = useLocale()
   const dateFnsLocale = getDateLocale(locale)
@@ -125,6 +126,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, initial
           weeks: passType === "week" ? 1 : undefined,
           includeTax: true,
           customerEmail,
+          referral,
         })
 
         if ("error" in result) {
