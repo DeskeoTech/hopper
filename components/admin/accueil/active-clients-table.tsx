@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo, Suspense } from "react"
+import Link from "next/link"
 import { Users, ChevronDown } from "lucide-react"
 import { DateNavigator } from "./date-navigator"
 import {
@@ -11,10 +12,13 @@ import {
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
 
+const COMPANIES_PER_PAGE = 10
+
 interface ActiveClient {
   id: string
   firstName: string | null
   lastName: string | null
+  companyId: string | null
   companyName: string | null
   siteId: string | null
   siteName: string | null
@@ -26,6 +30,7 @@ interface ActiveClientsTableProps {
 }
 
 interface CompanyGroup {
+  companyId: string | null
   companyName: string
   siteName: string | null
   clients: ActiveClient[]
@@ -49,7 +54,17 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
                   isOpen && "rotate-180"
                 )}
               />
-              <span className="font-semibold">{group.companyName || "Sans entreprise"}</span>
+              {group.companyId ? (
+                <Link
+                  href={`/admin/clients/${group.companyId}`}
+                  className="font-semibold hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {group.companyName}
+                </Link>
+              ) : (
+                <span className="font-semibold">{group.companyName}</span>
+              )}
               <span className="text-xs text-muted-foreground">
                 ({group.clients.length})
               </span>
@@ -83,16 +98,19 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
 }
 
 export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTableProps) {
+  const [visibleCount, setVisibleCount] = useState(COMPANIES_PER_PAGE)
+
   // Grouper par entreprise
   const companyGroups = useMemo(() => {
     const groups = new Map<string, CompanyGroup>()
     clients.forEach((client) => {
-      const key = client.companyName || "__none__"
+      const key = client.companyId || client.companyName || "__none__"
       const existing = groups.get(key)
       if (existing) {
         existing.clients.push(client)
       } else {
         groups.set(key, {
+          companyId: client.companyId,
           companyName: client.companyName || "Sans entreprise",
           siteName: client.siteName,
           clients: [client],
@@ -103,6 +121,9 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
       a.companyName.localeCompare(b.companyName, "fr")
     )
   }, [clients])
+
+  const visibleGroups = companyGroups.slice(0, visibleCount)
+  const hasMore = visibleCount < companyGroups.length
 
   return (
     <section className="space-y-4">
@@ -128,15 +149,28 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
           </p>
         </div>
       ) : (
-        <div className="rounded-lg bg-card overflow-x-auto">
-          <Table>
-            <TableBody>
-              {companyGroups.map((group) => (
-                <CompanyGroupRow key={group.companyName} group={group} />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <>
+          <div className="rounded-lg bg-card overflow-x-auto">
+            <Table>
+              <TableBody>
+                {visibleGroups.map((group) => (
+                  <CompanyGroupRow key={group.companyId || group.companyName} group={group} />
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          {hasMore && (
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + COMPANIES_PER_PAGE)}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-muted px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/70"
+            >
+              <span>Voir plus ({companyGroups.length - visibleCount} entreprise{companyGroups.length - visibleCount > 1 ? "s" : ""} restante{companyGroups.length - visibleCount > 1 ? "s" : ""})</span>
+              <ChevronDown className="h-4 w-4" />
+            </button>
+          )}
+        </>
       )}
     </section>
   )

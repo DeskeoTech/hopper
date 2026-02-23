@@ -55,6 +55,12 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
               </p>
             )}
             <div className="mt-2 flex items-center gap-2 text-[10px] text-foreground/50">
+              {(post.author_first_name || post.author_last_name) && (
+                <span className="font-medium">
+                  {[post.author_first_name, post.author_last_name].filter(Boolean).join(" ")}
+                </span>
+              )}
+              {(post.author_first_name || post.author_last_name) && formattedDate && <span>·</span>}
               {formattedDate && <span>{formattedDate}</span>}
               {post.site_name && (
                 <>
@@ -128,6 +134,12 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
           {post.content}
         </p>
         <div className="mt-4 flex items-center gap-2 text-xs text-foreground/50">
+          {(post.author_first_name || post.author_last_name) && (
+            <span className="font-medium">
+              {[post.author_first_name, post.author_last_name].filter(Boolean).join(" ")}
+            </span>
+          )}
+          {(post.author_first_name || post.author_last_name) && formattedDate && <span>·</span>}
           {formattedDate && <span>{formattedDate}</span>}
         </div>
       </div>

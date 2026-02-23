@@ -393,6 +393,7 @@ export interface NewsPost {
   excerpt: string | null
   image_storage_path: string | null
   site_id: string | null
+  created_by: string | null
   published_at: string | null
   is_pinned: boolean
   created_at: string
@@ -402,6 +403,8 @@ export interface NewsPost {
 export interface NewsPostWithSite extends NewsPost {
   site_name: string | null
   image_url: string | null
+  author_first_name: string | null
+  author_last_name: string | null
 }
 
 export interface Database {
