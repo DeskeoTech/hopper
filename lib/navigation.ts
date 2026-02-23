@@ -26,6 +26,7 @@ export const adminNavigation: NavItem[] = [
   { name: "Clients", href: "/admin/clients", icon: Briefcase },
   { name: "Tickets", href: "/admin/tickets", icon: Headphones },
   { name: "Tests Stripe", href: "/admin/tests", icon: FlaskConical },
+  { name: "Mon Compte", href: "/admin/compte", icon: User },
 ]
 
 export const clientNavigation: NavItem[] = [
