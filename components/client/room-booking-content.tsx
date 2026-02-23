@@ -34,7 +34,8 @@ import {
   checkAvailability,
   createMeetingRoomBooking,
 } from "@/lib/actions/bookings"
-import { disabledDateMatcher, getNextBusinessDay, getNextBusinessDays, getBusinessDaysFrom, getBusinessDaysCentered, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
+import { disabledDateMatcher, createSiteAwareDisabledMatcher, getNextBusinessDay, getNextBusinessDays, getBusinessDaysFrom, getBusinessDaysCentered, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
+import { getSiteClosureDates } from "@/lib/actions/sites"
 import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
@@ -106,6 +107,7 @@ export function RoomBookingContent({
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
+  const [siteClosureDates, setSiteClosureDates] = useState<Set<string>>(new Set())
 
   // Photo viewer handlers
   const handlePhotoClick = (photos: string[], index: number) => {
@@ -131,7 +133,7 @@ export function RoomBookingContent({
     return [...new Set(capacities)].sort((a, b) => a - b)
   }, [rooms])
 
-  // Load rooms when site changes
+  // Load rooms and closure dates when site changes
   useEffect(() => {
     if (selectedSiteId) {
       setLoadingRooms(true)
@@ -144,6 +146,9 @@ export function RoomBookingContent({
           setRooms(result.rooms)
         }
       })
+      getSiteClosureDates(selectedSiteId).then(setSiteClosureDates)
+    } else {
+      setSiteClosureDates(new Set())
     }
   }, [selectedSiteId])
 
@@ -336,10 +341,19 @@ export function RoomBookingContent({
   const isTodaySelected = isToday(selectedDate)
   const previousBusinessDay = getPreviousBusinessDay(selectedDate)
 
-  // Get business days centered around the view center date (not selected date)
+  // Site-aware disabled date matcher (memoized)
+  const siteDisabledMatcher = useMemo(
+    () => createSiteAwareDisabledMatcher(siteClosureDates),
+    [siteClosureDates]
+  )
+
+  // Get business days centered around the view center date, excluding site closures
   const upcomingDays = useMemo(() => {
-    return getBusinessDaysCentered(viewCenterDate, VISIBLE_DAYS_COUNT)
-  }, [viewCenterDate])
+    const days = getBusinessDaysCentered(viewCenterDate, VISIBLE_DAYS_COUNT + siteClosureDates.size + 5)
+    return days
+      .filter((d) => !siteClosureDates.has(format(d, "yyyy-MM-dd")))
+      .slice(0, VISIBLE_DAYS_COUNT)
+  }, [viewCenterDate, siteClosureDates])
 
   // Check if we can navigate to previous days
   const canNavigatePrev = useMemo(() => {
@@ -571,7 +585,7 @@ export function RoomBookingContent({
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateChange}
-                      disabled={disabledDateMatcher}
+                      disabled={siteDisabledMatcher}
                     />
                   </PopoverContent>
                 </Popover>
@@ -640,7 +654,7 @@ export function RoomBookingContent({
                       mode="single"
                       selected={selectedDate}
                       onSelect={handleDateChange}
-                      disabled={disabledDateMatcher}
+                      disabled={siteDisabledMatcher}
                     />
                   </PopoverContent>
                 </Popover>
