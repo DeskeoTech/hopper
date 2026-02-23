@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { Building2 } from "lucide-react"
 import type { Site } from "@/lib/types/database"
 import { SiteInstructionsEditor } from "@/components/admin/sites/site-instructions-editor"
@@ -69,10 +70,12 @@ export function SiteCard({ site, imageUrl, flexAvailability, deskeoUsers = [] }:
           {/* Full-width image */}
           <div className="relative aspect-[4/3] overflow-hidden bg-muted">
             {imageUrl ? (
-              <img
+              <Image
                 src={imageUrl || "/placeholder.svg"}
                 alt={site.name}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center bg-muted">

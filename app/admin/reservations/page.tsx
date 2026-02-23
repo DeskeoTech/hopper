@@ -98,10 +98,15 @@ export default async function ReservationsPage({
     query = query.eq("status", params.status)
   }
 
-  const { data: bookings, error: bookingsError } = await query
-
-  // Fetch filter options
-  const [sitesResult, openSitesResult, companiesResult, usersResult] = await Promise.all([
+  // Fetch bookings AND filter options in parallel
+  const [
+    { data: bookings, error: bookingsError },
+    sitesResult,
+    openSitesResult,
+    companiesResult,
+    usersResult,
+  ] = await Promise.all([
+    query,
     supabase.from("sites").select("id, name").order("name"),
     supabase.from("sites").select("id, name").eq("status", "open").order("name"),
     supabase.from("companies").select("id, name").order("name"),

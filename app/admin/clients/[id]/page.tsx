@@ -29,59 +29,75 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   const authUser = await getUser()
   const isTechAdmin = authUser?.email === "tech@deskeo.fr"
 
-  // Fetch company data with main site
-  const { data: company, error } = await supabase
-    .from("companies")
-    .select("*, main_site:sites!main_site_id(id, name, address, status)")
-    .eq("id", id)
-    .single()
+  // Phase 1: Fetch company, users, credits, transactions, passes, and sites in parallel
+  // (all depend only on company id, not on each other)
+  const [
+    { data: company, error },
+    { data: users },
+    { data: creditsResult },
+    { data: creditTransactions },
+    { data: passesData },
+    { data: allSites },
+  ] = await Promise.all([
+    supabase
+      .from("companies")
+      .select("*, main_site:sites!main_site_id(id, name, address, status)")
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("users")
+      .select("id, first_name, last_name, email, phone, role, status, contract_id, site_id, company_id, photo_storage_path, badge_number, badge_returned, is_hopper_admin, cgu_accepted_at, created_at, updated_at")
+      .eq("company_id", id)
+      .order("last_name")
+      .order("first_name"),
+    supabase.rpc("get_company_valid_credits", { p_company_id: id }),
+    supabase
+      .from("credit_transactions")
+      .select(`
+        id,
+        transaction_type,
+        amount,
+        balance_after,
+        reason,
+        created_at,
+        booking_id,
+        booking:bookings(
+          resource:resources(name)
+        )
+      `)
+      .eq("company_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    supabase
+      .from("contracts")
+      .select(`
+        id,
+        status,
+        start_date,
+        end_date,
+        commitment_end_date,
+        renewal_end_date,
+        Number_of_seats,
+        plans (name, recurrence, price_per_seat_month)
+      `)
+      .eq("company_id", id)
+      .order("start_date", { ascending: false }),
+    supabase
+      .from("sites")
+      .select("id, name")
+      .order("name"),
+  ])
 
   if (error || !company) {
     notFound()
   }
 
-  // Fetch users for this company
-  const { data: users } = await supabase
-    .from("users")
-    .select("*")
-    .eq("company_id", id)
-    .order("last_name")
-    .order("first_name")
-
-  // Fetch valid credits using the SQL function
-  // Credits are valid if:
-  // - extras_credit = true: permanent credits (always valid)
-  // - extras_credit = false/null: valid for 1 month from created_at
-  const { data: creditsResult } = await supabase
-    .rpc("get_company_valid_credits", { p_company_id: id })
-
   const totalCredits = creditsResult ?? 0
 
-  // Fetch user IDs for this company (needed for bookings query)
+  // Phase 2: Fetch bookings (depends on user IDs)
   const userIds = users?.map((u) => u.id) || []
-
-  // Fetch credit movements from credit_transactions table
-  const creditTransactionsPromise = supabase
-    .from("credit_transactions")
-    .select(`
-      id,
-      transaction_type,
-      amount,
-      balance_after,
-      reason,
-      created_at,
-      booking_id,
-      booking:bookings(
-        resource:resources(name)
-      )
-    `)
-    .eq("company_id", id)
-    .order("created_at", { ascending: false })
-    .limit(100)
-
-  // Fetch bookings with credits_used (for historical data without credit_transactions)
-  const bookingsPromise = userIds.length > 0
-    ? supabase
+  const { data: bookings } = userIds.length > 0
+    ? await supabase
         .from("bookings")
         .select(`
           id,
@@ -95,36 +111,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         .gt("credits_used", 0)
         .order("start_date", { ascending: false })
         .limit(100)
-    : Promise.resolve({ data: [] })
-
-  // Fetch company passes (contracts with plan details)
-  const passesPromise = supabase
-    .from("contracts")
-    .select(`
-      id,
-      status,
-      start_date,
-      end_date,
-      commitment_end_date,
-      renewal_end_date,
-      Number_of_seats,
-      plans (name, recurrence, price_per_seat_month)
-    `)
-    .eq("company_id", id)
-    .order("start_date", { ascending: false })
-
-  // Fetch all sites for the main site selector
-  const sitesPromise = supabase
-    .from("sites")
-    .select("id, name")
-    .order("name")
-
-  const [{ data: creditTransactions }, { data: bookings }, { data: passesData }, { data: allSites }] = await Promise.all([
-    creditTransactionsPromise,
-    bookingsPromise,
-    passesPromise,
-    sitesPromise,
-  ])
+    : { data: [] as never[] }
 
   // Transform passes for admin display
   const contractUserCounts: Record<string, number> = {}
