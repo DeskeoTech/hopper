@@ -478,6 +478,7 @@ export async function createBookingFromAdmin(data: {
   endDate: string // ISO timestamp
   status: "confirmed" | "pending"
   notes?: string
+  referral?: string
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
@@ -574,6 +575,7 @@ export async function createBookingFromAdmin(data: {
       end_date: data.endDate,
       status: data.status,
       notes: data.notes || null,
+      referral: data.referral || null,
       credits_used: creditsNeeded,
     })
     .select("id")
