@@ -9,7 +9,7 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { ScrollableCalendar } from "./scrollable-calendar"
 import { CGVModal } from "./cgv-modal"
 import { cn } from "@/lib/utils"
-import { format, isSameDay } from "date-fns"
+import { format, isSameDay, parse } from "date-fns"
 import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { Site } from "@/lib/types/database"
 import { createCheckoutSession } from "@/lib/actions/stripe"
@@ -84,7 +84,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
     if (initialState) {
       setPassType(initialState.passType)
       setSeats(initialState.seats)
-      setSelectedDates(initialState.selectedDates.map((d) => new Date(d)))
+      setSelectedDates(initialState.selectedDates.map((d) => parse(d, "dd/MM/yyyy", new Date())))
       setCgvAccepted(initialState.cgvAccepted)
     }
   }, [initialState])
@@ -121,7 +121,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
           siteName: site.name,
           passType,
           seats,
-          dates: selectedDates.map((d) => d.toISOString()),
+          dates: selectedDates.map((d) => format(d, "yyyy-MM-dd")),
           days: passType === "day" ? selectedDates.length : undefined,
           weeks: passType === "week" ? 1 : undefined,
           includeTax: true,
@@ -139,7 +139,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
             siteId: site.id,
             passType,
             seats,
-            selectedDates: selectedDates.map((d) => d.toISOString()),
+            selectedDates: selectedDates.map((d) => format(d, "dd/MM/yyyy")),
             cgvAccepted,
           }))
           window.location.href = result.url
