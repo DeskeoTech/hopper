@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import dynamic from "next/dynamic"
 import Image from "next/image"
+import {useReservationContext} from './reservation-context'
 import { useTranslations, useLocale } from "next-intl"
 import {
   ChevronLeft,
@@ -128,15 +129,23 @@ function Accordion({
 export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDetailsDialogProps) {
   const t = useTranslations("reservation")
   const tEquip = useTranslations("equipmentDetails")
-  const locale = useLocale()
-  const [activeTab, setActiveTab] = useState("about")
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
-  const [fullscreenPhoto, setFullscreenPhoto] = useState(false)
-  const [showFullDescription, setShowFullDescription] = useState(false)
-  const [residenceModalOpen, setResidenceModalOpen] = useState(false)
+  const locale = useLocale();
   const contentRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
+  const {
+  activeTab,
+  setActiveTab,
+  currentPhotoIndex,
+  setCurrentPhotoIndex,
+  fullscreenPhoto,
+  setFullscreenPhoto,
+  showFullDescription,
+  setShowFullDescription,
+  residenceModalOpen,
+  setResidenceModalOpen,
+  resetState,
+} = useReservationContext()
   const TABS = useMemo(() => [
     { id: "about", label: t("siteDetails.tabAbout") },
     { id: "access", label: t("siteDetails.tabAccess") },
