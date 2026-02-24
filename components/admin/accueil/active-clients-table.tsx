@@ -143,7 +143,7 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
           </p>
         </div>
       ) : (
-        <div className="rounded-lg bg-card max-h-[600px] overflow-y-auto">
+        <div className="rounded-lg bg-card max-h-[400px] overflow-y-auto">
           <Table>
             <TableBody>
               {companyGroups.map((group) => (
