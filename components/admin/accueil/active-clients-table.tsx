@@ -3,6 +3,7 @@
 import { useState, useMemo, Suspense } from "react"
 import Link from "next/link"
 import { Users, ChevronDown } from "lucide-react"
+
 import { DateNavigator } from "./date-navigator"
 import {
   Table,
@@ -11,8 +12,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
-
-const COMPANIES_PER_PAGE = 10
 
 interface ActiveClient {
   id: string
@@ -98,8 +97,6 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
 }
 
 export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTableProps) {
-  const [visibleCount, setVisibleCount] = useState(COMPANIES_PER_PAGE)
-
   // Grouper par entreprise
   const companyGroups = useMemo(() => {
     const groups = new Map<string, CompanyGroup>()
@@ -121,9 +118,6 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
       a.companyName.localeCompare(b.companyName, "fr")
     )
   }, [clients])
-
-  const visibleGroups = companyGroups.slice(0, visibleCount)
-  const hasMore = visibleCount < companyGroups.length
 
   return (
     <section className="space-y-4">
@@ -149,28 +143,15 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
           </p>
         </div>
       ) : (
-        <>
-          <div className="rounded-lg bg-card overflow-x-auto">
-            <Table>
-              <TableBody>
-                {visibleGroups.map((group) => (
-                  <CompanyGroupRow key={group.companyId || group.companyName} group={group} />
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-
-          {hasMore && (
-            <button
-              type="button"
-              onClick={() => setVisibleCount((prev) => prev + COMPANIES_PER_PAGE)}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-muted px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted/70"
-            >
-              <span>Voir plus ({companyGroups.length - visibleCount} entreprise{companyGroups.length - visibleCount > 1 ? "s" : ""} restante{companyGroups.length - visibleCount > 1 ? "s" : ""})</span>
-              <ChevronDown className="h-4 w-4" />
-            </button>
-          )}
-        </>
+        <div className="rounded-lg bg-card max-h-[600px] overflow-y-auto">
+          <Table>
+            <TableBody>
+              {companyGroups.map((group) => (
+                <CompanyGroupRow key={group.companyId || group.companyName} group={group} />
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       )}
     </section>
   )
