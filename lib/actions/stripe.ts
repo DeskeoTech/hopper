@@ -117,7 +117,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
     }
 
     // --- URLs ---
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hopper-coworking.com/notfound"
     const redirectPath = returnPath || "/"
     const successUrl = `${baseUrl}${redirectPath}?success=true&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = `${baseUrl}${redirectPath}?canceled=true`
@@ -200,7 +200,7 @@ export async function createPortalSession(customerId: string): Promise<{ url: st
       return { error: "Customer ID manquant" }
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://hopper-coworking.com/notfound"
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
       return_url: `${baseUrl}/admin/tests`,
