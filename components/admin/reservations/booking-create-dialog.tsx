@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo, useTransition } from "react"
-import { format } from "date-fns"
+import { format, addDays, eachDayOfInterval, isWeekend } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
   ChevronLeft,
@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -78,6 +79,7 @@ interface BookingCreateDialogProps {
   onOpenChange: (open: boolean) => void
   sites: Site[]
   users: User[]
+  currentUserId: string | null
 }
 
 export function BookingCreateDialog({
@@ -85,6 +87,7 @@ export function BookingCreateDialog({
   onOpenChange,
   sites,
   users,
+  currentUserId,
 }: BookingCreateDialogProps) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -98,6 +101,9 @@ export function BookingCreateDialog({
   const [siteId, setSiteId] = useState("")
   const [status, setStatus] = useState<"confirmed" | "pending">("confirmed")
   const [notes, setNotes] = useState("")
+  const [isME, setIsME] = useState(false)
+  const [meEndDate, setMeEndDate] = useState<Date | null>(null)
+  const [meCalendarOpen, setMeCalendarOpen] = useState(false)
 
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -121,10 +127,13 @@ export function BookingCreateDialog({
   useEffect(() => {
     if (open) {
       setView("planning")
-      setUserId("")
+      setUserId(currentUserId || "")
       setSiteId("")
       setStatus("confirmed")
       setNotes("")
+      setIsME(false)
+      setMeEndDate(null)
+      setMeCalendarOpen(false)
       setSelectedDate(new Date())
       setViewCenterDate(new Date())
       setRooms([])
@@ -277,22 +286,52 @@ export function BookingCreateDialog({
     const lastSlot = sortedSlots[sortedSlots.length - 1]
     const lastHour = parseInt(lastSlot.split(":")[0]) + 1
 
-    const dateStr = format(selectedDate, "yyyy-MM-dd")
-    const startDate = new Date(`${dateStr}T${firstSlot}:00`)
-    const endDate = new Date(`${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00`)
-
     startTransition(async () => {
-      const result = await createBookingFromAdmin({
-        userId,
-        resourceId: selectedRoom.id,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString(),
-        status,
-        notes: notes.trim() || undefined,
-      })
+      // Build list of dates to book
+      const datesToBook: Date[] = []
+      if (isME && meEndDate && meEndDate > selectedDate) {
+        const allDays = eachDayOfInterval({ start: selectedDate, end: meEndDate })
+        for (const day of allDays) {
+          if (!isWeekend(day)) {
+            datesToBook.push(day)
+          }
+        }
+      } else {
+        datesToBook.push(selectedDate)
+      }
 
-      if (result.error) {
-        setError(result.error)
+      const errors: string[] = []
+      let successCount = 0
+
+      for (const day of datesToBook) {
+        const dateStr = format(day, "yyyy-MM-dd")
+        const startDate = new Date(`${dateStr}T${firstSlot}:00`)
+        const endDate = new Date(`${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00`)
+
+        const result = await createBookingFromAdmin({
+          userId,
+          resourceId: selectedRoom.id,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          status,
+          notes: notes.trim() || undefined,
+          referral: isME ? "M&E" : undefined,
+        })
+
+        if (result.error) {
+          errors.push(`${format(day, "dd/MM")}: ${result.error}`)
+        } else {
+          successCount++
+        }
+      }
+
+      if (errors.length > 0 && successCount === 0) {
+        setError(errors.join("\n"))
+      } else if (errors.length > 0) {
+        setError(`${successCount} réservation(s) créée(s). Erreurs:\n${errors.join("\n")}`)
+        setTimeout(() => {
+          onOpenChange(false)
+        }, 3000)
       } else {
         setSuccess(true)
         setTimeout(() => {
@@ -358,7 +397,9 @@ export function BookingCreateDialog({
               <Check className="h-8 w-8 text-green-500" />
             </div>
             <p className="text-sm font-medium text-foreground">
-              La réservation a été créée avec succès !
+              {isME && meEndDate && meEndDate > selectedDate
+                ? `${eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} réservation(s) créée(s) avec succès !`
+                : "La réservation a été créée avec succès !"}
             </p>
           </div>
         </DialogContent>
@@ -626,6 +667,16 @@ export function BookingCreateDialog({
                           {format(selectedDate, "EEEE d MMMM yyyy", {
                             locale: fr,
                           })}
+                          {isME && meEndDate && meEndDate > selectedDate && (
+                            <span>
+                              {" → "}
+                              {format(meEndDate, "EEEE d MMMM yyyy", { locale: fr })}
+                              {" "}
+                              <span className="text-xs text-muted-foreground font-normal">
+                                ({eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} jours)
+                              </span>
+                            </span>
+                          )}
                         </p>
                       </div>
                     </div>
@@ -657,6 +708,70 @@ export function BookingCreateDialog({
 
                   {/* Admin options */}
                   <div className="space-y-3">
+                    {/* M&E checkbox */}
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="is-me"
+                        checked={isME}
+                        onCheckedChange={(checked) => {
+                          setIsME(checked === true)
+                          if (!checked) {
+                            setMeEndDate(null)
+                          }
+                        }}
+                        disabled={isPending}
+                      />
+                      <Label htmlFor="is-me" className="text-sm font-medium cursor-pointer">
+                        Réservation M&E (Meetings & Events)
+                      </Label>
+                    </div>
+
+                    {/* Date range picker when M&E is checked */}
+                    {isME && (
+                      <div className="space-y-1.5 rounded-[12px] border border-foreground/10 p-3">
+                        <Label className="text-xs text-muted-foreground">
+                          Date de fin (réservation sur plusieurs jours)
+                        </Label>
+                        <Popover open={meCalendarOpen} onOpenChange={setMeCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start rounded-[12px] text-left font-normal",
+                                !meEndDate && "text-muted-foreground"
+                              )}
+                              disabled={isPending}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {meEndDate
+                                ? format(meEndDate, "EEEE d MMMM yyyy", { locale: fr })
+                                : "Sélectionner la date de fin"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={meEndDate || undefined}
+                              onSelect={(date) => {
+                                setMeEndDate(date || null)
+                                setMeCalendarOpen(false)
+                              }}
+                              disabled={(date) =>
+                                date <= selectedDate || isWeekend(date)
+                              }
+                              defaultMonth={selectedDate}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {meEndDate && meEndDate > selectedDate && (
+                          <p className="text-xs text-muted-foreground">
+                            {eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} jour(s)
+                            ouvré(s) seront réservés avec les mêmes créneaux horaires
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">Statut</Label>
                       <Select
@@ -679,13 +794,13 @@ export function BookingCreateDialog({
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-2 text-xs text-muted-foreground">
                         <FileText className="h-3.5 w-3.5" />
-                        Notes (optionnel)
+                        Commentaire (optionnel)
                       </Label>
                       <Textarea
                         value={notes}
                         onChange={(e) => setNotes(e.target.value)}
                         disabled={isPending}
-                        placeholder="Ajouter des notes..."
+                        placeholder="Ajouter un commentaire..."
                         className="min-h-[60px] rounded-[12px]"
                       />
                     </div>

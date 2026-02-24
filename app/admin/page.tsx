@@ -39,14 +39,14 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .or(`end_date.is.null,end_date.gte.${selectedDate}`, { referencedTable: "contracts" })
       .order("last_name", { ascending: true }),
 
-    // Clients Spacebring avec abonnement actif
+    // Clients avec abonnement actif (plateforme et hors plateforme)
     supabase
       .from("users")
       .select(`
         id, first_name, last_name, company_id,
-        companies!inner(name, main_site_id, from_spacebring, subscription_start_date, subscription_end_date, sites(id, name))
+        companies!inner(name, main_site_id, subscription_start_date, subscription_end_date, sites(id, name))
       `)
-      .eq("companies.from_spacebring", true)
+      .not("companies.subscription_start_date", "is", null)
       .lte("companies.subscription_start_date", selectedDate)
       .or(`subscription_end_date.is.null,subscription_end_date.gte.${selectedDate}`, { referencedTable: "companies" })
       .order("last_name", { ascending: true }),

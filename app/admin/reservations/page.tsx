@@ -1,5 +1,5 @@
 import { Suspense } from "react"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getAdminProfile } from "@/lib/supabase/server"
 import { ReservationsFilters } from "@/components/admin/reservations/reservations-filters"
 import { ReservationsCalendar } from "@/components/admin/reservations/reservations-calendar"
 import { ReservationsHeader } from "@/components/admin/reservations/reservations-header"
@@ -99,6 +99,8 @@ export default async function ReservationsPage({
   }
 
   // Fetch bookings AND filter options in parallel
+  const adminProfile = await getAdminProfile()
+
   const [
     { data: bookings, error: bookingsError },
     sitesResult,
@@ -215,7 +217,7 @@ export default async function ReservationsPage({
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
-      <ReservationsHeader sites={openSites} users={users} />
+      <ReservationsHeader sites={openSites} users={users} currentUserId={adminProfile?.id || null} />
 
       {/* Filters */}
       <Suspense fallback={<div className="h-24 animate-pulse rounded-lg bg-muted" />}>

@@ -20,9 +20,10 @@ interface User {
 interface ReservationsHeaderProps {
   sites: Site[]
   users: User[]
+  currentUserId: string | null
 }
 
-export function ReservationsHeader({ sites, users }: ReservationsHeaderProps) {
+export function ReservationsHeader({ sites, users, currentUserId }: ReservationsHeaderProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
 
   return (
@@ -50,6 +51,7 @@ export function ReservationsHeader({ sites, users }: ReservationsHeaderProps) {
         onOpenChange={setDialogOpen}
         sites={sites}
         users={users}
+        currentUserId={currentUserId}
       />
     </>
   )
