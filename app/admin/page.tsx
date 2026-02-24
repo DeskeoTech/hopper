@@ -22,7 +22,8 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   // Récupération des données en parallèle
   const [
     activeClientsResult,
-    spacebringClientsResult,
+    subscriptionClientsResult,
+    offPlatformClientsResult,
     allSitesResult,
     newsPosts,
   ] = await Promise.all([
@@ -39,7 +40,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .or(`end_date.is.null,end_date.gte.${selectedDate}`, { referencedTable: "contracts" })
       .order("last_name", { ascending: true }),
 
-    // Clients avec abonnement actif (plateforme et hors plateforme)
+    // Clients avec abonnement actif (plateforme via subscription_start_date)
     supabase
       .from("users")
       .select(`
@@ -49,6 +50,18 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .not("companies.subscription_start_date", "is", null)
       .lte("companies.subscription_start_date", selectedDate)
       .or(`subscription_end_date.is.null,subscription_end_date.gte.${selectedDate}`, { referencedTable: "companies" })
+      .order("last_name", { ascending: true }),
+
+    // Clients hors plateforme actifs (from_spacebring avec spacebring_start_date)
+    supabase
+      .from("users")
+      .select(`
+        id, first_name, last_name, company_id,
+        companies!inner(name, main_site_id, from_spacebring, spacebring_start_date, sites(id, name))
+      `)
+      .eq("companies.from_spacebring", true)
+      .not("companies.spacebring_start_date", "is", null)
+      .lte("companies.spacebring_start_date", selectedDate)
       .order("last_name", { ascending: true }),
 
     // Tous les sites (pour le sélecteur)
@@ -80,7 +93,22 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     })
   }
 
-  for (const u of spacebringClientsResult.data || []) {
+  for (const u of subscriptionClientsResult.data || []) {
+    if (seenUserIds.has(u.id)) continue
+    seenUserIds.add(u.id)
+    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    activeClients.push({
+      id: u.id,
+      firstName: u.first_name,
+      lastName: u.last_name,
+      companyId: u.company_id,
+      companyName: company?.name || null,
+      siteId: company?.sites?.id || null,
+      siteName: company?.sites?.name || null,
+    })
+  }
+
+  for (const u of offPlatformClientsResult.data || []) {
     if (seenUserIds.has(u.id)) continue
     seenUserIds.add(u.id)
     const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null

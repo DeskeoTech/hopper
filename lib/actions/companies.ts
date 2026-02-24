@@ -380,6 +380,7 @@ export async function deleteCompanyKbis(companyId: string, storagePath: string) 
 export async function updateSpacebringSubscription(
   companyId: string,
   data: {
+    from_spacebring: boolean
     spacebring_plan_name: string | null
     spacebring_monthly_price: number | null
     spacebring_monthly_credits: number | null
@@ -389,16 +390,38 @@ export async function updateSpacebringSubscription(
 ) {
   const supabase = createAdminClient()
 
+  // Build update payload
+  const updateData: Record<string, unknown> = {
+    from_spacebring: data.from_spacebring,
+    spacebring_plan_name: data.spacebring_plan_name,
+    spacebring_monthly_price: data.spacebring_monthly_price,
+    spacebring_monthly_credits: data.spacebring_monthly_credits,
+    spacebring_seats: data.spacebring_seats,
+    spacebring_start_date: data.spacebring_start_date,
+    updated_at: new Date().toISOString(),
+  }
+
+  // Sync subscription_start_date for active client detection on homepage
+  if (data.from_spacebring && data.spacebring_start_date) {
+    updateData.subscription_start_date = data.spacebring_start_date
+  } else if (!data.from_spacebring) {
+    // When disabling off-platform, check if company has a Stripe subscription before clearing dates
+    const { data: company } = await supabase
+      .from("companies")
+      .select("customer_id_stripe, subscription_start_date")
+      .eq("id", companyId)
+      .single()
+
+    // Only clear subscription dates if no Stripe subscription exists
+    if (!company?.customer_id_stripe) {
+      updateData.subscription_start_date = null
+      updateData.subscription_end_date = null
+    }
+  }
+
   const { error } = await supabase
     .from("companies")
-    .update({
-      spacebring_plan_name: data.spacebring_plan_name,
-      spacebring_monthly_price: data.spacebring_monthly_price,
-      spacebring_monthly_credits: data.spacebring_monthly_credits,
-      spacebring_seats: data.spacebring_seats,
-      spacebring_start_date: data.spacebring_start_date,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", companyId)
 
   if (error) {
