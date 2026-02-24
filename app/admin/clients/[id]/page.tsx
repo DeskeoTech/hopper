@@ -449,16 +449,15 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                 {/* Sidebar - Right Column */}
                 <div className="space-y-6">
                   {/* Abonnement hors plateforme */}
-                  {company.from_spacebring && (
-                    <SpacebringSubscriptionCard
-                      companyId={company.id}
-                      planName={company.spacebring_plan_name}
-                      monthlyPrice={company.spacebring_monthly_price}
-                      monthlyCredits={company.spacebring_monthly_credits}
-                      seats={company.spacebring_seats}
-                      startDate={company.spacebring_start_date}
-                    />
-                  )}
+                  <SpacebringSubscriptionCard
+                    companyId={company.id}
+                    isFromSpacebring={company.from_spacebring ?? false}
+                    planName={company.spacebring_plan_name}
+                    monthlyPrice={company.spacebring_monthly_price}
+                    monthlyCredits={company.spacebring_monthly_credits}
+                    seats={company.spacebring_seats}
+                    startDate={company.spacebring_start_date}
+                  />
 
                   {/* Pass */}
                   <PassesSection
