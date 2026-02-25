@@ -35,7 +35,7 @@ export interface SiteWithDetails {
 }
 
 interface ClientLayoutContextValue {
-  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
+  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null; customer_id_stripe: string | null } | null }
   credits: UserCredits | null
   creditMovements: CreditMovement[]
   plan: UserPlan | null
@@ -58,7 +58,7 @@ const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
 
 interface ClientLayoutProviderProps {
   children: ReactNode
-  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null } | null }
+  user: User & { companies: { id: string; name: string | null; main_site_id: string | null; company_type: CompanyType | null; customer_id_stripe: string | null } | null }
   credits: UserCredits | null
   creditMovements: CreditMovement[]
   plan: UserPlan | null
