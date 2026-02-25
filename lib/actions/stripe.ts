@@ -30,6 +30,35 @@ function getStripe() {
   })
 }
 
+async function getOrCreateMonthlyPrice(
+  stripe: Stripe,
+  productId: string,
+  unitAmount: number
+): Promise<string> {
+  const existingPrices = await stripe.prices.list({
+    product: productId,
+    active: true,
+    currency: "eur",
+    recurring: { interval: "month" },
+    type: "recurring",
+    limit: 100,
+  })
+
+  const match = existingPrices.data.find((p) => p.unit_amount === unitAmount)
+  if (match) return match.id
+
+  const newPrice = await stripe.prices.create(
+    {
+      product: productId,
+      unit_amount: unitAmount,
+      currency: "eur",
+      recurring: { interval: "month" },
+    },
+    { idempotencyKey: `price-${productId}-${unitAmount}` }
+  )
+  return newPrice.id
+}
+
 interface CheckoutParams {
   siteId: string
   siteName: string
@@ -146,22 +175,29 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
     }
 
     if (isSubscription) {
-      const product = await stripe.products.create({
-        name: productName,
-        description: productDescription,
-      })
+      // Récupérer le stripe_product_id depuis la table plans (test vs live)
+      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")
+      const stripeProductIdColumn = isTestMode ? "stripe_product_id_test" : "stripe_product_id_live"
 
-      const price = await stripe.prices.create({
-        unit_amount: unitAmount,
-        currency: "eur",
-        recurring: { interval: "month" },
-        product: product.id,
-      })
+      const supabase = await createClient()
+      const { data: plan } = await supabase
+        .from("plans")
+        .select(stripeProductIdColumn)
+        .eq("name", "Hopper Pass Month")
+        .single()
+
+      const stripeProductId = plan?.[stripeProductIdColumn]
+      if (!stripeProductId) {
+        throw new Error("Produit Stripe non configuré pour le plan Hopper Pass Month")
+      }
+
+      // unitAmount = prix par poste (en cents), seats = nombre de postes
+      const priceId = await getOrCreateMonthlyPrice(stripe, stripeProductId, unitAmount)
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         mode: "subscription",
         payment_method_types: ["card"],
-        line_items: [{ price: price.id, quantity: seats }],
+        line_items: [{ price: priceId, quantity: seats }],
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata,
@@ -180,6 +216,9 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
             text: { minimum_length: 1, maximum_length: 50 },
           },
         ],
+        subscription_data: {
+          description: productDescription,
+        },
       }
       if (stripeCustomerId) {
         sessionParams.customer = stripeCustomerId

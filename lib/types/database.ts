@@ -154,6 +154,8 @@ export interface Plan {
   archived: boolean
   created_at: string
   updated_at: string
+  stripe_product_id_test: string | null
+  stripe_product_id_live: string | null
 }
 
 export interface PlanSite {
