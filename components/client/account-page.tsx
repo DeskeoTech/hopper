@@ -10,7 +10,7 @@ import { ContractsListSection } from "./contracts-list-section"
 import { NewsCard } from "./news-card"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay, NewsPostWithSite } from "@/lib/types/database"
-
+import { useTranslations } from "next-intl"
 interface AccountPageProps {
   bookings: BookingWithDetails[]
   contracts: ContractForDisplay[]
@@ -19,6 +19,7 @@ interface AccountPageProps {
 }
 
 export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPageProps) {
+    const t = useTranslations("")
   const { user, selectedSiteWithDetails } = useClientLayout()
   const [activeTab, setActiveTab] = useState<"reservations" | "actualites">("reservations")
   const [newsPage, setNewsPage] = useState(0)
@@ -98,7 +99,7 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
                   : "bg-foreground/5 text-foreground"
               )}
             >
-              Réservations
+              {t("dashboard.tabs.reservations")}
             </button>
             <button
               type="button"
@@ -110,7 +111,7 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
                   : "bg-foreground/5 text-foreground"
               )}
             >
-              Actualités
+              {t("dashboard.tabs.news")}
             </button>
           </div>
 
@@ -154,7 +155,7 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
                 <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
                   <Newspaper className="h-7 w-7 text-foreground/40" />
                 </div>
-                <p className="mt-4 text-base text-muted-foreground">Aucune actualité pour le moment</p>
+                <p className="mt-4 text-base text-muted-foreground">{t("dashboard.news.noNews")}</p>
               </div>
             )
           )}

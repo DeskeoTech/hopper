@@ -10,12 +10,24 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
+import { LanguageSwitcher, languages } from "@/components/public/language-switcher"
+import { CityFilter } from "@/components/public/reservation/city-filter"
 
-export function ClientHeader() {
+interface PublicHeaderProps {
+  selectedCity?: "paris" | "lyon" | null
+  onCityChange?: (city: "paris" | "lyon" | null) => void
+}
+
+const NOOP_CITY_CHANGE = () => {}
+
+export function ClientHeader({ selectedCity = null, onCityChange }: PublicHeaderProps) {
   const { user, credits, isDeskeoEmployee, canManageCompany } = useClientLayout()
   const searchParams = useSearchParams()
-
+  //detection de la langue via le context langue
+  const locale = useLocale();
+  const currentLang = languages.find((l) => l.code === locale) || languages[0]
   // Preserve site param in navigation
   const siteParam = searchParams.get("site")
   const monCompteHref = siteParam ? `/mon-compte?site=${siteParam}` : "/mon-compte"
@@ -30,6 +42,10 @@ export function ClientHeader() {
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center justify-end bg-[#f0e8dc] px-4 md:h-20">
       {/* Centered Logo - Clickable to home */}
+      <div className="absolute left-[30px] flex items-center gap-2">
+        <LanguageSwitcher />
+        <CityFilter selectedCity={selectedCity} onCityChange={onCityChange || NOOP_CITY_CHANGE} />
+      </div>
       <Link href="/compte" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
         <Image
           src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
@@ -40,7 +56,6 @@ export function ClientHeader() {
           priority
         />
       </Link>
-
       {/* User Info Block + Profile Dropdown */}
       <div className="flex items-center gap-3">
         {/* User Name & Company - Desktop only */}

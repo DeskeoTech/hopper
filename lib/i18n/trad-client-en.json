@@ -1,0 +1,79 @@
+{
+  "dashboard": {
+    "buyCredits": {
+      "title": "Buy Credits",
+      "description": "Top up your account",
+      "button": "Buy"
+    },
+    "bookRoom": {
+      "title": "Book a Room",
+      "description": "Book a meeting room",
+      "button": "Book"
+    },
+    "bookDesk": {
+      "title": "Book a Desk",
+      "description": "By the day, week or month",
+      "button": "Book"
+    },
+    "tabs": {
+      "reservations": "Reservations",
+      "news": "News"
+    },
+    "reservations": {
+      "noRoomBooking": "No room reservations"
+    },
+    "news": {
+      "noNews": "No news for today"
+    },
+    "pass": {
+      "title": "Pass",
+      "since": "Since",
+      "desks": "desk | desks",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      }
+    },
+    "sites": {
+      "title": "All Hopper Sites",
+      "viewAll": "View all"
+    },
+    "amenities": {
+        "bikeStorage": "Bike storage",
+        "cafe": "Café",
+        "phonebooth": "Phone booth",
+        "printer": "Printer",
+        "barista": "Barista",
+        "terrace": "Terrace",
+        "waterFountain": "Water fountain",
+        "showers": "Showers",
+        "gym": "Gym",
+        "rooftop": "Rooftop",
+        "microwave": "Microwave",
+        "restaurant": "Restaurant",
+        "wifi": "Wi-Fi"
+    }
+  },
+  "header": {
+    "myAccount": "My Account",
+    "manageCompany": "Manage my company",
+    "support": "Support",
+    "adminSpace": "Admin Panel",
+    "credits": "credit | credits"
+  },
+  "footer": {
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "copyright": "© 2026 Deskeo – Hopper Coworking"
+  },
+    "days": {
+    "lundi": "Lundi",
+    "mardi": "Mardi",
+    "mercredi": "Mercredi",
+    "jeudi": "Jeudi",
+    "vendredi": "Vendredi",
+    "samedi": "Samedi",
+    "dimanche": "Dimanche"
+  }
+}

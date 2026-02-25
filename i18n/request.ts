@@ -3,6 +3,11 @@ import { getRequestConfig } from 'next-intl/server'
 import { defaultLocale, locales } from './config'
 import type { Locale } from './config'
 
+import tradClientFr from '../lib/i18n/trad-client-fr.json'
+import tradClientEn from '../lib/i18n/trad-client-en.json'
+
+const clientMessages: Record<string, any> = { fr: tradClientFr, en: tradClientEn }
+
 export default getRequestConfig(async () => {
   const store = await cookies()
   const cookieLocale = store.get('locale')?.value
@@ -24,10 +29,8 @@ export default getRequestConfig(async () => {
     ...equipment.default,
     ...calendar.default,
     ...modals.default,
+    ...clientMessages[locale],
   }
 
-  return {
-    locale,
-    messages,
-  }
+  return { locale, messages }
 })

@@ -1,0 +1,79 @@
+{
+  "dashboard": {
+    "buyCredits": {
+      "title": "Acheter des crédits",
+      "description": "Rechargez votre compte",
+      "button": "Acheter"
+    },
+    "bookRoom": {
+      "title": "Réserver une salle",
+      "description": "Réservez une salle de réunion",
+      "button": "Réserver"
+    },
+    "bookDesk": {
+      "title": "Réserver un poste",
+      "description": "À la journée, à la semaine ou au mois",
+      "button": "Réserver"
+    },
+    "tabs": {
+      "reservations": "Réservations",
+      "news": "Actualités"
+    },
+    "reservations": {
+      "noRoomBooking": "Aucune réservation de salle"
+    },
+    "news": {
+      "noNews": "Aucune actualité pour le moment"
+    },
+    "pass": {
+      "title": "Pass",
+      "since": "Depuis le",
+      "desks": "poste | postes",
+      "status": {
+        "active": "En cours",
+        "expired": "Expiré",
+        "cancelled": "Annulé"
+      }
+    },
+    "sites": {
+      "title": "Tous les sites Hopper",
+      "viewAll": "Voir tous"
+    },
+    "amenities": {
+      "bikeStorage": "Local vélo",
+      "cafe": "Café",
+      "phonebooth": "Phonebooth",
+      "printer": "Imprimante",
+      "barista": "Barista",
+      "terrace": "Terrasse",
+      "waterFountain": "Fontaine à eau",
+      "showers": "Douches",
+      "gym": "Salle de sport",
+      "rooftop": "Rooftop",
+      "microwave": "Micro-ondes",
+      "restaurant": "Restauration",
+      "wifi": "Wifi"
+}
+  },
+  "header": {
+    "myAccount": "Mon Compte",
+    "manageCompany": "Gérer mon entreprise",
+    "support": "Support",
+    "adminSpace": "Espace Admin",
+    "credits": "crédit | crédits"
+  },
+  "footer": {
+    "terms": "Conditions Générales",
+    "privacy": "Politique de confidentialité",
+    "copyright": "© 2026 Deskeo – Hopper Coworking"
+  },
+  "days": {
+    "lundi": "Monday",
+    "mardi": "Tuesday",
+    "mercredi": "Wednesday",
+    "jeudi": "Thursday",
+    "vendredi": "Friday",
+    "samedi": "Saturday",
+    "dimanche": "Sunday"
+  }
+}
