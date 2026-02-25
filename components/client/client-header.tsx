@@ -13,16 +13,8 @@ import {
 import { useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { LanguageSwitcher, languages } from "@/components/public/language-switcher"
-import { CityFilter } from "@/components/public/reservation/city-filter"
 
-interface PublicHeaderProps {
-  selectedCity?: "paris" | "lyon"
-  onCityChange?: (city: "paris" | "lyon") => void
-}
-
-const NOOP_CITY_CHANGE = () => {}
-
-export function ClientHeader({ selectedCity = null, onCityChange }: PublicHeaderProps) {
+export function ClientHeader() {
   const { user, credits, isDeskeoEmployee, canManageCompany } = useClientLayout()
   const searchParams = useSearchParams()
   //detection de la langue via le context langue
@@ -44,7 +36,6 @@ export function ClientHeader({ selectedCity = null, onCityChange }: PublicHeader
       {/* Centered Logo - Clickable to home */}
       <div className="absolute left-[30px] flex items-center gap-2">
         <LanguageSwitcher />
-        <CityFilter selectedCity={selectedCity} onCityChange={onCityChange || NOOP_CITY_CHANGE} />
       </div>
       <Link href="/compte" className="absolute left-1/2 -translate-x-1/2 transition-opacity hover:opacity-80">
         <Image
