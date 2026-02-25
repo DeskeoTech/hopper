@@ -66,6 +66,9 @@ export function LoginForm({ initialError }: LoginFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [showNoAccountModal, setShowNoAccountModal] = useState(false)
   const t = useTranslations("login")
+  const [otpCode, setOtpCode] = useState("")
+  const [otpError, setOtpError] = useState<string | null>(null)
+  const [isVerifying, setIsVerifying] = useState(false)
 
   useEffect(() => {
     if (initialError === "no_account") {
