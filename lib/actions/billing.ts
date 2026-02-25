@@ -1,6 +1,6 @@
 "use server"
 
-import { getUser } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
 
 const N8N_WEBHOOK_URL = process.env.N8N_BILLING_WEBHOOK_URL!
 const N8N_WEBHOOK_SECRET = process.env.N8N_BILLING_WEBHOOK_SECRET
@@ -24,6 +24,25 @@ export async function createBillingPortalSession(
   }
 
   try {
+    // Fetch user's company and Stripe customer ID
+    const supabase = await createClient()
+    const { data: userData } = await supabase
+      .from("users")
+      .select("company_id")
+      .eq("email", user.email)
+      .maybeSingle()
+
+    let customerId: string | null = null
+    if (userData?.company_id) {
+      const { data: company } = await supabase
+        .from("companies")
+        .select("customer_id_stripe")
+        .eq("id", userData.company_id)
+        .maybeSingle()
+
+      customerId = company?.customer_id_stripe ?? null
+    }
+
     const response = await fetch(N8N_WEBHOOK_URL, {
       method: "POST",
       headers: {
@@ -33,7 +52,7 @@ export async function createBillingPortalSession(
       body: JSON.stringify({
         user_id: user.id,
         email: user.email,
-        customer_id: null,
+        customer_id: customerId,
         return_url: returnUrl,
       }),
     })
