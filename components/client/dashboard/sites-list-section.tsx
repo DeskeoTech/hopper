@@ -126,7 +126,7 @@ export function SitesListSection() {
               onClick={handleViewAllClick}
               className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              Voir tous
+              {t("sites.viewAll")}
               <ChevronRight className="h-4 w-4" />
             </button>
           )}
