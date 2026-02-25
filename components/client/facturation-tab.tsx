@@ -41,7 +41,10 @@ export function FacturationTab() {
       // Redirect to Stripe Billing Portal
       window.location.href = result.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : tc("errorOccurred"))
+      const message = err instanceof Error ? err.message : ""
+      // Ne jamais afficher d'identifiants Stripe (cus_, sub_, pi_, etc.) dans les erreurs
+      const isSafe = message && !/cus_|sub_|pi_|ch_|pm_|price_|prod_/.test(message)
+      setError(isSafe ? message : tc("errorOccurred"))
       setIsLoading(false)
     }
   }
