@@ -1,29 +1,25 @@
 "use client"
 
 import { useState } from "react"
-import { useTranslations } from "next-intl"
 import { Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
 interface CityFilterProps {
-  selectedCity: "paris" | "lyon" | null
-  onCityChange: (city: "paris" | "lyon" | null) => void
+  selectedCity: "paris" | "lyon"
+  onCityChange: (city: "paris" | "lyon") => void
 }
 
+const cities = [
+  { id: "paris" as const, label: "Paris" },
+  { id: "lyon" as const, label: "Lyon" },
+]
+
 export function CityFilter({ selectedCity, onCityChange }: CityFilterProps) {
-  const t = useTranslations("common")
   const [open, setOpen] = useState(false)
 
-  const cities = [
-    { id: "paris" as const, label: t("cities.paris"), fullLabel: t("cities.parisRegion") },
-    { id: "lyon" as const, label: t("cities.lyon"), fullLabel: t("cities.lyonRegion") },
-  ]
-
-  const displayLabel = selectedCity
-    ? cities.find((c) => c.id === selectedCity)?.label
-    : t("cities.paris")
+  const displayLabel = cities.find((c) => c.id === selectedCity)?.label ?? "Paris"
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

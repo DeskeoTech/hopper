@@ -16,8 +16,8 @@ import { LanguageSwitcher, languages } from "@/components/public/language-switch
 import { CityFilter } from "@/components/public/reservation/city-filter"
 
 interface PublicHeaderProps {
-  selectedCity?: "paris" | "lyon" | null
-  onCityChange?: (city: "paris" | "lyon" | null) => void
+  selectedCity?: "paris" | "lyon"
+  onCityChange?: (city: "paris" | "lyon") => void
 }
 
 const NOOP_CITY_CHANGE = () => {}
