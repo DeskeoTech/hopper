@@ -3,8 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { checkEmailExists, ensureSupabaseAuthUser } from "@/lib/actions/auth"
+import {
+  checkEmailExists,
+  ensureSupabaseAuthUser,
+  getPostLoginRedirectUrl,
+} from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Mail, Loader2, CheckCircle, ExternalLink } from "lucide-react"
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -44,18 +56,60 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ initialError }: LoginFormProps) {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showNoAccountModal, setShowNoAccountModal] = useState(false)
+  const [otpCode, setOtpCode] = useState("")
+  const [isVerifying, setIsVerifying] = useState(false)
+  const [otpError, setOtpError] = useState<string | null>(null)
 
   useEffect(() => {
     if (initialError === "no_account") {
       setShowNoAccountModal(true)
     }
   }, [initialError])
+
+  // OTP verification
+  const handleVerifyOtp = async (code: string) => {
+    if (code.length !== 6) return
+
+    setIsVerifying(true)
+    setOtpError(null)
+
+    try {
+      const supabase = createClient()
+
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
+      })
+
+      if (error) {
+        setOtpError("Code invalide ou expiré. Veuillez réessayer.")
+        setIsVerifying(false)
+        setOtpCode("")
+        return
+      }
+
+      // OTP verified — determine redirect with server action
+      try {
+        const { url } = await getPostLoginRedirectUrl()
+        window.location.href = url
+      } catch {
+        // Fallback if server action fails
+        window.location.href = "/compte"
+      }
+    } catch {
+      setOtpError("Une erreur est survenue. Veuillez réessayer.")
+      setIsVerifying(false)
+      setOtpCode("")
+    }
+  }
 
   // Google OAuth login
   const handleGoogleLogin = async () => {
@@ -106,7 +160,12 @@ export function LoginForm({ initialError }: LoginFormProps) {
     setIsLoading(false)
 
     if (error) {
-      setError(error.message)
+      const match = error.message.match(/request this after (\d+) seconds/)
+      if (match) {
+        setError(`Pour des raisons de sécurité, veuillez patienter ${match[1]} secondes avant de réessayer.`)
+      } else {
+        setError(error.message)
+      }
     } else {
       setIsSuccess(true)
     }
@@ -121,15 +180,67 @@ export function LoginForm({ initialError }: LoginFormProps) {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">Vérifiez votre boîte mail</h2>
           <p className="text-muted-foreground">
-            Nous avons envoyé un lien de connexion à <span className="font-medium text-foreground">{email}</span>
+            Nous avons envoyé un code de connexion à{" "}
+            <span className="font-medium text-foreground">{email}</span>
           </p>
         </div>
+
+        {/* OTP Input */}
+        <div className="w-full space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Entrez le code à 6 chiffres reçu par email
+          </p>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              pattern={REGEXP_ONLY_DIGITS}
+              value={otpCode}
+              onChange={(value) => {
+                setOtpCode(value)
+                setOtpError(null)
+              }}
+              onComplete={handleVerifyOtp}
+              disabled={isVerifying}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          {isVerifying && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Vérification en cours...
+            </div>
+          )}
+
+          {otpError && (
+            <p className="text-sm text-destructive">{otpError}</p>
+          )}
+        </div>
+
+        <div className="w-full border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            Vous pouvez aussi cliquer sur le lien dans l&apos;email
+          </p>
+        </div>
+
         <Button
           variant="ghost"
-          className="mt-4"
           onClick={() => {
             setIsSuccess(false)
             setEmail("")
+            setOtpCode("")
+            setOtpError(null)
           }}
         >
           Utiliser une autre adresse
@@ -142,8 +253,8 @@ export function LoginForm({ initialError }: LoginFormProps) {
     <>
       <form onSubmit={handleMagicLinkLogin} className="space-y-6">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">
-            Entrez votre adresse email pour recevoir un lien de connexion.
+          <p className="text-sm text-muted-foreground text-center">
+            Entrez votre adresse email pour vous connecter à votre espace Hopper.
           </p>
         </div>
 
@@ -174,7 +285,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
               Envoi en cours...
             </>
           ) : (
-            "RECEVOIR LE LIEN DE CONNEXION"
+            "CONNEXION"
           )}
         </Button>
 
