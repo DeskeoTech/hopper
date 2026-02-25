@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Loader2, Users, Shield, UserCircle, Plus } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
@@ -32,6 +33,8 @@ import type { User, UserRole } from "@/lib/types/database"
 
 export function MonEntrepriseTab() {
   const { user: currentUser } = useClientLayout()
+  const t = useTranslations("company")
+  const tCommon = useTranslations("common")
   const companyId = currentUser.company_id
   const companyName = currentUser.companies?.name
 
@@ -148,7 +151,7 @@ export function MonEntrepriseTab() {
   if (!companyId) {
     return (
       <div className="rounded-[16px] bg-card p-6 ">
-        <p className="text-muted-foreground">Aucune entreprise associée</p>
+        <p className="text-muted-foreground">{t("noCompany")}</p>
       </div>
     )
   }
@@ -163,7 +166,7 @@ export function MonEntrepriseTab() {
               <Users className="h-5 w-5 text-foreground/70" />
             </div>
             <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-              {companyName || "Entreprise"}
+              {companyName || t("enterprise")}
             </h2>
           </div>
 
@@ -172,7 +175,7 @@ export function MonEntrepriseTab() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 max-w-md">
                 <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-foreground/50">Sièges utilisés</span>
+                  <span className="text-foreground/50">{t("seatsOccupied")}</span>
                   <span className="font-medium text-foreground/70">{seatsInfo.activeUsers} / {seatsInfo.maxSeats}</span>
                 </div>
                 <Progress value={progressValue} className="h-1.5" />
@@ -184,7 +187,7 @@ export function MonEntrepriseTab() {
                 className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#1B1918] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Ajouter
+                {tCommon("add")}
               </button>
             </div>
           )}
@@ -198,7 +201,7 @@ export function MonEntrepriseTab() {
 
         {/* Users list */}
         <div className="rounded-[16px] bg-card p-4 sm:p-6">
-          <h3 className="mb-4 font-header text-sm font-bold uppercase tracking-tight text-foreground/70">Utilisateurs</h3>
+          <h3 className="mb-4 font-header text-sm font-bold uppercase tracking-tight text-foreground/70">{t("users")}</h3>
 
           {loading ? (
             <div className="flex items-center justify-center py-8">
@@ -206,7 +209,7 @@ export function MonEntrepriseTab() {
             </div>
           ) : users.length === 0 ? (
             <div className="py-8 text-center text-sm text-foreground/50">
-              Aucun utilisateur trouvé
+              {t("noUsersFound")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -237,11 +240,11 @@ export function MonEntrepriseTab() {
                           {userName}
                         </span>
                         {isCurrentUser && (
-                          <span className="text-[10px] text-foreground/40">(vous)</span>
+                          <span className="text-[10px] text-foreground/40">{t("youLabel")}</span>
                         )}
                         {user.role === "admin" && (
                           <span className="inline-flex items-center rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium text-foreground/70">
-                            Administrateur de l'entreprise
+                            {t("companyAdmin")}
                           </span>
                         )}
                       </div>
@@ -265,8 +268,8 @@ export function MonEntrepriseTab() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="user">Utilisateur</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="user">{t("roleUser")}</SelectItem>
+                            <SelectItem value="admin">{t("roleAdmin")}</SelectItem>
                           </SelectContent>
                         </Select>
                       ) : null}
@@ -282,7 +285,7 @@ export function MonEntrepriseTab() {
                           {isUpdating ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
-                            "Désactiver"
+                            t("deactivate")
                           )}
                         </button>
                       )}
@@ -299,61 +302,61 @@ export function MonEntrepriseTab() {
       <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogTitle>{t("addUser.title")}</DialogTitle>
             <DialogDescription>
-              Ajoutez un nouvel utilisateur à votre entreprise.
+              {t("addUser.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
+                <Label htmlFor="firstName">{tCommon("firstName")}</Label>
                 <Input
                   id="firstName"
                   value={newUserFirstName}
                   onChange={(e) => setNewUserFirstName(e.target.value)}
-                  placeholder="Prénom"
+                  placeholder={tCommon("firstName")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
+                <Label htmlFor="lastName">{tCommon("lastName")}</Label>
                 <Input
                   id="lastName"
                   value={newUserLastName}
                   onChange={(e) => setNewUserLastName(e.target.value)}
-                  placeholder="Nom"
+                  placeholder={tCommon("lastName")}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{tCommon("email")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={tCommon("email")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+              <Label htmlFor="phone">{tCommon("phone")}</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={newUserPhone}
                 onChange={(e) => setNewUserPhone(e.target.value)}
-                placeholder="Téléphone"
+                placeholder={tCommon("phone")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
+              <Label htmlFor="role">{tCommon("role")}</Label>
               <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as UserRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="admin">Administrateur</SelectItem>
+                  <SelectItem value="user">{t("roleUser")}</SelectItem>
+                  <SelectItem value="admin">{t("administrator")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -364,7 +367,7 @@ export function MonEntrepriseTab() {
               onClick={() => setAddUserOpen(false)}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
-              Annuler
+              {tCommon("cancel")}
             </button>
             <button
               type="button"
@@ -375,10 +378,10 @@ export function MonEntrepriseTab() {
               {addingUser ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Création...
+                  {tCommon("creating")}
                 </>
               ) : (
-                "Créer"
+                tCommon("create")
               )}
             </button>
           </DialogFooter>

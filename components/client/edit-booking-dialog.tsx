@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { format, parseISO } from "date-fns"
-import { fr } from "date-fns/locale"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import { CalendarIcon, ChevronLeft, ChevronRight, Loader2, Users } from "lucide-react"
 import {
   Dialog,
@@ -41,6 +42,11 @@ export function EditBookingDialog({
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [calendarOpen, setCalendarOpen] = useState(false)
+
+  const t = useTranslations("roomBooking")
+  const tc = useTranslations("common")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
 
   const initialDate = parseISO(booking.start_date)
   const initialStartHour = new Date(booking.start_date).getHours()
@@ -114,7 +120,7 @@ export function EditBookingDialog({
 
   const handleSave = async () => {
     if (selectedSlots.length === 0) {
-      setError("Veuillez sélectionner au moins un créneau")
+      setError(t("selectAtLeastOneSlot"))
       return
     }
 
@@ -157,7 +163,7 @@ export function EditBookingDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="rounded-[20px] sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Modifier la réservation</DialogTitle>
+          <DialogTitle>{t("editBooking")}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -167,14 +173,14 @@ export function EditBookingDialog({
             {booking.resource_capacity && (
               <div className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
                 <Users className="h-4 w-4" />
-                <span>{booking.resource_capacity} personnes</span>
+                <span>{booking.resource_capacity} {tc("people")}</span>
               </div>
             )}
           </div>
 
           {/* Date navigation */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Date</label>
+            <label className="text-sm font-medium">{tc("date")}</label>
             <div className="flex items-center gap-1">
               <Button
                 variant="outline"
@@ -195,8 +201,8 @@ export function EditBookingDialog({
                   <Button variant="outline" className="flex-1">
                     <CalendarIcon className="h-4 w-4 mr-2" />
                     {isTodaySelected
-                      ? "Aujourd'hui"
-                      : format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                      ? tc("today")
+                      : format(selectedDate, "EEEE d MMMM", { locale: dateLocale })}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="center">
@@ -222,7 +228,7 @@ export function EditBookingDialog({
 
           {/* Time slot picker */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Créneaux</label>
+            <label className="text-sm font-medium">{t("slots")}</label>
             {loadingSlots ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -245,7 +251,7 @@ export function EditBookingDialog({
             onClick={() => onOpenChange(false)}
             disabled={isLoading}
           >
-            Annuler
+            {tc("cancel")}
           </Button>
           <Button
             onClick={handleSave}
@@ -254,10 +260,10 @@ export function EditBookingDialog({
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Enregistrement...
+                {tc("saving")}
               </>
             ) : (
-              "Enregistrer"
+              tc("save")
             )}
           </Button>
         </div>

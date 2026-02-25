@@ -1,6 +1,7 @@
 "use client"
 
 import { X } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { ContractListCard } from "./contract-list-card"
 import { useClientLayout } from "./client-layout-provider"
@@ -20,6 +21,7 @@ export function AllContractsModal({
   onSelectContract,
 }: AllContractsModalProps) {
   const { isDeskeoEmployee, plan } = useClientLayout()
+  const tCompany = useTranslations("company")
 
   // Check if expired contract banner is visible
   const showBanner = !isDeskeoEmployee && !plan
@@ -50,7 +52,7 @@ export function AllContractsModal({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-4 md:rounded-t-[20px]">
           <h1 className="font-header text-xl font-bold uppercase tracking-tight">
-            Tous les pass
+            {tCompany("allPasses")}
           </h1>
           <button
             type="button"

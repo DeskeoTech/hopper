@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/table"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
+import { useTranslations, useLocale } from "next-intl"
 import type { CreditMovement, CreditMovementType, UserCredits } from "@/lib/types/database"
 
 interface CreditsHistoryModalProps {
@@ -29,27 +30,14 @@ interface CreditsHistoryModalProps {
   userEmail: string | null
 }
 
-const typeLabels: Record<CreditMovementType | "purchase", string> = {
-  reservation: "Réservation",
-  cancellation: "Annulation",
-  adjustment: "Ajustement",
-  purchase: "Achat",
-}
-
 const typeColors: Record<CreditMovementType | "purchase", string> = {
   reservation: "bg-blue-100 text-blue-700",
   cancellation: "bg-orange-100 text-orange-700",
   adjustment: "bg-purple-100 text-purple-700",
   purchase: "bg-green-100 text-green-700",
+  allocation: "bg-teal-100 text-teal-700",
+  expiration: "bg-red-100 text-red-700",
 }
-
-const filterOptions = [
-  { value: "all", label: "Tous les types" },
-  { value: "reservation", label: "Réservation" },
-  { value: "cancellation", label: "Annulation" },
-  { value: "adjustment", label: "Ajustement" },
-  { value: "purchase", label: "Achat" },
-]
 
 export function CreditsHistoryModal({
   open,
@@ -58,7 +46,20 @@ export function CreditsHistoryModal({
   movements,
   userEmail,
 }: CreditsHistoryModalProps) {
+  const t = useTranslations("creditsTab")
+  const tCommon = useTranslations("common")
+  const locale = useLocale()
   const [typeFilter, setTypeFilter] = useState("all")
+
+  const filterOptions = [
+    { value: "all", label: t("types.all") },
+    { value: "reservation", label: t("types.reservation") },
+    { value: "cancellation", label: t("types.cancellation") },
+    { value: "adjustment", label: t("types.adjustment") },
+    { value: "purchase", label: t("types.purchase") },
+    { value: "allocation", label: t("types.allocation") },
+    { value: "expiration", label: t("types.expiration") },
+  ]
 
   const filteredMovements = useMemo(() => {
     if (typeFilter === "all") {
@@ -73,7 +74,7 @@ export function CreditsHistoryModal({
         <DialogHeader className="px-6 py-4">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Ticket className="h-5 w-5" />
-            Mes crédits
+            {tCommon("credits")}
           </DialogTitle>
         </DialogHeader>
 
@@ -83,12 +84,12 @@ export function CreditsHistoryModal({
             <div className="rounded-lg border border-border bg-muted/30 p-4 sm:p-6">
               <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Solde actuel</p>
+                  <p className="text-sm text-muted-foreground">{t("currentBalance")}</p>
                   <p className="text-4xl font-bold text-foreground">
                     {credits?.remaining ?? 0}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    crédits disponibles
+                    {tCommon("credits")}
                   </p>
                 </div>
                 <div className="mt-4 sm:mt-0">
@@ -109,18 +110,18 @@ export function CreditsHistoryModal({
               }}
             >
               <ShoppingCart className="mr-2 h-4 w-4" />
-              Acheter des Crédits supplémentaires
+              {tCommon("buyMoreCredits")}
             </Button>
 
             {/* Credits History */}
             <div>
               <h3 className="mb-3 text-sm font-medium text-muted-foreground">
-                Historique des mouvements
+                {t("history")}
               </h3>
 
               {movements.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Aucun mouvement de crédit enregistré
+                  {t("noMovements")}
                 </p>
               ) : (
                 <div className="space-y-4">
@@ -130,8 +131,8 @@ export function CreditsHistoryModal({
                       options={filterOptions}
                       value={typeFilter}
                       onValueChange={setTypeFilter}
-                      placeholder="Filtrer par type"
-                      searchPlaceholder="Rechercher un type..."
+                      placeholder={t("filterByType")}
+                      searchPlaceholder={t("searchType")}
                       triggerClassName="w-full sm:w-[200px]"
                     />
                   </div>
@@ -141,14 +142,14 @@ export function CreditsHistoryModal({
                     <Table>
                       <TableHeader>
                         <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead className="text-right">Montant</TableHead>
+                          <TableHead>{t("tableHeaders.date")}</TableHead>
+                          <TableHead>{t("tableHeaders.type")}</TableHead>
+                          <TableHead className="text-right">{t("tableHeaders.amount")}</TableHead>
                           <TableHead className="hidden md:table-cell">
-                            Motif
+                            {t("tableHeaders.reason")}
                           </TableHead>
                           <TableHead className="hidden sm:table-cell text-right">
-                            Solde après
+                            {t("tableHeaders.balanceAfter")}
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -159,7 +160,7 @@ export function CreditsHistoryModal({
                               colSpan={5}
                               className="text-center text-muted-foreground"
                             >
-                              Aucun mouvement pour ce filtre
+                              {t("noMovementsFilter")}
                             </TableCell>
                           </TableRow>
                         ) : (
@@ -167,7 +168,7 @@ export function CreditsHistoryModal({
                             <TableRow key={movement.id}>
                               <TableCell className="whitespace-nowrap">
                                 {new Date(movement.date).toLocaleDateString(
-                                  "fr-FR"
+                                  locale === "fr" ? "fr-FR" : "en-US"
                                 )}
                               </TableCell>
                               <TableCell>
@@ -177,7 +178,7 @@ export function CreditsHistoryModal({
                                     typeColors[movement.type as CreditMovementType | "purchase"]
                                   )}
                                 >
-                                  {typeLabels[movement.type as CreditMovementType | "purchase"]}
+                                  {t(`types.${movement.type as CreditMovementType | "purchase"}`)}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">

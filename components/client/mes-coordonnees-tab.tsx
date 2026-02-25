@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Loader2, User, Mail, Phone, Check } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { useTranslations } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { updateUserProfile } from "@/lib/actions/user-company-info"
 
@@ -23,6 +24,8 @@ function formatFrenchPhone(value: string): string {
 
 export function MesCoordonneesTab() {
   const { user } = useClientLayout()
+  const t = useTranslations("profile")
+  const tc = useTranslations("common")
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -58,44 +61,44 @@ export function MesCoordonneesTab() {
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
           <User className="h-5 w-5 text-foreground/70" />
         </div>
-        <h2 className="font-header text-lg font-bold uppercase tracking-tight">Coordonnées</h2>
+        <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="firstName">Prénom</Label>
+            <Label htmlFor="firstName">{tc("firstName")}</Label>
             <Input
               id="firstName"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
-              placeholder="Votre prénom"
+              placeholder={t("firstNamePlaceholder")}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="lastName">Nom</Label>
+            <Label htmlFor="lastName">{tc("lastName")}</Label>
             <Input
               id="lastName"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
-              placeholder="Votre nom"
+              placeholder={t("lastNamePlaceholder")}
             />
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{tc("email")}</Label>
           <div className="flex items-center gap-2 rounded-[12px] bg-foreground/5 px-3 py-2.5">
             <Mail className="h-4 w-4 text-foreground/50" />
             <span className="text-sm text-foreground/70">{user.email}</span>
           </div>
           <p className="text-xs text-muted-foreground">
-            L&apos;email ne peut pas être modifié
+            {t("emailNotEditable")}
           </p>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="phone">Téléphone</Label>
+          <Label htmlFor="phone">{tc("phone")}</Label>
           <div className="relative">
             <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -109,7 +112,7 @@ export function MesCoordonneesTab() {
             />
           </div>
           <p className="text-xs text-muted-foreground">
-            Format : 01 23 45 67 89
+            {t("phoneFormat")}
           </p>
         </div>
 
@@ -122,7 +125,7 @@ export function MesCoordonneesTab() {
         {success && (
           <div className="flex items-center gap-2 rounded-[12px] bg-green-500/10 p-4 text-green-600">
             <Check className="h-4 w-4" />
-            <p className="text-sm font-medium">Informations mises à jour</p>
+            <p className="text-sm font-medium">{t("successMessage")}</p>
           </div>
         )}
 
@@ -134,10 +137,10 @@ export function MesCoordonneesTab() {
           {loading ? (
             <span className="flex items-center justify-center gap-2">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Enregistrement...
+              {tc("saving")}
             </span>
           ) : (
-            "Enregistrer"
+            tc("save")
           )}
         </button>
       </form>

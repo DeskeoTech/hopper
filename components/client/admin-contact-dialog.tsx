@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Mail, UserRound } from "lucide-react"
 import {
   AlertDialog,
@@ -25,16 +26,13 @@ export function AdminContactDialog({
   admin,
   actionType,
 }: AdminContactDialogProps) {
-  const actionLabels: Record<typeof actionType, string> = {
-    credits: "acheter des crédits",
-    desk: "réserver un poste",
-    billing: "accéder à la facturation",
-  }
-  const actionLabel = actionLabels[actionType]
+  const t = useTranslations("adminContact")
+  const tc = useTranslations("common")
+  const actionLabel = t(`actions.${actionType}`)
 
   const adminName = admin
-    ? `${admin.first_name || ""} ${admin.last_name || ""}`.trim() || "l'administrateur"
-    : "l'administrateur"
+    ? `${admin.first_name || ""} ${admin.last_name || ""}`.trim() || t("theAdmin")
+    : t("theAdmin")
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -44,10 +42,10 @@ export function AdminContactDialog({
             <UserRound className="h-7 w-7 text-foreground/70" />
           </div>
           <AlertDialogTitle className="text-center">
-            Contacter votre administrateur
+            {t("title")}
           </AlertDialogTitle>
           <AlertDialogDescription className="text-center">
-            Pour {actionLabel}, veuillez contacter l'administrateur de votre entreprise.
+            {t("message", { action: actionLabel })}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -76,7 +74,7 @@ export function AdminContactDialog({
         )}
 
         <AlertDialogFooter>
-          <AlertDialogAction className="w-full rounded-full">Compris</AlertDialogAction>
+          <AlertDialogAction className="w-full rounded-full">{tc("understood")}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

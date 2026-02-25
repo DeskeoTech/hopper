@@ -23,7 +23,9 @@
       "noRoomBooking": "Aucune réservation de salle"
     },
     "news": {
-      "noNews": "Aucune actualité pour le moment"
+      "noNews": "Aucune actualité pour le moment",
+      "feedTitle": "Fil d'actualité",
+      "pageTitle": "Actualités"
     },
     "pass": {
       "title": "Pass",
@@ -53,7 +55,7 @@
       "microwave": "Micro-ondes",
       "restaurant": "Restauration",
       "wifi": "Wifi"
-}
+    }
   },
   "header": {
     "myAccount": "Mon Compte",
@@ -68,12 +70,384 @@
     "copyright": "© 2026 Deskeo – Hopper Coworking"
   },
   "days": {
-    "lundi": "Monday",
-    "mardi": "Tuesday",
-    "mercredi": "Wednesday",
-    "jeudi": "Thursday",
-    "vendredi": "Friday",
-    "samedi": "Saturday",
-    "dimanche": "Sunday"
+    "lundi": "Lundi",
+    "mardi": "Mardi",
+    "mercredi": "Mercredi",
+    "jeudi": "Jeudi",
+    "vendredi": "Vendredi",
+    "samedi": "Samedi",
+    "dimanche": "Dimanche"
+  },
+  "common": {
+    "back": "Retour",
+    "backToHome": "Retour à l'accueil",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "create": "Créer",
+    "creating": "Création...",
+    "send": "Envoyer",
+    "sending": "Envoi...",
+    "confirm": "Confirmer",
+    "continue": "Continuer",
+    "delete": "Supprimer",
+    "loading": "Chargement...",
+    "user": "Utilisateur",
+    "noResults": "Aucun résultat",
+    "logout": "Déconnexion",
+    "loggingOut": "Déconnexion...",
+    "logoutConfirm": "Êtes-vous sûr de vouloir vous déconnecter ?",
+    "credit": "crédit",
+    "credits": "crédits",
+    "creditPerHour": "crédit/h",
+    "seats": "postes",
+    "persons": "pers.",
+    "people": "personnes",
+    "today": "Aujourd'hui",
+    "todayShort": "Auj.",
+    "date": "Date",
+    "time": "Horaire",
+    "site": "Site",
+    "hour": "heure",
+    "hours": "heures",
+    "errorOccurred": "Une erreur est survenue",
+    "add": "Ajouter",
+    "search": "Rechercher",
+    "all": "Toutes",
+    "finish": "Terminer",
+    "start": "Commencer",
+    "understood": "Compris",
+    "subscribe": "Souscrire",
+    "subscribePass": "Souscrire un pass",
+    "buyCredits": "Acheter des crédits",
+    "buyMoreCredits": "Acheter des crédits supplémentaires",
+    "firstName": "Prénom",
+    "lastName": "Nom",
+    "email": "Email",
+    "phone": "Téléphone",
+    "role": "Rôle",
+    "status": "Statut",
+    "actions": "Actions"
+  },
+  "account": {
+    "tabs": {
+      "profile": "Coordonnées",
+      "plan": "Forfait",
+      "credits": "Crédits",
+      "billing": "Facturation",
+      "support": "Support"
+    }
+  },
+  "profile": {
+    "title": "Coordonnées",
+    "firstNamePlaceholder": "Votre prénom",
+    "lastNamePlaceholder": "Votre nom",
+    "emailNotEditable": "L'email ne peut pas être modifié",
+    "phoneFormat": "Format : 01 23 45 67 89",
+    "successMessage": "Informations mises à jour"
+  },
+  "plan": {
+    "currentPlan": "Forfait actuel",
+    "status": {
+      "active": "Actif",
+      "suspended": "Suspendu",
+      "terminated": "Terminé"
+    },
+    "startDate": "Date de début",
+    "commitmentEnd": "Fin d'engagement",
+    "includedTitle": "Inclus dans votre forfait",
+    "includedAccess": "Accès illimité à Hopper Coworking",
+    "includedRooms": "Réservation de salles de réunion",
+    "includedWifi": "WiFi haut débit",
+    "managePlan": "Gérer mon forfait",
+    "noPlan": "Aucun forfait actif",
+    "history": "Historique des pass",
+    "noHistory": "Aucun historique de pass",
+    "tableHeaders": {
+      "plan": "Forfait",
+      "startDate": "Date début",
+      "endDate": "Date fin",
+      "seats": "Postes",
+      "priceTtc": "Prix TTC/mois"
+    }
+  },
+  "creditsTab": {
+    "currentBalance": "Solde actuel",
+    "buyCredits": "Acheter des crédits",
+    "history": "Historique des mouvements",
+    "noMovements": "Aucun mouvement de crédit enregistré",
+    "filterByType": "Filtrer par type",
+    "searchType": "Rechercher un type...",
+    "tableHeaders": {
+      "date": "Date",
+      "type": "Type",
+      "amount": "Montant",
+      "reason": "Motif",
+      "balanceAfter": "Solde après"
+    },
+    "noMovementsFilter": "Aucun mouvement pour ce filtre",
+    "types": {
+      "all": "Tous les types",
+      "reservation": "Réservation",
+      "cancellation": "Annulation",
+      "adjustment": "Ajustement",
+      "purchase": "Achat",
+      "allocation": "Attribution",
+      "expiration": "Expiration"
+    }
+  },
+  "billing": {
+    "title": "Facturation",
+    "description": "Accédez à votre espace de facturation pour consulter vos factures et gérer vos informations de paiement.",
+    "openPortal": "Accéder à mon compte facturation",
+    "connecting": "Connexion à Stripe...",
+    "preparing": "Préparation de votre espace de facturation.",
+    "redirecting": "Vous allez être redirigé dans quelques instants.",
+    "urlError": "URL de facturation non reçue"
+  },
+  "support": {
+    "sendTicket": "Envoyer un ticket",
+    "requester": "Demandeur",
+    "currentSite": "Vous êtes actuellement sur le site",
+    "selectSite": "Sélectionner un site...",
+    "requestAbout": "Votre demande concerne",
+    "requestType": "Type de demande",
+    "choose": "Choisir...",
+    "specify": "Précisez votre demande...",
+    "subject": "Sujet",
+    "subjectPlaceholder": "Résumez votre demande en quelques mots",
+    "description": "Description",
+    "descriptionPlaceholder": "Tapez quelque chose",
+    "attachment": "Pièce jointe",
+    "successMessage": "Votre demande a été envoyée avec succès",
+    "myRequests": "Mes demandes",
+    "noRequests": "Vous n'avez pas encore de demande",
+    "noDescription": "Pas de description",
+    "status": {
+      "todo": "En attente",
+      "in_progress": "En cours",
+      "done": "Résolu"
+    },
+    "validation": {
+      "selectType": "Veuillez sélectionner un type de demande",
+      "selectSubtype": "Veuillez sélectionner un type de demande précis",
+      "enterSubject": "Veuillez saisir un sujet",
+      "enterDescription": "Veuillez saisir une description"
+    }
+  },
+  "roomBooking": {
+    "selectSite": "Sélectionner un site",
+    "selectSiteMessage": "Sélectionnez un site pour voir les salles disponibles",
+    "searchSite": "Rechercher un site...",
+    "myCredits": "Mes crédits disponibles",
+    "passExpired": "Votre pass Hopper a expiré",
+    "passExpiredCoworking": "Votre pass Hopper Coworking a expiré",
+    "cannotBookRoom": "Vous ne pouvez pas réserver de salle de réunion. Souscrivez un nouveau pass pour accéder aux réservations.",
+    "noCreditsLeft": "Vous n'avez plus de crédits",
+    "noCreditsMessage": "Votre solde de crédits est à 0. Achetez des crédits supplémentaires pour réserver une salle de réunion.",
+    "notEnoughCredits": "Vous n'avez pas assez de crédits pour cette réservation",
+    "cannotBookWithoutCredits": "Vous ne pouvez pas réserver cette salle sans crédits.",
+    "bookingSuccess": "Votre salle a été réservée avec succès !",
+    "noRoomsOnSite": "Aucune salle disponible sur ce site",
+    "noRoomsCapacity": "Aucune salle ne correspond au filtre de capacité",
+    "selectSlots": "Sélectionnez vos créneaux",
+    "totalCost": "Coût total",
+    "creditsAvailable": "Crédits disponibles",
+    "available": "Disponibles",
+    "confirmBooking": "Confirmer la réservation",
+    "chooseSlots": "Choisir les créneaux",
+    "totalToDebit": "Total à débiter",
+    "remainingAfter": "Il vous restera {remaining} crédits après cette réservation",
+    "remainingCredits": "Reste: {remaining} crédits",
+    "capacity": "Capacité",
+    "capacityPersons": "Capacité: {count} personnes",
+    "manageOnStripe": "Gérer sur Stripe",
+    "editBooking": "Modifier la réservation",
+    "selectAtLeastOneSlot": "Veuillez sélectionner au moins un créneau",
+    "slots": "Créneaux"
+  },
+  "bookingCard": {
+    "cancel": "Annuler",
+    "ongoing": "En cours",
+    "cancelled": "Annulée",
+    "completed": "Terminée"
+  },
+  "cancelBooking": {
+    "title": "Annuler la réservation",
+    "message": "Êtes-vous sûr de vouloir annuler cette réservation du {date} ?",
+    "irreversible": "Cette action est irréversible.",
+    "keep": "Non, garder",
+    "confirmCancel": "Oui, annuler",
+    "cancelling": "Annulation..."
+  },
+  "company": {
+    "myCompany": "Mon entreprise",
+    "pass": "Pass",
+    "noActivePass": "Aucun pass actif",
+    "seatsUsed": "Postes utilisés",
+    "seatsOccupied": "Sièges utilisés",
+    "users": "Utilisateurs",
+    "noUsers": "Aucun utilisateur",
+    "linkToPass": "Lier à un pass",
+    "removeFromPass": "Retirer du pass",
+    "full": "complet",
+    "available": "{count} dispo",
+    "companyAdmin": "Administrateur de l'entreprise",
+    "companyType": {
+      "selfEmployed": "Auto-entrepreneur",
+      "company": "Entreprise"
+    },
+    "dateRange": {
+      "since": "Depuis le {date}",
+      "until": "Jusqu'au {date}"
+    },
+    "addUser": {
+      "title": "Ajouter un utilisateur",
+      "description": "Ajoutez un nouvel utilisateur à votre entreprise."
+    },
+    "linkPassDialog": {
+      "title": "Lier à un pass",
+      "selectPass": "Sélectionnez un pass pour",
+      "thisUser": "cet utilisateur",
+      "noPass": "Aucun pass disponible"
+    },
+    "seatsQuota": {
+      "title": "Quota de sièges atteint",
+      "message": "Vous avez atteint le nombre maximum d'utilisateurs pour vos pass actuels. Pour ajouter plus d'utilisateurs, veuillez souscrire à un nouveau pass."
+    },
+    "manageCompany": "Gérer mon entreprise",
+    "manageUsers": "Gérez les utilisateurs de {company}",
+    "manageUsersDefault": "Gérez les utilisateurs de votre entreprise",
+    "addUserButton": "Ajouter un utilisateur",
+    "noUsersFound": "Aucun utilisateur trouvé",
+    "administrator": "Administrateur",
+    "youLabel": "(vous)",
+    "deactivate": "Désactiver",
+    "inactive": "Inactif",
+    "active": "Actif",
+    "noCompany": "Aucune entreprise associée",
+    "enterprise": "Entreprise",
+    "roleUser": "Utilisateur",
+    "roleAdmin": "Admin",
+    "allPasses": "Tous les pass",
+    "viewAllPasses": "Voir tous les pass ({count})"
+  },
+  "contractDetail": {
+    "period": "Période",
+    "seats": "Postes",
+    "seatCount": "{count} poste",
+    "seatCountPlural": "{count} postes",
+    "undefined": "Non défini",
+    "assignedUsers": "Utilisateurs assignés",
+    "assignedUsersHint": "Seuls les administrateurs peuvent ajouter ou supprimer des utilisateurs",
+    "noUsers": "Aucun utilisateur assigné à ce pass",
+    "status": {
+      "ongoing": "En cours",
+      "suspended": "Suspendu",
+      "terminated": "Terminé",
+      "upcoming": "À venir",
+      "active": "Actif",
+      "pending": "En attente",
+      "inactive": "Inactif"
+    },
+    "since": "Depuis le {date}"
+  },
+  "assignUser": {
+    "title": "Assigner un utilisateur",
+    "searchUser": "Rechercher un utilisateur...",
+    "allSeatsOccupied": "Tous les postes sont occupés. Augmentez le nombre de postes sur Stripe pour ajouter un utilisateur.",
+    "noUserFound": "Aucun utilisateur trouvé",
+    "allAssigned": "Tous les utilisateurs sont déjà assignés"
+  },
+  "onboarding": {
+    "emailRequired": "L'email est requis",
+    "emailInvalid": "Format d'email invalide",
+    "welcome": "Bienvenue !",
+    "welcomeMessage": "L'équipe Hopper Coworking vous souhaite la bienvenue dans votre nouvel espace de travail.",
+    "companyInfoNeeded": "Pour commencer, nous avons besoin de quelques informations sur votre entreprise.",
+    "cguNeeded": "Avant de continuer, veuillez accepter nos conditions d'utilisation.",
+    "companyType": "Type d'entreprise",
+    "companyTypeMessage": "Sélectionnez le type de structure de votre entreprise",
+    "selfEmployed": "Entreprise Individuelle",
+    "selfEmployedDesc": "Auto-entrepreneur, EI, EIRL",
+    "multiEmployee": "Entreprise",
+    "multiEmployeeDesc": "SAS, SARL, SA, SASU, EURL...",
+    "kbisTitle": "Document KBIS",
+    "kbisMessage": "Le KBIS est obligatoire pour les entreprises (SAS, SARL...)",
+    "clickToUpload": "Cliquez pour importer",
+    "fileFormats": "PDF, JPG ou PNG (max 10 Mo)",
+    "completeProfile": "Complétez votre profil",
+    "almostDone": "Plus que quelques informations et c'est terminé !",
+    "cguTitle": "Conditions d'utilisation",
+    "cguAcceptMessage": "Veuillez accepter les conditions pour accéder à votre espace.",
+    "companyName": "Nom de l'entreprise",
+    "companyNamePlaceholder": "Nom de votre entreprise",
+    "address": "Adresse",
+    "addressPlaceholder": "Adresse de l'entreprise",
+    "contactEmail": "Email de contact",
+    "iAcceptThe": "J'accepte les",
+    "termsAndConditions": "Conditions Générales",
+    "andThe": "et la",
+    "privacyPolicy": "Politique de confidentialité",
+    "thankYou": "Merci !",
+    "welcomeToHopper": "Bienvenue chez Hopper Coworking",
+    "spaceReady": "Votre espace est prêt, redirection en cours..."
+  },
+  "cgu": {
+    "update": "Mise à jour",
+    "updateMessage": "Nos conditions générales ont été mises à jour ou vous ne les avez pas encore acceptées. Veuillez les accepter pour continuer à utiliser l'application.",
+    "validating": "Validation...",
+    "acceptAndContinue": "Accepter et continuer"
+  },
+  "noContract": {
+    "title": "Aucun pass actif",
+    "message": "Votre compte n'est lié à aucun pass actif. Veuillez contacter l'administrateur de votre entreprise pour être assigné à un pass.",
+    "logOut": "Se déconnecter"
+  },
+  "comingSoon": {
+    "defaultMessage": "Cette fonctionnalité sera bientôt disponible."
+  },
+  "expiredBanner": {
+    "message": "VOTRE PASS HOPPER A EXPIRÉ, SOUSCRIVEZ-EN UN NOUVEAU ICI"
+  },
+  "adminContact": {
+    "title": "Contacter votre administrateur",
+    "message": "Pour {action}, veuillez contacter l'administrateur de votre entreprise.",
+    "theAdmin": "l'administrateur",
+    "actions": {
+      "credits": "acheter des crédits",
+      "desk": "réserver un poste",
+      "billing": "accéder à la facturation"
+    }
+  },
+  "boutique": {
+    "title": "Boutique",
+    "buyCredits": "Acheter des Crédits",
+    "buyPass": "Acheter un Pass",
+    "cafeTitle": "Hopper Café",
+    "cafeDescription": "Abonnez-vous à nos formules boissons et profitez de vos cafés et jus préférés chaque jour"
+  },
+  "cafe": {
+    "popular": "Populaire",
+    "perMonth": "€/mois",
+    "drinksPerDay": "boisson | boissons",
+    "perDay": "/jour",
+    "perWeek": "/sem.",
+    "subscribe": "Souscrire",
+    "threeDays": "3 jours / sem.",
+    "fiveDays": "5 jours / sem.",
+    "moreChoices": "+ de choix"
+  },
+  "planningGrid": {
+    "screen": "Écran",
+    "videoConf": "Visio",
+    "whiteboard": "Tableau",
+    "myBooking": "Ma réservation",
+    "reserved": "Réservé",
+    "unavailable": "Indisponible"
+  },
+  "allSites": {
+    "title": "Tous les sites Hopper"
   }
 }

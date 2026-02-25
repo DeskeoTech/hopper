@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations, useLocale } from "next-intl"
 import { ArrowDown, ArrowUp, Coins, ShoppingCart } from "lucide-react"
 import {
   Table,
@@ -16,31 +17,30 @@ import { useClientLayout } from "./client-layout-provider"
 import { AdminContactDialog } from "./admin-contact-dialog"
 import type { CreditMovementType } from "@/lib/types/database"
 
-const typeLabels: Record<CreditMovementType | "purchase", string> = {
-  reservation: "Réservation",
-  cancellation: "Annulation",
-  adjustment: "Ajustement",
-  purchase: "Achat",
-}
-
 const typeColors: Record<CreditMovementType | "purchase", string> = {
   reservation: "bg-blue-100 text-blue-700",
   cancellation: "bg-orange-100 text-orange-700",
   adjustment: "bg-purple-100 text-purple-700",
   purchase: "bg-green-100 text-green-700",
+  allocation: "bg-teal-100 text-teal-700",
+  expiration: "bg-red-100 text-red-700",
 }
-
-const filterOptions = [
-  { value: "all", label: "Tous les types" },
-  { value: "reservation", label: "Réservation" },
-  { value: "cancellation", label: "Annulation" },
-  { value: "adjustment", label: "Ajustement" },
-  { value: "purchase", label: "Achat" },
-]
 
 export function MesCreditsTab() {
   const { credits, creditMovements, user, isAdmin, companyAdmin } = useClientLayout()
+  const t = useTranslations("creditsTab")
+  const locale = useLocale()
   const [typeFilter, setTypeFilter] = useState("all")
+
+  const filterOptions = [
+    { value: "all", label: t("types.all") },
+    { value: "reservation", label: t("types.reservation") },
+    { value: "cancellation", label: t("types.cancellation") },
+    { value: "adjustment", label: t("types.adjustment") },
+    { value: "purchase", label: t("types.purchase") },
+    { value: "allocation", label: t("types.allocation") },
+    { value: "expiration", label: t("types.expiration") },
+  ]
   const [adminDialogOpen, setAdminDialogOpen] = useState(false)
 
   const handleBuyCredits = () => {
@@ -63,7 +63,7 @@ export function MesCreditsTab() {
       <div className="rounded-[16px] bg-card p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">Solde actuel</p>
+            <p className="text-xs text-muted-foreground">{t("currentBalance")}</p>
             <p className="text-2xl font-bold text-foreground">
               {credits?.remaining ?? 0}
             </p>
@@ -81,7 +81,7 @@ export function MesCreditsTab() {
         onClick={handleBuyCredits}
       >
         <ShoppingCart className="h-4 w-4" />
-        Acheter des crédits
+        {t("buyCredits")}
       </button>
 
       {/* Admin Contact Dialog for non-admin users */}
@@ -94,10 +94,10 @@ export function MesCreditsTab() {
 
       {/* Credits History */}
       <div className="rounded-[16px] bg-card p-6">
-        <h3 className="mb-4 font-header text-lg font-bold uppercase tracking-tight">Historique des mouvements</h3>
+        <h3 className="mb-4 font-header text-lg font-bold uppercase tracking-tight">{t("history")}</h3>
 
         {creditMovements.length === 0 ? (
-          <p className="text-muted-foreground">Aucun mouvement de crédit enregistré</p>
+          <p className="text-muted-foreground">{t("noMovements")}</p>
         ) : (
           <div className="space-y-4">
             {/* Filter */}
@@ -106,8 +106,8 @@ export function MesCreditsTab() {
                 options={filterOptions}
                 value={typeFilter}
                 onValueChange={setTypeFilter}
-                placeholder="Filtrer par type"
-                searchPlaceholder="Rechercher un type..."
+                placeholder={t("filterByType")}
+                searchPlaceholder={t("searchType")}
                 triggerClassName="w-full sm:w-[200px]"
               />
             </div>
@@ -117,25 +117,25 @@ export function MesCreditsTab() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead className="hidden md:table-cell">Motif</TableHead>
-                    <TableHead className="hidden sm:table-cell text-right">Solde après</TableHead>
+                    <TableHead>{t("tableHeaders.date")}</TableHead>
+                    <TableHead>{t("tableHeaders.type")}</TableHead>
+                    <TableHead className="text-right">{t("tableHeaders.amount")}</TableHead>
+                    <TableHead className="hidden md:table-cell">{t("tableHeaders.reason")}</TableHead>
+                    <TableHead className="hidden sm:table-cell text-right">{t("tableHeaders.balanceAfter")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredMovements.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={5} className="text-center text-muted-foreground">
-                        Aucun mouvement pour ce filtre
+                        {t("noMovementsFilter")}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredMovements.map((movement) => (
                       <TableRow key={movement.id}>
                         <TableCell className="whitespace-nowrap">
-                          {new Date(movement.date).toLocaleDateString("fr-FR")}
+                          {new Date(movement.date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")}
                         </TableCell>
                         <TableCell>
                           <span
@@ -144,7 +144,7 @@ export function MesCreditsTab() {
                               typeColors[movement.type as CreditMovementType | "purchase"]
                             )}
                           >
-                            {typeLabels[movement.type as CreditMovementType | "purchase"]}
+                            {t(`types.${movement.type}`)}
                           </span>
                         </TableCell>
                         <TableCell className="text-right">

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { AlertCircle, LogOut, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 
@@ -10,6 +11,8 @@ interface NoContractModalProps {
 }
 
 export function NoContractModal({ open }: NoContractModalProps) {
+  const t = useTranslations("noContract")
+  const tc = useTranslations("common")
   const [loggingOut, setLoggingOut] = useState(false)
 
   if (!open) return null
@@ -36,13 +39,12 @@ export function NoContractModal({ open }: NoContractModalProps) {
 
           {/* Title */}
           <h2 className="mt-4 font-header text-xl font-bold uppercase tracking-tight">
-            Aucun pass actif
+            {t("title")}
           </h2>
 
           {/* Description */}
           <p className="mt-3 text-sm text-foreground/70">
-            Votre compte n&apos;est lié à aucun pass actif.
-            Veuillez contacter l&apos;administrateur de votre entreprise pour être assigné à un pass.
+            {t("message")}
           </p>
 
           {/* Logout button */}
@@ -55,12 +57,12 @@ export function NoContractModal({ open }: NoContractModalProps) {
             {loggingOut ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Déconnexion...
+                {tc("loggingOut")}
               </>
             ) : (
               <>
                 <LogOut className="mr-2 h-4 w-4" />
-                Se déconnecter
+                {t("logOut")}
               </>
             )}
           </Button>

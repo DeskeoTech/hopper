@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { Search, UserPlus, Plus, Loader2 } from "lucide-react"
 import {
   getCompanyUsersNotInContract,
@@ -24,6 +25,9 @@ export function AssignUserToContract({
   assignedUsersCount,
   onUserAssigned,
 }: AssignUserToContractProps) {
+  const t = useTranslations("assignUser")
+  const tc = useTranslations("common")
+
   const [search, setSearch] = useState("")
   const [availableUsers, setAvailableUsers] = useState<ContractUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -80,7 +84,7 @@ export function AssignUserToContract({
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
-          Assigner un utilisateur
+          {t("title")}
         </h3>
         <button
           type="button"
@@ -89,14 +93,14 @@ export function AssignUserToContract({
           className="flex items-center gap-1.5 rounded-full bg-foreground px-3 py-1.5 text-xs font-semibold uppercase text-background transition-colors hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus className="h-3.5 w-3.5" />
-          <span>Ajouter</span>
+          <span>{tc("add")}</span>
         </button>
       </div>
 
       {isFull ? (
         <div className="rounded-[12px] bg-orange-500/10 p-4">
           <p className="text-sm text-orange-700">
-            Tous les postes sont occupés. Augmentez le nombre de postes sur Stripe pour ajouter un utilisateur.
+            {t("allSeatsOccupied")}
           </p>
         </div>
       ) : (
@@ -106,7 +110,7 @@ export function AssignUserToContract({
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/40" />
             <input
               type="text"
-              placeholder="Rechercher un utilisateur..."
+              placeholder={t("searchUser")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="w-full rounded-[12px] bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-foreground/40 focus:outline-none focus:ring-2 focus:ring-foreground/20"
@@ -123,8 +127,8 @@ export function AssignUserToContract({
               <div className="rounded-[12px] bg-card p-4 text-center">
                 <p className="text-sm text-muted-foreground">
                   {search.trim()
-                    ? "Aucun utilisateur trouvé"
-                    : "Tous les utilisateurs sont déjà assignés"}
+                    ? t("noUserFound")
+                    : t("allAssigned")}
                 </p>
               </div>
             ) : (

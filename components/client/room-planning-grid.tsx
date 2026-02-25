@@ -1,16 +1,23 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Users, Coins, DoorOpen, ChevronLeft, ChevronRight, X, Tv, Video, PenTool, Layers } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { MeetingRoomResource, ResourceEquipment } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
-// Equipment labels and icons
-const equipmentConfig: Record<ResourceEquipment, { label: string; icon: typeof Tv }> = {
-  ecran: { label: "Écran", icon: Tv },
-  visio: { label: "Visio", icon: Video },
-  tableau: { label: "Tableau", icon: PenTool },
+// Equipment icons (labels come from translations)
+const equipmentIcons: Record<ResourceEquipment, typeof Tv> = {
+  ecran: Tv,
+  visio: Video,
+  tableau: PenTool,
+}
+
+const equipmentTransKeys: Record<ResourceEquipment, string> = {
+  ecran: "screen",
+  visio: "videoConf",
+  tableau: "whiteboard",
 }
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 8) // 8:00 to 19:00
@@ -104,6 +111,8 @@ interface RoomCardProps {
 }
 
 function RoomCard({ room, onClick, onPhotoClick }: RoomCardProps) {
+  const t = useTranslations("planningGrid")
+
   const handlePhotoClick = (e: React.MouseEvent) => {
     e.stopPropagation()
     if (room.photoUrls && room.photoUrls.length > 0 && onPhotoClick) {
@@ -167,16 +176,15 @@ function RoomCard({ room, onClick, onPhotoClick }: RoomCardProps) {
         {room.equipments && room.equipments.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {room.equipments.map((equipment) => {
-              const config = equipmentConfig[equipment]
-              if (!config) return null
-              const Icon = config.icon
+              const Icon = equipmentIcons[equipment]
+              if (!Icon) return null
               return (
                 <span
                   key={equipment}
                   className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs"
                 >
                   <Icon className="h-3 w-3" />
-                  {config.label}
+                  {t(equipmentTransKeys[equipment])}
                 </span>
               )
             })}
@@ -224,6 +232,8 @@ interface SingleRoomTimelineProps {
 }
 
 export function SingleRoomTimeline({ room, bookings, onSlotClick, selectedDate }: SingleRoomTimelineProps) {
+  const t = useTranslations("planningGrid")
+
   // Get current hour for the "now" indicator
   const now = new Date()
   const currentHour = now.getHours()
@@ -331,7 +341,7 @@ export function SingleRoomTimeline({ room, bookings, onSlotClick, selectedDate }
                 style={{ top: top + 1, height: height - 2 }}
               >
                 <p className="text-xs font-medium text-foreground truncate">
-                  {booking.title || "Réservé"}
+                  {booking.title || t("reserved")}
                 </p>
                 {booking.userName && height > 50 && (
                   <p className="text-[10px] text-muted-foreground truncate mt-0.5">
@@ -502,6 +512,8 @@ interface RoomTimelineProps {
 }
 
 export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId }: RoomTimelineProps) {
+  const t = useTranslations("planningGrid")
+
   // Group bookings by room
   const bookingsByRoom = useMemo(() => {
     const map = new Map<string, RoomBooking[]>()
@@ -637,7 +649,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                           style={{ top: top + 1, height: height - 2 }}
                         >
                           <p className="text-[9px] font-medium text-foreground truncate leading-tight">
-                            {isOwnBooking ? (booking.title || "Ma réservation") : "Indisponible"}
+                            {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
                           </p>
                           {height > 35 && (
                             <p className="text-[8px] text-muted-foreground/70 mt-0.5">
@@ -764,7 +776,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                         style={{ top: top + 1, height: height - 2 }}
                       >
                         <p className="text-xs font-medium text-foreground truncate">
-                          {isOwnBooking ? (booking.title || "Ma réservation") : "Indisponible"}
+                          {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
                         </p>
                         {isOwnBooking && height > 50 && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">

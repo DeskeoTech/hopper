@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations, useLocale } from "next-intl"
 import { CreditCard, Calendar, Check } from "lucide-react"
 import { useClientLayout } from "./client-layout-provider"
 import {
@@ -17,12 +18,6 @@ interface MonForfaitTabProps {
   initialContractHistory: ContractHistoryItem[] | null
 }
 
-const statusLabels: Record<string, string> = {
-  active: "Actif",
-  suspended: "Suspendu",
-  terminated: "Terminé",
-}
-
 const statusColors: Record<string, string> = {
   active: "bg-green-100 text-green-700",
   suspended: "bg-orange-100 text-orange-700",
@@ -31,6 +26,9 @@ const statusColors: Record<string, string> = {
 
 export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
   const { plan } = useClientLayout()
+  const t = useTranslations("plan")
+  const tc = useTranslations("common")
+  const locale = useLocale()
 
   const activeContract = initialContractHistory?.find((c) => c.status === "active")
 
@@ -43,7 +41,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
               <CreditCard className="h-5 w-5 text-foreground/70" />
             </div>
-            <h2 className="font-header text-xl font-bold uppercase tracking-tight">Forfait actuel</h2>
+            <h2 className="font-header text-xl font-bold uppercase tracking-tight">{t("currentPlan")}</h2>
           </div>
           {plan && (
             <span
@@ -52,7 +50,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                 activeContract ? statusColors[activeContract.status] : "bg-green-100 text-green-700"
               )}
             >
-              {activeContract ? statusLabels[activeContract.status] : "Actif"}
+              {activeContract ? t(`status.${activeContract.status}`) : t("status.active")}
             </span>
           )}
         </div>
@@ -64,7 +62,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
               <p className="text-2xl font-semibold text-foreground">{plan.name}</p>
               {activeContract?.number_of_seats && activeContract.number_of_seats > 1 && (
                 <p className="mt-2 text-lg text-foreground/60">
-                  {activeContract.number_of_seats} postes
+                  {activeContract.number_of_seats} {tc("seats")}
                 </p>
               )}
             </div>
@@ -77,9 +75,9 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                     <Calendar className="h-5 w-5 text-foreground/50" />
                   </div>
                   <div>
-                    <p className="text-base text-foreground/50">Date de début</p>
+                    <p className="text-base text-foreground/50">{t("startDate")}</p>
                     <p className="text-lg font-medium">
-                      {new Date(activeContract.start_date).toLocaleDateString("fr-FR", {
+                      {new Date(activeContract.start_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -94,9 +92,9 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                     <Calendar className="h-5 w-5 text-foreground/50" />
                   </div>
                   <div>
-                    <p className="text-base text-foreground/50">Fin d&apos;engagement</p>
+                    <p className="text-base text-foreground/50">{t("commitmentEnd")}</p>
                     <p className="text-lg font-medium">
-                      {new Date(activeContract.commitment_end_date).toLocaleDateString("fr-FR", {
+                      {new Date(activeContract.commitment_end_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
                         day: "numeric",
                         month: "long",
                         year: "numeric",
@@ -109,19 +107,19 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
 
             {/* Benefits list */}
             <div className="rounded-[12px] bg-foreground/[0.03] p-5">
-              <p className="mb-4 text-base font-medium uppercase text-foreground/50">Inclus dans votre forfait</p>
+              <p className="mb-4 text-base font-medium uppercase text-foreground/50">{t("includedTitle")}</p>
               <ul className="space-y-4">
                 <li className="flex items-center gap-4 text-lg text-foreground/80">
                   <Check className="h-6 w-6 shrink-0 text-green-600" />
-                  Accès illimité à Hopper Coworking
+                  {t("includedAccess")}
                 </li>
                 <li className="flex items-center gap-4 text-lg text-foreground/80">
                   <Check className="h-6 w-6 shrink-0 text-green-600" />
-                  Réservation de salles de réunion
+                  {t("includedRooms")}
                 </li>
                 <li className="flex items-center gap-4 text-lg text-foreground/80">
                   <Check className="h-6 w-6 shrink-0 text-green-600" />
-                  WiFi haut débit
+                  {t("includedWifi")}
                 </li>
               </ul>
             </div>
@@ -132,31 +130,31 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
               disabled
               className="w-full rounded-full bg-foreground/5 px-6 py-4 text-sm font-semibold uppercase tracking-wide text-foreground/50 transition-colors disabled:cursor-not-allowed"
             >
-              Gérer mon forfait
+              {t("managePlan")}
             </button>
           </div>
         ) : (
-          <p className="text-lg text-muted-foreground">Aucun forfait actif</p>
+          <p className="text-lg text-muted-foreground">{t("noPlan")}</p>
         )}
       </div>
 
       {/* Contract History */}
       <div className="rounded-[16px] bg-card p-5 sm:p-6">
-        <h3 className="mb-5 font-header text-lg font-bold uppercase tracking-tight">Historique des pass</h3>
+        <h3 className="mb-5 font-header text-lg font-bold uppercase tracking-tight">{t("history")}</h3>
 
         {!initialContractHistory || initialContractHistory.length === 0 ? (
-          <p className="text-lg text-muted-foreground">Aucun historique de pass</p>
+          <p className="text-lg text-muted-foreground">{t("noHistory")}</p>
         ) : (
           <div className="overflow-x-auto -mx-5 px-5 sm:mx-0 sm:px-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-base">Forfait</TableHead>
-                  <TableHead className="hidden sm:table-cell text-base">Date début</TableHead>
-                  <TableHead className="hidden sm:table-cell text-base">Date fin</TableHead>
-                  <TableHead className="hidden md:table-cell text-base">Postes</TableHead>
-                  <TableHead className="hidden md:table-cell text-base">Prix TTC/mois</TableHead>
-                  <TableHead className="text-base">Statut</TableHead>
+                  <TableHead className="text-base">{t("tableHeaders.plan")}</TableHead>
+                  <TableHead className="hidden sm:table-cell text-base">{t("tableHeaders.startDate")}</TableHead>
+                  <TableHead className="hidden sm:table-cell text-base">{t("tableHeaders.endDate")}</TableHead>
+                  <TableHead className="hidden md:table-cell text-base">{t("tableHeaders.seats")}</TableHead>
+                  <TableHead className="hidden md:table-cell text-base">{t("tableHeaders.priceTtc")}</TableHead>
+                  <TableHead className="text-base">{tc("status")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -165,12 +163,12 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                     <TableCell className="font-medium text-base py-4">{contract.plan_name}</TableCell>
                     <TableCell className="hidden sm:table-cell text-base py-4">
                       {contract.start_date
-                        ? new Date(contract.start_date).toLocaleDateString("fr-FR")
+                        ? new Date(contract.start_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")
                         : "—"}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-base py-4">
                       {contract.commitment_end_date
-                        ? new Date(contract.commitment_end_date).toLocaleDateString("fr-FR")
+                        ? new Date(contract.commitment_end_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")
                         : "—"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-base py-4">
@@ -178,7 +176,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-base py-4">
                       {contract.price_per_seat_month
-                        ? `${contract.price_per_seat_month.toLocaleString("fr-FR")} €`
+                        ? `${contract.price_per_seat_month.toLocaleString(locale === "fr" ? "fr-FR" : "en-US")} €`
                         : "—"}
                     </TableCell>
                     <TableCell className="py-4">
@@ -188,7 +186,7 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                           statusColors[contract.status] || "bg-gray-100 text-gray-700"
                         )}
                       >
-                        {statusLabels[contract.status] || contract.status}
+                        {t(`status.${contract.status}`)}
                       </span>
                     </TableCell>
                   </TableRow>

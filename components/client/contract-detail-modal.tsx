@@ -3,7 +3,8 @@
 import { useEffect, useState, useCallback } from "react"
 import { X, Calendar, Users, User, ExternalLink, Loader2 } from "lucide-react"
 import { format, parseISO } from "date-fns"
-import { fr } from "date-fns/locale"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import { cn } from "@/lib/utils"
 import { getContractUsers, getSpacebringCompanyUsers, type ContractUser } from "@/lib/actions/contracts"
 import { createBillingPortalSession } from "@/lib/actions/billing"
@@ -22,6 +23,12 @@ export function ContractDetailModal({
   open,
   onOpenChange,
 }: ContractDetailModalProps) {
+  const t = useTranslations("contractDetail")
+  const tc = useTranslations("common")
+  const tr = useTranslations("roomBooking")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
+
   const { isDeskeoEmployee, plan, isAdmin, user } = useClientLayout()
   const [users, setUsers] = useState<ContractUser[]>([])
   const [loading, setLoading] = useState(false)
@@ -62,7 +69,7 @@ export function ContractDetailModal({
 
   const startDate = contract.start_date ? parseISO(contract.start_date) : null
   const endDate = contract.end_date ? parseISO(contract.end_date) : null
-  const formatDate = (date: Date) => format(date, "d MMMM yyyy", { locale: fr })
+  const formatDate = (date: Date) => format(date, "d MMMM yyyy", { locale: dateLocale })
 
   const isTerminated = contract.status === "terminated"
   const isSuspended = contract.status === "suspended"
@@ -122,22 +129,22 @@ export function ContractDetailModal({
           <div className="flex items-center gap-2">
             {isOngoing && (
               <span className="rounded-full bg-green-500/20 px-3 py-1 text-sm font-semibold text-green-700">
-                En cours
+                {t("status.ongoing")}
               </span>
             )}
             {isSuspended && (
               <span className="rounded-full bg-orange-500/20 px-3 py-1 text-sm font-semibold text-orange-700">
-                Suspendu
+                {t("status.suspended")}
               </span>
             )}
             {isTerminated && (
               <span className="rounded-full bg-foreground/5 px-3 py-1 text-sm text-foreground/50">
-                Terminé
+                {t("status.terminated")}
               </span>
             )}
             {!isOngoing && !isSuspended && !isTerminated && (
               <span className="rounded-full bg-blue-500/20 px-3 py-1 text-sm font-semibold text-blue-700">
-                À venir
+                {t("status.upcoming")}
               </span>
             )}
           </div>
@@ -150,12 +157,12 @@ export function ContractDetailModal({
                 <Calendar className="h-4 w-4 text-foreground/60" />
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground/50 uppercase">Période</p>
+                <p className="text-xs font-medium text-foreground/50 uppercase">{t("period")}</p>
                 <p className="text-sm text-foreground">
                   {startDate && endDate
                     ? `${formatDate(startDate)} → ${formatDate(endDate)}`
                     : startDate
-                    ? `Depuis le ${formatDate(startDate)}`
+                    ? t("since", { date: formatDate(startDate) })
                     : "—"}
                 </p>
               </div>
@@ -167,11 +174,11 @@ export function ContractDetailModal({
                 <Users className="h-4 w-4 text-foreground/60" />
               </div>
               <div>
-                <p className="text-xs font-medium text-foreground/50 uppercase">Postes</p>
+                <p className="text-xs font-medium text-foreground/50 uppercase">{t("seats")}</p>
                 <p className="text-sm text-foreground">
                   {contract.number_of_seats !== null
-                    ? `${contract.number_of_seats} poste${contract.number_of_seats > 1 ? "s" : ""}`
-                    : "Non défini"}
+                    ? (contract.number_of_seats > 1 ? t("seatCountPlural", { count: contract.number_of_seats }) : t("seatCount", { count: contract.number_of_seats }))
+                    : t("undefined")}
                 </p>
               </div>
             </div>
@@ -181,21 +188,21 @@ export function ContractDetailModal({
           <div className="space-y-3">
             <div>
               <h3 className="font-header text-sm font-medium text-foreground/70 uppercase tracking-wide">
-                Utilisateurs assignés
+                {t("assignedUsers")}
               </h3>
               <p className="mt-1 text-xs text-foreground/40">
-                Seuls les administrateurs peuvent ajouter ou supprimer des utilisateurs
+                {t("assignedUsersHint")}
               </p>
             </div>
 
             {loading ? (
               <div className="rounded-[12px] bg-card p-4 text-center">
-                <p className="text-sm text-muted-foreground">Chargement...</p>
+                <p className="text-sm text-muted-foreground">{tc("loading")}</p>
               </div>
             ) : users.length === 0 ? (
               <div className="rounded-[12px] bg-card p-4 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Aucun utilisateur assigné à ce pass
+                  {t("noUsers")}
                 </p>
               </div>
             ) : (
@@ -232,17 +239,17 @@ export function ContractDetailModal({
                       </div>
                       {displayStatus === "active" && (
                         <span className="shrink-0 rounded-full bg-green-500/20 px-2.5 py-0.5 text-xs font-medium text-green-700">
-                          Actif
+                          {t("status.active")}
                         </span>
                       )}
                       {displayStatus === "pending" && (
                         <span className="shrink-0 rounded-full bg-orange-500/20 px-2.5 py-0.5 text-xs font-medium text-orange-700">
-                          En attente
+                          {t("status.pending")}
                         </span>
                       )}
                       {displayStatus === "inactive" && (
                         <span className="shrink-0 rounded-full bg-foreground/5 px-2.5 py-0.5 text-xs font-medium text-foreground/50">
-                          Inactif
+                          {t("status.inactive")}
                         </span>
                       )}
                     </div>
@@ -280,7 +287,7 @@ export function ContractDetailModal({
                     window.location.href = result.url
                   }
                 } catch {
-                  setBillingError("Une erreur est survenue")
+                  setBillingError(tc("errorOccurred"))
                 } finally {
                   setBillingLoading(false)
                 }
@@ -292,7 +299,7 @@ export function ContractDetailModal({
               ) : (
                 <ExternalLink className="h-4 w-4" />
               )}
-              Gérer sur Stripe
+              {tr("manageOnStripe")}
             </button>
           )}
 
