@@ -147,20 +147,24 @@ export function SitesListSection() {
         </div>
       </div>
 
-      {/* Site Info Modal */}
-      <SiteInfoModal
-        open={siteInfoModalOpen}
-        onOpenChange={setSiteInfoModalOpen}
-        site={selectedSite}
-      />
+      {/* Site Info Modal - lazy rendered */}
+      {siteInfoModalOpen && selectedSite && (
+        <SiteInfoModal
+          open={siteInfoModalOpen}
+          onOpenChange={setSiteInfoModalOpen}
+          site={selectedSite}
+        />
+      )}
 
-      {/* All Sites Modal */}
-      <AllSitesModal
-        open={allSitesModalOpen}
-        onOpenChange={setAllSitesModalOpen}
-        sites={sitesWithDetails}
-        onSiteSelect={handleSiteSelectFromModal}
-      />
+      {/* All Sites Modal - lazy rendered */}
+      {allSitesModalOpen && (
+        <AllSitesModal
+          open={allSitesModalOpen}
+          onOpenChange={setAllSitesModalOpen}
+          sites={sitesWithDetails}
+          onSiteSelect={handleSiteSelectFromModal}
+        />
+      )}
     </>
   )
 }

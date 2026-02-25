@@ -25,7 +25,8 @@
     "news": {
       "noNews": "No news for today",
       "feedTitle": "News Feed",
-      "pageTitle": "News"
+      "pageTitle": "News",
+      "pinned": "Pinned"
     },
     "pass": {
       "title": "Pass",
@@ -511,6 +512,7 @@
   "continue": "Continue",
   "reservationTitle": "Book a room",
   "beginHour": "Start time",
-  "endHour": "End time"
+  "endHour": "End time",
+  "duration": "Duration"
 }
 }

@@ -95,7 +95,7 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
         </div>
       </div>
 
-      {userId && (
+      {cancelDialogOpen && userId && (
         <CancelBookingDialog
           bookingId={booking.id}
           userId={userId}

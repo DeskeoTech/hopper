@@ -1,19 +1,10 @@
 "use client"
 
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
-import { fr } from "date-fns/locale"
 import { MapPin, Newspaper, Pencil, Pin, Trash2 } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { NewsPostWithSite } from "@/lib/types/database"
-
-function formatRelativeDate(dateStr: string): string {
-  const date = parseISO(dateStr)
-  const daysDiff = differenceInDays(new Date(), date)
-  if (daysDiff < 7) {
-    return formatDistanceToNow(date, { addSuffix: true, locale: fr })
-  }
-  return format(date, "d MMM yyyy", { locale: fr })
-}
 
 interface NewsCardProps {
   post: NewsPostWithSite
@@ -23,7 +14,20 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCardProps) {
-  const formattedDate = post.published_at ? formatRelativeDate(post.published_at) : null
+  const t = useTranslations("dashboard.news")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
+
+  const formattedDate = post.published_at
+    ? (() => {
+        const date = parseISO(post.published_at)
+        const daysDiff = differenceInDays(new Date(), date)
+        if (daysDiff < 7) {
+          return formatDistanceToNow(date, { addSuffix: true, locale: dateLocale })
+        }
+        return format(date, "d MMM yyyy", { locale: dateLocale })
+      })()
+    : null
 
   if (variant === "compact") {
     return (
@@ -81,7 +85,6 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
                 type="button"
                 onClick={() => onEdit(post.id)}
                 className="rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-primary/10 hover:text-primary"
-                title="Modifier l'actualité"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
@@ -91,7 +94,6 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
                 type="button"
                 onClick={() => onDelete(post.id)}
                 className="rounded-full p-1.5 text-muted-foreground/50 transition-colors hover:bg-destructive/10 hover:text-destructive"
-                title="Supprimer l'actualité"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -117,7 +119,7 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
           {post.is_pinned && (
             <span className="flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
               <Pin className="h-2.5 w-2.5" />
-              Épinglé
+              {t("pinned")}
             </span>
           )}
           {post.site_name && (
