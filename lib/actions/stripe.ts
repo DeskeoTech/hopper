@@ -122,6 +122,29 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
     const successUrl = `${baseUrl}${redirectPath}?success=true&session_id={CHECKOUT_SESSION_ID}`
     const cancelUrl = `${baseUrl}${redirectPath}?canceled=true`
 
+    // --- Chercher le customer Stripe dans Supabase pour verrouiller l'email ---
+    let stripeCustomerId: string | undefined
+    if (customerEmail) {
+      const supabase = await createClient()
+      const { data: userData } = await supabase
+        .from("users")
+        .select("company_id")
+        .eq("email", customerEmail)
+        .single()
+
+      if (userData?.company_id) {
+        const { data: companyData } = await supabase
+          .from("companies")
+          .select("customer_id_stripe")
+          .eq("id", userData.company_id)
+          .single()
+
+        if (companyData?.customer_id_stripe) {
+          stripeCustomerId = companyData.customer_id_stripe
+        }
+      }
+    }
+
     if (isSubscription) {
       const product = await stripe.products.create({
         name: productName,
@@ -143,8 +166,24 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
         cancel_url: cancelUrl,
         metadata,
         allow_promotion_codes: true,
+        custom_fields: [
+          {
+            key: "firstname",
+            label: { type: "custom", custom: "Prénom" },
+            type: "text",
+            text: { minimum_length: 1, maximum_length: 50 },
+          },
+          {
+            key: "lastname",
+            label: { type: "custom", custom: "Nom" },
+            type: "text",
+            text: { minimum_length: 1, maximum_length: 50 },
+          },
+        ],
       }
-      if (customerEmail) {
+      if (stripeCustomerId) {
+        sessionParams.customer = stripeCustomerId
+      } else if (customerEmail) {
         sessionParams.customer_email = customerEmail
       }
 
@@ -171,9 +210,25 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
         cancel_url: cancelUrl,
         metadata,
         allow_promotion_codes: true,
-        customer_creation: "always",
+        ...(!stripeCustomerId && { customer_creation: "always" }),
+        custom_fields: [
+          {
+            key: "firstname",
+            label: { type: "custom", custom: "Prénom" },
+            type: "text",
+            text: { minimum_length: 1, maximum_length: 50 },
+          },
+          {
+            key: "lastname",
+            label: { type: "custom", custom: "Nom" },
+            type: "text",
+            text: { minimum_length: 1, maximum_length: 50 },
+          },
+        ],
       }
-      if (customerEmail) {
+      if (stripeCustomerId) {
+        sessionParams.customer = stripeCustomerId
+      } else if (customerEmail) {
         sessionParams.customer_email = customerEmail
       }
 
