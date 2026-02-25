@@ -26,9 +26,31 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   // Build query for companies with main site
   let query = supabase.from("companies").select("*, main_site:sites!main_site_id(id, name)").order("name")
 
-  // Apply search filter (name only)
+  // Search: also match users by first_name, last_name or email
+  let matchingCompanyIds: string[] = []
   if (search) {
-    query = query.ilike("name", `%${search}%`)
+    // Sanitize search input: strip PostgREST reserved characters to prevent filter injection
+    const sanitizedSearch = search.replace(/[,().]/g, "")
+
+    const { data: matchingUsers } = await supabase
+      .from("users")
+      .select("company_id")
+      .not("company_id", "is", null)
+      .or(`first_name.ilike.%${sanitizedSearch}%,last_name.ilike.%${sanitizedSearch}%,email.ilike.%${sanitizedSearch}%`)
+
+    matchingCompanyIds = [...new Set(
+      (matchingUsers || []).map((u) => u.company_id).filter(Boolean)
+    )] as string[]
+  }
+
+  // Apply search filter (company name OR matching user's company)
+  if (search) {
+    const sanitizedSearch = search.replace(/[,().]/g, "")
+    if (matchingCompanyIds.length > 0) {
+      query = query.or(`name.ilike.%${sanitizedSearch}%,id.in.(${matchingCompanyIds.join(",")})`)
+    } else {
+      query = query.ilike("name", `%${sanitizedSearch}%`)
+    }
   }
 
   // Apply period filter

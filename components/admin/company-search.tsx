@@ -104,7 +104,7 @@ export function ClientsFilters({ sites }: ClientsFiltersProps) {
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           type="text"
-          placeholder="Rechercher par nom..."
+          placeholder="Rechercher par nom, prénom ou email..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-9"
