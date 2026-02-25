@@ -25,7 +25,7 @@ const packages = [
     passType: "day" as const,
   },
   {
-    name: "Pass Week",
+    name: "Weekly Pass",
     priceHT: 100,
     priceTTC: 120,
     period: "semaine",
@@ -40,7 +40,7 @@ const packages = [
     passType: "week" as const,
   },
   {
-    name: "Pass Month",
+    name: "Monthly Pass",
     priceHT: 300,
     priceTTC: 360,
     period: "mois",

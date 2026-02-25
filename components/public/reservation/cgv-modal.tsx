@@ -70,8 +70,8 @@ export function CGVModal({ open, onOpenChange }: CGVModalProps) {
                 définies par le type de Pass souscrit.
               </p>
               <p className="text-muted-foreground leading-relaxed mt-2">
-                Trois types de Pass sont proposés : Pass Day (journalier), Pass Week
-                (hebdomadaire, 5 jours ouvrés consécutifs) et Pass Month (mensuel,
+                Trois types de Pass sont proposés : Day Pass (journalier), Weekly Pass
+                (hebdomadaire, 5 jours ouvrés consécutifs) et Monthly Pass (mensuel,
                 20 jours ouvrés). Chaque Pass donne accès à un poste de travail en
                 open space dans le Centre sélectionné lors de la réservation.
               </p>
@@ -98,7 +98,7 @@ export function CGVModal({ open, onOpenChange }: CGVModalProps) {
               <h3 className="font-bold text-base mb-2">5. Conditions tarifaires</h3>
               <h4 className="font-semibold mt-3 mb-1">5.1 Pass Journalier / Hebdomadaire</h4>
               <p className="text-muted-foreground leading-relaxed">
-                Le Pass Day et le Pass Week sont facturés en une seule fois au moment
+                Le Day Pass et le Weekly Pass sont facturés en une seule fois au moment
                 de la réservation. Le paiement est effectué par carte bancaire via
                 la plateforme de paiement sécurisée Stripe.
               </p>
@@ -109,7 +109,7 @@ export function CGVModal({ open, onOpenChange }: CGVModalProps) {
 
               <h4 className="font-semibold mt-3 mb-1">5.2 Pass Mensuel</h4>
               <p className="text-muted-foreground leading-relaxed">
-                Le Pass Month fait l&apos;objet d&apos;un abonnement mensuel
+                Le Monthly Pass fait l&apos;objet d&apos;un abonnement mensuel
                 renouvelable automatiquement. Le Client peut résilier son abonnement
                 à tout moment depuis son espace personnel ou le portail Stripe.
               </p>
