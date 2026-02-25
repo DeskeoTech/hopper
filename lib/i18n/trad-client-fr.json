@@ -459,7 +459,7 @@
     "admin" : "Admin dashboard"
   },
   "login" : {
-    "message" : "Entrez votre adresse email pour recevoir un lien de connexion.",
+    "message" : "Entrez votre adresse email pour vous connecter à votre espace Hopper.",
     "loadingSend" : "Envoi en cours...",
     "loadingConnect" : "Connexion...",
     "logGoogle" : "Continuer avec Google",
@@ -473,12 +473,18 @@
     "success" : {
         "mailVerify" : "Vérifiez votre boîte mail",
         "linkSent" : "Nous avons envoyé un lien de connexion à ",
+        "codeSent" : "Nous avons envoyé un code de connexion à",
+        "enterCode" : "Entrez le code à 6 chiffres reçu par email",
+        "verifying" : "Vérification en cours...",
+        "linkAlternative" : "Vous pouvez aussi cliquer sur le lien dans l'email",
+        "invalidCode" : "Code invalide ou expiré. Veuillez réessayer.",
+        "genericError" : "Une erreur est survenue. Veuillez réessayer.",
         "otherAdress" : "Utiliser une autre adresse"
     },
     "unlog" : " Vous devez être connecté pour accéder à cette page.",
     "noReservation": "Pas de réservation ?",
     "discoverHopper": "Découvrez et réservez l'expérience Hopper ici",
-    "buttonLink" : "RECEVOIR LE LIEN DE CONNEXION"
+    "buttonLink" : "CONNEXION"
   },
   "sites" : {
     "seeSite" : "Voir les infos du site",
