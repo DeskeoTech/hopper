@@ -67,6 +67,12 @@ export function EditHeaderModal({
       company_type: companyType === "none" ? null : companyType,
     })
 
+    if (result.error) {
+      toast.error(result.error)
+      setLoading(false)
+      return
+    }
+
     // Gérer le changement de statut actif/inactif
     if (active !== isActive) {
       const statusResult = active
