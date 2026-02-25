@@ -89,7 +89,7 @@ function SiteCard({ site, onClick }: SiteCardProps) {
 
 export function SitesListSection() {
   const { sitesWithDetails } = useClientLayout()
-  const t = useTranslations("dashboard")
+  const t = useTranslations("")
   const [selectedSite, setSelectedSite] = useState<SiteWithDetails | null>(null)
   const [siteInfoModalOpen, setSiteInfoModalOpen] = useState(false)
   const [allSitesModalOpen, setAllSitesModalOpen] = useState(false)
@@ -119,7 +119,7 @@ export function SitesListSection() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h2 className="font-header text-xl text-foreground">Tous les sites Hopper</h2>
+          <h2 className="font-header text-xl text-foreground">{t("sites.title")}</h2>
           {sitesWithDetails.length > 3 && (
             <button
               type="button"

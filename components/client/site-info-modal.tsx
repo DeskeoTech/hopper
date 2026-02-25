@@ -14,12 +14,12 @@ import {
   Copy,
   Check,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
 import { cn } from "@/lib/utils"
 import type { Equipment, TransportationStop } from "@/lib/types/database"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import { groupTransportByStation } from "@/lib/utils/transportation"
+import { useTranslations } from "next-intl"
 
 interface SiteInfoModalProps {
   open: boolean
@@ -28,21 +28,6 @@ interface SiteInfoModalProps {
 }
 
 // Equipment labels in French
-const equipmentLabels: Record<Equipment, string> = {
-  barista: "Barista",
-  stationnement_velo: "Local vélo",
-  impression: "Imprimante",
-  douches: "Douches",
-  salle_sport: "Salle de sport",
-  terrasse: "Terrasse",
-  rooftop: "Rooftop",
-  cafe: "Café",
-  phonebooth: "Phonebooth",
-  fontaine_eau: "Fontaine à eau",
-  micro_ondes: "Micro-ondes",
-  restauration: "Restauration",
-  wifi: "Wifi",
-}
 
 export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoModalProps) {
   const { selectedSiteWithDetails, isDeskeoEmployee, plan } = useClientLayout()
@@ -52,7 +37,22 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
   const site = siteProp ?? selectedSiteWithDetails
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [copiedWifi, setCopiedWifi] = useState(false)
-
+  const t = useTranslations("")
+  const equipmentLabels: Record<Equipment, string> = {
+    barista: t("dashboard.amenities.barista"),
+    stationnement_velo: t("dashboard.amenities.bikeStorage"),
+    impression: t("dashboard.amenities.printer"),
+    douches: t("dashboard.amenities.showers"),
+    salle_sport: t("dashboard.amenities.gym"),
+    terrasse: t("dashboard.amenities.terrace"),
+    rooftop: t("dashboard.amenities.rooftop"),
+    cafe: t("dashboard.amenities.cafe"),
+    phonebooth: t("dashboard.amenities.phonebooth"),
+    fontaine_eau: t("dashboard.amenities.waterFountain"),
+    micro_ondes: t("dashboard.amenities.microwave"),
+    restauration: t("dashboard.amenities.restaurant"),
+    wifi: t("dashboard.amenities.wifi"),
+  }
   // Reset photo index when site changes
   useEffect(() => {
     setCurrentPhotoIndex(0)
@@ -231,7 +231,7 @@ export function SiteInfoModal({ open, onOpenChange, site: siteProp }: SiteInfoMo
                     <div className="space-y-1">
                       {site.openingDays.map((day) => (
                         <div key={day} className="flex items-center justify-between text-sm">
-                          <span className="capitalize text-muted-foreground">{day}</span>
+                          <span className="capitalize text-muted-foreground">{t(`days.${day}`)}</span>
                           <span className="font-medium">{site.openingHours || "—"}</span>
                         </div>
                       ))}

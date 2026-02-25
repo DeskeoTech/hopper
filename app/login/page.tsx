@@ -4,6 +4,8 @@ import { LoginForm } from "@/components/login-form"
 import { UserBar } from "@/components/user-bar"
 import { getUser } from "@/lib/supabase/server"
 import { ExternalLink } from "lucide-react"
+import { getTranslations } from "next-intl/server"
+import { LanguageSwitcher, languages } from "@/components/public/language-switcher"
 
 export default async function LoginPage({
   searchParams,
@@ -13,6 +15,7 @@ export default async function LoginPage({
   const user = await getUser()
   const { error } = await searchParams
   const isNotConnected = error === "not_connected"
+  const t = await getTranslations("login")
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -33,10 +36,10 @@ export default async function LoginPage({
           <div className="absolute inset-y-0 right-0 hidden w-32 bg-gradient-to-l from-background via-background/60 to-transparent lg:block" />
           <div className="absolute inset-y-0 right-0 hidden w-24 backdrop-blur-[3px] bg-gradient-to-l from-background/80 to-transparent lg:block" />
         </div>
-
+      
         {/* Bottom/Right side - Login container */}
         <div className="relative -mt-8 flex w-full flex-1 flex-col items-center justify-center p-4 lg:mt-0 lg:w-1/2 lg:p-8">
-
+        <div className="absolute top-8 right-8"><LanguageSwitcher/></div>
           <div className="w-full max-w-md space-y-6">
             {/* Login Card */}
             <div className="rounded-[20px] bg-card/95 p-6 shadow-lg backdrop-blur-sm sm:p-8">
@@ -56,26 +59,27 @@ export default async function LoginPage({
               {isNotConnected && (
                 <div className="mb-4 rounded-lg bg-orange-50 border border-orange-200 p-3 text-center">
                   <p className="text-sm font-medium text-orange-800">
-                    Vous devez être connecté pour accéder à cette page.
+                    {t("unlog")}
                   </p>
                 </div>
               )}
 
               {/* Login Form */}
               <LoginForm initialError={isNotConnected ? undefined : error} />
+              
             </div>
 
             {/* CTA Link below card */}
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
-                Pas de réservation ?{" "}
+                {t("noReservation")}{" "}
                 <Link
                   href="https://hopper-coworking.com"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  Découvrez et réservez l&apos;expérience Hopper ici
+                  {t("discoverHopper")}
                   <ExternalLink className="h-3.5 w-3.5" />
                 </Link>
               </p>

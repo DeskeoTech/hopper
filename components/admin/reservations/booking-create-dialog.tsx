@@ -57,7 +57,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
-
+import { useTranslations } from "next-intl"
 type View = "planning" | "slots" | "confirm"
 
 const VISIBLE_DAYS_COUNT = 5
@@ -92,7 +92,7 @@ export function BookingCreateDialog({
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-
+  const t = useTranslations("bookingCreate")
   // View state
   const [view, setView] = useState<View>("planning")
 
@@ -390,7 +390,7 @@ export function BookingCreateDialog({
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-[900px] sm:rounded-[20px]">
           <VisuallyHidden>
-            <DialogTitle>Nouvelle réservation</DialogTitle>
+            <DialogTitle>{t("new")}</DialogTitle>
           </VisuallyHidden>
           <div className="py-12 text-center">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5">
@@ -411,18 +411,18 @@ export function BookingCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] sm:rounded-[20px] max-h-[90vh] flex flex-col overflow-hidden p-0">
         <VisuallyHidden>
-          <DialogTitle>Nouvelle réservation</DialogTitle>
+          <DialogTitle>{t("new")}</DialogTitle>
         </VisuallyHidden>
         {/* Header with user + site selectors */}
         <div className="shrink-0 space-y-4 border-b p-4 sm:p-6">
           <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-            Nouvelle réservation
+            {t("new")}
           </h2>
 
           <div className="grid gap-3 sm:grid-cols-2">
             {/* User selection */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Utilisateur *</Label>
+              <Label className="text-xs text-muted-foreground">{t("user")} *</Label>
               <SearchableSelect
                 options={userOptions}
                 value={userId}
@@ -456,7 +456,7 @@ export function BookingCreateDialog({
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <MapPin className="h-10 w-10 text-muted-foreground/40" />
               <p className="mt-3 text-sm text-muted-foreground">
-                Sélectionnez un utilisateur et un site pour commencer
+                {t("selectSite")}
               </p>
             </div>
           ) : (
@@ -589,7 +589,7 @@ export function BookingCreateDialog({
                       </div>
                     ) : rooms.length === 0 ? (
                       <p className="py-8 text-center text-sm text-muted-foreground">
-                        Aucune salle disponible sur ce site
+                        {t("noRoom")}
                       </p>
                     ) : (
                       <RoomTimeline
@@ -631,7 +631,7 @@ export function BookingCreateDialog({
 
                   <div>
                     <label className="text-xs font-medium text-foreground mb-2 block">
-                      Sélectionnez vos créneaux
+                      {t("selectDate")}
                     </label>
                     {loadingSlots ? (
                       <div className="flex items-center justify-center py-4">
@@ -673,7 +673,7 @@ export function BookingCreateDialog({
                               {format(meEndDate, "EEEE d MMMM yyyy", { locale: fr })}
                               {" "}
                               <span className="text-xs text-muted-foreground font-normal">
-                                ({eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} jours)
+                                ({eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} {t("days")})
                               </span>
                             </span>
                           )}
@@ -683,7 +683,7 @@ export function BookingCreateDialog({
                     <div className="flex items-start gap-3">
                       <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="text-xs text-muted-foreground">Horaire</p>
+                        <p className="text-xs text-muted-foreground">{t("time")}</p>
                         <p className="text-sm font-medium">
                           {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
                           {parseInt(
@@ -691,7 +691,7 @@ export function BookingCreateDialog({
                               ":"
                             )[0]
                           ) + 1}
-                          h ({selectedSlots.length} heure
+                          h ({selectedSlots.length} {t("hour")}
                           {selectedSlots.length > 1 ? "s" : ""})
                         </p>
                       </div>
@@ -700,7 +700,7 @@ export function BookingCreateDialog({
                       <p className="text-sm font-medium">{selectedRoom.name}</p>
                       {selectedRoom.capacity && (
                         <p className="text-xs text-muted-foreground">
-                          Capacité: {selectedRoom.capacity} personnes
+                          {t("capacity")}: {selectedRoom.capacity} {t("persons")}
                         </p>
                       )}
                     </div>
@@ -722,7 +722,7 @@ export function BookingCreateDialog({
                         disabled={isPending}
                       />
                       <Label htmlFor="is-me" className="text-sm font-medium cursor-pointer">
-                        Réservation M&E (Meetings & Events)
+                        {t("reservation")} M&E (Meetings & Events)
                       </Label>
                     </div>
 
@@ -730,7 +730,7 @@ export function BookingCreateDialog({
                     {isME && (
                       <div className="space-y-1.5 rounded-[12px] border border-foreground/10 p-3">
                         <Label className="text-xs text-muted-foreground">
-                          Date de fin (réservation sur plusieurs jours)
+                          {t("endDate")}
                         </Label>
                         <Popover open={meCalendarOpen} onOpenChange={setMeCalendarOpen}>
                           <PopoverTrigger asChild>
@@ -765,15 +765,15 @@ export function BookingCreateDialog({
                         </Popover>
                         {meEndDate && meEndDate > selectedDate && (
                           <p className="text-xs text-muted-foreground">
-                            {eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} jour(s)
-                            ouvré(s) seront réservés avec les mêmes créneaux horaires
+                            {eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} {t("day")}(s)
+                            {t("businessDay")}
                           </p>
                         )}
                       </div>
                     )}
 
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-muted-foreground">Statut</Label>
+                      <Label className="text-xs text-muted-foreground">{t("status")}</Label>
                       <Select
                         value={status}
                         onValueChange={(v) =>
@@ -785,8 +785,8 @@ export function BookingCreateDialog({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="confirmed">Confirmée</SelectItem>
-                          <SelectItem value="pending">En attente</SelectItem>
+                          <SelectItem value="confirmed">{t("confirmed")}</SelectItem>
+                          <SelectItem value="pending">{t("pending")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -794,7 +794,7 @@ export function BookingCreateDialog({
                     <div className="space-y-1.5">
                       <Label className="flex items-center gap-2 text-xs text-muted-foreground">
                         <FileText className="h-3.5 w-3.5" />
-                        Commentaire (optionnel)
+                        {t("comment")}
                       </Label>
                       <Textarea
                         value={notes}
@@ -817,7 +817,7 @@ export function BookingCreateDialog({
                     className="rounded-full"
                     disabled={isPending}
                   >
-                    Retour
+                    {t("return")}
                   </Button>
                   {view === "confirm" ? (
                     <Button
@@ -828,7 +828,7 @@ export function BookingCreateDialog({
                       {isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      Confirmer la réservation
+                      {t("reservationConfirmed")}
                     </Button>
                   ) : (
                     <Button
@@ -836,7 +836,7 @@ export function BookingCreateDialog({
                       disabled={selectedSlots.length === 0}
                       className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90"
                     >
-                      Continuer
+                      {t("continue")}
                     </Button>
                   )}
                 </div>
