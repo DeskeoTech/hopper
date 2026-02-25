@@ -25,12 +25,14 @@ export function ContractListCard({ contract, onSelect }: ContractListCardProps) 
   const isSuspended = contract.status === "suspended"
 
   // Ongoing = active, started, and not ended yet
-  const now = new Date()
+  // Compare dates at day granularity to avoid timezone issues
+  // (new Date("2026-02-25") = midnight UTC, which is "past" after 1am in France)
+  const todayStr = new Date().toISOString().split("T")[0]
   const isOngoing =
     contract.status === "active" &&
-    startDate &&
-    startDate <= now &&
-    (!endDate || endDate >= now)
+    contract.start_date &&
+    contract.start_date <= todayStr &&
+    (!contract.end_date || contract.end_date >= todayStr)
 
   // Build date string
   let dateString = "—"

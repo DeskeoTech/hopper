@@ -22,11 +22,13 @@ export function ContractsListSection({
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
 
   // Filter active/non-terminated contracts and sort by start date
+  // Compare dates at day granularity (string ISO YYYY-MM-DD) to avoid timezone issues
+  // (new Date("2026-02-25") = midnight UTC, which is "past" after 1am in France)
   const activeContracts = useMemo(() => {
-    const now = new Date()
+    const todayStr = new Date().toISOString().split("T")[0]
     return contracts
       .filter((c) => {
-        return c.status !== "terminated" && (!c.end_date || new Date(c.end_date) >= now)
+        return c.status !== "terminated" && (!c.end_date || c.end_date >= todayStr)
       })
       .sort((a, b) => {
         const dateA = a.start_date ? new Date(a.start_date).getTime() : 0
