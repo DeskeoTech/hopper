@@ -3,8 +3,13 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
-import { checkEmailExists, ensureSupabaseAuthUser } from "@/lib/actions/auth"
+import {
+  checkEmailExists,
+  ensureSupabaseAuthUser,
+  getPostLoginRedirectUrl,
+} from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,6 +19,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+  InputOTPSeparator,
+} from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Mail, Loader2, CheckCircle, ExternalLink } from "lucide-react"
 import { useTranslations } from "next-intl"
 
@@ -46,6 +58,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ initialError }: LoginFormProps) {
+  const router = useRouter()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
@@ -59,6 +72,44 @@ export function LoginForm({ initialError }: LoginFormProps) {
       setShowNoAccountModal(true)
     }
   }, [initialError])
+
+  // OTP verification
+  const handleVerifyOtp = async (code: string) => {
+    if (code.length !== 6) return
+
+    setIsVerifying(true)
+    setOtpError(null)
+
+    try {
+      const supabase = createClient()
+
+      const { error } = await supabase.auth.verifyOtp({
+        email,
+        token: code,
+        type: "email",
+      })
+
+      if (error) {
+        setOtpError("Code invalide ou expiré. Veuillez réessayer.")
+        setIsVerifying(false)
+        setOtpCode("")
+        return
+      }
+
+      // OTP verified — determine redirect with server action
+      try {
+        const { url } = await getPostLoginRedirectUrl()
+        window.location.href = url
+      } catch {
+        // Fallback if server action fails
+        window.location.href = "/compte"
+      }
+    } catch {
+      setOtpError("Une erreur est survenue. Veuillez réessayer.")
+      setIsVerifying(false)
+      setOtpCode("")
+    }
+  }
 
   // Google OAuth login
   const handleGoogleLogin = async () => {
@@ -109,7 +160,12 @@ export function LoginForm({ initialError }: LoginFormProps) {
     setIsLoading(false)
 
     if (error) {
-      setError(error.message)
+      const match = error.message.match(/request this after (\d+) seconds/)
+      if (match) {
+        setError(`Pour des raisons de sécurité, veuillez patienter ${match[1]} secondes avant de réessayer.`)
+      } else {
+        setError(error.message)
+      }
     } else {
       setIsSuccess(true)
     }
@@ -127,12 +183,14 @@ export function LoginForm({ initialError }: LoginFormProps) {
            {t("success.linkSent")}<span className="font-medium text-foreground">{email}</span>
           </p>
         </div>
+
         <Button
           variant="ghost"
-          className="mt-4"
           onClick={() => {
             setIsSuccess(false)
             setEmail("")
+            setOtpCode("")
+            setOtpError(null)
           }}
         >
           {t("success.otherAdress")}

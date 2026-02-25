@@ -9,6 +9,7 @@ import { BookingDialog, BOOKING_STATE_KEY, type SavedBookingState } from "./book
 import { SiteDetailsDialog } from "./site-details-dialog"
 import { PaymentSuccessModal } from "./payment-success-modal"
 import { MobileToggle } from "./mobile-toggle"
+import { ReservationProvider } from "./reservation-context"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
@@ -108,6 +109,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
   }, [])
 
   return (
+    <ReservationProvider>
     <div className="flex h-screen flex-col">
       {/* Header */}
       <PublicHeader selectedCity={selectedCity} onCityChange={setSelectedCity} />
@@ -178,5 +180,6 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
         userEmail={customerEmail}
       />
     </div>
+    </ReservationProvider>
   )
 }

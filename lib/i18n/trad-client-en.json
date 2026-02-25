@@ -204,7 +204,9 @@
     "connecting": "Connecting to Stripe...",
     "preparing": "Preparing your billing portal.",
     "redirecting": "You will be redirected shortly.",
-    "urlError": "Billing URL not received"
+    "urlError": "Billing URL not received",
+    "noStripeAccount": "No billing account configured for your company. Please contact support.",
+    "serviceError": "Error connecting to the billing service"
   },
   "support": {
     "sendTicket": "Send a ticket",

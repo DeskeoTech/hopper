@@ -11,7 +11,7 @@ export async function updateCompanyHeader(
   companyId: string,
   data: { name: string | null; company_type: CompanyType | null }
 ) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("companies")

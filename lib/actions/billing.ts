@@ -1,7 +1,9 @@
 "use server"
 
-import Stripe from "stripe"
 import { createClient, getUser } from "@/lib/supabase/server"
+
+const N8N_WEBHOOK_URL = process.env.N8N_BILLING_WEBHOOK_URL!
+const N8N_WEBHOOK_SECRET = process.env.N8N_BILLING_WEBHOOK_SECRET
 
 interface BillingPortalResult {
   url?: string
@@ -9,8 +11,8 @@ interface BillingPortalResult {
 }
 
 /**
- * Creates a Stripe Billing Portal session.
- * Looks up the company's Stripe customer ID and creates a portal session directly.
+ * Creates a Stripe Billing Portal session via n8n webhook.
+ * Follows server-auth-actions: authenticates inside the action.
  */
 export async function createBillingPortalSession(
   returnUrl: string
@@ -21,50 +23,65 @@ export async function createBillingPortalSession(
     return { error: "Non authentifié" }
   }
 
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-  if (!stripeSecretKey) {
-    return { error: "Configuration Stripe manquante" }
-  }
-
   try {
+    // Fetch user's company and Stripe customer ID
     const supabase = await createClient()
-
-    // Get user's company_id and role
-    const { data: userProfile } = await supabase
+    const { data: userData } = await supabase
       .from("users")
-      .select("company_id, role")
+      .select("company_id")
       .eq("email", user.email)
-      .single()
+      .maybeSingle()
 
-    if (userProfile?.role !== "admin") {
-      return { error: "Accès non autorisé" }
+    let customerId: string | null = null
+    if (userData?.company_id) {
+      const { data: company } = await supabase
+        .from("companies")
+        .select("customer_id_stripe")
+        .eq("id", userData.company_id)
+        .maybeSingle()
+
+      customerId = company?.customer_id_stripe ?? null
     }
 
-    if (!userProfile?.company_id) {
-      return { error: "Entreprise non trouvée" }
-    }
-
-    // Get company's Stripe customer ID
-    const { data: company } = await supabase
-      .from("companies")
-      .select("customer_id_stripe")
-      .eq("id", userProfile.company_id)
-      .single()
-
-    if (!company?.customer_id_stripe) {
-      return { error: "Compte Stripe non configuré pour cette entreprise" }
-    }
-
-    const stripe = new Stripe(stripeSecretKey)
-    const session = await stripe.billingPortal.sessions.create({
-      customer: company.customer_id_stripe,
-      return_url: returnUrl,
+    const response = await fetch(N8N_WEBHOOK_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(N8N_WEBHOOK_SECRET && { "X-Webhook-Secret": N8N_WEBHOOK_SECRET }),
+      },
+      body: JSON.stringify({
+        user_id: user.id,
+        email: user.email,
+        customer_id: customerId,
+        return_url: returnUrl,
+      }),
     })
 
-    return { url: session.url }
-  } catch (err) {
+    if (!response.ok) {
+      return { error: "Erreur du service de facturation" }
+    }
+
+    const responseText = await response.text()
+
+    if (!responseText || responseText.trim() === "") {
+      return { error: "Réponse vide du service de facturation" }
+    }
+
+    let result: { url?: string }
+    try {
+      result = JSON.parse(responseText)
+    } catch {
+      return { error: "Réponse invalide du service de facturation" }
+    }
+
+    if (!result.url) {
+      return { error: "URL de facturation non reçue" }
+    }
+
+    return { url: result.url }
+  } catch {
     return {
-      error: err instanceof Error ? err.message : "Erreur lors de la création de la session",
+      error: "Erreur lors de la création de la session de facturation. Veuillez réessayer ou contacter le support.",
     }
   }
 }

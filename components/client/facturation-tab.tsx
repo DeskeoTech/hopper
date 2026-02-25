@@ -3,17 +3,19 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 import { Receipt, ExternalLink, Loader2, CreditCard } from "lucide-react"
-import { createBillingPortalSession } from "@/lib/actions/billing"
+import { createClient } from "@/lib/supabase/client"
 import { useClientLayout } from "./client-layout-provider"
 import { AdminContactDialog } from "./admin-contact-dialog"
 
 export function FacturationTab() {
-  const { isAdmin, companyAdmin } = useClientLayout()
+  const { isAdmin, companyAdmin, user } = useClientLayout()
   const t = useTranslations("billing")
   const tc = useTranslations("common")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showContactAdmin, setShowContactAdmin] = useState(false)
+
+  const customerId = user.companies?.customer_id_stripe ?? null
 
   async function handleOpenBillingPortal() {
     if (!isAdmin) {
@@ -21,27 +23,44 @@ export function FacturationTab() {
       return
     }
 
+    if (!customerId) {
+      setError(t("noStripeAccount"))
+      return
+    }
+
     setIsLoading(true)
     setError(null)
 
     try {
+      const supabase = createClient()
       const returnUrl = `${window.location.origin}/mon-compte?tab=facturation`
 
-      // Call Server Action directly (no edge function needed)
-      const result = await createBillingPortalSession(returnUrl)
+      const { data, error: fnError } = await supabase.functions.invoke(
+        "manage-plan",
+        {
+          body: {
+            returnUrl,
+            customerId,
+            customerEmail: user.email,
+          },
+        }
+      )
 
-      if (result.error) {
-        throw new Error(result.error)
+      if (fnError) {
+        throw new Error(fnError.message || t("serviceError"))
       }
 
-      if (!result.url) {
+      if (!data?.url) {
         throw new Error(t("urlError"))
       }
 
       // Redirect to Stripe Billing Portal
-      window.location.href = result.url
+      window.location.href = data.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : tc("errorOccurred"))
+      const message = err instanceof Error ? err.message : ""
+      // Ne jamais afficher d'identifiants Stripe (cus_, sub_, pi_, etc.) dans les erreurs
+      const isSafe = message && !/cus_|sub_|pi_|ch_|pm_|price_|prod_/.test(message)
+      setError(isSafe ? message : tc("errorOccurred"))
       setIsLoading(false)
     }
   }

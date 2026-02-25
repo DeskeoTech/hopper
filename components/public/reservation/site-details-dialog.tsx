@@ -117,7 +117,7 @@ function Accordion({
       <div
         className={cn(
           "overflow-hidden transition-all duration-200",
-          isOpen ? "max-h-[500px] pb-4" : "max-h-0"
+          isOpen ? "max-h-[1500px] pb-4" : "max-h-0"
         )}
       >
         <div className="pl-9">{children}</div>
@@ -240,8 +240,11 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
   return (
     <>
-      <Dialog open={open && !fullscreenPhoto} onOpenChange={handleClose}>
-        <DialogContent className="flex flex-col max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+      <Dialog open={open && !fullscreenPhoto} onOpenChange={(isOpen) => {
+        if (!isOpen && fullscreenPhoto) return
+        handleClose()
+      }}>
+        <DialogContent className="!flex flex-col max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
           <VisuallyHidden>
             <DialogTitle>{t("siteDetails.title", { siteName: site.name })}</DialogTitle>
           </VisuallyHidden>
@@ -276,7 +279,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
           </div>
 
           {/* Scrollable Content */}
-          <div ref={setContentRef} className="flex-1 overflow-y-auto">
+          <div ref={setContentRef} className="min-h-0 flex-1 overflow-y-auto">
             {/* Photo Gallery */}
             {photos.length > 0 && (
               <div className="p-4 md:p-6">
@@ -345,8 +348,9 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                   </p>
                   {description.length > 200 && (
                     <button
+                      type="button"
                       onClick={() => setShowFullDescription(!showFullDescription)}
-                      className="mt-2 text-sm text-primary hover:underline"
+                      className="mt-2 cursor-pointer text-sm text-primary hover:underline"
                     >
                       {showFullDescription ? t("siteDetails.showLess") : t("siteDetails.showMore")}
                     </button>
@@ -474,7 +478,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
 
       {/* Fullscreen Photo Gallery */}
       {fullscreenPhoto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/95">
           <button
             onClick={() => setFullscreenPhoto(false)}
             className="absolute right-4 top-4 rounded-full bg-white/10 p-3 hover:bg-white/20 transition-colors"

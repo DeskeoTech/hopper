@@ -204,7 +204,9 @@
     "connecting": "Connexion à Stripe...",
     "preparing": "Préparation de votre espace de facturation.",
     "redirecting": "Vous allez être redirigé dans quelques instants.",
-    "urlError": "URL de facturation non reçue"
+    "urlError": "URL de facturation non reçue",
+    "noStripeAccount": "Aucun compte de facturation configuré pour votre entreprise. Veuillez contacter le support.",
+    "serviceError": "Erreur lors de l'appel au service de facturation"
   },
   "support": {
     "sendTicket": "Envoyer un ticket",

@@ -44,7 +44,10 @@ export function StripePortalButton({ customerId, customerEmail, companyName }: S
 
       window.open(data.url, "_blank")
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue")
+      const message = err instanceof Error ? err.message : ""
+      // Ne jamais afficher d'identifiants Stripe dans les erreurs
+      const isSafe = message && !/cus_|sub_|pi_|ch_|pm_|price_|prod_/.test(message)
+      setError(isSafe ? message : "Une erreur est survenue")
     } finally {
       setIsLoading(false)
     }
