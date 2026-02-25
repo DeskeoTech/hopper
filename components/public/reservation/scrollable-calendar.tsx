@@ -501,7 +501,7 @@ export function ScrollableCalendar({
           )}
         >
           <div className="grid grid-cols-2 gap-3 p-0.5">
-            {/* Pass Week */}
+            {/* Weekly Pass */}
             <button
               onClick={() => handlePassToggle("week")}
               className={cn(
@@ -536,7 +536,7 @@ export function ScrollableCalendar({
               <span className="text-sm font-semibold">{t("passWeek")}</span>
             </button>
 
-            {/* Pass Month */}
+            {/* Monthly Pass */}
             <button
               onClick={() => handlePassToggle("month")}
               className={cn(

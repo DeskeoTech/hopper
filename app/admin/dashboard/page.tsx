@@ -331,8 +331,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   type RecurrenceType = "daily" | "weekly" | "monthly"
   const offerLabels: Record<RecurrenceType, string> = {
     daily: "Pass Day",
-    weekly: "Pass Week",
-    monthly: "Pass Month",
+    weekly: "Weekly Pass",
+    monthly: "Monthly Pass",
   }
 
   function countByRecurrence(contracts: typeof contractsThisMonth) {

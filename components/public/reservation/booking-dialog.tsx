@@ -47,14 +47,14 @@ const PASS_CONFIG = {
     stripeMode: "payment" as const,
   },
   week: {
-    label: "Pass Week",
+    label: "Weekly Pass",
     pricePerSeat: 100,
     days: 5,
     discount: 33,
     stripeMode: "payment" as const,
   },
   month: {
-    label: "Pass Month",
+    label: "Monthly Pass",
     pricePerSeat: 300,
     days: 20,
     discount: 50,

@@ -34,8 +34,8 @@ type PassType = "day" | "week" | "month"
 
 const PASS_CONFIG = {
   day: { label: "Day Pass", pricePerUnit: 30, unit: "jour" },
-  week: { label: "Pass Week", pricePerUnit: 100, unit: "semaine" },
-  month: { label: "Pass Month", pricePerUnit: 300, unit: "mois" },
+  week: { label: "Weekly Pass", pricePerUnit: 100, unit: "semaine" },
+  month: { label: "Monthly Pass", pricePerUnit: 300, unit: "mois" },
 }
 
 const TVA_RATE = 0.2
