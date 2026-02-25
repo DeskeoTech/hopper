@@ -13,8 +13,10 @@ import {
 import { useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { LanguageSwitcher, languages } from "@/components/public/language-switcher"
+import { useTranslations } from "next-intl"
 
 export function ClientHeader() {
+  const t = useTranslations("")
   const { user, credits, isDeskeoEmployee, canManageCompany } = useClientLayout()
   const searchParams = useSearchParams()
   //detection de la langue via le context langue
@@ -101,7 +103,7 @@ export function ClientHeader() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                     <User className="h-4 w-4 text-foreground/70" />
                   </div>
-                  <span>Mon Compte</span>
+                  <span>{t("header.myAccount")}</span>
                 </div>
                 <ChevronRight className="h-4 w-4" />
               </Link>
@@ -118,7 +120,7 @@ export function ClientHeader() {
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                       <Building2 className="h-4 w-4 text-foreground/70" />
                     </div>
-                    <span>Gérer mon entreprise</span>
+                    <span>{t("header.manageCompany")}</span>
                   </div>
                   <ChevronRight className="h-4 w-4" />
                 </Link>
@@ -135,7 +137,7 @@ export function ClientHeader() {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                     <MessageCircleQuestion className="h-4 w-4 text-foreground/70" />
                   </div>
-                  <span>Support</span>
+                  <span>{t("header.support")}</span>
                 </div>
                 <ChevronRight className="h-4 w-4" />
               </Link>
@@ -152,7 +154,7 @@ export function ClientHeader() {
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                       <Settings className="h-4 w-4 text-foreground/70" />
                     </div>
-                    <span>Espace Admin</span>
+                    <span>{t("header.adminSpace")}</span>
                   </div>
                   <ChevronRight className="h-4 w-4" />
                 </Link>
