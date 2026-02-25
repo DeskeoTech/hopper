@@ -23,13 +23,15 @@ export default getRequestConfig(async () => {
     import(`../messages/${locale}/modals.json`),
   ])
 
+  const { common: clientCommon, ...clientRest } = clientMessages[locale] ?? {}
+
   const messages = {
-    common: common.default,
+    common: { ...common.default, ...clientCommon },
     reservation: reservation.default,
     ...equipment.default,
     ...calendar.default,
     ...modals.default,
-    ...clientMessages[locale],
+    ...clientRest,
   }
 
   return { locale, messages }
