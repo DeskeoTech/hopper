@@ -32,7 +32,7 @@ export default async function ClientLayout({
   const resolvedSearchParams = searchParams ? await searchParams : {}
   const siteParam = resolvedSearchParams.site
 
-  // Fetch user profile with full company data
+  // Phase 1: Fetch user profile (required before all other queries)
   const { data: userProfile } = await supabase
     .from("users")
     .select(
@@ -48,96 +48,134 @@ export default async function ClientLayout({
     redirect("/login")
   }
 
-  // Fetch user's credits and plan (via company -> contract -> credits/plan)
   const today = new Date().toISOString().split("T")[0]
-  let userCredits: UserCredits | null = null
-  let userPlan: UserPlan | null = null
-  let creditMovements: CreditMovement[] = []
+  const hasCompany = !!userProfile.company_id
 
-  if (userProfile.company_id) {
-    // Fetch valid credits using the SQL function
-    // Credits are valid if:
-    // - extras_credit = true: permanent credits (always valid)
-    // - extras_credit = false/null: valid for 1 month from created_at
-    const { data: creditsResult } = await supabase
-      .rpc("get_company_valid_credits", { p_company_id: userProfile.company_id })
-
-    const validCredits = creditsResult ?? 0
-
-    if (validCredits > 0) {
-      userCredits = {
-        allocated: validCredits,
-        remaining: validCredits,
-        period: today,
-      }
-    }
-
-    // Fetch plan from active contract (take most recent if multiple)
-    const { data: contractData } = await supabase
-      .from("contracts")
-      .select(
-        `
-        plans (name, price_per_seat_month, credits_per_person_month)
-      `
-      )
-      .eq("company_id", userProfile.company_id)
-      .eq("status", "active")
-      .order("start_date", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-
-    if (contractData?.plans) {
-      const plan = contractData.plans as unknown as {
-        name: string
-        price_per_seat_month: number | null
-        credits_per_person_month: number | null
-      }
-      userPlan = {
-        name: plan.name,
-        pricePerSeatMonth: plan.price_per_seat_month,
-        creditsPerMonth: plan.credits_per_person_month,
-      }
-    }
-
-    // Fallback: use Spacebring subscription as plan if no contract-based plan
-    const company = userProfile.companies as Company | null
-    if (!userPlan && company?.from_spacebring && company.spacebring_plan_name) {
-      userPlan = {
-        name: company.spacebring_plan_name,
-        pricePerSeatMonth: company.spacebring_monthly_price,
-        creditsPerMonth: company.spacebring_monthly_credits,
-      }
-    }
-
-    // Fetch credit movements from user's bookings
-    const { data: bookings } = await supabase
-      .from("bookings")
+  // Phase 2: Run ALL independent queries in parallel
+  const [
+    sitesResult,
+    photosResult,
+    resourcesResult,
+    creditsResult,
+    planResult,
+    creditBookingsResult,
+    adminResult,
+  ] = await Promise.all([
+    // 1. All open sites
+    supabase
+      .from("sites")
       .select(`
-        id,
-        start_date,
-        status,
-        credits_used,
-        notes,
-        resource:resources(name)
+        id, name, address, is_nomad,
+        opening_hours, opening_days,
+        wifi_ssid, wifi_password,
+        equipments, description, description_en,
+        instructions, instructions_en, access, access_en, transportation_lines
       `)
-      .eq("user_id", userProfile.id)
-      .not("credits_used", "is", null)
-      .order("start_date", { ascending: false })
-      .limit(50)
+      .eq("status", "open")
+      .order("name"),
 
-    // Transform bookings to credit movements
+    // 2. Site photos
+    supabase
+      .from("site_photos")
+      .select("site_id, storage_path")
+      .order("created_at", { ascending: true }),
+
+    // 3. Resources
+    supabase
+      .from("resources")
+      .select("site_id, capacity, type"),
+
+    // 4. Credits (company-dependent)
+    hasCompany
+      ? supabase.rpc("get_company_valid_credits", { p_company_id: userProfile.company_id! })
+      : Promise.resolve({ data: null } as { data: number | null }),
+
+    // 5. Plan from active contract (company-dependent)
+    hasCompany
+      ? supabase
+          .from("contracts")
+          .select(`plans (name, price_per_seat_month, credits_per_person_month)`)
+          .eq("company_id", userProfile.company_id!)
+          .eq("status", "active")
+          .order("start_date", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null } as { data: null }),
+
+    // 6. Credit movements (bookings with credits_used)
+    hasCompany
+      ? supabase
+          .from("bookings")
+          .select(`id, start_date, status, credits_used, resource:resources(name)`)
+          .eq("user_id", userProfile.id)
+          .not("credits_used", "is", null)
+          .order("start_date", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null } as { data: null }),
+
+    // 7. Company admin (for non-admin users)
+    hasCompany && userProfile.role === "user"
+      ? supabase
+          .from("users")
+          .select("first_name, last_name, email")
+          .eq("company_id", userProfile.company_id!)
+          .eq("role", "admin")
+          .limit(1)
+          .single()
+      : Promise.resolve({ data: null } as { data: null }),
+  ])
+
+  // Process credits
+  let userCredits: UserCredits | null = null
+  const validCredits = (creditsResult.data as number | null) ?? 0
+  if (validCredits > 0) {
+    userCredits = {
+      allocated: validCredits,
+      remaining: validCredits,
+      period: today,
+    }
+  }
+
+  // Process plan
+  let userPlan: UserPlan | null = null
+  if (planResult.data && (planResult.data as Record<string, unknown>).plans) {
+    const plan = (planResult.data as Record<string, unknown>).plans as unknown as {
+      name: string
+      price_per_seat_month: number | null
+      credits_per_person_month: number | null
+    }
+    userPlan = {
+      name: plan.name,
+      pricePerSeatMonth: plan.price_per_seat_month,
+      creditsPerMonth: plan.credits_per_person_month,
+    }
+  }
+
+  // Spacebring fallback for plan
+  const company = userProfile.companies as Company | null
+  if (!userPlan && company?.from_spacebring && company.spacebring_plan_name) {
+    userPlan = {
+      name: company.spacebring_plan_name,
+      pricePerSeatMonth: company.spacebring_monthly_price,
+      creditsPerMonth: company.spacebring_monthly_credits,
+    }
+  }
+
+  // Process credit movements
+  let creditMovements: CreditMovement[] = []
+  if (creditBookingsResult.data) {
     const totalCredits = userCredits?.remaining ?? 0
     let runningBalance = totalCredits
-    creditMovements = (bookings || []).map((booking) => {
+    creditMovements = (creditBookingsResult.data as Array<Record<string, unknown>>).map((booking) => {
       const isCancelled = booking.status === "cancelled"
-      const creditsUsed = booking.credits_used || 0
+      const creditsUsed = (booking.credits_used as number) || 0
 
       let type: CreditMovementType = "reservation"
       let amount = -creditsUsed
 
       if (isCancelled) {
         type = "cancellation"
-        amount = creditsUsed // Credits restored
+        amount = creditsUsed
       }
 
       const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
@@ -146,52 +184,26 @@ export default async function ClientLayout({
         : `Réservation - ${resourceName}`
 
       const movement: CreditMovement = {
-        id: booking.id,
-        date: booking.start_date,
+        id: booking.id as string,
+        date: booking.start_date as string,
         type,
         amount,
         description,
         balance_after: runningBalance,
       }
 
-      // Adjust running balance for display (reverse chronological)
       runningBalance = runningBalance - amount
-
       return movement
     })
   }
 
-  // Determine main site ID (used for default site selection)
+  // Process sites
+  const allSites = sitesResult.data || []
+  const sitePhotos = photosResult.data
+  const resources = resourcesResult.data
   const mainSiteId = userProfile.companies?.main_site_id || null
 
-  // Fetch ALL open sites (for booking modal)
-  const { data: allSites } = await supabase
-    .from("sites")
-    .select(`
-      id, name, address, is_nomad,
-      opening_hours, opening_days,
-      wifi_ssid, wifi_password,
-      equipments, description, description_en,
-      instructions, instructions_en, access, access_en, transportation_lines
-    `)
-    .eq("status", "open")
-    .order("name")
-
-  // Use all open sites
-  const sites = allSites || []
-
-  // Fetch site photos for site switcher modal
-  const { data: sitePhotos } = await supabase
-    .from("site_photos")
-    .select("site_id, storage_path")
-    .order("created_at", { ascending: true })
-
-  // Fetch resources for site workstation count
-  const { data: resources } = await supabase
-    .from("resources")
-    .select("site_id, capacity, type")
-
-  // Build site photos map (all photos per site)
+  // Build site photos map
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const sitePhotosMap: Record<string, string[]> = {}
   sitePhotos?.forEach((photo) => {
@@ -203,9 +215,8 @@ export default async function ClientLayout({
     }
   })
 
-  // Build site capacity map (min/max from resources)
+  // Build site capacity map and workstation count
   const siteCapacityMap: Record<string, { min: number; max: number }> = {}
-  // Count total workstations per site (bench, flex_desk, fixed_desk)
   const siteWorkstationCount: Record<string, number> = {}
   const workstationTypes = ["bench", "flex_desk", "fixed_desk"]
 
@@ -224,14 +235,13 @@ export default async function ClientLayout({
         }
       }
     }
-    // Count workstations
     if (workstationTypes.includes(resource.type)) {
       siteWorkstationCount[resource.site_id] = (siteWorkstationCount[resource.site_id] || 0) + 1
     }
   })
 
-  // Build sitesWithDetails for the site switcher modal
-  const sitesWithDetails = (sites || []).map((site) => ({
+  // Build sitesWithDetails
+  const sitesWithDetails = allSites.map((site) => ({
     id: site.id,
     name: site.name,
     address: site.address || "",
@@ -250,44 +260,25 @@ export default async function ClientLayout({
   }))
 
   const isAdmin = userProfile.role === "admin"
-  // Check if user can access Hopper admin interface
   const isHopperAdmin = userProfile.is_hopper_admin === true
 
-  // Fetch company admin for non-admin users (to display in contact dialog)
-  let companyAdmin: { first_name: string | null; last_name: string | null; email: string | null } | null = null
-  if (userProfile.company_id && userProfile.role === "user") {
-    const { data: admin } = await supabase
-      .from("users")
-      .select("first_name, last_name, email")
-      .eq("company_id", userProfile.company_id)
-      .eq("role", "admin")
-      .limit(1)
-      .single()
-    companyAdmin = admin
-  }
+  const companyAdmin = adminResult.data as { first_name: string | null; last_name: string | null; email: string | null } | null
 
-  // Determine selected site: URL param > main_site_id > first site
-  const selectedSiteId = siteParam || mainSiteId || sites?.[0]?.id || null
+  // Determine selected site
+  const selectedSiteId = siteParam || mainSiteId || allSites[0]?.id || null
 
-  // Check if user has accepted CGU (must be checked FIRST, before all other modals)
+  // Modal checks
   const needsCguAcceptance = !userProfile.cgu_accepted_at
-
-  // Check if user needs onboarding (no company or onboarding not done)
   const needsOnboarding =
     (userProfile.role === "user" || userProfile.role === "admin") &&
     (!userProfile.company_id ||
       !(userProfile.companies as Company | null)?.onboarding_done)
-
-  // Check if user needs to complete their profile (only for 'user' or 'admin' role with a company, after onboarding)
   const needsProfileCompletion =
     !needsOnboarding &&
     (userProfile.role === "user" || userProfile.role === "admin") &&
     userProfile.company_id &&
     userProfile.companies &&
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
-
-  // Check if regular user needs contract assignment (after onboarding and profile completion)
-  // Spacebring companies don't use the contracts table, so skip this check for them
   const isFromSpacebring = (userProfile.companies as Company | null)?.from_spacebring === true
   const needsContractAssignment =
     !needsOnboarding &&
@@ -303,8 +294,8 @@ export default async function ClientLayout({
       credits={userCredits}
       creditMovements={creditMovements}
       plan={userPlan}
-      sites={sites}
-      allSites={(allSites || []).map((s) => ({ id: s.id, name: s.name }))}
+      sites={allSites}
+      allSites={allSites.map((s) => ({ id: s.id, name: s.name }))}
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}

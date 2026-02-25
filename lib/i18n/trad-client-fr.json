@@ -25,7 +25,8 @@
     "news": {
       "noNews": "Aucune actualité pour le moment",
       "feedTitle": "Fil d'actualité",
-      "pageTitle": "Actualités"
+      "pageTitle": "Actualités",
+      "pinned": "Épinglé"
     },
     "pass": {
       "title": "Pass",
@@ -518,6 +519,7 @@
     "reservationTitle" : "Réserver une salle",
 
     "beginHour" : "Heure de début",
-    "endHour" : "Heure de fin"
+    "endHour" : "Heure de fin",
+    "duration" : "Durée"
   }
 }

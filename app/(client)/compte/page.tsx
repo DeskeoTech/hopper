@@ -13,7 +13,7 @@ export default async function ComptePage() {
 
   const supabase = await createClient()
 
-  // Fetch user profile with company_id, role, contract_id, and company Spacebring fields
+  // Fetch user profile (required before other queries)
   const { data: userProfile } = await supabase
     .from("users")
     .select("id, company_id, role, contract_id, companies (main_site_id, from_spacebring, spacebring_plan_name, spacebring_seats, spacebring_start_date)")
@@ -24,75 +24,63 @@ export default async function ComptePage() {
     redirect("/login")
   }
 
-  // Determine if user is admin
   const isAdmin = userProfile.role === "admin"
-
-  // Fetch user's bookings with resource and site details
-  const { data: bookings } = await supabase
-    .from("bookings")
-    .select(
-      `
-      *,
-      resources!left (
-        id,
-        name,
-        type,
-        capacity,
-        floor,
-        site_id,
-        sites!left (id, name)
-      )
-    `
-    )
-    .eq("user_id", userProfile.id)
-    .not("resource_id", "is", null)
-    .order("start_date", { ascending: false })
-    .limit(50)
-
-  // Fetch contracts based on user role
-  // Admin: all company contracts
-  // User: only their assigned contract
-  let contracts: ContractForDisplay[] = []
-  if (userProfile.company_id) {
-    let query = supabase
-      .from("contracts")
-      .select(`
-        id,
-        status,
-        start_date,
-        end_date,
-        Number_of_seats,
-        plans (name, recurrence)
-      `)
-      .eq("company_id", userProfile.company_id)
-
-    // Regular user: filter by their assigned contract
-    if (!isAdmin && userProfile.contract_id) {
-      query = query.eq("id", userProfile.contract_id)
-    }
-
-    const { data: contractsData } = await query
-      .order("start_date", { ascending: false })
-      .limit(50)
-
-    contracts = (contractsData || []).map((c) => {
-      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
-      return {
-        id: c.id,
-        status: c.status as "active" | "suspended" | "terminated",
-        start_date: c.start_date,
-        end_date: c.end_date,
-        plan_name: plan?.name || "Pass",
-        plan_recurrence: plan?.recurrence || null,
-        site_name: null,
-        number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
-      }
-    })
-    // If user has no contract_id, contracts remains empty
-  }
-
-  // For Spacebring companies with no contracts, create a synthetic contract from Spacebring subscription
   const company = userProfile.companies as { main_site_id: string | null; from_spacebring: boolean | null; spacebring_plan_name: string | null; spacebring_seats: number | null; spacebring_start_date: string | null } | null
+  const mainSiteId = company?.main_site_id || null
+
+  // Build contracts query (conditional on role)
+  const contractsQueryBuilder = userProfile.company_id
+    ? (() => {
+        let query = supabase
+          .from("contracts")
+          .select(`id, status, start_date, end_date, Number_of_seats, plans (name, recurrence)`)
+          .eq("company_id", userProfile.company_id!)
+        if (!isAdmin && userProfile.contract_id) {
+          query = query.eq("id", userProfile.contract_id)
+        }
+        return query.order("start_date", { ascending: false }).limit(50)
+      })()
+    : Promise.resolve({ data: null } as { data: null })
+
+  // Run bookings, contracts, and news queries in parallel
+  const [bookingsResult, contractsResult, posts] = await Promise.all([
+    // Only fetch upcoming/ongoing bookings (server-side filter instead of client-side)
+    supabase
+      .from("bookings")
+      .select(`
+        *,
+        resources!left (
+          id, name, type, capacity, floor, site_id,
+          sites!left (id, name)
+        )
+      `)
+      .eq("user_id", userProfile.id)
+      .not("resource_id", "is", null)
+      .gte("end_date", new Date().toISOString())
+      .order("start_date", { ascending: true })
+      .limit(20),
+
+    contractsQueryBuilder,
+
+    getNewsPosts({ mainSiteId }),
+  ])
+
+  // Process contracts
+  let contracts: ContractForDisplay[] = ((contractsResult.data as Array<Record<string, unknown>>) || []).map((c) => {
+    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+    return {
+      id: c.id as string,
+      status: c.status as "active" | "suspended" | "terminated",
+      start_date: c.start_date as string | null,
+      end_date: c.end_date as string | null,
+      plan_name: plan?.name || "Pass",
+      plan_recurrence: plan?.recurrence || null,
+      site_name: null,
+      number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
+    }
+  })
+
+  // Spacebring fallback
   if (contracts.length === 0 && company?.from_spacebring && company.spacebring_plan_name) {
     contracts = [{
       id: "spacebring",
@@ -106,13 +94,9 @@ export default async function ComptePage() {
     }]
   }
 
-  // Fetch news posts for the user's main site
-  const mainSiteId = company?.main_site_id || null
-  const posts = await getNewsPosts({ mainSiteId })
-
-  // Transform bookings to flat structure with details
+  // Transform bookings to flat structure
   const transformedBookings: BookingWithDetails[] =
-    bookings?.map((b) => {
+    (bookingsResult.data || []).map((b) => {
       const resource = b.resources as {
         id: string
         name: string
@@ -150,7 +134,7 @@ export default async function ComptePage() {
         company_id: null,
         company_name: null,
       }
-    }) || []
+    })
 
   return (
     <AccountPage

@@ -86,20 +86,24 @@ export function ContractsListSection({
         </button>
       )}
 
-      {/* Modal with all contracts */}
-      <AllContractsModal
-        open={showAllModal}
-        onOpenChange={setShowAllModal}
-        contracts={activeContracts}
-        onSelectContract={handleSelectContract}
-      />
+      {/* Modal with all contracts - lazy rendered */}
+      {showAllModal && (
+        <AllContractsModal
+          open={showAllModal}
+          onOpenChange={setShowAllModal}
+          contracts={activeContracts}
+          onSelectContract={handleSelectContract}
+        />
+      )}
 
-      {/* Contract detail modal */}
-      <ContractDetailModal
-        contract={selectedContract}
-        open={!!selectedContract}
-        onOpenChange={(open) => !open && setSelectedContract(null)}
-      />
+      {/* Contract detail modal - lazy rendered */}
+      {selectedContract && (
+        <ContractDetailModal
+          contract={selectedContract}
+          open={!!selectedContract}
+          onOpenChange={(open) => !open && setSelectedContract(null)}
+        />
+      )}
     </section>
   )
 }

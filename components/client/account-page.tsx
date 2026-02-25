@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Building2, ChevronLeft, ChevronRight, Newspaper } from "lucide-react"
+import { ChevronLeft, ChevronRight, Newspaper } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { QuickActionCards } from "./dashboard/quick-action-cards"
 import { SitesListSection } from "./dashboard/sites-list-section"
@@ -11,6 +11,9 @@ import { NewsCard } from "./news-card"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay, NewsPostWithSite } from "@/lib/types/database"
 import { useTranslations } from "next-intl"
+
+const HERO_IMAGE_URL = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
+
 interface AccountPageProps {
   bookings: BookingWithDetails[]
   contracts: ContractForDisplay[]
@@ -19,16 +22,13 @@ interface AccountPageProps {
 }
 
 export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPageProps) {
-    const t = useTranslations("")
-  const { user, selectedSiteWithDetails } = useClientLayout()
+  const t = useTranslations("")
+  const { user } = useClientLayout()
   const [activeTab, setActiveTab] = useState<"reservations" | "actualites">("reservations")
   const [newsPage, setNewsPage] = useState(0)
   const NEWS_PER_PAGE = 4
   const totalNewsPages = Math.ceil(posts.length / NEWS_PER_PAGE)
   const visiblePosts = posts.slice(newsPage * NEWS_PER_PAGE, (newsPage + 1) * NEWS_PER_PAGE)
-
-  // Fixed banner image - always the same coworking panoramic
-  const siteImageUrl = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
 
   return (
     <div className="flex flex-col">
@@ -37,17 +37,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
         {/* Mobile: full bleed hero */}
         <div className="md:hidden">
           <div className="relative h-52 w-full overflow-hidden sm:h-60">
-            {siteImageUrl ? (
-              <img
-                src={siteImageUrl}
-                alt={selectedSiteWithDetails?.name ? `Espace ${selectedSiteWithDetails.name}` : "Espace Hopper"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted">
-                <Building2 className="h-16 w-16 text-muted-foreground/30" />
-              </div>
-            )}
+            <img
+              src={HERO_IMAGE_URL}
+              alt="Espace Hopper"
+              className="h-full w-full object-cover"
+            />
             {/* Top gradient + blur effect (header transition) */}
             <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
             <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent" />
@@ -60,17 +54,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
         {/* Desktop: contained hero with rounded corners and blur effects */}
         <div className="hidden md:block">
           <div className="relative h-48 w-full overflow-hidden rounded-[20px] lg:h-56">
-            {siteImageUrl ? (
-              <img
-                src={siteImageUrl}
-                alt={selectedSiteWithDetails?.name ? `Espace ${selectedSiteWithDetails.name}` : "Espace Hopper"}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted">
-                <Building2 className="h-16 w-16 text-muted-foreground/30" />
-              </div>
-            )}
+            <img
+              src={HERO_IMAGE_URL}
+              alt="Espace Hopper"
+              className="h-full w-full object-cover"
+            />
             {/* Top gradient + blur effect (header transition) */}
             <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
             <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent rounded-t-[20px]" />

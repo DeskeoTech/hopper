@@ -86,26 +86,30 @@ export function QuickActionCards() {
         />
       </div>
 
-      {/* Booking Modal */}
-      <BookMeetingRoomModal
-        open={bookingModalOpen}
-        onOpenChange={setBookingModalOpen}
-        userId={user.id}
-        companyId={user.company_id || ""}
-        mainSiteId={mainSiteId}
-        remainingCredits={credits?.remaining || 0}
-        sites={allSites}
-        userEmail={user.email || ""}
-        hasActivePlan={!!plan}
-      />
+      {/* Booking Modal - lazy rendered */}
+      {bookingModalOpen && (
+        <BookMeetingRoomModal
+          open={bookingModalOpen}
+          onOpenChange={setBookingModalOpen}
+          userId={user.id}
+          companyId={user.company_id || ""}
+          mainSiteId={mainSiteId}
+          remainingCredits={credits?.remaining || 0}
+          sites={allSites}
+          userEmail={user.email || ""}
+          hasActivePlan={!!plan}
+        />
+      )}
 
-      {/* Admin Contact Dialog for non-admin users */}
-      <AdminContactDialog
-        open={adminDialogOpen}
-        onOpenChange={setAdminDialogOpen}
-        admin={companyAdmin}
-        actionType={adminDialogAction}
-      />
+      {/* Admin Contact Dialog - lazy rendered */}
+      {adminDialogOpen && (
+        <AdminContactDialog
+          open={adminDialogOpen}
+          onOpenChange={setAdminDialogOpen}
+          admin={companyAdmin}
+          actionType={adminDialogAction}
+        />
+      )}
     </>
   )
 }
