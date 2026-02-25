@@ -37,10 +37,6 @@
         "cancelled": "Cancelled"
       }
     },
-    "sites": {
-      "title": "All Hopper Sites",
-      "viewAll": "View all"
-    },
     "amenities": {
       "bikeStorage": "Bike storage",
       "cafe": "Café",
@@ -455,5 +451,60 @@
   },
   "allSites": {
     "title": "All Hopper Sites"
-  }
+  },
+  "login": {
+    "message": "Enter your email address to receive a login link.",
+    "loadingSend": "Sending...",
+    "loadingConnect": "Connecting...",
+    "logGoogle": "Continue with Google",
+    "email": "Email address",
+    "errors": {
+      "notFound": "No account found",
+      "hopperOnly": "Only Hopper clients can access this space.",
+      "noBooking": "No reservation yet?",
+      "retryAdress": "Try with another email"
+    },
+    "success": {
+      "mailVerify": "Check your inbox",
+      "linkSent": "We sent a login link to ",
+      "otherAdress": "Use a different email"
+    },
+    "unlog": "You must be logged in to access this page.",
+    "noReservation": "No reservation?",
+  "discoverHopper": "Discover and book the Hopper experience here",
+  "buttonLink" : "RECEIVE LOGIN LINK"
+  },
+  "sites": {
+  "seeSite": "View site info",
+  "seeAllSites": "View all Hopper sites",
+  "select": "Select",
+  "title": "All Hopper Sites",
+  "viewAll": "View all"
+},
+"bookingCreate": {
+  "new": "New reservation",
+  "user": "User",
+  "selectSite": "Select a user and a site to get started",
+  "noRoom": "No rooms available at this site",
+  "selectDate": "Select your time slots",
+  "days": "days",
+  "day": "day",
+  "time": "Time",
+  "hour": "hour",
+  "capacity": "Capacity",
+  "persons": "people",
+  "reservation": "Reservation",
+  "endDate": "End date (multi-day reservation)",
+  "businessDay": "business day(s) will be booked with the same time slots",
+  "status": "Status",
+  "confirmed": "Confirmed",
+  "pending": "Pending",
+  "comment": "Comment (optional)",
+  "return": "Back",
+  "reservationConfirmed": "Confirm reservation",
+  "continue": "Continue",
+  "reservationTitle": "Book a room",
+  "beginHour": "Start time",
+  "endHour": "End time"
+}
 }

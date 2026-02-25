@@ -5,6 +5,7 @@ import { Coins, ChevronLeft, MapPin } from "lucide-react"
 import { Dialog, DialogContentFullscreen, DialogTitle } from "@/components/ui/dialog"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { RoomBookingContent } from "./room-booking-content"
+import { useTranslations } from "next-intl"
 
 interface BookMeetingRoomModalProps {
   open: boolean
@@ -51,7 +52,7 @@ export function BookMeetingRoomModal({
   const [contentKey, setContentKey] = useState(0)
   // Site selection state (lifted from RoomBookingContent for header display)
   const [selectedSiteId, setSelectedSiteId] = useState<string | null>(mainSiteId)
-
+  const t = useTranslations("bookingCreate")
   // Reset content when modal opens
   useEffect(() => {
     if (open) {
@@ -85,11 +86,11 @@ export function BookMeetingRoomModal({
                 className="flex items-center gap-0.5 px-2 py-1.5 -ml-2 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
-                <span>Retour</span>
+                <span>{t("return")}</span>
               </button>
 
               <DialogTitle className="text-sm font-semibold">
-                Réserver une salle
+                {t("reservationTitle")}
               </DialogTitle>
 
               <div className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1">
@@ -127,7 +128,7 @@ export function BookMeetingRoomModal({
                 className="flex items-center gap-1 px-3 py-2 -ml-3 rounded-full text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-foreground/5 transition-colors"
               >
                 <ChevronLeft className="h-5 w-5" />
-                <span>Retour</span>
+                <span>{t("return")}</span>
               </button>
 
               {/* Site selector */}
@@ -149,7 +150,7 @@ export function BookMeetingRoomModal({
 
             {/* Title - centered */}
             <DialogTitle className="absolute left-1/2 -translate-x-1/2">
-              Réserver une salle
+              {t("reservationTitle")}
             </DialogTitle>
 
             {/* Credits badge - right */}

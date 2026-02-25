@@ -37,10 +37,6 @@
         "cancelled": "Annulé"
       }
     },
-    "sites": {
-      "title": "Tous les sites Hopper",
-      "viewAll": "Voir tous"
-    },
     "amenities": {
       "bikeStorage": "Local vélo",
       "cafe": "Café",
@@ -461,5 +457,61 @@
     "company" : "Manage my company",
     "support" : "Support",
     "admin" : "Admin dashboard"
+  },
+  "login" : {
+    "message" : "Entrez votre adresse email pour recevoir un lien de connexion.",
+    "loadingSend" : "Envoi en cours...",
+    "loadingConnect" : "Connexion...",
+    "logGoogle" : "Continuer avec Google",
+    "email" : "Adresse email",
+    "errors" : {
+      "notFound" : "Aucun compte trouvé",
+      "hopperOnly" : "Seuls les clients Hopper peuvent accéder à cet espace.",
+      "noBooking" : "Pas encore de réservation ?",
+      "retryAdress" : "Réessayer avec une autre adresse"
+    },
+    "success" : {
+        "mailVerify" : "Vérifiez votre boîte mail",
+        "linkSent" : "Nous avons envoyé un lien de connexion à ",
+        "otherAdress" : "Utiliser une autre adresse"
+    },
+    "unlog" : " Vous devez être connecté pour accéder à cette page.",
+    "noReservation": "Pas de réservation ?",
+    "discoverHopper": "Découvrez et réservez l'expérience Hopper ici",
+    "buttonLink" : "RECEVOIR LE LIEN DE CONNEXION"
+  },
+  "sites" : {
+    "seeSite" : "Voir les infos du site",
+    "seeAllSites" : "Voir tous les sites Hopper",
+    "select" : "Sélectionner",
+    "title": "Tous les sites Hopper",
+    "viewAll": "Voir tous"
+  },
+  "bookingCreate" : {
+    "new" : "Nouvelle réservation",
+    "user" : "Utilisateur",
+    "selectSite" : "Sélectionnez un utilisateur et un site pour commencer",
+    "noRoom" : "Aucune salle disponible sur ce site",
+    "selectDate" : "Sélectionnez vos créneaux",
+    "days" : "jours",
+    "day" : "jour",
+    "time" : "Horaire",
+    "hour" : "heure",
+    "capacity" : "Capacité",
+    "persons" : "personnes",
+    "reservation" : "Réservation",
+    "endDate" : "Date de fin (réservation sur plusieurs jours)",
+    "businessDay" : "ouvré(s) seront réservés avec les mêmes créneaux horaires",
+    "status" : "Statut",
+    "confirmed" : "Confirmée",
+    "pending" : "En attente",
+    "comment" : "Commentaire (optionnel)",
+    "return" :"Retour",
+    "reservationConfirmed" : "Confirmer la réservation",
+    "continue" : "Continuer",
+    "reservationTitle" : "Réserver une salle",
+
+    "beginHour" : "Heure de début",
+    "endHour" : "Heure de fin"
   }
 }

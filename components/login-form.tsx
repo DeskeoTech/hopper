@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/input-otp"
 import { REGEXP_ONLY_DIGITS } from "input-otp"
 import { Mail, Loader2, CheckCircle, ExternalLink } from "lucide-react"
+import { useTranslations } from "next-intl"
+
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -63,9 +65,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
   const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showNoAccountModal, setShowNoAccountModal] = useState(false)
-  const [otpCode, setOtpCode] = useState("")
-  const [isVerifying, setIsVerifying] = useState(false)
-  const [otpError, setOtpError] = useState<string | null>(null)
+  const t = useTranslations("login")
 
   useEffect(() => {
     if (initialError === "no_account") {
@@ -178,59 +178,9 @@ export function LoginForm({ initialError }: LoginFormProps) {
           <CheckCircle className="h-8 w-8 text-primary" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold">Vérifiez votre boîte mail</h2>
+          <h2 className="text-xl font-semibold">{t("success.mailVerify")}</h2>
           <p className="text-muted-foreground">
-            Nous avons envoyé un code de connexion à{" "}
-            <span className="font-medium text-foreground">{email}</span>
-          </p>
-        </div>
-
-        {/* OTP Input */}
-        <div className="w-full space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Entrez le code à 6 chiffres reçu par email
-          </p>
-          <div className="flex justify-center">
-            <InputOTP
-              maxLength={6}
-              pattern={REGEXP_ONLY_DIGITS}
-              value={otpCode}
-              onChange={(value) => {
-                setOtpCode(value)
-                setOtpError(null)
-              }}
-              onComplete={handleVerifyOtp}
-              disabled={isVerifying}
-            >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-                <InputOTPSlot index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-          </div>
-
-          {isVerifying && (
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Vérification en cours...
-            </div>
-          )}
-
-          {otpError && (
-            <p className="text-sm text-destructive">{otpError}</p>
-          )}
-        </div>
-
-        <div className="w-full border-t pt-4">
-          <p className="text-xs text-muted-foreground">
-            Vous pouvez aussi cliquer sur le lien dans l&apos;email
+           {t("success.linkSent")}<span className="font-medium text-foreground">{email}</span>
           </p>
         </div>
 
@@ -243,7 +193,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
             setOtpError(null)
           }}
         >
-          Utiliser une autre adresse
+          {t("success.otherAdress")}
         </Button>
       </div>
     )
@@ -253,14 +203,14 @@ export function LoginForm({ initialError }: LoginFormProps) {
     <>
       <form onSubmit={handleMagicLinkLogin} className="space-y-6">
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground text-center">
-            Entrez votre adresse email pour vous connecter à votre espace Hopper.
+          <p className="text-sm text-muted-foreground">
+            {t("message")}
           </p>
         </div>
 
         <div className="space-y-2">
           <label htmlFor="email" className="text-sm font-medium text-foreground">
-            Adresse email
+            {t("email")}
           </label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -279,15 +229,15 @@ export function LoginForm({ initialError }: LoginFormProps) {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Envoi en cours...
-            </>
-          ) : (
-            "CONNEXION"
-          )}
-        </Button>
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {t("loadingSend")}
+          </>
+        ) : (
+          t("buttonLink")
+        )}
+      </Button>
 
         {/* Separator */}
         <div className="relative">
@@ -310,12 +260,12 @@ export function LoginForm({ initialError }: LoginFormProps) {
           {isGoogleLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Connexion...
+              {t("loadingConnect")}
             </>
           ) : (
             <>
               <GoogleIcon className="mr-2 h-4 w-4" />
-              Continuer avec Google
+              {t("logGoogle")}
             </>
           )}
         </Button>
@@ -333,21 +283,22 @@ function NoAccountModal({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const t = useTranslations("login")
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-center font-header text-xl">
-            Aucun compte trouvé
+            {t("errors.notFound")}
           </DialogTitle>
           <DialogDescription className="text-center">
-            Seuls les clients Hopper peuvent accéder à cet espace.
+            {t("errors.hopperOnly")}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col items-center gap-4 py-4">
           <p className="text-center text-sm text-muted-foreground">
-            Pas encore de réservation ?
+            {t("errors.noBooking")}
           </p>
           <Button asChild className="w-full">
             <a
@@ -356,7 +307,7 @@ function NoAccountModal({
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2"
             >
-              Découvrez l&apos;expérience Hopper
+              {t("discoverHopper")}
               <ExternalLink className="h-4 w-4" />
             </a>
           </Button>
@@ -365,7 +316,7 @@ function NoAccountModal({
             onClick={() => onOpenChange(false)}
             className="w-full"
           >
-            Réessayer avec une autre adresse
+            {t("errors.retryAdress")}
           </Button>
         </div>
       </DialogContent>

@@ -2,7 +2,7 @@
 
 import { useMemo, useCallback } from "react"
 import { cn } from "@/lib/utils"
-
+import { useTranslations } from "next-intl"
 interface TimeSlotPickerProps {
   selectedSlots: string[]
   onSlotsChange: (slots: string[]) => void
@@ -26,6 +26,7 @@ export function TimeSlotPicker({
   unavailableSlots,
   disabled = false,
 }: TimeSlotPickerProps) {
+  const t = useTranslations("bookingCreate")
   // Derive current start and end from selected slots
   const { startHour, endHour } = useMemo(() => {
     if (selectedSlots.length === 0) return { startHour: null, endHour: null }
@@ -78,7 +79,7 @@ export function TimeSlotPicker({
       {/* Start time */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-muted-foreground">
-          Heure de début
+          {t("beginHour")}
         </label>
         <div className="flex flex-wrap gap-1.5">
           {HOURS.map((h) => {
@@ -113,7 +114,7 @@ export function TimeSlotPicker({
       {startHour !== null && (
         <div className="space-y-2">
           <label className="text-xs font-medium text-muted-foreground">
-            Heure de fin
+            {t("endHour")}
           </label>
           <div className="flex flex-wrap gap-1.5">
             {availableEnds.map((h) => {
@@ -177,7 +178,7 @@ export function TimeSlotPicker({
           <p className="text-sm font-medium text-foreground">
             {startHour}h00 — {endHour}h00
             <span className="ml-2 font-normal text-muted-foreground">
-              · {duration} heure{duration > 1 ? "s" : ""}
+              · {duration} {t("hour")}{duration > 1 ? "s" : ""}
             </span>
           </p>
         </div>
