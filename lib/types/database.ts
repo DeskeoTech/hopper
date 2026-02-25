@@ -269,8 +269,6 @@ export interface AdminPassForDisplay {
   status: ContractStatus
   start_date: string | null
   end_date: string | null
-  commitment_end_date: string | null
-  renewal_end_date: string | null
   plan_name: string
   plan_recurrence: PlanRecurrence | null
   price_per_seat_month: number | null

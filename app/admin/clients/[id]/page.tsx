@@ -75,8 +75,6 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         status,
         start_date,
         end_date,
-        commitment_end_date,
-        renewal_end_date,
         Number_of_seats,
         plans (name, recurrence, price_per_seat_month)
       `)
@@ -128,8 +126,6 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       status: c.status as ContractStatus,
       start_date: c.start_date,
       end_date: c.end_date,
-      commitment_end_date: c.commitment_end_date,
-      renewal_end_date: c.renewal_end_date,
       plan_name: plan?.name || "Pass",
       plan_recurrence: plan?.recurrence || null,
       price_per_seat_month: plan?.price_per_seat_month ?? null,

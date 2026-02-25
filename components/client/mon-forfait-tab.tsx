@@ -86,23 +86,6 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                   </div>
                 </div>
               )}
-              {activeContract?.commitment_end_date && (
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-foreground/5">
-                    <Calendar className="h-5 w-5 text-foreground/50" />
-                  </div>
-                  <div>
-                    <p className="text-base text-foreground/50">{t("commitmentEnd")}</p>
-                    <p className="text-lg font-medium">
-                      {new Date(activeContract.commitment_end_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })}
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Benefits list */}
@@ -167,8 +150,8 @@ export function MonForfaitTab({ initialContractHistory }: MonForfaitTabProps) {
                         : "—"}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-base py-4">
-                      {contract.commitment_end_date
-                        ? new Date(contract.commitment_end_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")
+                      {contract.end_date
+                        ? new Date(contract.end_date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")
                         : "—"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-base py-4">

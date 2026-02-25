@@ -46,8 +46,6 @@ export function PassDetailModal({ pass, open, onOpenChange }: PassDetailModalPro
 
   const startDate = pass.start_date ? parseISO(pass.start_date) : null
   const endDate = pass.end_date ? parseISO(pass.end_date) : null
-  const commitmentDate = pass.commitment_end_date ? parseISO(pass.commitment_end_date) : null
-  const renewalDate = pass.renewal_end_date ? parseISO(pass.renewal_end_date) : null
   const formatDate = (date: Date) => format(date, "d MMMM yyyy", { locale: fr })
 
   const isTerminated = pass.status === "terminated"
@@ -120,18 +118,6 @@ export function PassDetailModal({ pass, open, onOpenChange }: PassDetailModalPro
                 <div>
                   <span className="text-muted-foreground">Fin : </span>
                   <span className="text-foreground">{formatDate(endDate)}</span>
-                </div>
-              )}
-              {commitmentDate && (
-                <div>
-                  <span className="text-muted-foreground">Fin engagement : </span>
-                  <span className="text-foreground">{formatDate(commitmentDate)}</span>
-                </div>
-              )}
-              {renewalDate && (
-                <div>
-                  <span className="text-muted-foreground">Fin renouvellement : </span>
-                  <span className="text-foreground">{formatDate(renewalDate)}</span>
                 </div>
               )}
               {!startDate && !endDate && (
