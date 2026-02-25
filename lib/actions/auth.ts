@@ -1,6 +1,7 @@
 "use server"
 
 import { createAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@/lib/supabase/server"
 
 export async function checkEmailExists(email: string): Promise<{ exists: boolean }> {
   // Use admin client to bypass RLS - this allows checking email existence
@@ -56,4 +57,65 @@ export async function ensureSupabaseAuthUser(
   }
 
   return { success: true, error: null }
+}
+
+export async function getPostLoginRedirectUrl(): Promise<{
+  url: string
+  error: string | null
+}> {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user?.email) {
+    return { url: "/login", error: "Session invalide" }
+  }
+
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id, role, company_id, contract_id, is_hopper_admin")
+    .eq("email", user.email)
+    .single()
+
+  if (!existingUser) {
+    await supabase.auth.signOut()
+    return { url: "/login?error=no_account", error: "no_account" }
+  }
+
+  // Auto-assign first user of a company to the first contract
+  if (existingUser.company_id && !existingUser.contract_id) {
+    const { count: userCount } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", existingUser.company_id)
+
+    if (userCount === 1) {
+      const { data: firstContract } = await supabase
+        .from("contracts")
+        .select("id")
+        .eq("company_id", existingUser.company_id)
+        .order("start_date", { ascending: true })
+        .limit(1)
+        .single()
+
+      if (firstContract) {
+        await supabase
+          .from("users")
+          .update({ contract_id: firstContract.id })
+          .eq("id", existingUser.id)
+      }
+    }
+  }
+
+  if (existingUser.is_hopper_admin) {
+    return { url: "/admin", error: null }
+  }
+
+  if (existingUser.role === "user") {
+    return { url: "/compte", error: null }
+  }
+
+  return { url: "/compte", error: null }
 }

@@ -18,6 +18,16 @@ export default async function AuthErrorPage() {
             </p>
           </div>
 
+          <div className="rounded-[12px] bg-card p-4 text-left space-y-2">
+            <p className="text-sm font-medium text-foreground">
+              Vous avez ouvert le lien dans un autre navigateur ?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Retournez sur le navigateur d&apos;origine et entrez le code
+              à 6 chiffres indiqué dans l&apos;email de connexion.
+            </p>
+          </div>
+
           <Button asChild>
             <Link href="/login">Retourner à la page de connexion</Link>
           </Button>
