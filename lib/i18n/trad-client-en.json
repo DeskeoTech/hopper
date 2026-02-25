@@ -453,7 +453,7 @@
     "title": "All Hopper Sites"
   },
   "login": {
-    "message": "Enter your email address to receive a login link.",
+    "message": "Enter your email address to log in to your Hopper space.",
     "loadingSend": "Sending...",
     "loadingConnect": "Connecting...",
     "logGoogle": "Continue with Google",
@@ -467,12 +467,18 @@
     "success": {
       "mailVerify": "Check your inbox",
       "linkSent": "We sent a login link to ",
+      "codeSent": "We sent a login code to",
+      "enterCode": "Enter the 6-digit code received by email",
+      "verifying": "Verifying...",
+      "linkAlternative": "You can also click the link in the email",
+      "invalidCode": "Invalid or expired code. Please try again.",
+      "genericError": "An error occurred. Please try again.",
       "otherAdress": "Use a different email"
     },
     "unlog": "You must be logged in to access this page.",
     "noReservation": "No reservation?",
   "discoverHopper": "Discover and book the Hopper experience here",
-  "buttonLink" : "RECEIVE LOGIN LINK"
+  "buttonLink" : "LOG IN"
   },
   "sites": {
   "seeSite": "View site info",

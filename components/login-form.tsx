@@ -93,7 +93,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
       })
 
       if (error) {
-        setOtpError("Code invalide ou expiré. Veuillez réessayer.")
+        setOtpError(t("success.invalidCode"))
         setIsVerifying(false)
         setOtpCode("")
         return
@@ -108,7 +108,7 @@ export function LoginForm({ initialError }: LoginFormProps) {
         window.location.href = "/compte"
       }
     } catch {
-      setOtpError("Une erreur est survenue. Veuillez réessayer.")
+      setOtpError(t("success.genericError"))
       setIsVerifying(false)
       setOtpCode("")
     }
@@ -183,7 +183,57 @@ export function LoginForm({ initialError }: LoginFormProps) {
         <div className="space-y-2">
           <h2 className="text-xl font-semibold">{t("success.mailVerify")}</h2>
           <p className="text-muted-foreground">
-           {t("success.linkSent")}<span className="font-medium text-foreground">{email}</span>
+            {t("success.codeSent")}{" "}
+            <span className="font-medium text-foreground">{email}</span>
+          </p>
+        </div>
+
+        {/* OTP Input */}
+        <div className="w-full space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {t("success.enterCode")}
+          </p>
+          <div className="flex justify-center">
+            <InputOTP
+              maxLength={6}
+              pattern={REGEXP_ONLY_DIGITS}
+              value={otpCode}
+              onChange={(value) => {
+                setOtpCode(value)
+                setOtpError(null)
+              }}
+              onComplete={handleVerifyOtp}
+              disabled={isVerifying}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+              </InputOTPGroup>
+              <InputOTPSeparator />
+              <InputOTPGroup>
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          {isVerifying && (
+            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {t("success.verifying")}
+            </div>
+          )}
+
+          {otpError && (
+            <p className="text-sm text-destructive">{otpError}</p>
+          )}
+        </div>
+
+        <div className="w-full border-t pt-4">
+          <p className="text-xs text-muted-foreground">
+            {t("success.linkAlternative")}
           </p>
         </div>
 
