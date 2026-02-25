@@ -128,7 +128,11 @@
     "phone": "Téléphone",
     "role": "Rôle",
     "status": "Statut",
-    "actions": "Actions"
+    "actions": "Actions",
+    "mobileToggle" : {
+      "listView" : "List view",
+      "mapView" : "Map view"
+    }
   },
   "account": {
     "tabs": {
@@ -449,5 +453,11 @@
   },
   "allSites": {
     "title": "Tous les sites Hopper"
+  },
+  "accountTile": {
+    "account" : "Mon compte",
+    "company" : "Manage my company",
+    "support" : "Support",
+    "admin" : "Admin dashboard"
   }
 }
