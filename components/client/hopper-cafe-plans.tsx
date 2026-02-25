@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Coffee, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -104,6 +105,8 @@ const cafePlans: CafePlan[] = [
 ]
 
 function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
+  const t = useTranslations("cafe")
+
   const handleSubscribe = () => {
     const stripeUrl = `https://buy.stripe.com/${plan.priceId}?prefilled_email=${encodeURIComponent(userEmail)}`
     window.open(stripeUrl, "_blank")
@@ -119,7 +122,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
       {plan.isPopular && (
         <div className="absolute -top-3 left-4 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
           <Sparkles className="h-3 w-3" />
-          Populaire
+          {t("popular")}
         </div>
       )}
 
@@ -133,7 +136,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
         <span className="text-2xl sm:text-3xl font-bold text-foreground">
           {plan.price.toFixed(2).replace(".", ",")}
         </span>
-        <span className="text-xs sm:text-sm text-muted-foreground">€/mois</span>
+        <span className="text-xs sm:text-sm text-muted-foreground">{t("perMonth")}</span>
       </div>
 
       <div className="mt-2 sm:mt-3 flex items-center gap-2">
@@ -143,16 +146,16 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
         <div className="text-xs sm:text-sm">
           <span className="font-semibold text-foreground">{plan.perDay}</span>{" "}
           <span className="text-muted-foreground">
-            boisson{plan.perDay > 1 ? "s" : ""}/jour
+            {plan.perDay > 1 ? t("drinksPerDay").split(" | ")[1] : t("drinksPerDay").split(" | ")[0]}{t("perDay")}
           </span>
           <span className="text-muted-foreground"> · </span>
           <span className="font-semibold text-foreground">{plan.perWeek}</span>{" "}
-          <span className="text-muted-foreground">/sem.</span>
+          <span className="text-muted-foreground">{t("perWeek")}</span>
         </div>
       </div>
 
       <Button className="mt-3 sm:mt-4 w-full" size="sm" onClick={handleSubscribe}>
-        Souscrire
+        {t("subscribe")}
       </Button>
     </div>
   )
@@ -160,6 +163,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
 
 export function HopperCafePlans() {
   const { user } = useClientLayout()
+  const t = useTranslations("cafe")
   const [frequency, setFrequency] = useState<"3days" | "5days">("5days")
 
   const filteredPlans = cafePlans.filter((plan) => plan.frequency === frequency)
@@ -173,12 +177,12 @@ export function HopperCafePlans() {
       >
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4 sm:mb-6">
           <TabsTrigger value="3days" className="text-xs sm:text-sm">
-            3 jours / sem.
+            {t("threeDays")}
           </TabsTrigger>
           <TabsTrigger value="5days" className="text-xs sm:text-sm">
-            5 jours / sem.
+            {t("fiveDays")}
             <span className="ml-1 sm:ml-2 hidden sm:inline rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
-              + de choix
+              {t("moreChoices")}
             </span>
           </TabsTrigger>
         </TabsList>

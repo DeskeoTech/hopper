@@ -8,7 +8,7 @@ import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-const languages = [
+export const languages = [
   { code: "fr" as const, label: "Français", flag: "/flags/fr.svg" },
   { code: "en" as const, label: "English", flag: "/flags/gb.svg" },
 ]

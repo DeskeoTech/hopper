@@ -25,25 +25,23 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { useTranslations, useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { createTicket, getUserTickets } from "@/lib/actions/tickets"
 import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
 import { REQUEST_TYPE_LABELS, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
 
-const STATUS_CONFIG: Record<TicketStatus, { label: string; icon: typeof Circle; className: string }> = {
+const STATUS_CONFIG: Record<TicketStatus, { icon: typeof Circle; className: string }> = {
   todo: {
-    label: "En attente",
     icon: Clock,
     className: "text-amber-600 bg-amber-100",
   },
   in_progress: {
-    label: "En cours",
     icon: AlertCircle,
     className: "text-blue-600 bg-blue-100",
   },
   done: {
-    label: "Résolu",
     icon: CheckCircle2,
     className: "text-green-600 bg-green-100",
   },
@@ -64,6 +62,9 @@ function parseTicketComment(ticket: SupportTicket) {
 }
 
 export function SupportTab() {
+  const t = useTranslations("support")
+  const tc = useTranslations("common")
+  const locale = useLocale()
   const { user, sites, selectedSiteId } = useClientLayout()
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -109,20 +110,20 @@ export function SupportTab() {
     e.preventDefault()
 
     if (!requestType) {
-      setError("Veuillez sélectionner un type de demande")
+      setError(t("validation.selectType"))
       return
     }
     const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType]
     if (subtypeOptions && subtypeOptions.length > 0 && !requestSubtype) {
-      setError("Veuillez sélectionner un type de demande précis")
+      setError(t("validation.selectSubtype"))
       return
     }
     if (!subject.trim()) {
-      setError("Veuillez saisir un sujet")
+      setError(t("validation.enterSubject"))
       return
     }
     if (!comment.trim()) {
-      setError("Veuillez saisir une description")
+      setError(t("validation.enterDescription"))
       return
     }
 
@@ -163,7 +164,7 @@ export function SupportTab() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("fr-FR", {
+    return new Date(dateString).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
       day: "numeric",
       month: "short",
       year: "numeric",
@@ -180,14 +181,14 @@ export function SupportTab() {
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <MessageCircle className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Envoyer un ticket</h2>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("sendTicket")}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Demandeur */}
           <div className="space-y-2">
             <Label>
-              Demandeur <span className="text-destructive">*</span>
+              {t("requester")} <span className="text-destructive">*</span>
             </Label>
             <div className="flex items-center gap-2 rounded-[8px] border border-input bg-foreground/[0.03] px-3 py-2.5">
               <Mail className="h-4 w-4 shrink-0 text-foreground/40" />
@@ -198,14 +199,14 @@ export function SupportTab() {
           {/* Site */}
           <div className="space-y-2">
             <Label htmlFor="siteId">
-              Vous êtes actuellement sur le site
+              {t("currentSite")}
             </Label>
             <Select
               value={siteId}
               onValueChange={setSiteId}
             >
               <SelectTrigger id="siteId">
-                <SelectValue placeholder="Sélectionner un site..." />
+                <SelectValue placeholder={t("selectSite")} />
               </SelectTrigger>
               <SelectContent>
                 {sites.map((site) => (
@@ -220,7 +221,7 @@ export function SupportTab() {
           {/* Votre demande concerne */}
           <div className="space-y-2">
             <Label htmlFor="requestType">
-              Votre demande concerne <span className="text-destructive">*</span>
+              {t("requestAbout")} <span className="text-destructive">*</span>
             </Label>
             <SearchableSelect
               options={REQUEST_TYPE_OPTIONS}
@@ -229,8 +230,8 @@ export function SupportTab() {
                 setRequestType(value as TicketRequestType)
                 setRequestSubtype("")
               }}
-              placeholder="Choisir..."
-              searchPlaceholder="Rechercher..."
+              placeholder={t("choose")}
+              searchPlaceholder={tc("search") + "..."}
               triggerClassName="w-full"
             />
           </div>
@@ -239,14 +240,14 @@ export function SupportTab() {
           {requestType && REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] && (
             <div className="space-y-2 overflow-hidden transition-all duration-200">
               <Label htmlFor="requestSubtype">
-                Type de demande <span className="text-destructive">*</span>
+                {t("requestType")} <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
                 options={REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] || []}
                 value={requestSubtype}
                 onValueChange={setRequestSubtype}
-                placeholder="Précisez votre demande..."
-                searchPlaceholder="Rechercher..."
+                placeholder={t("specify")}
+                searchPlaceholder={tc("search") + "..."}
                 triggerClassName="w-full"
               />
             </div>
@@ -255,26 +256,26 @@ export function SupportTab() {
           {/* Sujet */}
           <div className="space-y-2">
             <Label htmlFor="subject">
-              Sujet <span className="text-destructive">*</span>
+              {t("subject")} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="subject"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Résumez votre demande en quelques mots"
+              placeholder={t("subjectPlaceholder")}
             />
           </div>
 
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">
-              Description <span className="text-destructive">*</span>
+              {t("description")} <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="description"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              placeholder="Tapez quelque chose"
+              placeholder={t("descriptionPlaceholder")}
               rows={5}
               className="resize-none"
             />
@@ -317,7 +318,7 @@ export function SupportTab() {
                 className="flex items-center gap-2 text-sm text-foreground/60 transition-colors hover:text-foreground"
               >
                 <Paperclip className="h-4 w-4" />
-                Pièce jointe
+                {t("attachment")}
               </button>
             )}
           </div>
@@ -332,7 +333,7 @@ export function SupportTab() {
           {success && (
             <div className="flex items-center gap-2 rounded-[12px] bg-green-500/10 p-4 text-green-600">
               <Check className="h-4 w-4" />
-              <p className="text-sm font-medium">Votre demande a été envoyée avec succès</p>
+              <p className="text-sm font-medium">{t("successMessage")}</p>
             </div>
           )}
 
@@ -343,7 +344,7 @@ export function SupportTab() {
               onClick={handleReset}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
-              Annuler
+              {tc("cancel")}
             </button>
             <button
               type="submit"
@@ -353,10 +354,10 @@ export function SupportTab() {
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Envoi...
+                  {tc("sending")}
                 </>
               ) : (
-                "Envoyer"
+                tc("send")
               )}
             </button>
           </div>
@@ -369,7 +370,7 @@ export function SupportTab() {
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <Clock className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Mes demandes</h2>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("myRequests")}</h2>
         </div>
 
         {loadingTickets ? (
@@ -382,7 +383,7 @@ export function SupportTab() {
               <MessageCircle className="h-6 w-6 text-muted-foreground" />
             </div>
             <p className="mt-4 text-sm text-muted-foreground">
-              Vous n&apos;avez pas encore de demande
+              {t("noRequests")}
             </p>
           </div>
         ) : (
@@ -422,7 +423,7 @@ export function SupportTab() {
                       )}
                     >
                       <StatusIcon className="h-3.5 w-3.5" />
-                      {statusConfig.label}
+                      {t(`status.${ticket.status || "todo"}`)}
                     </div>
                   </div>
                 </div>

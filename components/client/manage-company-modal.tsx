@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { Loader2, Users, Mail, Phone, Shield, UserCircle, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,6 +54,9 @@ export function ManageCompanyModal({
   companyName,
   currentUserId,
 }: ManageCompanyModalProps) {
+  const t = useTranslations("company")
+  const tc = useTranslations("common")
+
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -161,10 +165,10 @@ export function ManageCompanyModal({
   const getRoleLabel = (role: string | null) => {
     switch (role) {
       case "admin":
-        return "Administrateur"
+        return t("administrator")
       case "user":
       default:
-        return "Utilisateur"
+        return tc("user")
     }
   }
 
@@ -172,13 +176,13 @@ export function ManageCompanyModal({
     if (status === "inactive") {
       return (
         <span className="inline-flex items-center rounded-full bg-destructive/10 px-2 py-1 text-xs font-medium text-destructive">
-          Inactif
+          {t("inactive")}
         </span>
       )
     }
     return (
       <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-        Actif
+        {t("active")}
       </span>
     )
   }
@@ -195,12 +199,12 @@ export function ManageCompanyModal({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Users className="h-5 w-5" />
-              Gérer mon entreprise
+              {t("manageCompany")}
             </DialogTitle>
             <DialogDescription>
               {companyName
-                ? `Gérez les utilisateurs de ${companyName}`
-                : "Gérez les utilisateurs de votre entreprise"}
+                ? t("manageUsers", { company: companyName })
+                : t("manageUsersDefault")}
             </DialogDescription>
           </DialogHeader>
 
@@ -209,7 +213,7 @@ export function ManageCompanyModal({
             <div className="flex items-center justify-between gap-6 pt-2">
               <div className="flex-1 max-w-md">
                 <div className="flex items-center justify-between text-sm mb-2">
-                  <span className="text-muted-foreground">Sièges utilisés</span>
+                  <span className="text-muted-foreground">{t("seatsOccupied")}</span>
                   <span className="font-medium">{seatsInfo.activeUsers} / {seatsInfo.maxSeats}</span>
                 </div>
                 <Progress value={progressValue} className="h-2" />
@@ -220,7 +224,7 @@ export function ManageCompanyModal({
                 className="shrink-0"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Ajouter un utilisateur
+                {t("addUserButton")}
               </Button>
             </div>
           )}
@@ -237,19 +241,19 @@ export function ManageCompanyModal({
             </div>
           ) : users.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
-              Aucun utilisateur trouvé
+              {t("noUsersFound")}
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Utilisateur</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Téléphone</TableHead>
-                    <TableHead>Rôle</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{tc("user")}</TableHead>
+                    <TableHead>{tc("email")}</TableHead>
+                    <TableHead>{tc("phone")}</TableHead>
+                    <TableHead>{tc("role")}</TableHead>
+                    <TableHead>{tc("status")}</TableHead>
+                    <TableHead className="text-right">{tc("actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -276,7 +280,7 @@ export function ManageCompanyModal({
                                 .join(" ") || "—"}
                               {isCurrentUser && (
                                 <span className="ml-2 text-xs text-muted-foreground">
-                                  (vous)
+                                  {t("youLabel")}
                                 </span>
                               )}
                             </span>
@@ -311,8 +315,8 @@ export function ManageCompanyModal({
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="user">Utilisateur</SelectItem>
-                                <SelectItem value="admin">Administrateur</SelectItem>
+                                <SelectItem value="user">{tc("user")}</SelectItem>
+                                <SelectItem value="admin">{t("administrator")}</SelectItem>
                               </SelectContent>
                             </Select>
                           )}
@@ -330,7 +334,7 @@ export function ManageCompanyModal({
                               {isUpdating ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                "Désactiver"
+                                t("deactivate")
                               )}
                             </Button>
                           )}
@@ -349,77 +353,77 @@ export function ManageCompanyModal({
       <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogTitle>{t("addUser.title")}</DialogTitle>
             <DialogDescription>
-              Ajoutez un nouvel utilisateur à votre entreprise.
+              {t("addUser.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
+                <Label htmlFor="firstName">{tc("firstName")}</Label>
                 <Input
                   id="firstName"
                   value={newUserFirstName}
                   onChange={(e) => setNewUserFirstName(e.target.value)}
-                  placeholder="Prénom"
+                  placeholder={tc("firstName")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
+                <Label htmlFor="lastName">{tc("lastName")}</Label>
                 <Input
                   id="lastName"
                   value={newUserLastName}
                   onChange={(e) => setNewUserLastName(e.target.value)}
-                  placeholder="Nom"
+                  placeholder={tc("lastName")}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={tc("email")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="phone">Téléphone</Label>
+              <Label htmlFor="phone">{tc("phone")}</Label>
               <Input
                 id="phone"
                 type="tel"
                 value={newUserPhone}
                 onChange={(e) => setNewUserPhone(e.target.value)}
-                placeholder="Téléphone"
+                placeholder={tc("phone")}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Rôle</Label>
+              <Label htmlFor="role">{tc("role")}</Label>
               <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as UserRole)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="user">Utilisateur</SelectItem>
-                  <SelectItem value="admin">Administrateur</SelectItem>
+                  <SelectItem value="user">{tc("user")}</SelectItem>
+                  <SelectItem value="admin">{t("administrator")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setAddUserOpen(false)}>
-              Annuler
+              {tc("cancel")}
             </Button>
             <Button onClick={handleAddUser} disabled={addingUser}>
               {addingUser ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Création...
+                  {tc("creating")}
                 </>
               ) : (
-                "Créer"
+                tc("create")
               )}
             </Button>
           </DialogFooter>

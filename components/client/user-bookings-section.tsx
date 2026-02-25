@@ -4,19 +4,19 @@ import { useMemo } from "react"
 import { CalendarX2 } from "lucide-react"
 import { UserBookingCard } from "./user-booking-card"
 import type { BookingWithDetails } from "@/lib/types/database"
+import { useTranslations } from "next-intl"
 
 interface UserBookingsSectionProps {
   bookings: BookingWithDetails[]
   userId?: string
 }
 
-export function UserBookingsSection({
-  bookings,
-  userId,
-}: UserBookingsSectionProps) {
+export function UserBookingsSection({ bookings, userId }: UserBookingsSectionProps) {
+  const t = useTranslations("dashboard.reservations")
   // Filter meeting room bookings (upcoming or ongoing, not cancelled)
+
   const meetingRoomBookings = useMemo(() => {
-    const now = new Date()
+    const now = new Date();
     return bookings
       .filter((b) => {
         // Include if: upcoming (start > now) OR ongoing (start <= now <= end)
@@ -34,7 +34,7 @@ export function UserBookingsSection({
           <CalendarX2 className="h-7 w-7 text-foreground/40" />
         </div>
         <p className="mt-4 text-base text-muted-foreground">
-          Aucune réservation de salle
+          {t("noRoomBooking")}
         </p>
       </div>
     )

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Coins, Ticket } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
@@ -7,6 +8,7 @@ import { HopperCafePlans } from "./hopper-cafe-plans"
 
 export function BoutiquePage() {
   const { user } = useClientLayout()
+  const t = useTranslations("boutique")
 
   const handleBuyCredits = () => {
     const stripeUrl = `https://buy.stripe.com/5kQeVf6455TeaCt8wBgIo01?prefilled_email=${encodeURIComponent(user.email || "")}`
@@ -22,7 +24,7 @@ export function BoutiquePage() {
     <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
       {/* Page Header */}
       <h1 className="font-header text-xl sm:text-2xl font-bold uppercase tracking-tight">
-        Boutique
+        {t("title")}
       </h1>
 
       {/* Quick Actions */}
@@ -40,7 +42,7 @@ export function BoutiquePage() {
             <Coins className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <span className="text-center text-[11px] sm:text-xs font-medium text-[#F0E8DC] leading-tight uppercase font-sans">
-            Acheter des Crédits
+            {t("buyCredits")}
           </span>
         </button>
 
@@ -57,7 +59,7 @@ export function BoutiquePage() {
             <Ticket className="h-5 w-5 sm:h-6 sm:w-6" />
           </div>
           <span className="text-center text-[11px] sm:text-xs font-medium text-foreground/70 leading-tight uppercase font-sans">
-            Acheter un Pass
+            {t("buyPass")}
           </span>
         </button>
       </div>
@@ -65,10 +67,10 @@ export function BoutiquePage() {
       {/* Hopper Café Section */}
       <div>
         <h2 className="font-header text-lg font-semibold text-foreground">
-          Hopper Café
+          {t("cafeTitle")}
         </h2>
         <p className="text-sm text-muted-foreground mt-1 mb-4">
-          Abonnez-vous à nos formules boissons et profitez de vos cafés et jus préférés chaque jour
+          {t("cafeDescription")}
         </p>
         <HopperCafePlans />
       </div>

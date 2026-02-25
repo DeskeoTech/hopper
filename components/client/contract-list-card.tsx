@@ -1,8 +1,9 @@
 "use client"
 
 import { format, parseISO } from "date-fns"
-import { fr } from "date-fns/locale"
 import { FileText, ChevronRight } from "lucide-react"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { ContractForDisplay } from "@/lib/types/database"
 
 interface ContractListCardProps {
@@ -11,10 +12,14 @@ interface ContractListCardProps {
 }
 
 export function ContractListCard({ contract, onSelect }: ContractListCardProps) {
+  const tContract = useTranslations("contractDetail")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
+
   const startDate = contract.start_date ? parseISO(contract.start_date) : null
   const endDate = contract.end_date ? parseISO(contract.end_date) : null
 
-  const formatDate = (date: Date) => format(date, "d MMM yyyy", { locale: fr })
+  const formatDate = (date: Date) => format(date, "d MMM yyyy", { locale: dateLocale })
 
   const isTerminated = contract.status === "terminated"
   const isSuspended = contract.status === "suspended"
@@ -32,13 +37,15 @@ export function ContractListCard({ contract, onSelect }: ContractListCardProps) 
   if (startDate && endDate) {
     dateString = `${formatDate(startDate)} → ${formatDate(endDate)}`
   } else if (startDate) {
-    dateString = `Depuis le ${formatDate(startDate)}`
+    dateString = tContract("since", { date: formatDate(startDate) })
   }
 
   // Build seats string
   const seatsString =
     contract.number_of_seats !== null
-      ? `${contract.number_of_seats} poste${contract.number_of_seats > 1 ? "s" : ""}`
+      ? contract.number_of_seats > 1
+        ? tContract("seatCountPlural", { count: contract.number_of_seats })
+        : tContract("seatCount", { count: contract.number_of_seats })
       : null
 
   const handleClick = () => {
@@ -74,22 +81,22 @@ export function ContractListCard({ contract, onSelect }: ContractListCardProps) 
         <div className="flex shrink-0 items-center gap-2">
           {isOngoing && (
             <span className="rounded-full bg-green-500/20 px-3 py-1.5 text-sm font-semibold text-green-700">
-              En cours
+              {tContract("status.ongoing")}
             </span>
           )}
           {isSuspended && (
             <span className="rounded-full bg-orange-500/20 px-3 py-1.5 text-sm font-semibold text-orange-700">
-              Suspendu
+              {tContract("status.suspended")}
             </span>
           )}
           {isTerminated && (
             <span className="rounded-full bg-foreground/5 px-3 py-1.5 text-sm text-foreground/50">
-              Terminé
+              {tContract("status.terminated")}
             </span>
           )}
           {!isOngoing && !isSuspended && !isTerminated && (
             <span className="rounded-full bg-blue-500/20 px-3 py-1.5 text-sm font-semibold text-blue-700">
-              À venir
+              {tContract("status.upcoming")}
             </span>
           )}
           <ChevronRight className="h-5 w-5 text-foreground/30" />

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Receipt, ExternalLink, Loader2, CreditCard } from "lucide-react"
 import { createBillingPortalSession } from "@/lib/actions/billing"
 import { useClientLayout } from "./client-layout-provider"
@@ -8,6 +9,8 @@ import { AdminContactDialog } from "./admin-contact-dialog"
 
 export function FacturationTab() {
   const { isAdmin, companyAdmin } = useClientLayout()
+  const t = useTranslations("billing")
+  const tc = useTranslations("common")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showContactAdmin, setShowContactAdmin] = useState(false)
@@ -32,13 +35,13 @@ export function FacturationTab() {
       }
 
       if (!result.url) {
-        throw new Error("URL de facturation non reçue")
+        throw new Error(t("urlError"))
       }
 
       // Redirect to Stripe Billing Portal
       window.location.href = result.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue")
+      setError(err instanceof Error ? err.message : tc("errorOccurred"))
       setIsLoading(false)
     }
   }
@@ -53,12 +56,12 @@ export function FacturationTab() {
             </div>
             <div className="flex items-center gap-3">
               <Loader2 className="h-5 w-5 animate-spin text-foreground/70" />
-              <p className="text-lg font-medium">Connexion à Stripe...</p>
+              <p className="text-lg font-medium">{t("connecting")}</p>
             </div>
             <p className="text-center text-sm text-muted-foreground">
-              Préparation de votre espace de facturation.
+              {t("preparing")}
               <br />
-              Vous allez être redirigé dans quelques instants.
+              {t("redirecting")}
             </p>
           </div>
         </div>
@@ -69,12 +72,11 @@ export function FacturationTab() {
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <Receipt className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">Facturation</h2>
+          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
         </div>
 
         <p className="mb-6 text-muted-foreground">
-          Accédez à votre espace de facturation pour consulter vos factures et
-          gérer vos informations de paiement.
+          {t("description")}
         </p>
 
         <button
@@ -84,7 +86,7 @@ export function FacturationTab() {
           className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
         >
           <ExternalLink className="h-4 w-4" />
-          Accéder à mon compte facturation
+          {t("openPortal")}
         </button>
 
         {error && (

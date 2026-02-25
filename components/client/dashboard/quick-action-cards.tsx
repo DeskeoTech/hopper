@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useClientLayout } from "../client-layout-provider"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
 import { AdminContactDialog } from "../admin-contact-dialog"
+import { useTranslations } from "next-intl"
 
 interface ActionCardProps {
   title: string
@@ -39,6 +40,7 @@ export function QuickActionCards() {
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [adminDialogOpen, setAdminDialogOpen] = useState(false)
   const [adminDialogAction, setAdminDialogAction] = useState<"credits" | "desk">("credits")
+  const t = useTranslations("dashboard")
 
   const handleBookDesk = () => {
     if (!isAdmin) {
@@ -65,21 +67,21 @@ export function QuickActionCards() {
       {/* Action cards grid */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ActionCard
-          title="Acheter des crédits"
-          description="Rechargez votre compte"
-          buttonText="Acheter"
+          title={t("buyCredits.title")}
+          description={t("buyCredits.description")}
+          buttonText={t("buyCredits.button")}
           onClick={handleBuyCredits}
         />
         <ActionCard
-          title="Réserver une salle"
-          description="Réservez une salle de réunion"
-          buttonText="Réserver"
+          title={t("bookRoom.title")}
+          description={t("bookRoom.description")}
+          buttonText={t("bookRoom.button")}
           onClick={() => setBookingModalOpen(true)}
         />
         <ActionCard
-          title="Réserver un poste"
-          description="À la journée, à la semaine ou au mois"
-          buttonText="Réserver"
+          title={t("bookDesk.title")}
+          description={t("bookDesk.description")}
+          buttonText={t("bookDesk.button")}
           onClick={handleBookDesk}
         />
       </div>

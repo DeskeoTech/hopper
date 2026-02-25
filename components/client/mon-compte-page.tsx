@@ -21,6 +21,7 @@ import { MesCreditsTab } from "./mes-credits-tab"
 import { FacturationTab } from "./facturation-tab"
 import { SupportTab } from "./support-tab"
 import { createClient } from "@/lib/supabase/client"
+import { useTranslations } from "next-intl"
 import type { ContractForDisplay } from "@/lib/types/database"
 
 interface MonComptePageProps {
@@ -29,6 +30,8 @@ interface MonComptePageProps {
 
 export function MonComptePage({ contracts }: MonComptePageProps) {
   const { user, credits, plan, isAdmin } = useClientLayout()
+  const t = useTranslations("common")
+  const tAccount = useTranslations("account")
   const router = useRouter()
   const searchParams = useSearchParams()
   const [loggingOut, setLoggingOut] = useState(false)
@@ -51,7 +54,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
   // User info
   const firstName = user?.first_name || ""
   const lastName = user?.last_name || ""
-  const fullName = [firstName, lastName].filter(Boolean).join(" ") || "Utilisateur"
+  const fullName = [firstName, lastName].filter(Boolean).join(" ") || t("user")
   const companyName = user?.companies?.name || null
   const planName = plan?.name || null
   const remainingCredits = credits?.remaining ?? 0
@@ -65,11 +68,11 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
 
   // Menu items for mobile grid
   const menuItems = [
-    { value: "coordonnees", label: "Coordonnées", icon: User },
-    { value: "forfait", label: "Forfait", icon: Package },
-    { value: "credits", label: "Crédits", icon: Coins },
-    { value: "facturation", label: "Facturation", icon: Receipt },
-    { value: "contact", label: "Support", icon: MessageCircle },
+    { value: "coordonnees", label: tAccount("tabs.profile"), icon: User },
+    { value: "forfait", label: tAccount("tabs.plan"), icon: Package },
+    { value: "credits", label: tAccount("tabs.credits"), icon: Coins },
+    { value: "facturation", label: tAccount("tabs.billing"), icon: Receipt },
+    { value: "contact", label: tAccount("tabs.support"), icon: MessageCircle },
   ]
 
   // Filter out admin-only tabs for non-admin users
@@ -89,7 +92,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-foreground/5">
             <ArrowLeft className="h-4 w-4" />
           </div>
-          <span>Retour à l&apos;accueil</span>
+          <span>{t("backToHome")}</span>
         </Link>
 
         {/* Logout button */}
@@ -99,7 +102,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
           className="flex shrink-0 items-center gap-2 rounded-full bg-foreground/5 px-3 py-2 text-xs font-medium text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
         >
           <LogOut className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Déconnexion</span>
+          <span className="hidden sm:inline">{t("logout")}</span>
         </button>
       </div>
 
@@ -116,7 +119,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-1.5 text-sm text-foreground/70">
               <Ticket className="h-3.5 w-3.5" />
-              <span>{remainingCredits} crédit{remainingCredits !== 1 ? "s" : ""}</span>
+              <span>{remainingCredits} {remainingCredits !== 1 ? t("credits") : t("credit")}</span>
             </div>
             {planName && (
               <div className="flex items-center gap-1.5 text-sm text-foreground/70">
@@ -154,23 +157,23 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
         <div className="hidden md:block">
           <TabsList className="inline-flex h-auto w-full gap-1 p-1 justify-start">
             <TabsTrigger value="coordonnees" className="whitespace-nowrap px-3 py-2 text-sm">
-              Coordonnées
+              {tAccount("tabs.profile")}
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="forfait" className="whitespace-nowrap px-3 py-2 text-sm">
-                Forfait
+                {tAccount("tabs.plan")}
               </TabsTrigger>
             )}
             <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
-              Crédits
+              {tAccount("tabs.credits")}
             </TabsTrigger>
             {isAdmin && (
               <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
-                Facturation
+                {tAccount("tabs.billing")}
               </TabsTrigger>
             )}
             <TabsTrigger value="contact" className="whitespace-nowrap px-3 py-2 text-sm">
-              Support
+              {tAccount("tabs.support")}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -206,10 +209,10 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
       <AlertDialogContent className="bg-background sm:rounded-[20px]">
         <AlertDialogHeader>
           <AlertDialogTitle className="font-header text-lg font-bold uppercase tracking-tight">
-            Déconnexion
+            {t("logout")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Êtes-vous sûr de vouloir vous déconnecter ?
+            {t("logoutConfirm")}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="gap-2 sm:gap-0">
@@ -218,7 +221,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
             onClick={() => setShowLogoutConfirm(false)}
             className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
           >
-            Annuler
+            {t("cancel")}
           </button>
           <button
             type="button"
@@ -229,12 +232,12 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
             {loggingOut ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Déconnexion...
+                {t("loggingOut")}
               </>
             ) : (
               <>
                 <LogOut className="h-4 w-4" />
-                Déconnexion
+                {t("logout")}
               </>
             )}
           </button>

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +12,8 @@ import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { acceptCgu } from "@/lib/actions/cgu";
 
 export function CguAcceptanceModal() {
+  const t = useTranslations("cgu");
+  const to = useTranslations("onboarding");
   const [accepted, setAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,12 +63,10 @@ export function CguAcceptanceModal() {
           {/* Title & Description */}
           <div className="space-y-2 text-center">
             <h2 className="font-header text-2xl font-bold uppercase tracking-tight">
-              Mise à jour
+              {t("update")}
             </h2>
             <p className="text-sm text-muted-foreground">
-              Nos conditions générales ont été mises à jour ou vous ne les avez
-              pas encore acceptées. Veuillez les accepter pour continuer à
-              utiliser l&apos;application.
+              {t("updateMessage")}
             </p>
           </div>
 
@@ -81,23 +82,23 @@ export function CguAcceptanceModal() {
               htmlFor="cgu-accept"
               className="cursor-pointer text-sm leading-relaxed text-muted-foreground"
             >
-              J&apos;accepte les{" "}
+              {to("iAcceptThe")}{" "}
               <a
                 href="/conditions-generales"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-2 text-foreground hover:text-primary"
               >
-                Conditions Générales
+                {to("termsAndConditions")}
               </a>{" "}
-              et la{" "}
+              {to("andThe")}{" "}
               <a
                 href="/politique-de-confidentialite"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="underline underline-offset-2 text-foreground hover:text-primary"
               >
-                Politique de confidentialité
+                {to("privacyPolicy")}
               </a>
             </Label>
           </div>
@@ -119,10 +120,10 @@ export function CguAcceptanceModal() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Validation...
+                {t("validating")}
               </>
             ) : (
-              "Accepter et continuer"
+              t("acceptAndContinue")
             )}
           </Button>
         </div>

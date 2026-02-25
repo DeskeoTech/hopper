@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { format, parseISO } from "date-fns"
-import { fr } from "date-fns/locale"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import { MapPin } from "lucide-react"
 import { CancelBookingDialog } from "./cancel-booking-dialog"
 import { cn } from "@/lib/utils"
@@ -15,13 +16,16 @@ interface UserBookingCardProps {
 }
 
 export function UserBookingCard({ booking, userId, isPast = false }: UserBookingCardProps) {
+  const t = useTranslations("bookingCard")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
 
   const parsedDate = parseISO(booking.start_date)
-  const formattedDate = format(parsedDate, "dd/MM/yyyy", { locale: fr })
-  const startTime = format(parsedDate, "HH:mm", { locale: fr })
-  const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: fr })
-  const fullDate = format(parsedDate, "EEEE d MMMM yyyy", { locale: fr })
+  const formattedDate = format(parsedDate, "dd/MM/yyyy", { locale: dateLocale })
+  const startTime = format(parsedDate, "HH:mm", { locale: dateLocale })
+  const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: dateLocale })
+  const fullDate = format(parsedDate, "EEEE d MMMM yyyy", { locale: dateLocale })
 
   const isCancelled = booking.status === "cancelled"
   // Past = end_date has passed (both date AND time)
@@ -73,19 +77,19 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
               onClick={() => setCancelDialogOpen(true)}
               className="mt-3 rounded-full bg-foreground/5 px-3 py-1.5 text-xs text-foreground/70 transition-colors hover:bg-destructive/10 hover:text-destructive"
             >
-              Annuler
+              {t("cancel")}
             </button>
           )}
 
           {/* Status badge: En cours > Annulée > Terminée */}
           {isOngoing && !isCancelled && (
             <span className="mt-2.5 rounded-full bg-green-500/20 px-3 py-1 text-xs font-semibold text-green-700">
-              En cours
+              {t("ongoing")}
             </span>
           )}
           {!isOngoing && (isPast || isCancelled) && (
             <span className="mt-2.5 rounded-full bg-foreground/5 px-3 py-1 text-xs text-foreground/50">
-              {isCancelled ? "Annulée" : "Terminée"}
+              {isCancelled ? t("cancelled") : t("completed")}
             </span>
           )}
         </div>

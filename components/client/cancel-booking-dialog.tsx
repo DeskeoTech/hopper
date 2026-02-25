@@ -11,6 +11,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { useTranslations } from "next-intl"
 import { cancelBooking } from "@/lib/actions/bookings"
 
 interface CancelBookingDialogProps {
@@ -30,6 +31,7 @@ export function CancelBookingDialog({
   onOpenChange,
   onSuccess,
 }: CancelBookingDialogProps) {
+  const t = useTranslations("cancelBooking")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,10 +56,9 @@ export function CancelBookingDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="rounded-[20px]">
         <AlertDialogHeader>
-          <AlertDialogTitle>Annuler la reservation</AlertDialogTitle>
+          <AlertDialogTitle>{t("title")}</AlertDialogTitle>
           <AlertDialogDescription>
-            Etes-vous sur de vouloir annuler cette reservation du {bookingDate} ?
-            Cette action est irreversible.
+            {t("message", { date: bookingDate })} {t("irreversible")}
           </AlertDialogDescription>
           {error && (
             <p className="text-sm text-destructive mt-2">{error}</p>
@@ -65,7 +66,7 @@ export function CancelBookingDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isLoading}>
-            Non, garder
+            {t("keep")}
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={(e) => {
@@ -75,7 +76,7 @@ export function CancelBookingDialog({
             disabled={isLoading}
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
           >
-            {isLoading ? "Annulation..." : "Oui, annuler"}
+            {isLoading ? t("cancelling") : t("confirmCancel")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

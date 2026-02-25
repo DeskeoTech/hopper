@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useTranslations, useLocale } from "next-intl"
 import {
   ArrowLeft,
   Building2,
@@ -54,6 +55,10 @@ export function EntreprisePage({
   users: initialUsers,
   currentUserId,
 }: EntreprisePageProps) {
+  const t = useTranslations("company")
+  const tc = useTranslations("common")
+  const locale = useLocale()
+
   const [users, setUsers] = useState(initialUsers)
   const [contracts, setContracts] = useState(initialContracts)
   const [error, setError] = useState<string | null>(null)
@@ -168,31 +173,30 @@ export function EntreprisePage({
   const getCompanyTypeLabel = (type: string | null) => {
     switch (type) {
       case "self_employed":
-        return "Auto-entrepreneur"
+        return t("companyType.selfEmployed")
       case "multi_employee":
-        return "Entreprise"
+        return t("companyType.company")
       default:
         return "—"
     }
   }
 
   const formatDateRange = (start: string | null, end: string | null) => {
-    const formatDate = (date: string) => {
-      return new Date(date).toLocaleDateString("fr-FR", {
+    const fmtDate = (date: string) => {
+      return new Date(date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
         day: "numeric",
         month: "short",
         year: "numeric",
       })
     }
-
     if (start && end) {
-      return `${formatDate(start)} → ${formatDate(end)}`
+      return `${fmtDate(start)} → ${fmtDate(end)}`
     }
     if (start) {
-      return `Depuis le ${formatDate(start)}`
+      return t("dateRange.since", { date: fmtDate(start) })
     }
     if (end) {
-      return `Jusqu'au ${formatDate(end)}`
+      return t("dateRange.until", { date: fmtDate(end) })
     }
     return null
   }
@@ -205,7 +209,7 @@ export function EntreprisePage({
         className="mb-6 inline-flex items-center gap-2 text-sm text-foreground/50 transition-colors hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Retour
+        {tc("back")}
       </Link>
 
       <div className="space-y-6">
@@ -217,7 +221,7 @@ export function EntreprisePage({
             </div>
             <div>
               <h1 className="font-header text-lg font-bold uppercase tracking-tight">
-                {company.name || "Mon entreprise"}
+                {company.name || t("myCompany")}
               </h1>
               <p className="text-xs text-foreground/50">
                 {getCompanyTypeLabel(company.company_type)}
@@ -237,12 +241,12 @@ export function EntreprisePage({
               <FileText className="h-5 w-5 text-foreground/70" />
             </div>
             <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-              Pass
+              {t("pass")}
             </h2>
           </div>
 
           {contracts.length === 0 ? (
-            <p className="text-sm text-foreground/50">Aucun pass actif</p>
+            <p className="text-sm text-foreground/50">{t("noActivePass")}</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {contracts.map((contract) => {
@@ -280,7 +284,7 @@ export function EntreprisePage({
 
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs">
-                        <span className="text-foreground/50">Postes utilisés</span>
+                        <span className="text-foreground/50">{t("seatsUsed")}</span>
                         <span className="font-medium text-foreground/70">
                           {contract.assigned_seats} / {contract.total_seats}
                         </span>
@@ -302,7 +306,7 @@ export function EntreprisePage({
                 <Users className="h-5 w-5 text-foreground/70" />
               </div>
               <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-                Utilisateurs
+                {t("users")}
               </h2>
             </div>
 
@@ -311,7 +315,7 @@ export function EntreprisePage({
               {totalSeats > 0 && (
                 <div className="flex-1 min-w-[150px] max-w-[200px]">
                   <div className="flex items-center justify-between text-xs mb-1.5">
-                    <span className="text-foreground/50">Sièges utilisés</span>
+                    <span className="text-foreground/50">{t("seatsOccupied")}</span>
                     <span className="font-medium text-foreground/70">
                       {activeUsers} / {totalSeats}
                     </span>
@@ -331,7 +335,7 @@ export function EntreprisePage({
                 className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#1B1918] px-4 py-2 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
               >
                 <Plus className="h-3.5 w-3.5" />
-                Ajouter
+                {tc("add")}
               </button>
             </div>
           </div>
@@ -343,7 +347,7 @@ export function EntreprisePage({
           )}
 
           {users.length === 0 ? (
-            <p className="text-sm text-foreground/50">Aucun utilisateur</p>
+            <p className="text-sm text-foreground/50">{t("noUsers")}</p>
           ) : (
             <div className="space-y-2">
               {users.map((user) => {
@@ -375,11 +379,11 @@ export function EntreprisePage({
                             {userName}
                           </span>
                           {isCurrentUser && (
-                            <span className="text-[10px] text-foreground/40">(vous)</span>
+                            <span className="text-[10px] text-foreground/40">{t("youLabel")}</span>
                           )}
                           {user.role === "admin" && (
                             <span className="inline-flex items-center rounded-full bg-foreground/10 px-2.5 py-0.5 text-xs font-medium text-foreground/70">
-                              Administrateur de l'entreprise
+                              {t("companyAdmin")}
                             </span>
                           )}
                         </div>
@@ -405,7 +409,7 @@ export function EntreprisePage({
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="none">Retirer du pass</SelectItem>
+                            <SelectItem value="none">{t("removeFromPass")}</SelectItem>
                             {contracts.map((contract) => {
                               const isAssignedToThis = user.contract_id === contract.id
                               const hasSpace =
@@ -418,7 +422,7 @@ export function EntreprisePage({
                                   disabled={!hasSpace}
                                 >
                                   {contract.plan_name}
-                                  {!hasSpace && " (complet)"}
+                                  {!hasSpace && " (" + t("full") + ")"}
                                 </SelectItem>
                               )
                             })}
@@ -437,7 +441,7 @@ export function EntreprisePage({
                           ) : (
                             <>
                               <FileText className="h-3 w-3" />
-                              Lier à un pass
+                              {t("linkToPass")}
                             </>
                           )}
                         </button>
@@ -456,40 +460,40 @@ export function EntreprisePage({
       <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogTitle>{t("addUser.title")}</DialogTitle>
             <DialogDescription>
-              Ajoutez un nouvel utilisateur à votre entreprise.
+              {t("addUser.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">Prénom</Label>
+                <Label htmlFor="firstName">{tc("firstName")}</Label>
                 <Input
                   id="firstName"
                   value={newUserFirstName}
                   onChange={(e) => setNewUserFirstName(e.target.value)}
-                  placeholder="Prénom"
+                  placeholder={tc("firstName")}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName">Nom</Label>
+                <Label htmlFor="lastName">{tc("lastName")}</Label>
                 <Input
                   id="lastName"
                   value={newUserLastName}
                   onChange={(e) => setNewUserLastName(e.target.value)}
-                  placeholder="Nom"
+                  placeholder={tc("lastName")}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{tc("email")}</Label>
               <Input
                 id="email"
                 type="email"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
-                placeholder="Email"
+                placeholder={tc("email")}
               />
             </div>
           </div>
@@ -499,7 +503,7 @@ export function EntreprisePage({
               onClick={() => setAddUserOpen(false)}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
-              Annuler
+              {tc("cancel")}
             </button>
             <button
               type="button"
@@ -510,10 +514,10 @@ export function EntreprisePage({
               {addingUser ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Création...
+                  {tc("creating")}
                 </>
               ) : (
-                "Créer"
+                tc("create")
               )}
             </button>
           </DialogFooter>
@@ -524,15 +528,15 @@ export function EntreprisePage({
       <Dialog open={linkContractOpen} onOpenChange={setLinkContractOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Lier à un pass</DialogTitle>
+            <DialogTitle>{t("linkPassDialog.title")}</DialogTitle>
             <DialogDescription>
               {userToLink && (
                 <>
-                  Sélectionnez un pass pour{" "}
+                  {t("linkPassDialog.selectPass")}{" "}
                   <span className="font-medium">
                     {[userToLink.first_name, userToLink.last_name].filter(Boolean).join(" ") ||
                       userToLink.email ||
-                      "cet utilisateur"}
+                      t("linkPassDialog.thisUser")}
                   </span>
                 </>
               )}
@@ -541,7 +545,7 @@ export function EntreprisePage({
           <div className="py-4 space-y-2">
             {contracts.length === 0 ? (
               <p className="text-sm text-foreground/50 text-center py-4">
-                Aucun pass disponible
+                {t("linkPassDialog.noPass")}
               </p>
             ) : (
               contracts.map((contract) => {
@@ -559,17 +563,17 @@ export function EntreprisePage({
                     <div>
                       <p className="font-medium text-sm">{contract.plan_name}</p>
                       <p className="text-xs text-foreground/50">
-                        {contract.assigned_seats} / {contract.total_seats} postes utilisés
+                        {contract.assigned_seats} / {contract.total_seats} {t("seatsUsed").toLowerCase()}
                       </p>
                     </div>
                     {isFull ? (
                       <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
                         <Check className="h-3 w-3" />
-                        Complet
+                        {t("full")}
                       </span>
                     ) : (
                       <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs text-green-600">
-                        {availableSeats} dispo
+                        {t("available", { count: availableSeats })}
                       </span>
                     )}
                   </button>
@@ -583,7 +587,7 @@ export function EntreprisePage({
               onClick={() => setLinkContractOpen(false)}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
-              Annuler
+              {tc("cancel")}
             </button>
           </DialogFooter>
         </DialogContent>
@@ -600,10 +604,9 @@ export function EntreprisePage({
       <Dialog open={noSeatsDialogOpen} onOpenChange={setNoSeatsDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Quota de sièges atteint</DialogTitle>
+            <DialogTitle>{t("seatsQuota.title")}</DialogTitle>
             <DialogDescription>
-              Vous avez atteint le nombre maximum d&apos;utilisateurs pour vos pass actuels.
-              Pour ajouter plus d&apos;utilisateurs, veuillez souscrire à un nouveau pass.
+              {t("seatsQuota.message")}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
@@ -612,7 +615,7 @@ export function EntreprisePage({
               onClick={() => setNoSeatsDialogOpen(false)}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
-              Fermer
+              {tc("close")}
             </button>
             <button
               type="button"
@@ -623,7 +626,7 @@ export function EntreprisePage({
               }}
               className="flex items-center gap-2 rounded-full bg-[#1B1918] px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
             >
-              Souscrire un pass
+              {tc("subscribePass")}
             </button>
           </DialogFooter>
         </DialogContent>

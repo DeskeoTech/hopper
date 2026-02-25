@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { format } from "date-fns"
-import { fr } from "date-fns/locale"
+import { useTranslations, useLocale } from "next-intl"
+import { getDateLocale } from "@/lib/i18n/date-locale"
 import {
   ChevronLeft,
   ChevronRight,
@@ -108,6 +109,11 @@ export function RoomBookingContent({
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
   const [siteClosureDates, setSiteClosureDates] = useState<Set<string>>(new Set())
+
+  const t = useTranslations("roomBooking")
+  const tc = useTranslations("common")
+  const locale = useLocale()
+  const dateLocale = getDateLocale(locale)
 
   // Photo viewer handlers
   const handlePhotoClick = (photos: string[], index: number) => {
@@ -388,21 +394,21 @@ export function RoomBookingContent({
       {hasActivePlan ? (
         <>
           <p className="text-sm text-destructive font-medium">
-            Vous n'avez pas assez de crédits pour cette réservation
+            {t("notEnoughCredits")}
           </p>
           <Link
             href="/boutique?tab=credits"
             className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
             onClick={onClose}
           >
-            Acheter des crédits supplémentaires
+            {tc("buyMoreCredits")}
             <ExternalLink className="h-3.5 w-3.5" />
           </Link>
         </>
       ) : (
         <>
           <p className="text-sm text-destructive font-medium">
-            Votre pass Hopper Coworking a expiré
+            {t("passExpiredCoworking")}
           </p>
           <a
             href={`https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`}
@@ -410,7 +416,7 @@ export function RoomBookingContent({
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
           >
-            Souscrire un nouveau pass
+            {tc("subscribePass")}
             <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </>
@@ -426,7 +432,7 @@ export function RoomBookingContent({
           <Check className="h-8 w-8 text-green-500" />
         </div>
         <p className="text-sm font-medium text-foreground">
-          Votre salle a été réservée avec succès !
+          {t("bookingSuccess")}
         </p>
       </div>
     )
@@ -438,7 +444,7 @@ export function RoomBookingContent({
       <div className="flex flex-col items-center justify-center py-12 px-4">
         <Building2 className="h-12 w-12 text-muted-foreground/50" />
         <p className="mt-4 text-sm text-muted-foreground text-center">
-          Sélectionnez un site pour voir les salles disponibles
+          {t("selectSiteMessage")}
         </p>
         {sites.length > 0 && (
           <div className="mt-4 w-full max-w-[250px]">
@@ -449,8 +455,8 @@ export function RoomBookingContent({
               }))}
               value=""
               onValueChange={handleSiteChange}
-              placeholder="Sélectionner un site"
-              searchPlaceholder="Rechercher un site..."
+              placeholder={t("selectSite")}
+              searchPlaceholder={t("searchSite")}
             />
           </div>
         )}
@@ -488,7 +494,7 @@ export function RoomBookingContent({
                         className="h-7 px-2 text-xs rounded-full"
                         onClick={() => setCapacityFilter(null)}
                       >
-                        Toutes
+                        {tc("all")}
                       </Button>
                       {capacityOptions.map((cap) => (
                         <Button
@@ -541,7 +547,7 @@ export function RoomBookingContent({
                           "text-[8px] sm:text-[9px] font-medium uppercase tracking-wide",
                           isSelected ? "text-white/80" : "text-muted-foreground"
                         )}>
-                          {format(day, "EEE", { locale: fr })}
+                          {format(day, "EEE", { locale: dateLocale })}
                         </span>
                         <span className={cn(
                           "text-sm sm:text-base font-semibold leading-tight",
@@ -553,7 +559,7 @@ export function RoomBookingContent({
                           "text-[7px] sm:text-[8px]",
                           isSelected ? "text-white/70" : "text-muted-foreground/70"
                         )}>
-                          {dayIsToday ? "Auj." : format(day, "MMM", { locale: fr })}
+                          {dayIsToday ? tc("todayShort") : format(day, "MMM", { locale: dateLocale })}
                         </span>
                       </button>
                     )
@@ -602,7 +608,7 @@ export function RoomBookingContent({
                       className="h-7 px-2 text-xs rounded-full shrink-0"
                       onClick={() => setCapacityFilter(null)}
                     >
-                      Toutes
+                      {tc("all")}
                     </Button>
                     {capacityOptions.map((cap) => (
                       <Button
@@ -646,7 +652,7 @@ export function RoomBookingContent({
                   <PopoverTrigger asChild>
                     <Button variant="outline" className="min-w-[140px]">
                       <CalendarIcon className="h-4 w-4 mr-2" />
-                      {isTodaySelected ? "Aujourd'hui" : format(selectedDate, "dd/MM/yyyy")}
+                      {isTodaySelected ? tc("today") : format(selectedDate, "dd/MM/yyyy")}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="center">
@@ -679,9 +685,9 @@ export function RoomBookingContent({
                   <Coins className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="type-body-sm text-muted-foreground">Mes crédits disponibles</p>
+                  <p className="type-body-sm text-muted-foreground">{t("myCredits")}</p>
                   <p className="type-h4 text-foreground">
-                    {remainingCredits} crédit{remainingCredits > 1 ? "s" : ""}
+                    {remainingCredits} {remainingCredits > 1 ? tc("credits") : tc("credit")}
                   </p>
                 </div>
               </div>
@@ -699,10 +705,10 @@ export function RoomBookingContent({
                   {!hasActivePlan ? (
                     <>
                       <p className="font-medium text-amber-800">
-                        Votre pass Hopper a expiré
+                        {t("passExpired")}
                       </p>
                       <p className="mt-1 text-sm text-amber-700">
-                        Vous ne pouvez pas réserver de salle de réunion. Souscrivez un nouveau pass pour accéder aux réservations.
+                        {t("cannotBookRoom")}
                       </p>
                       <a
                         href={`https://hopper-coworking.com/?email_user=${encodeURIComponent(userEmail)}`}
@@ -710,23 +716,23 @@ export function RoomBookingContent({
                         rel="noopener noreferrer"
                         className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
                       >
-                        Souscrire un pass
+                        {tc("subscribePass")}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </>
                   ) : (
                     <>
                       <p className="font-medium text-amber-800">
-                        Vous n&apos;avez plus de crédits
+                        {t("noCreditsLeft")}
                       </p>
                       <p className="mt-1 text-sm text-amber-700">
-                        Votre solde de crédits est à 0. Achetez des crédits supplémentaires pour réserver une salle de réunion.
+                        {t("noCreditsMessage")}
                       </p>
                       <Link
                         href="/boutique?tab=credits"
                         className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-700"
                       >
-                        Acheter des crédits
+                        {tc("buyCredits")}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </Link>
                     </>
@@ -755,14 +761,14 @@ export function RoomBookingContent({
                 <Coins className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-amber-800">
-                    Vous n&apos;avez plus de crédits
+                    {t("noCreditsLeft")}
                   </p>
                   <Link
                     href="/boutique?tab=credits"
                     onClick={onClose}
                     className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-amber-700 hover:text-amber-800"
                   >
-                    Acheter des crédits
+                    {tc("buyCredits")}
                     <ExternalLink className="h-3 w-3" />
                   </Link>
                 </div>
@@ -789,8 +795,8 @@ export function RoomBookingContent({
                 ) : filteredRooms.length === 0 ? (
                   <p className="py-8 text-center type-body text-muted-foreground">
                     {rooms.length === 0
-                      ? "Aucune salle disponible sur ce site"
-                      : "Aucune salle ne correspond au filtre de capacité"}
+                      ? t("noRoomsOnSite")
+                      : t("noRoomsCapacity")}
                   </p>
                 ) : (
                   <RoomTimeline
@@ -814,18 +820,18 @@ export function RoomBookingContent({
                   <div className="min-w-0 flex-1">
                     <p className="type-body font-medium truncate">{selectedRoom.name}</p>
                     <div className="flex items-center gap-2 type-body-sm text-muted-foreground">
-                      {selectedRoom.capacity && <span>{selectedRoom.capacity} pers.</span>}
+                      {selectedRoom.capacity && <span>{selectedRoom.capacity} {tc("persons")}</span>}
                       {selectedRoom.hourly_credit_rate && (
                         <span className="flex items-center gap-1">
                           <Coins className="h-3 w-3" />
-                          {selectedRoom.hourly_credit_rate} crédit/h
+                          {selectedRoom.hourly_credit_rate} {tc("creditPerHour")}
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="sm:text-right">
                     <p className="type-body-sm text-muted-foreground">
-                      {format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                      {format(selectedDate, "EEEE d MMMM", { locale: dateLocale })}
                     </p>
                   </div>
                 </div>
@@ -838,10 +844,10 @@ export function RoomBookingContent({
                     <Coins className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
                     <div className="flex-1">
                       <p className="font-medium text-destructive">
-                        Vous n&apos;avez plus de crédits
+                        {t("noCreditsLeft")}
                       </p>
                       <p className="mt-1 text-sm text-destructive/80">
-                        Vous ne pouvez pas réserver cette salle sans crédits.
+                        {t("cannotBookWithoutCredits")}
                       </p>
                       {renderCreditsError()}
                     </div>
@@ -851,7 +857,7 @@ export function RoomBookingContent({
 
               <div>
                 <label className="type-body-sm font-medium text-foreground mb-2 block">
-                  Sélectionnez vos créneaux
+                  {t("selectSlots")}
                 </label>
                 {loadingSlots ? (
                   <div className="flex items-center justify-center py-4">
@@ -871,7 +877,7 @@ export function RoomBookingContent({
                   className={`rounded-[16px] p-4 ${!hasEnoughCredits ? "bg-destructive/10" : "bg-foreground/5"}`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="type-body-sm text-muted-foreground">Coût total</span>
+                    <span className="type-body-sm text-muted-foreground">{t("totalCost")}</span>
                     <div className="flex items-center gap-1">
                       <Coins
                         className={`h-4 w-4 ${!hasEnoughCredits ? "text-destructive" : "text-primary"}`}
@@ -879,13 +885,13 @@ export function RoomBookingContent({
                       <span
                         className={`type-body font-semibold ${!hasEnoughCredits ? "text-destructive" : ""}`}
                       >
-                        {creditsNeeded} crédits
+                        {creditsNeeded} {tc("credits")}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-1">
                     <span className="type-body-sm text-muted-foreground">
-                      Crédits disponibles
+                      {t("creditsAvailable")}
                     </span>
                     <span className="type-body-sm">{remainingCredits}</span>
                   </div>
@@ -902,27 +908,27 @@ export function RoomBookingContent({
                 <div className="flex items-start gap-3">
                   <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="type-body-sm text-muted-foreground">Site</p>
+                    <p className="type-body-sm text-muted-foreground">{tc("site")}</p>
                     <p className="type-body font-medium">{selectedSite?.name}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="type-body-sm text-muted-foreground">Date</p>
+                    <p className="type-body-sm text-muted-foreground">{tc("date")}</p>
                     <p className="type-body font-medium capitalize">
-                      {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
+                      {format(selectedDate, "EEEE d MMMM yyyy", { locale: dateLocale })}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <p className="type-body-sm text-muted-foreground">Horaire</p>
+                    <p className="type-body-sm text-muted-foreground">{tc("time")}</p>
                     <p className="type-body font-medium">
                       {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
                       {parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1}
-                      h ({selectedSlots.length} heure{selectedSlots.length > 1 ? "s" : ""})
+                      h ({selectedSlots.length} {selectedSlots.length > 1 ? tc("hours") : tc("hour")})
                     </p>
                   </div>
                 </div>
@@ -930,7 +936,7 @@ export function RoomBookingContent({
                   <p className="type-body font-medium">{selectedRoom.name}</p>
                   {selectedRoom.capacity && (
                     <p className="type-body-sm text-muted-foreground">
-                      Capacité: {selectedRoom.capacity} personnes
+                      {t("capacityPersons", { count: selectedRoom.capacity })}
                     </p>
                   )}
                 </div>
@@ -938,15 +944,14 @@ export function RoomBookingContent({
 
               <div className="rounded-[16px] bg-[#1B1918] p-4 text-white">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Total à débiter</span>
+                  <span className="text-sm font-medium">{t("totalToDebit")}</span>
                   <div className="flex items-center gap-1">
                     <Coins className="h-5 w-5" />
-                    <span className="text-lg font-bold">{creditsNeeded} crédits</span>
+                    <span className="text-lg font-bold">{creditsNeeded} {tc("credits")}</span>
                   </div>
                 </div>
                 <p className="mt-1 text-xs text-white/70">
-                  Il vous restera {remainingCredits - creditsNeeded} crédits après cette
-                  réservation
+                  {t("remainingAfter", { remaining: remainingCredits - creditsNeeded })}
                 </p>
               </div>
             </div>
@@ -956,16 +961,16 @@ export function RoomBookingContent({
           {view !== "planning" && (
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-3 sm:pt-4 shrink-0 border-t border-foreground/5 mt-3 sm:mt-4">
               <Button variant="outline" onClick={handleBack} className="rounded-full w-full sm:w-auto">
-                Retour
+                {tc("back")}
               </Button>
               {view === "confirm" ? (
                 <Button onClick={handleConfirm} disabled={submitting} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90 w-full sm:w-auto">
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Confirmer la réservation
+                  {t("confirmBooking")}
                 </Button>
               ) : (
                 <Button onClick={handleNext} disabled={!canProceed()} className="rounded-full bg-[#1B1918] hover:bg-[#1B1918]/90 w-full sm:w-auto">
-                  Continuer
+                  {tc("continue")}
                 </Button>
               )}
             </div>
@@ -983,8 +988,8 @@ export function RoomBookingContent({
             ) : filteredRooms.length === 0 ? (
               <p className="py-8 text-center text-sm text-muted-foreground">
                 {rooms.length === 0
-                  ? "Aucune salle disponible sur ce site"
-                  : "Aucune salle ne correspond au filtre de capacité"}
+                  ? t("noRoomsOnSite")
+                  : t("noRoomsCapacity")}
               </p>
             ) : (
               <RoomPlanningGrid
@@ -1000,7 +1005,7 @@ export function RoomBookingContent({
             {capacityOptions.length > 0 && view === "planning" && (
               <div className="flex items-center gap-2 flex-wrap pt-4 mt-4 border-t">
                 <Users className="h-4 w-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">Capacité</span>
+                <span className="text-sm text-muted-foreground">{t("capacity")}</span>
                 <div className="flex flex-wrap gap-1">
                   <Button
                     variant={capacityFilter === null ? "default" : "outline"}
@@ -1008,7 +1013,7 @@ export function RoomBookingContent({
                     className="h-7 px-2 text-xs"
                     onClick={() => setCapacityFilter(null)}
                   >
-                    Toutes
+                    {tc("all")}
                   </Button>
                   {capacityOptions.map((cap) => (
                     <Button
@@ -1035,7 +1040,7 @@ export function RoomBookingContent({
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
                 <h3 className="type-body font-semibold">
-                  {view === "slots" ? "Choisir les créneaux" : "Confirmer"}
+                  {view === "slots" ? t("chooseSlots") : tc("confirm")}
                 </h3>
                 <Button variant="ghost" size="icon" onClick={handleCancel} className="h-8 w-8">
                   <X className="h-4 w-4" />
@@ -1048,22 +1053,22 @@ export function RoomBookingContent({
                   <div className="rounded-lg border p-3 bg-muted/50">
                     <p className="type-body font-medium truncate">{selectedRoom.name}</p>
                     <div className="flex items-center gap-2 type-body-sm text-muted-foreground mt-1">
-                      {selectedRoom.capacity && <span>{selectedRoom.capacity} pers.</span>}
+                      {selectedRoom.capacity && <span>{selectedRoom.capacity} {tc("persons")}</span>}
                       {selectedRoom.hourly_credit_rate && (
                         <span className="flex items-center gap-1">
                           <Coins className="h-3 w-3" />
-                          {selectedRoom.hourly_credit_rate} crédit/h
+                          {selectedRoom.hourly_credit_rate} {tc("creditPerHour")}
                         </span>
                       )}
                     </div>
                     <p className="type-body-sm text-muted-foreground mt-1">
-                      {format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                      {format(selectedDate, "EEEE d MMMM", { locale: dateLocale })}
                     </p>
                   </div>
 
                   <div>
                     <label className="type-body-sm font-medium text-foreground mb-2 block">
-                      Sélectionnez vos créneaux
+                      {t("selectSlots")}
                     </label>
                     {loadingSlots ? (
                       <div className="flex items-center justify-center py-4">
@@ -1083,7 +1088,7 @@ export function RoomBookingContent({
                       className={`rounded-lg p-3 ${!hasEnoughCredits ? "bg-destructive/10 border border-destructive/20" : "bg-muted"}`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="type-body-sm text-muted-foreground">Coût total</span>
+                        <span className="type-body-sm text-muted-foreground">{t("totalCost")}</span>
                         <div className="flex items-center gap-1">
                           <Coins
                             className={`h-4 w-4 ${!hasEnoughCredits ? "text-destructive" : "text-primary"}`}
@@ -1091,12 +1096,12 @@ export function RoomBookingContent({
                           <span
                             className={`type-body font-semibold ${!hasEnoughCredits ? "text-destructive" : ""}`}
                           >
-                            {creditsNeeded} crédits
+                            {creditsNeeded} {tc("credits")}
                           </span>
                         </div>
                       </div>
                       <div className="flex items-center justify-between mt-1">
-                        <span className="type-body-sm text-muted-foreground">Disponibles</span>
+                        <span className="type-body-sm text-muted-foreground">{t("available")}</span>
                         <span className="type-body-sm">{remainingCredits}</span>
                       </div>
                       {!hasEnoughCredits && renderCreditsError()}
@@ -1104,7 +1109,7 @@ export function RoomBookingContent({
                   )}
 
                   <Button onClick={handleNext} disabled={!canProceed()} className="w-full">
-                    Continuer
+                    {tc("continue")}
                   </Button>
                 </div>
               )}
@@ -1116,23 +1121,23 @@ export function RoomBookingContent({
                     <div className="flex items-start gap-3">
                       <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="type-body-sm text-muted-foreground">Site</p>
+                        <p className="type-body-sm text-muted-foreground">{tc("site")}</p>
                         <p className="type-body font-medium">{selectedSite?.name}</p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <CalendarIcon className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="type-body-sm text-muted-foreground">Date</p>
+                        <p className="type-body-sm text-muted-foreground">{tc("date")}</p>
                         <p className="type-body font-medium capitalize">
-                          {format(selectedDate, "EEEE d MMMM yyyy", { locale: fr })}
+                          {format(selectedDate, "EEEE d MMMM yyyy", { locale: dateLocale })}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
                       <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
                       <div>
-                        <p className="type-body-sm text-muted-foreground">Horaire</p>
+                        <p className="type-body-sm text-muted-foreground">{tc("time")}</p>
                         <p className="type-body font-medium">
                           {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
                           {parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1}h
@@ -1143,7 +1148,7 @@ export function RoomBookingContent({
                       <p className="type-body font-medium">{selectedRoom.name}</p>
                       {selectedRoom.capacity && (
                         <p className="type-body-sm text-muted-foreground">
-                          Capacité: {selectedRoom.capacity} personnes
+                          {t("capacityPersons", { count: selectedRoom.capacity })}
                         </p>
                       )}
                     </div>
@@ -1151,20 +1156,20 @@ export function RoomBookingContent({
 
                   <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
                     <div className="flex items-center justify-between">
-                      <span className="type-body font-medium">Total à débiter</span>
+                      <span className="type-body font-medium">{t("totalToDebit")}</span>
                       <div className="flex items-center gap-1">
                         <Coins className="h-5 w-5 text-primary" />
-                        <span className="type-h4 text-primary">{creditsNeeded} crédits</span>
+                        <span className="type-h4 text-primary">{creditsNeeded} {tc("credits")}</span>
                       </div>
                     </div>
                     <p className="mt-1 type-body-sm text-muted-foreground">
-                      Reste: {remainingCredits - creditsNeeded} crédits
+                      {t("remainingCredits", { remaining: remainingCredits - creditsNeeded })}
                     </p>
                   </div>
 
                   <Button onClick={handleConfirm} className="w-full" disabled={submitting}>
                     {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Confirmer la réservation
+                    {t("confirmBooking")}
                   </Button>
                 </div>
               )}

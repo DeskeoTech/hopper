@@ -26,6 +26,7 @@ import {
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { completeOnboarding, uploadOnboardingKbis } from "@/lib/actions/onboarding"
 import type { Company } from "@/lib/types/database"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface OnboardingModalProps {
@@ -41,6 +42,8 @@ const AUTO_ADVANCE_DELAY = 400 // ms delay before auto-advancing
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function OnboardingModal({ userId, existingCompany }: OnboardingModalProps) {
+  const t = useTranslations("onboarding")
+  const tc = useTranslations("common")
   const [step, setStep] = useState(0)
   const [direction, setDirection] = useState<"forward" | "back">("forward")
   const [loading, setLoading] = useState(false)
@@ -195,11 +198,11 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
 
   const validateEmail = (email: string): boolean => {
     if (!email.trim()) {
-      setEmailError("L'email est requis")
+      setEmailError(t("emailRequired"))
       return false
     }
     if (!EMAIL_REGEX.test(email)) {
-      setEmailError("Format d'email invalide")
+      setEmailError(t("emailInvalid"))
       return false
     }
     setEmailError(null)
@@ -326,13 +329,13 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                 <Check className="h-8 w-8 text-green-600" />
               </div>
               <h2 className="font-header text-2xl font-bold uppercase tracking-tight">
-                Merci !
+                {t("thankYou")}
               </h2>
               <p className="text-lg text-muted-foreground">
-                Bienvenue chez Hopper Coworking
+                {t("welcomeToHopper")}
               </p>
               <p className="text-sm text-muted-foreground">
-                Votre espace est prêt, redirection en cours...
+                {t("spaceReady")}
               </p>
             </div>
 
@@ -375,21 +378,21 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
 
                 <div className="space-y-2">
                   <h2 className="font-header text-2xl font-bold uppercase tracking-tight">
-                    Bienvenue !
+                    {t("welcome")}
                   </h2>
                   <p className="text-muted-foreground">
-                    L&apos;équipe Hopper Coworking vous souhaite la bienvenue dans votre nouvel espace de travail.
+                    {t("welcomeMessage")}
                   </p>
                 </div>
 
                 <p className="text-sm text-muted-foreground">
                   {companyAlreadySetup
-                    ? "Avant de continuer, veuillez accepter nos conditions d'utilisation."
-                    : "Pour commencer, nous avons besoin de quelques informations sur votre entreprise."}
+                    ? t("cguNeeded")
+                    : t("companyInfoNeeded")}
                 </p>
 
                 <Button onClick={() => goNext()} className="w-full" size="lg">
-                  Commencer
+                  {tc("start")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -400,10 +403,10 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
               <div className={cn("space-y-6", animationClass)}>
                 <div className="space-y-2 text-center">
                   <h2 className="font-header text-xl font-bold uppercase tracking-tight">
-                    Type d&apos;entreprise
+                    {t("companyType")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Sélectionnez le type de structure de votre entreprise
+                    {t("companyTypeMessage")}
                   </p>
                 </div>
 
@@ -431,9 +434,9 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium">Entreprise Individuelle</div>
+                      <div className="font-medium">{t("selfEmployed")}</div>
                       <div className="text-sm text-muted-foreground">
-                        Auto-entrepreneur, EI, EIRL
+                        {t("selfEmployedDesc")}
                       </div>
                     </div>
                     {companyType === "self_employed" && isTransitioning && (
@@ -466,9 +469,9 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="font-medium">Entreprise</div>
+                      <div className="font-medium">{t("multiEmployee")}</div>
                       <div className="text-sm text-muted-foreground">
-                        SAS, SARL, SA, SASU, EURL...
+                        {t("multiEmployeeDesc")}
                       </div>
                     </div>
                     {companyType === "multi_employee" && isTransitioning && (
@@ -481,7 +484,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
 
                 <Button variant="outline" onClick={goBack} className="w-full" disabled={isTransitioning}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {tc("back")}
                 </Button>
               </div>
             )}
@@ -491,10 +494,10 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
               <div className={cn("space-y-6", animationClass)}>
                 <div className="space-y-2 text-center">
                   <h2 className="font-header text-xl font-bold uppercase tracking-tight">
-                    Document KBIS
+                    {t("kbisTitle")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    Le KBIS est obligatoire pour les entreprises (SAS, SARL...)
+                    {t("kbisMessage")}
                   </p>
                 </div>
 
@@ -552,9 +555,9 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                           <Upload className="h-7 w-7 text-muted-foreground" />
                         </div>
                         <div className="text-center">
-                          <div className="font-medium">Cliquez pour importer</div>
+                          <div className="font-medium">{t("clickToUpload")}</div>
                           <div className="text-sm text-muted-foreground">
-                            PDF, JPG ou PNG (max 10 Mo)
+                            {t("fileFormats")}
                           </div>
                         </div>
                       </button>
@@ -570,7 +573,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
 
                 <Button variant="outline" onClick={goBack} className="w-full" disabled={isTransitioning}>
                   <ArrowLeft className="mr-2 h-4 w-4" />
-                  Retour
+                  {tc("back")}
                 </Button>
               </div>
             )}
@@ -580,12 +583,12 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
               <div className={cn("space-y-6", animationClass)}>
                 <div className="space-y-2 text-center">
                   <h2 className="font-header text-xl font-bold uppercase tracking-tight">
-                    {companyAlreadySetup ? "Conditions d'utilisation" : "Complétez votre profil"}
+                    {companyAlreadySetup ? t("cguTitle") : t("completeProfile")}
                   </h2>
                   <p className="text-sm text-muted-foreground">
                     {companyAlreadySetup
-                      ? "Veuillez accepter les conditions pour accéder à votre espace."
-                      : "Plus que quelques informations et c'est terminé !"}
+                      ? t("cguAcceptMessage")
+                      : t("almostDone")}
                   </p>
                 </div>
 
@@ -593,7 +596,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="companyName">
-                        Nom de l&apos;entreprise <span className="text-destructive">*</span>
+                        {t("companyName")} <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="companyName"
@@ -601,13 +604,13 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                         onChange={(e) =>
                           setCompanyInfo((prev) => ({ ...prev, name: e.target.value }))
                         }
-                        placeholder="Nom de votre entreprise"
+                        placeholder={t("companyNamePlaceholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="address">
-                        Adresse <span className="text-destructive">*</span>
+                        {t("address")} <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="address"
@@ -615,13 +618,13 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                         onChange={(e) =>
                           setCompanyInfo((prev) => ({ ...prev, address: e.target.value }))
                         }
-                        placeholder="Adresse de l'entreprise"
+                        placeholder={t("addressPlaceholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="contact_email">
-                        Email de contact <span className="text-destructive">*</span>
+                        {t("contactEmail")} <span className="text-destructive">*</span>
                       </Label>
                       <Input
                         id="contact_email"
@@ -653,23 +656,23 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                     htmlFor="cgu-accept"
                     className="cursor-pointer text-sm leading-relaxed text-muted-foreground"
                   >
-                    J&apos;accepte les{" "}
+                    {t("iAcceptThe")}{" "}
                     <a
                       href="/conditions-generales"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline underline-offset-2 text-foreground hover:text-primary"
                     >
-                      Conditions Générales
+                      {t("termsAndConditions")}
                     </a>{" "}
-                    et la{" "}
+                    {t("andThe")}{" "}
                     <a
                       href="/politique-de-confidentialite"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="underline underline-offset-2 text-foreground hover:text-primary"
                     >
-                      Politique de confidentialité
+                      {t("privacyPolicy")}
                     </a>
                   </Label>
                 </div>
@@ -683,7 +686,7 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={goBack} className="flex-1" disabled={loading}>
                     <ArrowLeft className="mr-2 h-4 w-4" />
-                    Retour
+                    {tc("back")}
                   </Button>
                   <Button
                     onClick={handleSubmit}
@@ -693,11 +696,11 @@ export function OnboardingModal({ userId, existingCompany }: OnboardingModalProp
                     {loading ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enregistrement...
+                        {tc("saving")}
                       </>
                     ) : (
                       <>
-                        Terminer
+                        {tc("finish")}
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </>
                     )}

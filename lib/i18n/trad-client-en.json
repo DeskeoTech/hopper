@@ -1,0 +1,453 @@
+{
+  "dashboard": {
+    "buyCredits": {
+      "title": "Buy Credits",
+      "description": "Top up your account",
+      "button": "Buy"
+    },
+    "bookRoom": {
+      "title": "Book a Room",
+      "description": "Book a meeting room",
+      "button": "Book"
+    },
+    "bookDesk": {
+      "title": "Book a Desk",
+      "description": "By the day, week or month",
+      "button": "Book"
+    },
+    "tabs": {
+      "reservations": "Reservations",
+      "news": "News"
+    },
+    "reservations": {
+      "noRoomBooking": "No room reservations"
+    },
+    "news": {
+      "noNews": "No news for today",
+      "feedTitle": "News Feed",
+      "pageTitle": "News"
+    },
+    "pass": {
+      "title": "Pass",
+      "since": "Since",
+      "desks": "desk | desks",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "cancelled": "Cancelled"
+      }
+    },
+    "sites": {
+      "title": "All Hopper Sites",
+      "viewAll": "View all"
+    },
+    "amenities": {
+      "bikeStorage": "Bike storage",
+      "cafe": "Café",
+      "phonebooth": "Phone booth",
+      "printer": "Printer",
+      "barista": "Barista",
+      "terrace": "Terrace",
+      "waterFountain": "Water fountain",
+      "showers": "Showers",
+      "gym": "Gym",
+      "rooftop": "Rooftop",
+      "microwave": "Microwave",
+      "restaurant": "Restaurant",
+      "wifi": "Wi-Fi"
+    }
+  },
+  "header": {
+    "myAccount": "My Account",
+    "manageCompany": "Manage my company",
+    "support": "Support",
+    "adminSpace": "Admin Panel",
+    "credits": "credit | credits"
+  },
+  "footer": {
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "copyright": "© 2026 Deskeo – Hopper Coworking"
+  },
+  "days": {
+    "lundi": "Monday",
+    "mardi": "Tuesday",
+    "mercredi": "Wednesday",
+    "jeudi": "Thursday",
+    "vendredi": "Friday",
+    "samedi": "Saturday",
+    "dimanche": "Sunday"
+  },
+  "common": {
+    "back": "Back",
+    "backToHome": "Back to home",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "saving": "Saving...",
+    "create": "Create",
+    "creating": "Creating...",
+    "send": "Send",
+    "sending": "Sending...",
+    "confirm": "Confirm",
+    "continue": "Continue",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "user": "User",
+    "noResults": "No results",
+    "logout": "Log out",
+    "loggingOut": "Logging out...",
+    "logoutConfirm": "Are you sure you want to log out?",
+    "credit": "credit",
+    "credits": "credits",
+    "creditPerHour": "credit/h",
+    "seats": "seats",
+    "persons": "pers.",
+    "people": "people",
+    "today": "Today",
+    "todayShort": "Today",
+    "date": "Date",
+    "time": "Time",
+    "site": "Site",
+    "hour": "hour",
+    "hours": "hours",
+    "errorOccurred": "An error occurred",
+    "add": "Add",
+    "search": "Search",
+    "all": "All",
+    "finish": "Finish",
+    "start": "Start",
+    "understood": "Got it",
+    "subscribe": "Subscribe",
+    "subscribePass": "Subscribe to a pass",
+    "buyCredits": "Buy credits",
+    "buyMoreCredits": "Buy more credits",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "status": "Status",
+    "actions": "Actions"
+  },
+  "account": {
+    "tabs": {
+      "profile": "Profile",
+      "plan": "Plan",
+      "credits": "Credits",
+      "billing": "Billing",
+      "support": "Support"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "firstNamePlaceholder": "Your first name",
+    "lastNamePlaceholder": "Your last name",
+    "emailNotEditable": "Email cannot be changed",
+    "phoneFormat": "Format: 01 23 45 67 89",
+    "successMessage": "Information updated"
+  },
+  "plan": {
+    "currentPlan": "Current plan",
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "terminated": "Terminated"
+    },
+    "startDate": "Start date",
+    "commitmentEnd": "Commitment end",
+    "includedTitle": "Included in your plan",
+    "includedAccess": "Unlimited access to Hopper Coworking",
+    "includedRooms": "Meeting room booking",
+    "includedWifi": "High-speed WiFi",
+    "managePlan": "Manage my plan",
+    "noPlan": "No active plan",
+    "history": "Pass history",
+    "noHistory": "No pass history",
+    "tableHeaders": {
+      "plan": "Plan",
+      "startDate": "Start date",
+      "endDate": "End date",
+      "seats": "Seats",
+      "priceTtc": "Price incl. VAT/mo"
+    }
+  },
+  "creditsTab": {
+    "currentBalance": "Current balance",
+    "buyCredits": "Buy credits",
+    "history": "Transaction history",
+    "noMovements": "No credit transactions recorded",
+    "filterByType": "Filter by type",
+    "searchType": "Search type...",
+    "tableHeaders": {
+      "date": "Date",
+      "type": "Type",
+      "amount": "Amount",
+      "reason": "Reason",
+      "balanceAfter": "Balance after"
+    },
+    "noMovementsFilter": "No transactions for this filter",
+    "types": {
+      "all": "All types",
+      "reservation": "Reservation",
+      "cancellation": "Cancellation",
+      "adjustment": "Adjustment",
+      "purchase": "Purchase",
+      "allocation": "Allocation",
+      "expiration": "Expiration"
+    }
+  },
+  "billing": {
+    "title": "Billing",
+    "description": "Access your billing portal to view invoices and manage your payment information.",
+    "openPortal": "Access my billing account",
+    "connecting": "Connecting to Stripe...",
+    "preparing": "Preparing your billing portal.",
+    "redirecting": "You will be redirected shortly.",
+    "urlError": "Billing URL not received"
+  },
+  "support": {
+    "sendTicket": "Send a ticket",
+    "requester": "Requester",
+    "currentSite": "You are currently at",
+    "selectSite": "Select a site...",
+    "requestAbout": "Your request is about",
+    "requestType": "Request type",
+    "choose": "Choose...",
+    "specify": "Specify your request...",
+    "subject": "Subject",
+    "subjectPlaceholder": "Summarize your request in a few words",
+    "description": "Description",
+    "descriptionPlaceholder": "Type something",
+    "attachment": "Attachment",
+    "successMessage": "Your request has been sent successfully",
+    "myRequests": "My requests",
+    "noRequests": "You don't have any requests yet",
+    "noDescription": "No description",
+    "status": {
+      "todo": "Pending",
+      "in_progress": "In progress",
+      "done": "Resolved"
+    },
+    "validation": {
+      "selectType": "Please select a request type",
+      "selectSubtype": "Please select a specific request type",
+      "enterSubject": "Please enter a subject",
+      "enterDescription": "Please enter a description"
+    }
+  },
+  "roomBooking": {
+    "selectSite": "Select a site",
+    "selectSiteMessage": "Select a site to see available rooms",
+    "searchSite": "Search a site...",
+    "myCredits": "My available credits",
+    "passExpired": "Your Hopper pass has expired",
+    "passExpiredCoworking": "Your Hopper Coworking pass has expired",
+    "cannotBookRoom": "You cannot book a meeting room. Subscribe to a new pass to access bookings.",
+    "noCreditsLeft": "You have no credits left",
+    "noCreditsMessage": "Your credit balance is 0. Buy additional credits to book a meeting room.",
+    "notEnoughCredits": "You don't have enough credits for this booking",
+    "cannotBookWithoutCredits": "You cannot book this room without credits.",
+    "bookingSuccess": "Your room has been booked successfully!",
+    "noRoomsOnSite": "No rooms available on this site",
+    "noRoomsCapacity": "No rooms match the capacity filter",
+    "selectSlots": "Select your time slots",
+    "totalCost": "Total cost",
+    "creditsAvailable": "Credits available",
+    "available": "Available",
+    "confirmBooking": "Confirm booking",
+    "chooseSlots": "Choose time slots",
+    "totalToDebit": "Total to debit",
+    "remainingAfter": "You will have {remaining} credits left after this booking",
+    "remainingCredits": "Remaining: {remaining} credits",
+    "capacity": "Capacity",
+    "capacityPersons": "Capacity: {count} people",
+    "manageOnStripe": "Manage on Stripe",
+    "editBooking": "Edit booking",
+    "selectAtLeastOneSlot": "Please select at least one time slot",
+    "slots": "Time slots"
+  },
+  "bookingCard": {
+    "cancel": "Cancel",
+    "ongoing": "Ongoing",
+    "cancelled": "Cancelled",
+    "completed": "Completed"
+  },
+  "cancelBooking": {
+    "title": "Cancel booking",
+    "message": "Are you sure you want to cancel this booking on {date}?",
+    "irreversible": "This action is irreversible.",
+    "keep": "No, keep it",
+    "confirmCancel": "Yes, cancel",
+    "cancelling": "Cancelling..."
+  },
+  "company": {
+    "myCompany": "My company",
+    "pass": "Pass",
+    "noActivePass": "No active pass",
+    "seatsUsed": "Seats used",
+    "seatsOccupied": "Seats occupied",
+    "users": "Users",
+    "noUsers": "No users",
+    "linkToPass": "Link to a pass",
+    "removeFromPass": "Remove from pass",
+    "full": "full",
+    "available": "{count} available",
+    "companyAdmin": "Company administrator",
+    "companyType": {
+      "selfEmployed": "Self-employed",
+      "company": "Company"
+    },
+    "dateRange": {
+      "since": "Since {date}",
+      "until": "Until {date}"
+    },
+    "addUser": {
+      "title": "Add a user",
+      "description": "Add a new user to your company."
+    },
+    "linkPassDialog": {
+      "title": "Link to a pass",
+      "selectPass": "Select a pass for",
+      "thisUser": "this user",
+      "noPass": "No pass available"
+    },
+    "seatsQuota": {
+      "title": "Seat quota reached",
+      "message": "You have reached the maximum number of users for your current passes. To add more users, please subscribe to a new pass."
+    },
+    "manageCompany": "Manage my company",
+    "manageUsers": "Manage users of {company}",
+    "manageUsersDefault": "Manage your company's users",
+    "addUserButton": "Add a user",
+    "noUsersFound": "No users found",
+    "administrator": "Administrator",
+    "youLabel": "(you)",
+    "deactivate": "Deactivate",
+    "inactive": "Inactive",
+    "active": "Active",
+    "noCompany": "No associated company",
+    "enterprise": "Company",
+    "roleUser": "User",
+    "roleAdmin": "Admin",
+    "allPasses": "All passes",
+    "viewAllPasses": "View all passes ({count})"
+  },
+  "contractDetail": {
+    "period": "Period",
+    "seats": "Seats",
+    "seatCount": "{count} seat",
+    "seatCountPlural": "{count} seats",
+    "undefined": "Not defined",
+    "assignedUsers": "Assigned users",
+    "assignedUsersHint": "Only administrators can add or remove users",
+    "noUsers": "No users assigned to this pass",
+    "status": {
+      "ongoing": "Ongoing",
+      "suspended": "Suspended",
+      "terminated": "Terminated",
+      "upcoming": "Upcoming",
+      "active": "Active",
+      "pending": "Pending",
+      "inactive": "Inactive"
+    },
+    "since": "Since {date}"
+  },
+  "assignUser": {
+    "title": "Assign a user",
+    "searchUser": "Search a user...",
+    "allSeatsOccupied": "All seats are occupied. Increase the number of seats on Stripe to add a user.",
+    "noUserFound": "No user found",
+    "allAssigned": "All users are already assigned"
+  },
+  "onboarding": {
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "welcome": "Welcome!",
+    "welcomeMessage": "The Hopper Coworking team welcomes you to your new workspace.",
+    "companyInfoNeeded": "To get started, we need some information about your company.",
+    "cguNeeded": "Before continuing, please accept our terms of use.",
+    "companyType": "Company type",
+    "companyTypeMessage": "Select the type of your company structure",
+    "selfEmployed": "Sole Proprietorship",
+    "selfEmployedDesc": "Self-employed, EI, EIRL",
+    "multiEmployee": "Company",
+    "multiEmployeeDesc": "SAS, SARL, SA, SASU, EURL...",
+    "kbisTitle": "KBIS Document",
+    "kbisMessage": "KBIS is required for companies (SAS, SARL...)",
+    "clickToUpload": "Click to upload",
+    "fileFormats": "PDF, JPG or PNG (max 10 MB)",
+    "completeProfile": "Complete your profile",
+    "almostDone": "Just a few more details and you're done!",
+    "cguTitle": "Terms of use",
+    "cguAcceptMessage": "Please accept the terms to access your space.",
+    "companyName": "Company name",
+    "companyNamePlaceholder": "Your company name",
+    "address": "Address",
+    "addressPlaceholder": "Company address",
+    "contactEmail": "Contact email",
+    "iAcceptThe": "I accept the",
+    "termsAndConditions": "Terms & Conditions",
+    "andThe": "and the",
+    "privacyPolicy": "Privacy Policy",
+    "thankYou": "Thank you!",
+    "welcomeToHopper": "Welcome to Hopper Coworking",
+    "spaceReady": "Your space is ready, redirecting..."
+  },
+  "cgu": {
+    "update": "Update",
+    "updateMessage": "Our terms and conditions have been updated or you have not yet accepted them. Please accept them to continue using the application.",
+    "validating": "Validating...",
+    "acceptAndContinue": "Accept and continue"
+  },
+  "noContract": {
+    "title": "No active pass",
+    "message": "Your account is not linked to any active pass. Please contact your company administrator to be assigned to a pass.",
+    "logOut": "Log out"
+  },
+  "comingSoon": {
+    "defaultMessage": "This feature will be available soon."
+  },
+  "expiredBanner": {
+    "message": "YOUR HOPPER PASS HAS EXPIRED, SUBSCRIBE TO A NEW ONE HERE"
+  },
+  "adminContact": {
+    "title": "Contact your administrator",
+    "message": "To {action}, please contact your company administrator.",
+    "theAdmin": "the administrator",
+    "actions": {
+      "credits": "buy credits",
+      "desk": "book a desk",
+      "billing": "access billing"
+    }
+  },
+  "boutique": {
+    "title": "Shop",
+    "buyCredits": "Buy Credits",
+    "buyPass": "Buy a Pass",
+    "cafeTitle": "Hopper Café",
+    "cafeDescription": "Subscribe to our drink plans and enjoy your favorite coffees and juices every day"
+  },
+  "cafe": {
+    "popular": "Popular",
+    "perMonth": "€/mo",
+    "drinksPerDay": "drink | drinks",
+    "perDay": "/day",
+    "perWeek": "/wk",
+    "subscribe": "Subscribe",
+    "threeDays": "3 days / wk",
+    "fiveDays": "5 days / wk",
+    "moreChoices": "+ more choices"
+  },
+  "planningGrid": {
+    "screen": "Screen",
+    "videoConf": "Video conf.",
+    "whiteboard": "Whiteboard",
+    "myBooking": "My booking",
+    "reserved": "Reserved",
+    "unavailable": "Unavailable"
+  },
+  "allSites": {
+    "title": "All Hopper Sites"
+  }
+}

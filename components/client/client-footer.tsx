@@ -1,6 +1,9 @@
 import Link from "next/link"
-
+import { useTranslations } from "next-intl"
+ 
 export function ClientFooter() {
+  const t = useTranslations("footer")
+
   return (
     <footer className="border-t border-foreground/5 bg-background px-4 pb-24 pt-6 md:px-6 md:pb-6">
       <div className="mx-auto flex flex-col items-center gap-3 text-center">
@@ -9,14 +12,14 @@ export function ClientFooter() {
             href="/conditions-generales"
             className="text-xs text-foreground/50 transition-colors hover:text-foreground/80"
           >
-            Conditions Générales
+            {t("terms")}
           </Link>
           <span className="text-xs text-foreground/20">|</span>
           <Link
             href="/politique-de-confidentialite"
             className="text-xs text-foreground/50 transition-colors hover:text-foreground/80"
           >
-            Politique de confidentialité
+            {t("privacy")}
           </Link>
         </div>
         <p className="text-xs text-foreground/40">

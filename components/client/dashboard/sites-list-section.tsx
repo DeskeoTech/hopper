@@ -6,37 +6,36 @@ import { useClientLayout, type SiteWithDetails } from "../client-layout-provider
 import { SiteInfoModal } from "../site-info-modal"
 import { AllSitesModal } from "../all-sites-modal"
 import type { Equipment } from "@/lib/types/database"
-
+import { useTranslations } from "next-intl"
 interface SiteCardProps {
   site: SiteWithDetails
   onClick: () => void
 }
 
-// Equipment labels in French
-const equipmentLabels: Record<Equipment, string> = {
-  barista: "Barista",
-  stationnement_velo: "Local vélo",
-  impression: "Imprimante",
-  douches: "Douches",
-  salle_sport: "Salle de sport",
-  terrasse: "Terrasse",
-  rooftop: "Rooftop",
-  cafe: "Café",
-  phonebooth: "Phonebooth",
-  fontaine_eau: "Fontaine à eau",
-  micro_ondes: "Micro-ondes",
-  restauration: "Restauration",
-  wifi: "Wifi",
-}
 
 const MAX_VISIBLE_EQUIPMENTS = 4
 
 function SiteCard({ site, onClick }: SiteCardProps) {
+  const t = useTranslations("dashboard")
   const hasPhoto = site.photoUrls && site.photoUrls.length > 0
   const equipments = site.equipments || []
   const visibleEquipments = equipments.slice(0, MAX_VISIBLE_EQUIPMENTS)
   const remainingCount = equipments.length - MAX_VISIBLE_EQUIPMENTS
-
+  const equipmentLabels: Record<Equipment, string> = {
+    barista: t("amenities.barista"),
+    stationnement_velo: t("amenities.bikeStorage"),
+    impression: t("amenities.printer"),
+    douches: t("amenities.showers"),
+    salle_sport: t("amenities.gym"),
+    terrasse: t("amenities.terrace"),
+    rooftop: t("amenities.rooftop"),
+    cafe: t("amenities.cafe"),
+    phonebooth: t("amenities.phonebooth"),
+    fontaine_eau: t("amenities.waterFountain"),
+    micro_ondes: t("amenities.microwave"),
+    restauration: t("amenities.restaurant"),
+    wifi: t("amenities.wifi"),
+  }
   return (
     <button
       type="button"
@@ -90,6 +89,7 @@ function SiteCard({ site, onClick }: SiteCardProps) {
 
 export function SitesListSection() {
   const { sitesWithDetails } = useClientLayout()
+  const t = useTranslations("dashboard")
   const [selectedSite, setSelectedSite] = useState<SiteWithDetails | null>(null)
   const [siteInfoModalOpen, setSiteInfoModalOpen] = useState(false)
   const [allSitesModalOpen, setAllSitesModalOpen] = useState(false)

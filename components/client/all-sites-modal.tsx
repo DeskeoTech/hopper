@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { X, ImageIcon, MapPin } from "lucide-react"
 import { useClientLayout, type SiteWithDetails } from "./client-layout-provider"
 import { cn } from "@/lib/utils"
@@ -17,26 +18,10 @@ interface SiteCardProps {
   onClick: () => void
 }
 
-// Equipment labels in French
-const equipmentLabels: Record<Equipment, string> = {
-  barista: "Barista",
-  stationnement_velo: "Local vélo",
-  impression: "Imprimante",
-  douches: "Douches",
-  salle_sport: "Salle de sport",
-  terrasse: "Terrasse",
-  rooftop: "Rooftop",
-  cafe: "Café",
-  phonebooth: "Phonebooth",
-  fontaine_eau: "Fontaine à eau",
-  micro_ondes: "Micro-ondes",
-  restauration: "Restauration",
-  wifi: "Wifi",
-}
-
 const MAX_VISIBLE_EQUIPMENTS = 4
 
 function SiteCard({ site, onClick }: SiteCardProps) {
+  const te = useTranslations("equipment")
   const hasPhoto = site.photoUrls && site.photoUrls.length > 0
   const equipments = site.equipments || []
   const visibleEquipments = equipments.slice(0, MAX_VISIBLE_EQUIPMENTS)
@@ -79,7 +64,7 @@ function SiteCard({ site, onClick }: SiteCardProps) {
               key={equipment}
               className="rounded-full bg-foreground/5 px-2.5 py-1 text-xs h-fit"
             >
-              {equipmentLabels[equipment] || equipment}
+              {te(equipment as string) || equipment}
             </span>
           ))}
           {remainingCount > 0 && (
@@ -95,6 +80,7 @@ function SiteCard({ site, onClick }: SiteCardProps) {
 
 export function AllSitesModal({ open, onOpenChange, sites, onSiteSelect }: AllSitesModalProps) {
   const { isDeskeoEmployee, plan } = useClientLayout()
+  const t = useTranslations("allSites")
 
   // Check if expired contract banner is visible
   const showBanner = !isDeskeoEmployee && !plan
@@ -123,7 +109,7 @@ export function AllSitesModal({ open, onOpenChange, sites, onSiteSelect }: AllSi
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between bg-background px-4 py-4 md:rounded-t-[20px]">
           <h1 className="font-header text-xl font-bold uppercase tracking-tight">
-            Tous les sites Hopper
+            {t("title")}
           </h1>
           <button
             type="button"

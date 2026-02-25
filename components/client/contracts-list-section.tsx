@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import { FileText, ChevronRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { ContractListCard } from "./contract-list-card"
 import { AllContractsModal } from "./all-contracts-modal"
 import { ContractDetailModal } from "./contract-detail-modal"
@@ -16,6 +17,7 @@ const MAX_VISIBLE_CONTRACTS = 3
 export function ContractsListSection({
   contracts,
 }: ContractsListSectionProps) {
+  const tCompany = useTranslations("company")
   const [showAllModal, setShowAllModal] = useState(false)
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
 
@@ -44,12 +46,12 @@ export function ContractsListSection({
   if (activeContracts.length === 0) {
     return (
       <section className="space-y-4">
-        <h2 className="font-header text-2xl text-foreground">Pass</h2>
+        <h2 className="font-header text-2xl text-foreground">{tCompany("pass")}</h2>
         <div className="rounded-[16px] bg-card p-6 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-foreground/5">
             <FileText className="h-7 w-7 text-foreground/40" />
           </div>
-          <p className="mt-4 text-base text-muted-foreground">Aucun pass actif</p>
+          <p className="mt-4 text-base text-muted-foreground">{tCompany("noActivePass")}</p>
         </div>
       </section>
     )
@@ -57,7 +59,7 @@ export function ContractsListSection({
 
   return (
     <section className="space-y-4">
-      <h2 className="font-header text-2xl text-foreground">Pass</h2>
+      <h2 className="font-header text-2xl text-foreground">{tCompany("pass")}</h2>
 
       {/* Contract cards */}
       <div className="space-y-3">
@@ -77,7 +79,7 @@ export function ContractsListSection({
           onClick={() => setShowAllModal(true)}
           className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground/5 px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
         >
-          <span>Voir tous les pass ({activeContracts.length})</span>
+          <span>{tCompany("viewAllPasses", { count: activeContracts.length })}</span>
           <ChevronRight className="h-4 w-4" />
         </button>
       )}
