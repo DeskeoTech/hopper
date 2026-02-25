@@ -168,13 +168,13 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
         allow_promotion_codes: true,
         custom_fields: [
           {
-            key: "prenom",
+            key: "firstname",
             label: { type: "custom", custom: "Prénom" },
             type: "text",
             text: { minimum_length: 1, maximum_length: 50 },
           },
           {
-            key: "nom",
+            key: "lastname",
             label: { type: "custom", custom: "Nom" },
             type: "text",
             text: { minimum_length: 1, maximum_length: 50 },
@@ -213,13 +213,13 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
         ...(!stripeCustomerId && { customer_creation: "always" }),
         custom_fields: [
           {
-            key: "prenom",
+            key: "firstname",
             label: { type: "custom", custom: "Prénom" },
             type: "text",
             text: { minimum_length: 1, maximum_length: 50 },
           },
           {
-            key: "nom",
+            key: "lastname",
             label: { type: "custom", custom: "Nom" },
             type: "text",
             text: { minimum_length: 1, maximum_length: 50 },
