@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOut, Bell } from "lucide-react"
@@ -22,12 +22,14 @@ const pageTitles: Record<string, string> = {
 interface AdminHeaderProps {
   userEmail?: string | null
   siteName?: string | null
+  siteId?: string | null
 }
 
-export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
+export function AdminHeader({ userEmail, siteName, siteId }: AdminHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // Get title - check for dynamic routes
   let title = pageTitles[pathname] || "Dashboard"
@@ -41,6 +43,10 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
     router.push("/login")
     router.refresh()
   }
+
+  const handleUnreadCountChange = useCallback((count: number) => {
+    setUnreadCount(count)
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-[#f0e8dc] px-4 md:h-20 md:px-6">
@@ -67,8 +73,19 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
             {userEmail}
           </span>
         )}
-        <Button type="button" variant="ghost" size="sm" onClick={() => setNotificationsOpen(true)}>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="relative"
+          onClick={() => setNotificationsOpen(true)}
+        >
           <Bell className="size-4" />
+          {unreadCount > 0 && (
+            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
           <span className="sr-only">Notifications</span>
         </Button>
         <Button type="button" variant="ghost" size="sm" onClick={handleLogout}>
@@ -77,7 +94,13 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
         </Button>
       </div>
 
-      <NotificationsModal open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+      <NotificationsModal
+        open={notificationsOpen}
+        onOpenChange={setNotificationsOpen}
+        siteId={siteId ?? null}
+        userEmail={userEmail ?? null}
+        onUnreadCountChange={handleUnreadCountChange}
+      />
     </header>
   )
 }
