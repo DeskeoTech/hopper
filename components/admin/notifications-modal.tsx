@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Bell, Circle } from "lucide-react"
+import { Bell, CalendarCheck, Circle, FileText, TicketIcon } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
-import type { TicketStatus } from "@/lib/types/database"
 
 interface NotificationsModalProps {
   open: boolean
@@ -25,21 +24,19 @@ interface SiteOption {
   label: string
 }
 
-interface NotificationTicket {
+// Type unifié pour tickets + contrats
+type NotificationType = "ticket" | "contract" | "booking"
+
+interface NotificationItem {
   id: string
-  subject: string | null
-  status: TicketStatus | null
-  request_type: string | null
-  updated_at: string
-  created_at: string
-  site_id: string | null
-  user: {
-    first_name: string | null
-    last_name: string | null
-  } | null
-  site: {
-    name: string
-  } | null
+  type: NotificationType
+  title: string
+  subtitle: string | null
+  siteName: string | null
+  siteId: string | null
+  statusLabel: string
+  statusClassName: string
+  updatedAt: string
 }
 
 // Clé localStorage par utilisateur
@@ -58,10 +55,153 @@ function setLastReadAt(email: string | null, date: string) {
   localStorage.setItem(storageKey(email), date)
 }
 
-const statusConfig: Record<string, { label: string; className: string }> = {
+const ticketStatusConfig: Record<string, { label: string; className: string }> = {
   todo: { label: "À traiter", className: "bg-yellow-100 text-yellow-700" },
   in_progress: { label: "En cours", className: "bg-blue-100 text-blue-700" },
   done: { label: "Résolu", className: "bg-green-100 text-green-700" },
+}
+
+const bookingStatusConfig: Record<string, { label: string; className: string }> = {
+  confirmed: { label: "Confirmée", className: "bg-indigo-100 text-indigo-700" },
+  pending: { label: "En attente", className: "bg-yellow-100 text-yellow-700" },
+  cancelled: { label: "Annulée", className: "bg-gray-100 text-gray-500" },
+}
+
+const contractStatusConfig: Record<string, { label: string; className: string }> = {
+  active: { label: "Actif", className: "bg-green-100 text-green-700" },
+  suspended: { label: "Suspendu", className: "bg-yellow-100 text-yellow-700" },
+  terminated: { label: "Résilié", className: "bg-gray-100 text-gray-500" },
+}
+
+async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
+  let query = supabase
+    .from("support_tickets")
+    .select(`
+      id, subject, status, request_type, updated_at, created_at, site_id,
+      user:users!user_id(first_name, last_name),
+      site:sites!site_id(name)
+    `)
+    .in("status", ["todo", "in_progress"])
+    .order("updated_at", { ascending: false })
+    .limit(30)
+
+  if (filterSiteId) {
+    query = query.eq("site_id", filterSiteId)
+  }
+
+  const { data, error } = await query
+  if (error) {
+    console.error("Error fetching tickets:", error)
+    return []
+  }
+
+  return (data ?? []).map((t: Record<string, unknown>) => {
+    const user = t.user as { first_name: string | null; last_name: string | null } | null
+    const site = t.site as { name: string } | null
+    const status = ticketStatusConfig[t.status as string] ?? { label: t.status as string, className: "bg-muted text-muted-foreground" }
+    const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
+
+    return {
+      id: `ticket-${t.id}`,
+      type: "ticket" as NotificationType,
+      title: (t.subject as string) ?? "Sans objet",
+      subtitle: userName || null,
+      siteName: site?.name ?? null,
+      siteId: t.site_id as string | null,
+      statusLabel: status.label,
+      statusClassName: status.className,
+      updatedAt: t.updated_at as string,
+    }
+  })
+}
+
+async function fetchContracts(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
+  let query = supabase
+    .from("contracts")
+    .select(`
+      id, status, start_date, created_at, Number_of_seats,
+      plans(name),
+      companies!company_id(name, main_site_id, sites:sites!main_site_id(name))
+    `)
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  const { data, error } = await query
+  if (error) {
+    console.error("Error fetching contracts:", error)
+    return []
+  }
+
+  return (data ?? [])
+    .filter((c: Record<string, unknown>) => {
+      if (!filterSiteId) return true
+      const company = c.companies as { main_site_id: string | null } | null
+      return company?.main_site_id === filterSiteId
+    })
+    .map((c: Record<string, unknown>) => {
+      const plan = c.plans as { name: string } | null
+      const company = c.companies as { name: string; main_site_id: string | null; sites: { name: string } | null } | null
+      const status = contractStatusConfig[c.status as string] ?? { label: c.status as string, className: "bg-muted text-muted-foreground" }
+      const seats = c.Number_of_seats as number | null
+
+      return {
+        id: `contract-${c.id}`,
+        type: "contract" as NotificationType,
+        title: `Nouveau contrat : ${plan?.name ?? "Plan inconnu"}`,
+        subtitle: company?.name ? `${company.name}${seats ? ` · ${seats} place${seats > 1 ? "s" : ""}` : ""}` : null,
+        siteName: company?.sites?.name ?? null,
+        siteId: company?.main_site_id ?? null,
+        statusLabel: status.label,
+        statusClassName: status.className,
+        updatedAt: c.created_at as string,
+      }
+    })
+}
+
+async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
+  let query = supabase
+    .from("bookings")
+    .select(`
+      id, status, start_date, end_date, seats_count, created_at, updated_at,
+      user:users!user_id(first_name, last_name),
+      resource:resources!resource_id(name, type, site_id, sites:sites!site_id(name))
+    `)
+    .in("status", ["confirmed", "pending"])
+    .order("created_at", { ascending: false })
+    .limit(30)
+
+  const { data, error } = await query
+  if (error) {
+    console.error("Error fetching bookings:", error)
+    return []
+  }
+
+  return (data ?? [])
+    .filter((b: Record<string, unknown>) => {
+      if (!filterSiteId) return true
+      const resource = b.resource as { site_id: string | null } | null
+      return resource?.site_id === filterSiteId
+    })
+    .map((b: Record<string, unknown>) => {
+      const user = b.user as { first_name: string | null; last_name: string | null } | null
+      const resource = b.resource as { name: string | null; type: string | null; site_id: string | null; sites: { name: string } | null } | null
+      const status = bookingStatusConfig[b.status as string] ?? { label: b.status as string, className: "bg-muted text-muted-foreground" }
+      const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
+      const startDate = b.start_date as string | null
+
+      return {
+        id: `booking-${b.id}`,
+        type: "booking" as NotificationType,
+        title: `Réservation : ${resource?.name ?? "Ressource"}`,
+        subtitle: userName ? `${userName}${startDate ? ` · ${new Date(startDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}` : ""}` : null,
+        siteName: resource?.sites?.name ?? null,
+        siteId: resource?.site_id ?? null,
+        statusLabel: status.label,
+        statusClassName: status.className,
+        updatedAt: b.created_at as string,
+      }
+    })
 }
 
 export function NotificationsModal({
@@ -73,7 +213,7 @@ export function NotificationsModal({
 }: NotificationsModalProps) {
   const [sites, setSites] = useState<SiteOption[]>([])
   const [selectedSite, setSelectedSite] = useState<string>(siteId ?? "all")
-  const [notifications, setNotifications] = useState<NotificationTicket[]>([])
+  const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [lastReadAt, setLastReadAtState] = useState<string | null>(null)
   const hasBeenOpened = useRef(false)
 
@@ -82,7 +222,7 @@ export function NotificationsModal({
     setLastReadAtState(getLastReadAt(userEmail))
   }, [userEmail])
 
-  // Fetch sites pour le filtre (toujours)
+  // Fetch sites pour le filtre
   useEffect(() => {
     if (!open) return
 
@@ -102,41 +242,34 @@ export function NotificationsModal({
     fetchSites()
   }, [open])
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchAllNotifications = useCallback(async (filterSiteId?: string | null) => {
     const supabase = createClient()
+    const [tickets, contracts, bookings] = await Promise.all([
+      fetchTickets(supabase, filterSiteId),
+      fetchContracts(supabase, filterSiteId),
+      fetchBookings(supabase, filterSiteId),
+    ])
 
-    let query = supabase
-      .from("support_tickets")
-      .select(`
-        id, subject, status, request_type, updated_at, created_at, site_id,
-        user:users!user_id(first_name, last_name),
-        site:sites!site_id(name)
-      `)
-      .in("status", ["todo", "in_progress"])
-      .order("updated_at", { ascending: false })
-      .limit(50)
+    const merged = [...tickets, ...contracts, ...bookings].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+    )
 
-    if (selectedSite !== "all") {
-      query = query.eq("site_id", selectedSite)
-    }
+    setNotifications(merged)
+  }, [])
 
-    const { data, error } = await query
-    if (error) console.error("Error fetching notifications:", error)
-    if (data) setNotifications(data as NotificationTicket[])
-  }, [selectedSite])
-
-  // Fetch notifications when modal opens or filter changes
+  // Fetch when modal opens or filter changes
   useEffect(() => {
     if (!open) return
-    fetchNotifications()
-  }, [open, fetchNotifications])
+    const filter = selectedSite !== "all" ? selectedSite : null
+    fetchAllNotifications(filter)
+  }, [open, selectedSite, fetchAllNotifications])
 
-  // Compute unread count and report to parent (basé sur le scope du site admin)
+  // Compute unread count
   const computeUnreadCount = useCallback(
-    (notifs: NotificationTicket[], lastRead: string | null) => {
+    (notifs: NotificationItem[], lastRead: string | null) => {
       return notifs.filter((n) => {
         if (!lastRead) return true
-        return new Date(n.updated_at) > new Date(lastRead)
+        return new Date(n.updatedAt) > new Date(lastRead)
       }).length
     },
     []
@@ -148,42 +281,17 @@ export function NotificationsModal({
 
   // Fetch pour le badge au mount (scope = site de l'admin)
   useEffect(() => {
-    async function fetchForBadge() {
-      const supabase = createClient()
+    fetchAllNotifications(siteId)
+  }, [siteId, fetchAllNotifications])
 
-      let query = supabase
-        .from("support_tickets")
-        .select(`
-          id, subject, status, request_type, updated_at, created_at, site_id,
-          user:users!user_id(first_name, last_name),
-          site:sites!site_id(name)
-        `)
-        .in("status", ["todo", "in_progress"])
-        .order("updated_at", { ascending: false })
-        .limit(50)
-
-      // Badge count = scope de l'admin (son site ou tous)
-      if (siteId) {
-        query = query.eq("site_id", siteId)
-      }
-
-      const { data } = await query
-      if (data) {
-        setNotifications(data as NotificationTicket[])
-      }
-    }
-
-    fetchForBadge()
-  }, [siteId])
-
-  // Track quand la modale a été ouverte au moins une fois
+  // Track ouverture
   useEffect(() => {
     if (open) {
       hasBeenOpened.current = true
     }
   }, [open])
 
-  // Mark as read uniquement quand la modale se FERME (open→closed)
+  // Mark as read quand la modale se FERME
   useEffect(() => {
     if (!open && hasBeenOpened.current) {
       hasBeenOpened.current = false
@@ -207,13 +315,19 @@ export function NotificationsModal({
           <DialogTitle className="flex items-center gap-2">
             <Bell className="size-5" />
             Notifications
-            {unreadCount > 0 && (
-              <span className="ml-auto rounded-full bg-red-500 px-2 py-0.5 text-xs font-medium text-white">
-                {unreadCount} non lue{unreadCount > 1 ? "s" : ""}
-              </span>
-            )}
           </DialogTitle>
         </DialogHeader>
+
+        {unreadCount > 0 && (
+          <div className="flex items-center gap-2.5 rounded-lg border border-red-200/60 bg-red-500/[0.06] px-3 py-2.5">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/80 px-1.5 text-[11px] font-semibold text-white">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+            <span className="text-sm text-red-900/70">
+              nouvelle{unreadCount > 1 ? "s" : ""} notification{unreadCount > 1 ? "s" : ""}
+            </span>
+          </div>
+        )}
 
         <div className="space-y-4">
           <SearchableSelect
@@ -235,8 +349,8 @@ export function NotificationsModal({
           ) : (
             <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
               {(() => {
-                const unreadNotifs = notifications.filter((n) => isUnread(n.updated_at))
-                const readNotifs = notifications.filter((n) => !isUnread(n.updated_at))
+                const unreadNotifs = notifications.filter((n) => isUnread(n.updatedAt))
+                const readNotifs = notifications.filter((n) => !isUnread(n.updatedAt))
                 const sections: React.ReactNode[] = []
 
                 if (unreadNotifs.length > 0) {
@@ -266,14 +380,8 @@ export function NotificationsModal({
     </Dialog>
   )
 
-  function renderNotif(notif: NotificationTicket, unread: boolean) {
-    const status = statusConfig[notif.status ?? ""] ?? {
-      label: notif.status,
-      className: "bg-muted text-muted-foreground",
-    }
-    const userName = [notif.user?.first_name, notif.user?.last_name]
-      .filter(Boolean)
-      .join(" ")
+  function renderNotif(notif: NotificationItem, unread: boolean) {
+    const TypeIcon = notif.type === "contract" ? FileText : notif.type === "booking" ? CalendarCheck : TicketIcon
 
     return (
       <div
@@ -283,24 +391,26 @@ export function NotificationsModal({
         }`}
       >
         <div className="flex items-start gap-2 min-w-0 flex-1">
-          {unread && (
+          {unread ? (
             <Circle className="mt-1 size-2 shrink-0 fill-red-500 text-red-500" />
+          ) : (
+            <TypeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
           )}
           <div className="flex flex-col gap-1 min-w-0">
             <span className={`truncate ${unread ? "font-semibold" : "font-medium"}`}>
-              {notif.subject ?? "Sans objet"}
+              {notif.title}
             </span>
-            {userName && (
+            {notif.subtitle && (
               <span className="text-muted-foreground text-xs truncate">
-                {userName}
+                {notif.subtitle}
               </span>
             )}
             <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              {notif.site?.name && (
-                <span className="truncate">{notif.site.name}</span>
+              {notif.siteName && (
+                <span className="truncate">{notif.siteName}</span>
               )}
               <span>
-                {new Date(notif.updated_at).toLocaleDateString("fr-FR", {
+                {new Date(notif.updatedAt).toLocaleDateString("fr-FR", {
                   day: "2-digit",
                   month: "short",
                   hour: "2-digit",
@@ -311,9 +421,9 @@ export function NotificationsModal({
           </div>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${status.className}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${notif.statusClassName}`}
         >
-          {status.label}
+          {notif.statusLabel}
         </span>
       </div>
     )
