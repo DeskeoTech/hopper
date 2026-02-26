@@ -21,9 +21,19 @@ interface SiteOption {
   label: string
 }
 
+interface SupportTicket {
+  id: string
+  subject: string
+  status: string
+  updated_at: string
+  user_id: string
+  last_name: string
+}
+
 export function NotificationsModal({ open, onOpenChange }: NotificationsModalProps) {
   const [sites, setSites] = useState<SiteOption[]>([])
   const [selectedSite, setSelectedSite] = useState("all")
+  const [notifications, setNotifications] = useState<SupportTicket[]>([])
 
   useEffect(() => {
     if (!open) return
@@ -44,6 +54,36 @@ export function NotificationsModal({ open, onOpenChange }: NotificationsModalPro
     fetchSites()
   }, [open])
 
+  useEffect(() => {
+    if (!open) return
+
+    const fetchNotifications = async () => {
+      const supabase = createClient()
+
+      let query = supabase
+        .from("support_tickets")
+        .select("*")
+        .order("updated_at", { ascending: false })
+
+      if (selectedSite !== "all") {
+        query = query.eq("site_id", selectedSite)
+      }
+
+      const { data, error } = await query
+      if (error) console.error(error)
+      if (data) setNotifications(data)
+    }
+
+    fetchNotifications()
+  }, [selectedSite, open])
+
+  const statusColor = (status: string) => {
+    if (status === "open") return "bg-green-100 text-green-700"
+    if (status === "closed") return "bg-gray-100 text-gray-500"
+    if (status === "pending") return "bg-yellow-100 text-yellow-700"
+    return "bg-muted text-muted-foreground"
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -62,14 +102,41 @@ export function NotificationsModal({ open, onOpenChange }: NotificationsModalPro
             placeholder="Filtrer par site"
           />
 
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-              <Bell className="h-7 w-7 text-muted-foreground/40" />
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <Bell className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="mt-4 text-sm text-muted-foreground">
+                Aucune notification pour le moment.
+              </p>
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Aucune notification pour le moment.
-            </p>
-          </div>
+          ) : (
+            <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
+              {notifications.map((notif) => (
+                <div
+                  key={notif.id}
+                  className="flex items-start justify-between rounded-lg border p-3 text-sm"
+                >
+                  <div className="flex flex-col gap-1">
+                    <span className="font-medium">{notif.subject}</span>
+                    <span className="text-muted-foreground text-xs">{notif.last_name}</span>
+                    <span className="text-muted-foreground text-xs">
+                      {new Date(notif.updated_at).toLocaleDateString("fr-FR", {
+                        day: "2-digit",
+                        month: "short",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </span>
+                  </div>
+                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${statusColor(notif.status)}`}>
+                    {notif.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
