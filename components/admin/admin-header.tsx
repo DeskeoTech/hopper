@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { LogOut } from "lucide-react"
+import { LogOut, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
 import { MobileNav } from "./mobile-nav"
+import { NotificationsModal } from "./notifications-modal"
 
 const pageTitles: Record<string, string> = {
   "/admin": "Accueil",
@@ -25,6 +27,7 @@ interface AdminHeaderProps {
 export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
 
   // Get title - check for dynamic routes
   let title = pageTitles[pathname] || "Dashboard"
@@ -64,11 +67,17 @@ export function AdminHeader({ userEmail, siteName }: AdminHeaderProps) {
             {userEmail}
           </span>
         )}
+        <Button type="button" variant="ghost" size="sm" onClick={() => setNotificationsOpen(true)}>
+          <Bell className="size-4" />
+          <span className="sr-only">Notifications</span>
+        </Button>
         <Button type="button" variant="ghost" size="sm" onClick={handleLogout}>
           <LogOut className="size-4" />
           <span className="sr-only">Déconnexion</span>
         </Button>
       </div>
+
+      <NotificationsModal open={notificationsOpen} onOpenChange={setNotificationsOpen} />
     </header>
   )
 }
