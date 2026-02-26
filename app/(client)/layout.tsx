@@ -268,18 +268,19 @@ export default async function ClientLayout({
   const selectedSiteId = siteParam || mainSiteId || allSites[0]?.id || null
 
   // Modal checks
+  const isFromSpacebring = (userProfile.companies as Company | null)?.from_spacebring === true
   const needsCguAcceptance = !userProfile.cgu_accepted_at
   const needsOnboarding =
     (userProfile.role === "user" || userProfile.role === "admin") &&
     (!userProfile.company_id ||
-      !(userProfile.companies as Company | null)?.onboarding_done)
+      !(userProfile.companies as Company | null)?.onboarding_done) &&
+    !isFromSpacebring
   const needsProfileCompletion =
     !needsOnboarding &&
     (userProfile.role === "user" || userProfile.role === "admin") &&
     userProfile.company_id &&
     userProfile.companies &&
     !isUserCompanyInfoComplete(userProfile, userProfile.companies as Company)
-  const isFromSpacebring = (userProfile.companies as Company | null)?.from_spacebring === true
   const needsContractAssignment =
     !needsOnboarding &&
     !needsProfileCompletion &&
