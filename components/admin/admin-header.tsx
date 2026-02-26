@@ -23,9 +23,10 @@ interface AdminHeaderProps {
   userEmail?: string | null
   siteName?: string | null
   siteId?: string | null
+  adminId?: string | null
 }
 
-export function AdminHeader({ userEmail, siteName, siteId }: AdminHeaderProps) {
+export function AdminHeader({ userEmail, siteName, siteId, adminId }: AdminHeaderProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -99,6 +100,7 @@ export function AdminHeader({ userEmail, siteName, siteId }: AdminHeaderProps) {
         onOpenChange={setNotificationsOpen}
         siteId={siteId ?? null}
         userEmail={userEmail ?? null}
+        adminId={adminId ?? null}
         onUnreadCountChange={handleUnreadCountChange}
       />
     </header>

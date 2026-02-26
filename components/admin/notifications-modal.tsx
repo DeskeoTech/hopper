@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Bell, CalendarCheck, Circle, FileText, TicketIcon } from "lucide-react"
+import { Bell, CalendarCheck, Circle, FileText, Pin, TicketIcon } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ interface NotificationsModalProps {
   onOpenChange: (open: boolean) => void
   siteId: string | null
   userEmail: string | null
+  adminId: string | null
   onUnreadCountChange?: (count: number) => void
 }
 
@@ -37,6 +38,14 @@ interface NotificationItem {
   statusLabel: string
   statusClassName: string
   updatedAt: string
+  pinned: boolean
+  sourceId: string
+}
+
+const sourceTableMap: Record<NotificationType, string> = {
+  ticket: "support_tickets",
+  contract: "contracts",
+  booking: "bookings",
 }
 
 // Clé localStorage par utilisateur
@@ -111,6 +120,8 @@ async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSit
       statusLabel: status.label,
       statusClassName: status.className,
       updatedAt: t.updated_at as string,
+      pinned: false,
+      sourceId: t.id as string,
     }
   })
 }
@@ -155,6 +166,8 @@ async function fetchContracts(supabase: ReturnType<typeof createClient>, filterS
         statusLabel: status.label,
         statusClassName: status.className,
         updatedAt: c.created_at as string,
+        pinned: false,
+        sourceId: c.id as string,
       }
     })
 }
@@ -200,6 +213,8 @@ async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSi
         statusLabel: status.label,
         statusClassName: status.className,
         updatedAt: b.created_at as string,
+        pinned: false,
+        sourceId: b.id as string,
       }
     })
 }
@@ -209,12 +224,14 @@ export function NotificationsModal({
   onOpenChange,
   siteId,
   userEmail,
+  adminId,
   onUnreadCountChange,
 }: NotificationsModalProps) {
   const [sites, setSites] = useState<SiteOption[]>([])
   const [selectedSite, setSelectedSite] = useState<string>(siteId ?? "all")
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [lastReadAt, setLastReadAtState] = useState<string | null>(null)
+  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
   const hasBeenOpened = useRef(false)
 
   // Load lastReadAt from localStorage on mount (per-user)
@@ -235,27 +252,95 @@ export function NotificationsModal({
         .order("name")
 
       if (data) {
-        setSites(data.map((s) => ({ value: s.id, label: s.name })))
+        setSites(data.map((s: { id: string; name: string }) => ({ value: s.id, label: s.name })))
       }
     }
 
     fetchSites()
   }, [open])
 
+  // Fetch pinned notification IDs for this admin
+  const fetchPinnedIds = useCallback(async () => {
+    if (!adminId) return new Set<string>()
+    const supabase = createClient()
+    const { data } = await supabase
+      .from("admin_notifications")
+      .select("source_table, source_id")
+      .eq("admin_user", adminId)
+      .eq("pinned", true)
+
+    const ids = new Set<string>()
+    if (data) {
+      for (const row of data) {
+        // Reverse map: source_table → type prefix
+        const typePrefix = row.source_table === "support_tickets" ? "ticket"
+          : row.source_table === "contracts" ? "contract"
+          : row.source_table === "bookings" ? "booking"
+          : null
+        if (typePrefix) {
+          ids.add(`${typePrefix}-${row.source_id}`)
+        }
+      }
+    }
+    return ids
+  }, [adminId])
+
   const fetchAllNotifications = useCallback(async (filterSiteId?: string | null) => {
     const supabase = createClient()
-    const [tickets, contracts, bookings] = await Promise.all([
+    const [tickets, contracts, bookings, pinned] = await Promise.all([
       fetchTickets(supabase, filterSiteId),
       fetchContracts(supabase, filterSiteId),
       fetchBookings(supabase, filterSiteId),
+      fetchPinnedIds(),
     ])
 
-    const merged = [...tickets, ...contracts, ...bookings].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    )
+    setPinnedIds(pinned)
+
+    const merged = [...tickets, ...contracts, ...bookings]
+      .map((n) => ({ ...n, pinned: pinned.has(n.id) }))
+      .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
     setNotifications(merged)
-  }, [])
+  }, [fetchPinnedIds])
+
+  // Toggle pin for a notification
+  const togglePin = useCallback(async (notif: NotificationItem) => {
+    if (!adminId) return
+    const supabase = createClient()
+    const sourceTable = sourceTableMap[notif.type]
+    const newPinned = !notif.pinned
+
+    // Upsert: check if row exists
+    const { data: existing } = await supabase
+      .from("admin_notifications")
+      .select("id")
+      .eq("admin_user", adminId)
+      .eq("source_table", sourceTable)
+      .eq("source_id", notif.sourceId)
+      .maybeSingle()
+
+    if (existing) {
+      await supabase
+        .from("admin_notifications")
+        .update({ pinned: newPinned })
+        .eq("id", existing.id)
+    } else {
+      await supabase
+        .from("admin_notifications")
+        .insert({ admin_user: adminId, source_table: sourceTable, source_id: notif.sourceId, pinned: newPinned })
+    }
+
+    // Update local state
+    setNotifications((prev) =>
+      prev.map((n) => n.id === notif.id ? { ...n, pinned: newPinned } : n)
+    )
+    setPinnedIds((prev) => {
+      const next = new Set(prev)
+      if (newPinned) next.add(notif.id)
+      else next.delete(notif.id)
+      return next
+    })
+  }, [adminId])
 
   // Fetch when modal opens or filter changes
   useEffect(() => {
@@ -349,9 +434,21 @@ export function NotificationsModal({
           ) : (
             <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
               {(() => {
-                const unreadNotifs = notifications.filter((n) => isUnread(n.updatedAt))
-                const readNotifs = notifications.filter((n) => !isUnread(n.updatedAt))
+                const pinnedNotifs = notifications.filter((n) => n.pinned)
+                const unpinnedNotifs = notifications.filter((n) => !n.pinned)
+                const unreadNotifs = unpinnedNotifs.filter((n) => isUnread(n.updatedAt))
+                const readNotifs = unpinnedNotifs.filter((n) => !isUnread(n.updatedAt))
                 const sections: React.ReactNode[] = []
+
+                if (pinnedNotifs.length > 0) {
+                  sections.push(
+                    <p key="pinned-label" className="flex items-center gap-1 text-xs font-medium text-muted-foreground px-1">
+                      <Pin className="size-3" />
+                      Épinglées
+                    </p>
+                  )
+                  sections.push(...pinnedNotifs.map((n) => renderNotif(n, isUnread(n.updatedAt))))
+                }
 
                 if (unreadNotifs.length > 0) {
                   sections.push(
@@ -386,12 +483,18 @@ export function NotificationsModal({
     return (
       <div
         key={notif.id}
-        className={`flex items-start justify-between rounded-lg border p-3 text-sm transition-colors ${
+        className={`group flex items-start justify-between rounded-lg border p-3 text-sm transition-colors cursor-pointer hover:bg-muted/50 ${
           unread ? "border-primary/30 bg-primary/5" : ""
         }`}
+        onClick={() => togglePin(notif)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") togglePin(notif) }}
       >
         <div className="flex items-start gap-2 min-w-0 flex-1">
-          {unread ? (
+          {notif.pinned ? (
+            <Pin className="mt-0.5 size-4 shrink-0 fill-amber-500 text-amber-500" />
+          ) : unread ? (
             <Circle className="mt-1 size-2 shrink-0 fill-red-500 text-red-500" />
           ) : (
             <TypeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
@@ -420,11 +523,14 @@ export function NotificationsModal({
             </div>
           </div>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${notif.statusClassName}`}
-        >
-          {notif.statusLabel}
-        </span>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Pin className={`size-3.5 transition-opacity ${notif.pinned ? "text-amber-500 opacity-100" : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"}`} />
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${notif.statusClassName}`}
+          >
+            {notif.statusLabel}
+          </span>
+        </div>
       </div>
     )
   }
