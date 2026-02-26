@@ -213,7 +213,7 @@ export function RoomBookingContent({
 
   // Temporary block: Victoire room bookings disabled until Monday March 2, 2026
   const VICTOIRE_BLOCK_END = new Date("2026-03-02T06:00:00")
-  const isVictoireBlocked = selectedSite?.name?.toLowerCase().includes("victoire") && new Date() < VICTOIRE_BLOCK_END
+  const isVictoireBlocked = selectedSite?.name?.toLowerCase().includes("casa deskeo") && new Date() < VICTOIRE_BLOCK_END
 
   // Handle site change - reset selection
   const handleSiteChange = (newSiteId: string) => {

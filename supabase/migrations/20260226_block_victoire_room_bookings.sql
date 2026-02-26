@@ -7,5 +7,5 @@ SELECT
   d::date,
   'Réservation de salles indisponible - sera disponible lundi 2 mars. Merci de passer par Spacebring.'
 FROM sites, unnest(ARRAY['2026-02-26'::date, '2026-02-27'::date]) AS d
-WHERE name ILIKE '%victoire%'
+WHERE name ILIKE '%casa deskeo%'
 ON CONFLICT (site_id, date) DO NOTHING;
