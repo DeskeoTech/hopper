@@ -16,7 +16,6 @@ interface NotificationsModalProps {
   onOpenChange: (open: boolean) => void
   siteId: string | null
   userEmail: string | null
-  adminId: string | null
   onUnreadCountChange?: (count: number) => void
 }
 
@@ -224,7 +223,6 @@ export function NotificationsModal({
   onOpenChange,
   siteId,
   userEmail,
-  adminId,
   onUnreadCountChange,
 }: NotificationsModalProps) {
   const [sites, setSites] = useState<SiteOption[]>([])
@@ -233,7 +231,14 @@ export function NotificationsModal({
   const [lastReadAt, setLastReadAtState] = useState<string | null>(null)
   const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
   const hasBeenOpened = useRef(false)
+  const [authId, setAuthId] = useState<string | null>(null)
 
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      setAuthId(data.user?.id ?? null)
+    })
+  }, [])
   // Load lastReadAt from localStorage on mount (per-user)
   useEffect(() => {
     setLastReadAtState(getLastReadAt(userEmail))
@@ -261,12 +266,12 @@ export function NotificationsModal({
 
   // Fetch pinned notification IDs for this admin
   const fetchPinnedIds = useCallback(async () => {
-    if (!adminId) return new Set<string>()
+    if (!authId) return new Set<string>()
     const supabase = createClient()
     const { data } = await supabase
       .from("admin_notifications")
       .select("source_table, source_id")
-      .eq("admin_user", adminId)
+      .eq("admin_user", authId)
       .eq("pinned", true)
 
     const ids = new Set<string>()
@@ -283,7 +288,7 @@ export function NotificationsModal({
       }
     }
     return ids
-  }, [adminId])
+  }, [authId])
 
   const fetchAllNotifications = useCallback(async (filterSiteId?: string | null) => {
     const supabase = createClient()
@@ -305,7 +310,7 @@ export function NotificationsModal({
 
   // Toggle pin for a notification
   const togglePin = useCallback(async (notif: NotificationItem) => {
-    if (!adminId) return
+    if (!authId) return
     const supabase = createClient()
     const sourceTable = sourceTableMap[notif.type]
     const newPinned = !notif.pinned
@@ -314,7 +319,7 @@ export function NotificationsModal({
     const { data: existing } = await supabase
       .from("admin_notifications")
       .select("id")
-      .eq("admin_user", adminId)
+      .eq("admin_user", authId)
       .eq("source_table", sourceTable)
       .eq("source_id", notif.sourceId)
       .maybeSingle()
@@ -327,7 +332,7 @@ export function NotificationsModal({
     } else {
       await supabase
         .from("admin_notifications")
-        .insert({ admin_user: adminId, source_table: sourceTable, source_id: notif.sourceId, pinned: newPinned })
+        .insert({ admin_user: authId, source_table: sourceTable, source_id: notif.sourceId, pinned: newPinned })
     }
 
     // Update local state
@@ -340,7 +345,7 @@ export function NotificationsModal({
       else next.delete(notif.id)
       return next
     })
-  }, [adminId])
+  }, [authId])
 
   // Fetch when modal opens or filter changes
   useEffect(() => {
@@ -395,7 +400,7 @@ export function NotificationsModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Bell className="size-5" />

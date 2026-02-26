@@ -100,7 +100,6 @@ export function AdminHeader({ userEmail, siteName, siteId, adminId }: AdminHeade
         onOpenChange={setNotificationsOpen}
         siteId={siteId ?? null}
         userEmail={userEmail ?? null}
-        adminId={adminId ?? null}
         onUnreadCountChange={handleUnreadCountChange}
       />
     </header>
