@@ -1,15 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <clipPath id="gb-clip">
-    <circle cx="256" cy="256" r="256"/>
-  </clipPath>
-  <g clip-path="url(#gb-clip)">
-    <rect width="512" height="512" fill="#012169"/>
-    <path d="M0 0L512 512M512 0L0 512" stroke="#fff" stroke-width="76.8"/>
-    <path d="M0 0L512 512M512 0L0 512" stroke="#C8102E" stroke-width="51.2" clip-path="url(#gb-diag)"/>
-    <clipPath id="gb-diag">
-      <path d="M256 0H512V256L0 512H0V256Z"/>
+  <defs>
+    <clipPath id="c">
+      <circle cx="256" cy="256" r="256"/>
     </clipPath>
-    <path d="M256 0V512M0 256H512" stroke="#fff" stroke-width="102.4"/>
-    <path d="M256 0V512M0 256H512" stroke="#C8102E" stroke-width="61.44"/>
+  </defs>
+  <g clip-path="url(#c)">
+    <rect width="512" height="512" fill="#012169"/>
+    <polygon fill="#fff" points="54,0 512,458 458,512 0,54"/>
+    <polygon fill="#fff" points="458,0 512,54 54,512 0,458"/>
+    <polygon fill="#C8102E" points="36,0 512,476 476,512 0,36"/>
+    <polygon fill="#C8102E" points="476,0 512,36 36,512 0,476"/>
+    <rect x="0" y="205" width="512" height="102" fill="#fff"/>
+    <rect x="205" y="0" width="102" height="512" fill="#fff"/>
+    <rect x="0" y="225" width="512" height="62" fill="#C8102E"/>
+    <rect x="225" y="0" width="62" height="512" fill="#C8102E"/>
   </g>
 </svg>
