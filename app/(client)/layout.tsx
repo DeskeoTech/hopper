@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientHeader } from "@/components/client/client-header"
 import { ClientFooter } from "@/components/client/client-footer"
@@ -288,6 +289,23 @@ export default async function ClientLayout({
     userProfile.company_id &&
     !userProfile.contract_id &&
     !isFromSpacebring
+
+  // Auto-update Onboarding flag for users whose company already completed onboarding
+  if (
+    !needsOnboarding &&
+    userProfile.company_id &&
+    (userProfile.companies as Company | null)?.onboarding_done &&
+    !(userProfile as Record<string, unknown>).Onboarding
+  ) {
+    const adminSupabase = createAdminClient()
+    adminSupabase
+      .from("users")
+      .update({ Onboarding: true, updated_at: new Date().toISOString() })
+      .eq("id", userProfile.id)
+      .then(({ error }) => {
+        if (error) console.error("Error auto-updating user onboarding flag:", error)
+      })
+  }
 
   return (
     <ClientLayoutProvider
