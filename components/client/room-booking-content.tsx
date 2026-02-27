@@ -114,7 +114,7 @@ export function RoomBookingContent({
   const tc = useTranslations("common")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
-
+  const [notes, setNotes] = useState("");
   // Photo viewer handlers
   const handlePhotoClick = (photos: string[], index: number) => {
     setViewerPhotos(photos)
@@ -307,6 +307,7 @@ export function RoomBookingContent({
       creditsToUse: creditsNeeded,
       companyId,
       referral,
+      notes,
     })
 
     setSubmitting(false)
@@ -469,7 +470,7 @@ export function RoomBookingContent({
   }
 
   // Victoire blocked: show banner instead of booking UI
-  if (isVictoireBlocked) {
+  if (!isVictoireBlocked) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
@@ -852,6 +853,28 @@ export function RoomBookingContent({
                         </span>
                       )}
                     </div>
+                    <div className="border-t pt-3">
+                    <p className="type-body font-medium">{selectedRoom.name}</p>
+                    {selectedRoom.capacity && (
+                      <p className="type-body-sm text-muted-foreground">
+                        {t("capacityPersons", { count: selectedRoom.capacity })}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Notes input */}
+                  <div className="border-t pt-3">
+                    <label htmlFor="booking-notes" className="type-body-sm font-medium mb-1.5 block">
+                      {t("notes")}
+                    </label>
+                    <textarea
+                      id="booking-notes"
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder={t("notesPlaceholder")}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 type-body-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-none"
+                    />
+                  </div>
                   </div>
                   <div className="sm:text-right">
                     <p className="type-body-sm text-muted-foreground">
