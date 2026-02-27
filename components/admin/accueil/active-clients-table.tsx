@@ -75,19 +75,24 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
       {isOpen && (
         <>
           <TableRow className="bg-muted/30">
-            <TableCell className="pl-10 text-xs font-semibold uppercase text-muted-foreground">
-              Nom
-            </TableCell>
-            <TableCell className="text-xs font-semibold uppercase text-muted-foreground">
-              Prénom
+            <TableCell className="pl-10 text-xs font-semibold uppercase text-muted-foreground" colSpan={2}>
+              Nom Prénom
             </TableCell>
           </TableRow>
           {group.clients.map((client) => (
             <TableRow key={client.id} className="bg-muted/20">
-              <TableCell className="pl-10 font-medium">
-                {client.lastName || "—"}
+              <TableCell className="pl-10 font-medium" colSpan={2}>
+                {group.companyId ? (
+                  <Link
+                    href={`/admin/clients/${group.companyId}`}
+                    className="hover:underline"
+                  >
+                    {client.lastName || "—"} {client.firstName || "—"}
+                  </Link>
+                ) : (
+                  <span>{client.lastName || "—"} {client.firstName || "—"}</span>
+                )}
               </TableCell>
-              <TableCell>{client.firstName || "—"}</TableCell>
             </TableRow>
           ))}
         </>
