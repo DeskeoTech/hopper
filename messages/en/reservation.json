@@ -47,7 +47,7 @@
     "postPaymentInfo": "Additional information will be requested after payment on your personal Hopper space",
     "dateRangeTo": "{start} to {end}",
     "residenceTitle": "CUSTOM OFFER",
-    "residenceTagline": "Your fixed desk, unlimited",
+    "residenceTagline": "Your fixed desk, unlimited access.",
     "residenceDesc1": "Enjoy a dedicated workstation in Hopper Residence spaces, with access to all Hopper Lounge areas.",
     "residenceDesc2": "Your subscription includes two complimentary drinks per day and a personal locker.",
     "residenceDesc3": "Perfect for settling in for the long term, creating your routine and feeling \"at home\" at the office.",
@@ -71,7 +71,7 @@
     "seats": "{count} seats",
     "meetingRooms": "{count} meeting rooms",
     "residenceTitle": "HOPPER RESIDENCE",
-    "residenceTagline": "Your dedicated desk, unlimited",
+    "residenceTagline": "Your dedicated desk, unlimited access.",
     "learnMore": "Learn more"
   },
   "days": {
