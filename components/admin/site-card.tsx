@@ -58,7 +58,6 @@ export function SiteCard({ site, imageUrl, flexAvailability, deskeoUsers = [] }:
             }`} />
             {site.status === "open" ? "Ouvert" : "Fermé"}
           </div>
-
           {/* Flex desk availability badge */}
           {availabilityDisplay && (
             <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">

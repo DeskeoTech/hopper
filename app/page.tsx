@@ -63,7 +63,7 @@ async function getSitesWithPhotos() {
     return {
       ...site,
       photos: photoUrls,
-      capacity: totalCapacity,
+      capacity: site.capacity ?? 0,
       meetingRoomsCount,
     }
   })
