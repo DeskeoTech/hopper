@@ -116,6 +116,7 @@ function getStableDate(): Date {
 }
 
 function isClosure(date: Date, closures: Date[]): boolean {
+  if (!closures) return false
   return closures.some((c) => isSameDay(c, date))
 }
 
@@ -263,7 +264,7 @@ export function ScrollableCalendar({
   }, [today])
 
   const closuresAsDate = useMemo(
-    () => closureDates.map((d) => {
+    () => (closureDates ?? []).map((d) => {
       const [y, m, day] = d.split("-").map(Number)
       return new Date(y, m - 1, day)
     }),
