@@ -211,10 +211,6 @@ export function RoomBookingContent({
   const creditsNeeded = selectedSlots.length * (selectedRoom?.hourly_credit_rate || 1)
   const hasEnoughCredits = remainingCredits >= creditsNeeded
 
-  // Temporary block: Victoire room bookings disabled until Monday March 2, 2026
-  const VICTOIRE_BLOCK_END = new Date("2026-03-02T06:00:00")
-  const isVictoireBlocked = selectedSite?.name?.toLowerCase().includes("casa deskeo") && new Date() < VICTOIRE_BLOCK_END
-
   // Handle site change - reset selection
   const handleSiteChange = (newSiteId: string) => {
     setSelectedSiteId(newSiteId)
@@ -465,25 +461,6 @@ export function RoomBookingContent({
             />
           </div>
         )}
-      </div>
-    )
-  }
-
-  if (isVictoireBlocked) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
-          <CalendarIcon className="h-8 w-8 text-amber-600" />
-        </div>
-        <h3 className="text-lg font-semibold text-foreground">
-          Réservation temporairement indisponible
-        </h3>
-        <p className="mt-2 text-sm text-muted-foreground max-w-sm">
-          La réservation de salles de réunion sur ce site sera disponible à partir du <strong>lundi 2 mars</strong>.
-        </p>
-        <p className="mt-3 text-sm text-muted-foreground max-w-sm">
-          En attendant, merci de continuer à réserver via <strong>Spacebring</strong>.
-        </p>
       </div>
     )
   }
