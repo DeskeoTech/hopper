@@ -17,7 +17,7 @@ async function getSitesWithPhotos() {
   // Fetch open sites
   const { data: sites, error: sitesError } = await supabase
     .from("sites")
-    .select("*")
+    .select("id, name, address, status, latitude, longitude, description, description_en, opening_days, opening_hours, equipments, transportation_lines, is_nomad")
     .eq("status", "open")
     .order("name")
 
