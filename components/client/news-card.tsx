@@ -45,19 +45,12 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-start gap-2">
-              {post.is_pinned && (
-                <Pin className="h-3 w-3 flex-shrink-0 text-primary mt-0.5" />
-              )}
-              <h3 className="text-sm font-semibold text-foreground break-words">
-                {post.title}
-              </h3>
-            </div>
-            {post.excerpt && (
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {post.excerpt}
-              </p>
+            {post.is_pinned && (
+              <Pin className="h-3 w-3 flex-shrink-0 text-primary mb-1" />
             )}
+            <p className="text-sm text-foreground line-clamp-3">
+              {post.content || post.title}
+            </p>
             <div className="mt-2 flex items-center gap-2 text-[10px] text-foreground/50">
               {(post.author_first_name || post.author_last_name) && (
                 <span className="font-medium">
@@ -129,10 +122,7 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
             </span>
           )}
         </div>
-        <h2 className="font-header text-xl font-semibold text-foreground">
-          {post.title}
-        </h2>
-        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+        <p className="whitespace-pre-line text-sm text-foreground">
           {post.content}
         </p>
         <div className="mt-4 flex items-center gap-2 text-xs text-foreground/50">
