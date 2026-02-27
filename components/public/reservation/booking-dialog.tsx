@@ -17,6 +17,7 @@ import { createCheckoutSession } from "@/lib/actions/stripe"
 interface SiteWithPhotos extends Site {
   photos: string[]
   capacity: number
+  closureDates?: string[]
 }
 
 export interface SavedBookingState {
@@ -234,6 +235,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
                   onPassTypeChange={setPassType}
                   seats={seats}
                   onSeatsChange={setSeats}
+                  closureDates={site.closureDates}
                 />
               </div>
             </div>
