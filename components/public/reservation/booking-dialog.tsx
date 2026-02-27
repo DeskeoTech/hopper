@@ -349,7 +349,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
                 {t("bookingDialog.residenceDesc3")}
               </p>
               <Button
-                className="w-full rounded-full bg-[#1B1918] text-white font-bold text-base tracking-wide hover:bg-[#2D2B2A] h-12"
+                className="w-full rounded-full bg-[#1B1918] text-[#E8E4DF] font-bold text-base tracking-wide hover:bg-[#2D2B2A] h-12"
                 onClick={() => window.open("https://www.deskeo.com/fr/contact/", "_blank")}
               >
                 {t("bookingDialog.residenceContact")}
