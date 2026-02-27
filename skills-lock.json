@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "skills": {
+    "supabase-audit-auth-config": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "b069f03b824c6e4e6b8508cf98250caddd88e8508b0843af1cdbb1d336f685f9"
+    },
+    "supabase-audit-auth-signup": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "a5866f50fffcbb83f83fcc2d8f391c3a149d18751b26b07a8cff2e50ee62631b"
+    },
+    "supabase-audit-auth-users": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "8ff5b31230d1c5e04951048d112118a179adb14b62a5ae8618e866de2d5b1777"
+    },
+    "supabase-audit-authenticated": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "80e15c8bd14276737cd705251a2cde63a91a3911a24f44f1bec6f2f8a6084b4f"
+    },
+    "supabase-audit-buckets-list": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "b3acd9525098749d501f1f3374214c4fa55605e3a6b38b1d1d85d302490a2add"
+    },
+    "supabase-audit-buckets-public": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "88971c36a08c937c0242877c3d7bd433b582374457870a65bd4284cc3913e53f"
+    },
+    "supabase-audit-buckets-read": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "0e0e15afb424fddb1371ce8e48e1330dbf767b9a94c460e7735cc3ad5d485e3c"
+    },
+    "supabase-audit-functions": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "0381b22df35f0c13a7757357099dd277ea6782a9e5a25e5509b655e65ac4392a"
+    },
+    "supabase-audit-realtime": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "f0bc55c9e7b46254ccf51558b0e41cbcc127a95eae8aa44976d4271918f0f3d2"
+    },
+    "supabase-audit-rls": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "19722a043162d04e1465f6b8da7c6f3bbdef0b0295fa29d63504b3486847311e"
+    },
+    "supabase-audit-rpc": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "fff4de3d04f2f6c98ef123032134978212a2c4e3751def0ae638c58861fe5d58"
+    },
+    "supabase-audit-tables-list": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "a9b1d1195b656fa41906319fa084fb28893fc650f7a4f32c423dadd838aad799"
+    },
+    "supabase-audit-tables-read": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "5040aadbdb563d10177913828de6aaed0dfd7587919ff1d72c960acd233045fd"
+    },
+    "supabase-detect": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "3017539aecefe36aa388f8d1d890fbe92d33871f4a4ba897882f72f9d8e75dc7"
+    },
+    "supabase-extract-anon-key": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "064c347552baa1ad4ff36ebbef590e793524e83851e30d61b630c4b0597017bc"
+    },
+    "supabase-extract-db-string": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "fa75ad83395661e9899fbeddf5ebb38ac79bb10202a5b9113966b7241bc2e3f9"
+    },
+    "supabase-extract-jwt": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "affe04b84785adc2a7f60fcfc1a458366da115d72505076eeaff6037223423a1"
+    },
+    "supabase-extract-service-key": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "c3e2b79e5c8f5e70e8e502015e83ab7ca065fef45061dba124f1ff5001d634b5"
+    },
+    "supabase-extract-url": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "901161b11ba3a9a0d460971c5953eca349a58e4d9c200c8c9a4bf139c88763bb"
+    },
+    "supabase-help": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "010a5a42275056b24a112045d3e360a27c0b5eb9f186603bee53e5ef5c1bcad6"
+    },
+    "supabase-pentest": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "e31fa44f879255c33e66a50854a588cb52a3ba37ca828dd501de96ba92b6c24b"
+    },
+    "supabase-report": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "603f22aa422475ce1742b38c0edce9fafb04b447fe17f2e24042e2d18d2b987c"
+    },
+    "supabase-report-compare": {
+      "source": "yoanbernabeu/supabase-pentest-skills",
+      "sourceType": "github",
+      "computedHash": "60212b97c7d455b78ae0f0102facf7aee597d71bd3889e0f6ee6a7b8fa2d1bc4"
+    }
+  }
+}

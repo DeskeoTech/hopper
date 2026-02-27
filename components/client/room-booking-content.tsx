@@ -114,7 +114,7 @@ export function RoomBookingContent({
   const tc = useTranslations("common")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
-
+  const [notes, setNotes] = useState("");
   // Photo viewer handlers
   const handlePhotoClick = (photos: string[], index: number) => {
     setViewerPhotos(photos)
@@ -307,6 +307,7 @@ export function RoomBookingContent({
       creditsToUse: creditsNeeded,
       companyId,
       referral,
+      notes,
     })
 
     setSubmitting(false)
@@ -468,7 +469,6 @@ export function RoomBookingContent({
     )
   }
 
-  // Victoire blocked: show banner instead of booking UI
   if (isVictoireBlocked) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
@@ -964,6 +964,20 @@ export function RoomBookingContent({
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Notes input */}
+              <div className="rounded-[16px] bg-foreground/5 p-4">
+                <label htmlFor="booking-notes" className="type-body-sm font-medium mb-1.5 block">
+                  {t("notes")}
+                </label>
+                <textarea
+                  id="booking-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t("notesPlaceholder")}
+                  className="w-full rounded-[12px] border border-input bg-background px-3 py-2 type-body-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-none"
+                />
               </div>
 
               <div className="rounded-[16px] bg-[#1B1918] p-4 text-white">

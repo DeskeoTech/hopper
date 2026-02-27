@@ -86,6 +86,7 @@ export interface RoomBooking {
   endHour: number
   title: string | null
   userName: string | null
+  notes: string | null
 }
 
 export async function getRoomBookingsForDate(
@@ -146,6 +147,7 @@ export async function getRoomBookingsForDate(
       endHour: new Date(b.end_date).getHours(),
       title: b.notes,
       userName: user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || null : null,
+      notes: b.notes,
     }
   })
 
@@ -219,6 +221,7 @@ export async function createMeetingRoomBooking(data: {
   creditsToUse: number
   companyId: string
   referral?: string
+  notes?: string 
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
@@ -305,6 +308,7 @@ export async function createMeetingRoomBooking(data: {
       status: "confirmed",
       credits_used: data.creditsToUse,
       ...(data.referral ? { referral: data.referral } : {}),
+      ...(data.notes ? { notes: data.notes } : {}),
     })
     .select("id")
     .single()
