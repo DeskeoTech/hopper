@@ -90,10 +90,14 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     )
   }
 
-  // Sort sites alphabetically (case-insensitive) and filter
-  let filteredSites = [...(sites || [])].sort((a, b) =>
-    (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
-  )
+  // Sort sites: open first, then alphabetically (case-insensitive)
+  let filteredSites = [...(sites || [])].sort((a, b) => {
+    // Open sites first
+    if (a.status === "open" && b.status !== "open") return -1
+    if (a.status !== "open" && b.status === "open") return 1
+    // Then alphabetically
+    return (a.name || "").localeCompare(b.name || "", "fr", { sensitivity: "base" })
+  })
   if (searchQuery) {
     const searchLower = searchQuery.toLowerCase()
     filteredSites = filteredSites.filter(

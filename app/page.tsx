@@ -26,27 +26,28 @@ async function getSitesWithPhotos() {
     return []
   }
 
-  // Fetch photos and resources in parallel
-  const [{ data: photos }, { data: resources }] = await Promise.all([
+  const siteIds = sites.map((s) => s.id)
+
+  // Fetch photos, resources, and closures in parallel
+  const [{ data: photos }, { data: resources }, { data: closures }] = await Promise.all([
     supabase
       .from("site_photos")
       .select("site_id, storage_path")
-      .in(
-        "site_id",
-        sites.map((s) => s.id)
-      )
+      .in("site_id", siteIds)
       .order("created_at"),
     supabase
       .from("resources")
       .select("site_id, capacity, type")
-      .in(
-        "site_id",
-        sites.map((s) => s.id)
-      )
+      .in("site_id", siteIds)
       .eq("status", "available"),
+    supabase
+      .from("site_closures")
+      .select("site_id, date")
+      .in("site_id", siteIds)
+      .gte("date", new Date().toISOString().split("T")[0]),
   ])
 
-  // Combine sites with photos and capacity
+  // Combine sites with photos, capacity, and closures
   return sites.map((site) => {
     const sitePhotos = photos?.filter((p) => p.site_id === site.id) || []
     const siteResources = resources?.filter((r) => r.site_id === site.id) || []
@@ -54,6 +55,7 @@ async function getSitesWithPhotos() {
       .filter((r) => r.type !== "meeting_room")
       .reduce((sum, r) => sum + (r.capacity || 0), 0)
     const meetingRoomsCount = siteResources.filter((r) => r.type === "meeting_room").length
+    const siteClosures = closures?.filter((c) => c.site_id === site.id).map((c) => c.date) || []
 
     // Build full URLs for photos from Supabase storage
     const photoUrls = sitePhotos.map(
@@ -65,6 +67,7 @@ async function getSitesWithPhotos() {
       photos: photoUrls,
       capacity: site.capacity ?? 0,
       meetingRoomsCount,
+      closureDates: siteClosures,
     }
   })
 }

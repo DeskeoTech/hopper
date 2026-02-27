@@ -18,6 +18,7 @@ import type { Site } from "@/lib/types/database"
 interface SiteWithPhotos extends Site {
   photos: string[]
   capacity: number
+  closureDates?: string[]
 }
 
 interface ReservationPageClientProps {

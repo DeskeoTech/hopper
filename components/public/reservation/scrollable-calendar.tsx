@@ -31,12 +31,14 @@ interface ScrollableCalendarProps {
   onPassTypeChange: (passType: "day" | "week" | "month") => void
   seats: number
   onSeatsChange: (seats: number) => void
+  closureDates?: string[]
 }
 
 interface MonthGridProps {
   monthDate: Date
   selectedDates: Date[]
   holidays: Date[]
+  closures: Date[]
   today: Date
   minDate: Date
   passType: "day" | "week" | "month"
@@ -113,10 +115,15 @@ function getStableDate(): Date {
   return new Date(now.getFullYear(), now.getMonth(), now.getDate())
 }
 
+function isClosure(date: Date, closures: Date[]): boolean {
+  return closures.some((c) => isSameDay(c, date))
+}
+
 const MonthGrid = memo(function MonthGrid({
   monthDate,
   selectedDates,
   holidays,
+  closures,
   today,
   minDate,
   passType,
@@ -160,9 +167,10 @@ const MonthGrid = memo(function MonthGrid({
           const isDisabled = isBefore(day, minDate)
           const isWeekendDay = isWeekend(day)
           const isHolidayDay = isHoliday(day, holidays)
+          const isClosureDay = isClosure(day, closures)
           const isSelected = selectedDates.some((d) => isSameDay(d, day))
           const isTodayDay = isSameDay(day, today)
-          const isUnavailable = isDisabled || isWeekendDay || isHolidayDay
+          const isUnavailable = isDisabled || isWeekendDay || isHolidayDay || isClosureDay
 
           // Month mode: visually select all business days from start date
           const isMonthMode = passType === "month" && selectedDates.length === 1
@@ -188,7 +196,7 @@ const MonthGrid = memo(function MonthGrid({
                 "aspect-square flex items-center justify-center text-sm font-medium transition-colors rounded-lg",
                 !isUnavailable && !isSelected && !isMonthContinuation && "hover:bg-muted cursor-pointer",
                 isUnavailable && !isMonthContinuation && "text-muted-foreground/30 cursor-not-allowed",
-                (isWeekendDay || isHolidayDay) && !isMonthContinuation && "line-through decoration-muted-foreground/40",
+                (isWeekendDay || isHolidayDay || isClosureDay) && !isMonthContinuation && "line-through decoration-muted-foreground/40",
                 isTodayDay && !isSelected && !isMonthStart && !isMonthContinuation && "border-2 border-foreground",
                 // Day mode: all selected dates get same style
                 passType === "day" && isSelected && "bg-foreground text-background font-bold",
@@ -219,6 +227,7 @@ export function ScrollableCalendar({
   onPassTypeChange,
   seats,
   onSeatsChange,
+  closureDates = [],
 }: ScrollableCalendarProps) {
   const t = useTranslations("calendar")
   const locale = useLocale()
@@ -253,25 +262,35 @@ export function ScrollableCalendar({
     return [...getFrenchHolidays(year), ...getFrenchHolidays(year + 1)]
   }, [today])
 
+  const closuresAsDate = useMemo(
+    () => closureDates.map((d) => {
+      const [y, m, day] = d.split("-").map(Number)
+      return new Date(y, m - 1, day)
+    }),
+    [closureDates]
+  )
+
   const handleDateClick = useCallback(
     (date: Date) => {
       if (isBefore(date, minDate)) return
       if (isWeekend(date)) return
       if (isHoliday(date, holidays)) return
+      if (isClosure(date, closuresAsDate)) return
 
       if (passType === "day") {
         // Use stable toggle callback from parent (no selectedDates dependency)
         onToggleDate(date)
       } else if (passType === "week") {
-        // Auto-select 5 business days from clicked date
-        const businessDays = getNextBusinessDays(date, 5, holidays)
+        // Auto-select 5 business days from clicked date (excluding closures)
+        const allUnavailable = [...holidays, ...closuresAsDate]
+        const businessDays = getNextBusinessDays(date, 5, allUnavailable)
         onDatesChange(businessDays)
       } else if (passType === "month") {
         // Store only the start date — visual rendering handles the rest
         onDatesChange([date])
       }
     },
-    [passType, holidays, minDate, onDatesChange, onToggleDate]
+    [passType, holidays, closuresAsDate, minDate, onDatesChange, onToggleDate]
   )
 
   const handleReset = useCallback(() => {
@@ -297,13 +316,14 @@ export function ScrollableCalendar({
             // Month: store only start date
             onDatesChange([startDate])
           } else {
-            const businessDays = getNextBusinessDays(startDate, 5, holidays)
+            const allUnavailable = [...holidays, ...closuresAsDate]
+            const businessDays = getNextBusinessDays(startDate, 5, allUnavailable)
             onDatesChange(businessDays)
           }
         }
       }
     },
-    [passType, selectedDates, holidays, onPassTypeChange, onDatesChange]
+    [passType, selectedDates, holidays, closuresAsDate, onPassTypeChange, onDatesChange]
   )
 
   // Show loading state until client-side hydration is complete
@@ -366,6 +386,7 @@ export function ScrollableCalendar({
           monthDate={currentMonth}
           selectedDates={selectedDates}
           holidays={holidays}
+          closures={closuresAsDate}
           today={today}
           minDate={minDate}
           passType={passType}
@@ -377,6 +398,7 @@ export function ScrollableCalendar({
           monthDate={addMonths(currentMonth, 1)}
           selectedDates={selectedDates}
           holidays={holidays}
+          closures={closuresAsDate}
           today={today}
           minDate={minDate}
           passType={passType}

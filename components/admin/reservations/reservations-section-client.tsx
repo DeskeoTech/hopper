@@ -23,6 +23,7 @@ interface ReservationsSectionClientProps {
   paramPrefix: string
   meetingRooms?: MeetingRoomResource[]
   showRoomsView?: boolean
+  siteClosureDates?: string[]
 }
 
 export function ReservationsSectionClient({
@@ -36,6 +37,7 @@ export function ReservationsSectionClient({
   paramPrefix,
   meetingRooms = [],
   showRoomsView = false,
+  siteClosureDates = [],
 }: ReservationsSectionClientProps) {
   return (
     <div className="space-y-4">
@@ -58,6 +60,7 @@ export function ReservationsSectionClient({
             bookings={bookings}
             referenceDate={referenceDate}
             paramPrefix={paramPrefix}
+            siteClosureDates={siteClosureDates}
           />
         ) : (
           <ReservationsCalendar

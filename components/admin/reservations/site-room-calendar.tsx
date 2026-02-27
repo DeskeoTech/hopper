@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { format, parseISO, addDays, subDays, isToday } from "date-fns"
+import { format, parseISO, addDays, subDays, isToday, isSameDay } from "date-fns"
 import { fr } from "date-fns/locale"
-import { ChevronLeft, ChevronRight, Users, DoorOpen } from "lucide-react"
+import { ChevronLeft, ChevronRight, Users, DoorOpen, CalendarOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -37,6 +37,7 @@ interface SiteRoomCalendarProps {
   bookings: BookingWithDetails[]
   referenceDate: string
   paramPrefix: string
+  siteClosureDates?: string[]
 }
 
 export function SiteRoomCalendar({
@@ -44,6 +45,7 @@ export function SiteRoomCalendar({
   bookings,
   referenceDate,
   paramPrefix,
+  siteClosureDates = [],
 }: SiteRoomCalendarProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -95,6 +97,16 @@ export function SiteRoomCalendar({
   const currentHour = now.getHours()
   const currentMinutes = now.getMinutes()
   const isWithinRange = currentHour >= 8 && currentHour < 20
+
+  // Check if current date is a site closure
+  const closureDatesAsDate = useMemo(
+    () => siteClosureDates.map((d) => parseISO(d)),
+    [siteClosureDates]
+  )
+  const isClosedDay = useMemo(
+    () => siteClosureDates.includes(format(currentDate, "yyyy-MM-dd")),
+    [siteClosureDates, currentDate]
+  )
 
   // Calculate now indicator position (percentage from top of grid)
   const isCurrentDateToday = isToday(currentDate)
@@ -202,6 +214,8 @@ export function SiteRoomCalendar({
                 selected={currentDate}
                 onSelect={handleDateSelect}
                 initialFocus
+                modifiers={{ closed: closureDatesAsDate }}
+                modifiersClassNames={{ closed: "bg-red-100 text-red-700 line-through" }}
               />
             </PopoverContent>
           </Popover>
@@ -229,6 +243,14 @@ export function SiteRoomCalendar({
 
         <ViewToggle currentView="rooms" onViewChange={handleViewChange} showRoomsView />
       </div>
+
+      {/* Closed day banner */}
+      {isClosedDay && (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          <CalendarOff className="h-4 w-4 shrink-0" />
+          <span className="font-medium">Site fermé ce jour (fermeture exceptionnelle)</span>
+        </div>
+      )}
 
       {/* Room planning grid */}
       <div className="overflow-x-auto -mx-6">
