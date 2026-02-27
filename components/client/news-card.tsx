@@ -45,11 +45,11 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-start gap-2">
               {post.is_pinned && (
-                <Pin className="h-3 w-3 flex-shrink-0 text-primary" />
+                <Pin className="h-3 w-3 flex-shrink-0 text-primary mt-0.5" />
               )}
-              <h3 className="truncate text-sm font-semibold text-foreground">
+              <h3 className="text-sm font-semibold text-foreground break-words">
                 {post.title}
               </h3>
             </div>

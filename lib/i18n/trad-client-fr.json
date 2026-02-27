@@ -268,7 +268,9 @@
     "manageOnStripe": "Gérer sur Stripe",
     "editBooking": "Modifier la réservation",
     "selectAtLeastOneSlot": "Veuillez sélectionner au moins un créneau",
-    "slots": "Créneaux"
+    "slots": "Créneaux",
+    "notes": "Commentaire",
+    "notesPlaceholder": "Ajouter un commentaire pour cette réservation..."
   },
   "bookingCard": {
     "cancel": "Annuler",

@@ -268,7 +268,9 @@
     "manageOnStripe": "Manage on Stripe",
     "editBooking": "Edit booking",
     "selectAtLeastOneSlot": "Please select at least one time slot",
-    "slots": "Time slots"
+    "slots": "Time slots",
+    "notes": "Comment",
+    "notesPlaceholder": "Add a comment for this booking..."
   },
   "bookingCard": {
     "cancel": "Cancel",

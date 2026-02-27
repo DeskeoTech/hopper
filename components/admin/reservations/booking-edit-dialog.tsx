@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useMemo } from "react"
 import { format, parseISO, isPast } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Calendar, Clock, MapPin, User, Building2, Loader2 } from "lucide-react"
+import { Calendar, Clock, MapPin, User, Building2, Loader2, MessageSquare } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -195,6 +195,19 @@ export function BookingEditDialog({
                 </div>
               )}
             </div>
+
+            {/* Client notes */}
+            {booking.notes && (
+              <div className="rounded-[16px] border border-border/10 bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Commentaire client</p>
+                    <p className="text-sm">{booking.notes}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Date/time modification form */}
             {!isReadOnly && (
