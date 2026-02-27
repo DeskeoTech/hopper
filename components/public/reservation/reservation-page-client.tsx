@@ -113,7 +113,6 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
     <div className="flex h-screen flex-col">
       {/* Header */}
       <PublicHeader selectedCity={selectedCity} onCityChange={setSelectedCity} />
-
       {/* Main Content */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sites List */}
