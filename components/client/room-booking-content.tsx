@@ -470,7 +470,7 @@ export function RoomBookingContent({
   }
 
   // Victoire blocked: show banner instead of booking UI
-  if (!isVictoireBlocked) {
+  if (isVictoireBlocked) {
     return (
       <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-100">
