@@ -73,7 +73,7 @@ export async function completeOnboarding(data: OnboardingData) {
       return { error: "Erreur lors de la mise à jour de l'entreprise" }
     }
 
-    // Mark user as onboarded and active
+    // Mark current user as onboarded and active
     const { error: userUpdateError } = await supabase
       .from("users")
       .update({
