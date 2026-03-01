@@ -4,7 +4,12 @@ import { useState, useCallback, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { PublicHeader } from "@/components/public/public-header"
 import { SitesList } from "./sites-list"
-import { SitesMapView } from "./sites-map-view"
+import dynamic from "next/dynamic"
+
+const SitesMapView = dynamic(() => import("./sites-map-view").then((m) => ({ default: m.SitesMapView })), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-muted animate-pulse" />,
+})
 import { BookingDialog, BOOKING_STATE_KEY, type SavedBookingState } from "./booking-dialog"
 import { SiteDetailsDialog } from "./site-details-dialog"
 import { PaymentSuccessModal } from "./payment-success-modal"
