@@ -1,48 +1,58 @@
 "use client"
 
-import { useRef, useEffect } from "react"
-import { mapStyles, loadGoogleMapsScript } from "@/lib/google-maps"
+import { useEffect, useRef } from "react"
+import maplibregl from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
+import { useLocale } from "next-intl"
+import { getDeskeoMapStyle } from "@/lib/map-style"
+
+function createMarkerEl(): HTMLDivElement {
+  const el = document.createElement("div")
+  el.style.width = "24px"
+  el.style.height = "24px"
+  el.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="10" fill="#000000" stroke="white" stroke-width="2"/>
+  </svg>`
+  return el
+}
 
 export function SiteLocationMap({ lat, lng }: { lat: number; lng: number }) {
-  const mapRef = useRef<HTMLDivElement>(null)
+  const locale = useLocale()
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-    if (!apiKey || !mapRef.current) return
+    if (!mapContainerRef.current) return
 
-    loadGoogleMapsScript(apiKey)
-      .then(() => {
-        if (!mapRef.current) return
+    let cancelled = false
 
-        const position = { lat, lng }
-        const map = new google.maps.Map(mapRef.current, {
-          center: position,
-          zoom: 15,
-          styles: mapStyles,
-          disableDefaultUI: true,
-          zoomControl: true,
-          mapTypeControl: false,
-          streetViewControl: false,
-        })
+    getDeskeoMapStyle(locale).then((style) => {
+      if (cancelled || !mapContainerRef.current) return
 
-        new google.maps.Marker({
-          position,
-          map,
-          icon: {
-            url: `data:image/svg+xml,${encodeURIComponent(`
-              <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="12" cy="12" r="10" fill="#000000" stroke="white" stroke-width="2"/>
-              </svg>
-            `)}`,
-            scaledSize: new google.maps.Size(24, 24),
-            anchor: new google.maps.Point(12, 12),
-          },
-        })
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style,
+        center: [lng, lat],
+        zoom: 15,
+        attributionControl: false,
+        scrollZoom: false,
       })
-      .catch((error) => {
-        console.error("Error loading Google Maps:", error)
-      })
-  }, [lat, lng])
 
-  return <div ref={mapRef} className="h-full w-full rounded-2xl" />
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+
+      new maplibregl.Marker({ element: createMarkerEl() })
+        .setLngLat([lng, lat])
+        .addTo(map)
+
+      mapRef.current = map
+    })
+
+    return () => {
+      cancelled = true
+      mapRef.current?.remove()
+      mapRef.current = null
+    }
+  }, [lat, lng, locale])
+
+  return <div ref={mapContainerRef} className="h-full w-full rounded-2xl" />
 }

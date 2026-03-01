@@ -7,6 +7,7 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  serverExternalPackages: ["maplibre-gl"],
   images: {
     unoptimized: true,
     remotePatterns: [

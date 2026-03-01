@@ -1,10 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState, useMemo } from "react"
-import { useTranslations } from "next-intl"
+import { useEffect, useRef, useMemo, useState, useCallback } from "react"
+import maplibregl from "maplibre-gl"
+import "maplibre-gl/dist/maplibre-gl.css"
+import { useLocale } from "next-intl"
 import type { Site } from "@/lib/types/database"
-import { mapStyles, loadGoogleMapsScript } from "@/lib/google-maps"
 import { filterByCity } from "@/lib/utils/site-filters"
+import { getDeskeoMapStyle } from "@/lib/map-style"
 
 interface SiteWithPhotos extends Site {
   photos: string[]
@@ -19,22 +21,21 @@ interface SitesMapViewProps {
   selectedCity: "paris" | "lyon" | null
 }
 
-function createMarkerSvg(isHovered: boolean): string {
+function createMarkerEl(isHovered: boolean): HTMLDivElement {
   const size = isHovered ? 32 : 24
   const color = isHovered ? "#f97316" : "#000000"
   const strokeWidth = isHovered ? 3 : 2
   const radius = size / 2 - strokeWidth
 
-  return `data:image/svg+xml,${encodeURIComponent(`
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="${color}" stroke="white" stroke-width="${strokeWidth}"/>
-    </svg>
-  `)}`
+  const el = document.createElement("div")
+  el.style.width = `${size}px`
+  el.style.height = `${size}px`
+  el.style.cursor = "pointer"
+  el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="${size / 2}" cy="${size / 2}" r="${radius}" fill="${color}" stroke="white" stroke-width="${strokeWidth}"/>
+  </svg>`
+  return el
 }
-
-// Pre-compute the two possible marker SVGs to avoid recalculating on every hover
-const MARKER_SVG_DEFAULT = createMarkerSvg(false)
-const MARKER_SVG_HOVERED = createMarkerSvg(true)
 
 export function SitesMapView({
   sites,
@@ -43,13 +44,12 @@ export function SitesMapView({
   onSiteClick,
   selectedCity,
 }: SitesMapViewProps) {
-  const t = useTranslations("common")
-  const mapRef = useRef<HTMLDivElement>(null)
-  const googleMapRef = useRef<google.maps.Map | null>(null)
-  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map())
+  const locale = useLocale()
+  const mapContainerRef = useRef<HTMLDivElement>(null)
+  const mapRef = useRef<maplibregl.Map | null>(null)
+  const markersRef = useRef<Map<string, maplibregl.Marker>>(new Map())
   const prevHoveredRef = useRef<string | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [hasApiKey, setHasApiKey] = useState(true)
 
   const filteredSites = useMemo(() => {
     return filterByCity(sites, selectedCity).filter(
@@ -57,155 +57,139 @@ export function SitesMapView({
     )
   }, [sites, selectedCity])
 
-  // Initialize Google Maps
+  // Stable callback refs to avoid marker re-creation
+  const onSiteClickRef = useRef(onSiteClick)
+  onSiteClickRef.current = onSiteClick
+  const onHoverRef = useRef(onHover)
+  onHoverRef.current = onHover
+
+  // Initialize map
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    if (!mapContainerRef.current) return
 
-    if (!apiKey) {
-      setHasApiKey(false)
-      return
-    }
-    if (!mapRef.current) return
+    let cancelled = false
 
-    loadGoogleMapsScript(apiKey)
-      .then(() => {
-        if (!mapRef.current) return
+    getDeskeoMapStyle(locale).then((style) => {
+      if (cancelled || !mapContainerRef.current) return
 
-        const map = new google.maps.Map(mapRef.current, {
-          center: { lat: 48.8566, lng: 2.3522 }, // Paris
-          zoom: 11,
-          styles: mapStyles,
-          disableDefaultUI: true,
-          zoomControl: true,
-          fullscreenControl: true,
-          mapTypeControl: false,
-          streetViewControl: false,
-        })
-
-        googleMapRef.current = map
-        setIsLoaded(true)
+      const map = new maplibregl.Map({
+        container: mapContainerRef.current,
+        style,
+        center: [2.3522, 48.8566], // Paris
+        zoom: 11,
+        attributionControl: false,
       })
-      .catch((error) => {
-        console.error("Error loading Google Maps:", error)
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }))
+
+      map.on("load", () => {
+        if (!cancelled) {
+          mapRef.current = map
+          setIsLoaded(true)
+        }
       })
+    })
 
     return () => {
-      markersRef.current.forEach((marker) => marker.setMap(null))
+      cancelled = true
+      markersRef.current.forEach((m) => m.remove())
       markersRef.current.clear()
+      mapRef.current?.remove()
+      mapRef.current = null
+      setIsLoaded(false)
     }
-  }, [])
+  }, [locale])
 
   // Update markers when sites change
   useEffect(() => {
-    if (!isLoaded || !googleMapRef.current) return
-
-    const map = googleMapRef.current
+    if (!isLoaded || !mapRef.current) return
 
     // Remove old markers
-    markersRef.current.forEach((marker) => marker.setMap(null))
+    markersRef.current.forEach((m) => m.remove())
     markersRef.current.clear()
 
     // Add new markers
     filteredSites.forEach((site) => {
       if (!site.latitude || !site.longitude) return
 
-      const position = { lat: site.latitude, lng: site.longitude }
+      const el = createMarkerEl(false)
 
-      const marker = new google.maps.Marker({
-        position,
-        map,
-        title: site.name,
-        icon: {
-          url: MARKER_SVG_DEFAULT,
-          scaledSize: new google.maps.Size(24, 24),
-          anchor: new google.maps.Point(12, 12),
-        },
-      })
+      el.addEventListener("click", () => onSiteClickRef.current(site))
+      el.addEventListener("mouseenter", () => onHoverRef.current(site.id))
+      el.addEventListener("mouseleave", () => onHoverRef.current(null))
 
-      marker.addListener("click", () => {
-        onSiteClick(site)
-      })
-
-      marker.addListener("mouseover", () => onHover(site.id))
-      marker.addListener("mouseout", () => onHover(null))
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat([site.longitude, site.latitude])
+        .addTo(mapRef.current!)
 
       markersRef.current.set(site.id, marker)
     })
-  }, [isLoaded, filteredSites, onHover, onSiteClick])
-
-  // Center map on filtered sites only when city changes
-  useEffect(() => {
-    if (!isLoaded || !googleMapRef.current) return
-    if (filteredSites.length === 0) return
-
-    const map = googleMapRef.current
-    const bounds = new google.maps.LatLngBounds()
-
-    filteredSites.forEach((site) => {
-      if (site.latitude && site.longitude) {
-        bounds.extend({ lat: site.latitude, lng: site.longitude })
-      }
-    })
-
-    map.fitBounds(bounds)
-
-    // Don't zoom in too much
-    const listener = google.maps.event.addListener(map, "idle", () => {
-      const zoom = map.getZoom()
-      if (zoom && zoom > 15) {
-        map.setZoom(15)
-      }
-      google.maps.event.removeListener(listener)
-    })
   }, [isLoaded, filteredSites])
 
-  // Update marker appearance on hover (only update the 2 affected markers)
+  // Fit bounds when filtered sites change
+  useEffect(() => {
+    if (!isLoaded || !mapRef.current || filteredSites.length === 0) return
+
+    const bounds = new maplibregl.LngLatBounds()
+    filteredSites.forEach((site) => {
+      if (site.latitude && site.longitude) {
+        bounds.extend([site.longitude, site.latitude])
+      }
+    })
+
+    mapRef.current.fitBounds(bounds, { padding: 40, maxZoom: 15 })
+  }, [isLoaded, filteredSites])
+
+  // Update marker appearance on hover
   useEffect(() => {
     if (!isLoaded) return
 
-    // Reset previous hovered marker
+    // Reset previous
     if (prevHoveredRef.current) {
       const prev = markersRef.current.get(prevHoveredRef.current)
       if (prev) {
-        prev.setIcon({
-          url: MARKER_SVG_DEFAULT,
-          scaledSize: new google.maps.Size(24, 24),
-          anchor: new google.maps.Point(12, 12),
-        })
+        prev.getElement().replaceWith(createMarkerEl(false))
+        // Re-create marker with updated element
+        const site = filteredSites.find((s) => s.id === prevHoveredRef.current)
+        if (site && site.longitude && site.latitude && mapRef.current) {
+          prev.remove()
+          const el = createMarkerEl(false)
+          el.addEventListener("click", () => onSiteClickRef.current(site))
+          el.addEventListener("mouseenter", () =>
+            onHoverRef.current(site.id)
+          )
+          el.addEventListener("mouseleave", () => onHoverRef.current(null))
+          const newMarker = new maplibregl.Marker({ element: el })
+            .setLngLat([site.longitude, site.latitude])
+            .addTo(mapRef.current)
+          markersRef.current.set(site.id, newMarker)
+        }
       }
     }
 
-    // Set new hovered marker
+    // Set new hovered
     if (hoveredSiteId) {
       const curr = markersRef.current.get(hoveredSiteId)
       if (curr) {
-        curr.setIcon({
-          url: MARKER_SVG_HOVERED,
-          scaledSize: new google.maps.Size(32, 32),
-          anchor: new google.maps.Point(16, 16),
-        })
+        const site = filteredSites.find((s) => s.id === hoveredSiteId)
+        if (site && site.longitude && site.latitude && mapRef.current) {
+          curr.remove()
+          const el = createMarkerEl(true)
+          el.addEventListener("click", () => onSiteClickRef.current(site))
+          el.addEventListener("mouseenter", () =>
+            onHoverRef.current(site.id)
+          )
+          el.addEventListener("mouseleave", () => onHoverRef.current(null))
+          const newMarker = new maplibregl.Marker({ element: el })
+            .setLngLat([site.longitude, site.latitude])
+            .addTo(mapRef.current)
+          markersRef.current.set(site.id, newMarker)
+        }
       }
     }
 
     prevHoveredRef.current = hoveredSiteId
-  }, [hoveredSiteId, isLoaded])
+  }, [hoveredSiteId, isLoaded, filteredSites])
 
-  if (!hasApiKey) {
-    return (
-      <div className="flex h-full w-full items-center justify-center rounded-2xl bg-muted/50">
-        <div className="text-center p-6">
-          <p className="text-muted-foreground">
-            {t("map.unavailable")}
-          </p>
-          <p className="text-xs text-muted-foreground mt-2">
-            {t("map.configureKey")}
-          </p>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div ref={mapRef} className="h-full w-full rounded-2xl" />
-  )
+  return <div ref={mapContainerRef} className="h-full w-full rounded-2xl" />
 }
