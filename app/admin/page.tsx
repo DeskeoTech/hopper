@@ -1,5 +1,6 @@
 import { createClient, getAdminProfile } from "@/lib/supabase/server"
 import { getNewsPosts } from "@/lib/actions/news"
+import { getCompanyPaymentStatuses, getSubscriptionStatuses, type CompanyPaymentStatus, type StripeSubscriptionStatus } from "@/lib/actions/stripe"
 import { ActiveClientsTable } from "@/components/admin/accueil/active-clients-table"
 import { SiteSwitcher } from "@/components/admin/accueil/site-switcher"
 
@@ -32,8 +33,8 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .from("users")
       .select(`
         id, first_name, last_name, company_id,
-        companies!inner(name, main_site_id, sites(id, name)),
-        contracts!inner(id, status, start_date, end_date)
+        companies!inner(name, main_site_id, customer_id_stripe, sites(id, name)),
+        contracts!inner(id, status, start_date, end_date, Subscription_ID)
       `)
       .eq("contracts.status", "active")
       .lte("contracts.start_date", selectedDate)
@@ -45,7 +46,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .from("users")
       .select(`
         id, first_name, last_name, company_id,
-        companies!inner(name, main_site_id, subscription_start_date, subscription_end_date, sites(id, name))
+        companies!inner(name, main_site_id, customer_id_stripe, subscription_start_date, subscription_end_date, sites(id, name))
       `)
       .not("companies.subscription_start_date", "is", null)
       .lte("companies.subscription_start_date", selectedDate)
@@ -57,7 +58,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       .from("users")
       .select(`
         id, first_name, last_name, company_id,
-        companies!inner(name, main_site_id, from_spacebring, spacebring_start_date, sites(id, name))
+        companies!inner(name, main_site_id, customer_id_stripe, from_spacebring, spacebring_start_date, sites(id, name))
       `)
       .eq("companies.from_spacebring", true)
       .not("companies.spacebring_start_date", "is", null)
@@ -75,19 +76,32 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   ])
 
   // Transformer les clients actifs (contrats + spacebring, dédupliqués)
+  type CompanyData = { name: string | null; main_site_id: string | null; customer_id_stripe: string | null; sites: { id: string; name: string } | null }
+  type ContractData = { id: string; status: string; start_date: string; end_date: string | null; Subscription_ID: string | null }
+
   const seenUserIds = new Set<string>()
-  const activeClients: { id: string; firstName: string | null; lastName: string | null; companyId: string | null; companyName: string | null; siteId: string | null; siteName: string | null }[] = []
+  // Map companyId -> subscription ID (first active contract with subscription)
+  const companySubscriptionMap = new Map<string, string>()
+  const activeClients: { id: string; firstName: string | null; lastName: string | null; companyId: string | null; companyName: string | null; customerIdStripe: string | null; siteId: string | null; siteName: string | null }[] = []
 
   for (const u of activeClientsResult.data || []) {
     if (seenUserIds.has(u.id)) continue
     seenUserIds.add(u.id)
-    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    const company = u.companies as unknown as CompanyData | null
+    // Extract subscription ID from contract
+    const contracts = u.contracts as unknown as ContractData | ContractData[] | null
+    const contractArr = Array.isArray(contracts) ? contracts : contracts ? [contracts] : []
+    const subId = contractArr.find((c) => c.Subscription_ID)?.Subscription_ID
+    if (subId && u.company_id && !companySubscriptionMap.has(u.company_id)) {
+      companySubscriptionMap.set(u.company_id, subId)
+    }
     activeClients.push({
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
       companyId: u.company_id,
       companyName: company?.name || null,
+      customerIdStripe: company?.customer_id_stripe || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,
     })
@@ -96,13 +110,14 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   for (const u of subscriptionClientsResult.data || []) {
     if (seenUserIds.has(u.id)) continue
     seenUserIds.add(u.id)
-    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    const company = u.companies as unknown as CompanyData | null
     activeClients.push({
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
       companyId: u.company_id,
       companyName: company?.name || null,
+      customerIdStripe: company?.customer_id_stripe || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,
     })
@@ -111,13 +126,14 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
   for (const u of offPlatformClientsResult.data || []) {
     if (seenUserIds.has(u.id)) continue
     seenUserIds.add(u.id)
-    const company = u.companies as unknown as { name: string | null; main_site_id: string | null; sites: { id: string; name: string } | null } | null
+    const company = u.companies as unknown as CompanyData | null
     activeClients.push({
       id: u.id,
       firstName: u.first_name,
       lastName: u.last_name,
       companyId: u.company_id,
       companyName: company?.name || null,
+      customerIdStripe: company?.customer_id_stripe || null,
       siteId: company?.sites?.id || null,
       siteName: company?.sites?.name || null,
     })
@@ -135,6 +151,36 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
     ? activeClients
     : activeClients.filter((c) => c.siteId === selectedSiteId)
 
+  // Fetch payment statuses and subscription statuses in parallel
+  const uniqueStripeIds = [...new Set(
+    filteredClients
+      .filter((c) => c.customerIdStripe)
+      .map((c) => c.customerIdStripe!)
+  )]
+  const uniqueSubIds = [...new Set(companySubscriptionMap.values())]
+
+  const [paymentResult, subResult] = await Promise.all([
+    uniqueStripeIds.length > 0
+      ? getCompanyPaymentStatuses(uniqueStripeIds)
+      : null,
+    uniqueSubIds.length > 0
+      ? getSubscriptionStatuses(uniqueSubIds)
+      : null,
+  ])
+
+  const paymentStatuses: Record<string, CompanyPaymentStatus> =
+    paymentResult && "statuses" in paymentResult ? paymentResult.statuses : {}
+  const subscriptionStatuses: Record<string, StripeSubscriptionStatus> =
+    subResult && "statuses" in subResult ? subResult.statuses : {}
+
+  // Build companyId -> subscription status mapping
+  const companySubStatuses: Record<string, StripeSubscriptionStatus> = {}
+  for (const [companyId, subId] of companySubscriptionMap) {
+    if (subscriptionStatuses[subId]) {
+      companySubStatuses[companyId] = subscriptionStatuses[subId]
+    }
+  }
+
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Site Switcher */}
@@ -143,7 +189,7 @@ export default async function AccueilPage({ searchParams }: AccueilPageProps) {
       </div>
 
       {/* Tableau des clients avec forfait actif */}
-      <ActiveClientsTable clients={filteredClients} selectedDate={selectedDate} />
+      <ActiveClientsTable clients={filteredClients} selectedDate={selectedDate} paymentStatuses={paymentStatuses} subscriptionStatuses={companySubStatuses} />
 
       {/* Accès rapide (collapsible) */}
       <QuickAccessSection />

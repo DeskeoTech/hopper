@@ -120,6 +120,8 @@ export default async function ComptePage() {
         notes: b.notes,
         hubspot_deal_id: b.hubspot_deal_id,
         netsuite_invoice_id: b.netsuite_invoice_id,
+        stripe_checkout_session_id: b.stripe_checkout_session_id,
+        referral: b.referral,
         created_at: b.created_at,
         updated_at: b.updated_at,
         resource_name: resource?.name || null,

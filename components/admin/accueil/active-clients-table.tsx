@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import type { CompanyPaymentStatus, StripeSubscriptionStatus } from "@/lib/actions/stripe"
 
 interface ActiveClient {
   id: string
@@ -19,6 +20,7 @@ interface ActiveClient {
   lastName: string | null
   companyId: string | null
   companyName: string | null
+  customerIdStripe: string | null
   siteId: string | null
   siteName: string | null
 }
@@ -26,16 +28,59 @@ interface ActiveClient {
 interface ActiveClientsTableProps {
   clients: ActiveClient[]
   selectedDate: string // YYYY-MM-DD
+  paymentStatuses?: Record<string, CompanyPaymentStatus>
+  subscriptionStatuses?: Record<string, StripeSubscriptionStatus>
 }
 
 interface CompanyGroup {
   companyId: string | null
   companyName: string
+  customerIdStripe: string | null
   siteName: string | null
   clients: ActiveClient[]
 }
 
-function CompanyGroupRow({ group }: { group: CompanyGroup }) {
+const SUB_STATUS_LABELS: Record<string, { label: string; color: string }> = {
+  active: { label: "actif", color: "bg-success" },
+  trialing: { label: "essai", color: "bg-blue-500" },
+  past_due: { label: "impayé", color: "bg-destructive" },
+  unpaid: { label: "impayé", color: "bg-destructive" },
+  canceled: { label: "annulé", color: "bg-muted-foreground/40" },
+  incomplete: { label: "incomplet", color: "bg-orange-500" },
+  paused: { label: "en pause", color: "bg-orange-500" },
+}
+
+function PaymentDot({ status, subscriptionStatus }: { status: CompanyPaymentStatus; subscriptionStatus?: StripeSubscriptionStatus }) {
+  // Prefer subscription status if available
+  if (subscriptionStatus && SUB_STATUS_LABELS[subscriptionStatus]) {
+    const config = SUB_STATUS_LABELS[subscriptionStatus]
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        Abonnement :
+        <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", config.color)} />
+        {config.label}
+        <span className="ml-1">|</span>
+      </span>
+    )
+  }
+
+  // Fallback to charge-based payment status
+  const dotColor = status === "ok"
+    ? "bg-success"
+    : status === "failed"
+      ? "bg-destructive"
+      : "bg-muted-foreground/40"
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+      Statut du dernier paiement :
+      <span className={cn("inline-block h-2 w-2 shrink-0 rounded-full", dotColor)} />
+      {status}
+      <span className="ml-1">|</span>
+    </span>
+  )
+}
+
+function CompanyGroupRow({ group, paymentStatus, subscriptionStatus }: { group: CompanyGroup; paymentStatus: CompanyPaymentStatus; subscriptionStatus?: StripeSubscriptionStatus }) {
   const [isOpen, setIsOpen] = useState(false)
 
   return (
@@ -64,11 +109,15 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
               ) : (
                 <span className="font-semibold">{group.companyName}</span>
               )}
+              
               <span className="text-xs text-muted-foreground">
                 ({group.clients.length})
               </span>
             </div>
-            <span className="text-sm text-muted-foreground hidden sm:inline">{group.siteName || "—"}</span>
+            <div className="flex items-center gap-2">
+              <PaymentDot status={paymentStatus} subscriptionStatus={subscriptionStatus} />
+              <span className="text-sm text-muted-foreground hidden sm:inline">{group.siteName || "—"}</span>
+            </div>
           </div>
         </TableCell>
       </TableRow>
@@ -101,7 +150,7 @@ function CompanyGroupRow({ group }: { group: CompanyGroup }) {
   )
 }
 
-export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTableProps) {
+export function ActiveClientsTable({ clients, selectedDate, paymentStatuses = {}, subscriptionStatuses = {} }: ActiveClientsTableProps) {
   // Grouper par entreprise
   const companyGroups = useMemo(() => {
     const groups = new Map<string, CompanyGroup>()
@@ -114,6 +163,7 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
         groups.set(key, {
           companyId: client.companyId,
           companyName: client.companyName || "Sans entreprise",
+          customerIdStripe: client.customerIdStripe,
           siteName: client.siteName,
           clients: [client],
         })
@@ -151,9 +201,15 @@ export function ActiveClientsTable({ clients, selectedDate }: ActiveClientsTable
         <div className="rounded-lg bg-card max-h-[400px] overflow-y-auto">
           <Table>
             <TableBody>
-              {companyGroups.map((group) => (
-                <CompanyGroupRow key={group.companyId || group.companyName} group={group} />
-              ))}
+              {companyGroups.map((group) => {
+                const status: CompanyPaymentStatus = group.customerIdStripe
+                  ? (paymentStatuses[group.customerIdStripe] || "none")
+                  : "none"
+                const subStatus = group.companyId ? subscriptionStatuses[group.companyId] : undefined
+                return (
+                  <CompanyGroupRow key={group.companyId || group.companyName} group={group} paymentStatus={status} subscriptionStatus={subStatus} />
+                )
+              })}
             </TableBody>
           </Table>
         </div>

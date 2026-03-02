@@ -221,7 +221,8 @@ export async function createMeetingRoomBooking(data: {
   creditsToUse: number
   companyId: string
   referral?: string
-  notes?: string 
+  notes?: string
+  stripeCheckoutSessionId?: string
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
@@ -309,6 +310,7 @@ export async function createMeetingRoomBooking(data: {
       credits_used: data.creditsToUse,
       ...(data.referral ? { referral: data.referral } : {}),
       ...(data.notes ? { notes: data.notes } : {}),
+      ...(data.stripeCheckoutSessionId ? { stripe_checkout_session_id: data.stripeCheckoutSessionId } : {}),
     })
     .select("id")
     .single()
