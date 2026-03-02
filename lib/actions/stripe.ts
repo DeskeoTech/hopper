@@ -554,16 +554,28 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
       return { error: "Aucune ressource disponible sur ce site" }
     }
 
-    // Find user by email
+    // Find user by email and update company's Stripe customer ID if needed
     let userId: string | null = null
     if (customerEmail) {
       const { data: user } = await supabase
         .from("users")
-        .select("id")
+        .select("id, company_id")
         .eq("email", customerEmail)
         .maybeSingle()
 
       userId = user?.id || null
+
+      // Sauvegarder le customer ID Stripe dans la company si un nouveau a été créé
+      const stripeCustomerId = typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id
+      if (stripeCustomerId && user?.company_id) {
+        await supabase
+          .from("companies")
+          .update({ customer_id_stripe: stripeCustomerId })
+          .eq("id", user.company_id)
+          .is("customer_id_stripe", null)
+      }
     }
 
     // Create the booking
