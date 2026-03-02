@@ -104,15 +104,12 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
-            <Briefcase className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <h1 className="type-h2 text-foreground">Clients</h1>
-            <p className="mt-1 text-muted-foreground">Gérez vos entreprises clientes et leurs abonnements</p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="type-h2 text-foreground">Clients</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {transformedCompanies.length} entreprise{transformedCompanies.length !== 1 ? "s" : ""}
+          </p>
         </div>
         <CreateCompanyModal sites={sites || []} />
       </div>
@@ -126,9 +123,11 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
       {transformedCompanies && transformedCompanies.length > 0 ? (
         <CompaniesTable companies={transformedCompanies} isTechAdmin={isTechAdmin} />
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-lg bg-card p-12">
-          <Briefcase className="mb-4 h-12 w-12 text-muted-foreground/50" />
-          <p className="text-muted-foreground">
+        <div className="rounded-[20px] bg-card p-8 text-center">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+            <Briefcase className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="mt-3 text-sm text-muted-foreground">
             {search || status || period || site ? "Aucun client ne correspond à vos critères" : "Aucun client trouvé"}
           </p>
         </div>

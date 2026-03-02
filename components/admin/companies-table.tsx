@@ -2,17 +2,9 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle, Trash2 } from "lucide-react"
+import { MoreVertical, XCircle, Trash2, Users, ChevronLeft, ChevronRight } from "lucide-react"
 import { getCompanyPaymentStatuses, type CompanyPaymentStatus } from "@/lib/actions/stripe"
 import { CompanyPaymentStatusBadge } from "./companies/company-payment-status-badge"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,8 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Pagination, PaginationInfo } from "@/components/ui/pagination"
-import { SubscriptionStatusBadge, getSubscriptionStatus, type SubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
+import { SubscriptionStatusBadge, type SubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
 import { CancelSubscriptionModal } from "@/components/admin/abonnements/cancel-subscription-modal"
 import {
   AlertDialog,
@@ -35,10 +26,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { deleteCompany } from "@/lib/actions/companies"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 import type { Company, SubscriptionPeriod } from "@/lib/types/database"
-
-type SortField = "name" | "userCount" | "mainSiteName" | "period" | "startDate" | "endDate" | "status"
-type SortOrder = "asc" | "desc"
 
 const PAGE_SIZE = 15
 
@@ -53,10 +42,23 @@ interface CompaniesTableProps {
   isTechAdmin?: boolean
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .map(w => w[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+}
+
+function formatPeriod(period: SubscriptionPeriod | null) {
+  if (!period) return null
+  return period === "month" ? "Mensuel" : "Hebdomadaire"
+}
+
 export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTableProps) {
   const router = useRouter()
-  const [sortField, setSortField] = useState<SortField>("name")
-  const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
   const [currentPage, setCurrentPage] = useState(1)
   const [confirmDelete, setConfirmDelete] = useState<CompanyWithCounts | null>(null)
   const [loading, setLoading] = useState(false)
@@ -75,69 +77,14 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
     }
   }, [])
 
-  const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc")
-    } else {
-      setSortField(field)
-      setSortOrder("asc")
-    }
-    setCurrentPage(1)
-  }
-
-  const sortedCompanies = useMemo(() => {
-    return [...companies].sort((a, b) => {
-      let aValue: string | number
-      let bValue: string | number
-
-      switch (sortField) {
-        case "name":
-          aValue = (a.name || "").toLowerCase()
-          bValue = (b.name || "").toLowerCase()
-          break
-        case "userCount":
-          aValue = a.userCount
-          bValue = b.userCount
-          break
-        case "mainSiteName":
-          aValue = (a.mainSiteName || "").toLowerCase()
-          bValue = (b.mainSiteName || "").toLowerCase()
-          break
-        case "period":
-          aValue = a.subscription_period || ""
-          bValue = b.subscription_period || ""
-          break
-        case "startDate":
-          aValue = a.subscription_start_date || ""
-          bValue = b.subscription_start_date || ""
-          break
-        case "endDate":
-          aValue = a.subscription_end_date || "9999-99-99"
-          bValue = b.subscription_end_date || "9999-99-99"
-          break
-        case "status":
-          const statusOrder = { actif: 0, expirant: 1, inactif: 2 }
-          aValue = statusOrder[a.subscriptionStatus]
-          bValue = statusOrder[b.subscriptionStatus]
-          break
-        default:
-          return 0
-      }
-
-      if (aValue < bValue) return sortOrder === "asc" ? -1 : 1
-      if (aValue > bValue) return sortOrder === "asc" ? 1 : -1
-      return 0
-    })
-  }, [companies, sortField, sortOrder])
-
   // Pagination
-  const totalPages = Math.ceil(sortedCompanies.length / PAGE_SIZE)
+  const totalPages = Math.ceil(companies.length / PAGE_SIZE)
   const paginatedCompanies = useMemo(() => {
     const start = (currentPage - 1) * PAGE_SIZE
-    return sortedCompanies.slice(start, start + PAGE_SIZE)
-  }, [sortedCompanies, currentPage])
+    return companies.slice(start, start + PAGE_SIZE)
+  }, [companies, currentPage])
 
-  // Reset page when companies change (e.g., filters applied)
+  // Reset page when companies change
   useEffect(() => {
     setCurrentPage(1)
   }, [companies.length])
@@ -146,31 +93,6 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
   useEffect(() => {
     fetchPaymentStatuses(paginatedCompanies)
   }, [paginatedCompanies, fetchPaymentStatuses])
-
-  const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="ml-2 h-4 w-4" />
-    ) : (
-      <ArrowDown className="ml-2 h-4 w-4" />
-    )
-  }
-
-  const formatPeriod = (period: SubscriptionPeriod | null) => {
-    if (!period) return "-"
-    return period === "month" ? "Mensuel" : "Hebdomadaire"
-  }
-
-  const formatDate = (date: string | null) => {
-    if (!date) return "-"
-    return new Date(date).toLocaleDateString("fr-FR", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    })
-  }
 
   const handleDeleteCompany = async () => {
     if (!confirmDelete) return
@@ -185,130 +107,79 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
     }
   }
 
+  const startItem = (currentPage - 1) * PAGE_SIZE + 1
+  const endItem = Math.min(currentPage * PAGE_SIZE, companies.length)
+
   return (
     <div className="space-y-4">
-      <div className="overflow-x-auto rounded-[20px] bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-b border-border/50 hover:bg-transparent">
-              <TableHead
-                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
-                onClick={() => handleSort("name")}
-              >
-                <div className="flex items-center">
-                  Nom
-                  <SortIcon field="name" />
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none text-center text-xs font-bold uppercase tracking-wide"
-                onClick={() => handleSort("userCount")}
-              >
-                <div className="flex items-center justify-center">
-                  <span className="hidden sm:inline">Utilisateurs</span>
-                  <span className="sm:hidden">Users</span>
-                  <SortIcon field="userCount" />
-                </div>
-              </TableHead>
-              <TableHead
-                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide lg:table-cell"
-                onClick={() => handleSort("mainSiteName")}
-              >
-                <div className="flex items-center">
-                  Site
-                  <SortIcon field="mainSiteName" />
-                </div>
-              </TableHead>
-              <TableHead
-                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide md:table-cell"
-                onClick={() => handleSort("period")}
-              >
-                <div className="flex items-center">
-                  Pass
-                  <SortIcon field="period" />
-                </div>
-              </TableHead>
-              <TableHead
-                className="hidden cursor-pointer select-none text-xs font-bold uppercase tracking-wide md:table-cell"
-                onClick={() => handleSort("startDate")}
-              >
-                <div className="flex items-center">
-                  Début
-                  <SortIcon field="startDate" />
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
-                onClick={() => handleSort("endDate")}
-              >
-                <div className="flex items-center">
-                  Fin
-                  <SortIcon field="endDate" />
-                </div>
-              </TableHead>
-              <TableHead className="hidden text-xs font-bold uppercase tracking-wide lg:table-cell">
-                Paiement
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
-                onClick={() => handleSort("status")}
-              >
-                <div className="flex items-center">
-                  Statut
-                  <SortIcon field="status" />
-                </div>
-              </TableHead>
-              <TableHead className="w-[50px]">
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedCompanies.map((company) => (
-              <TableRow
+      <div className="rounded-[20px] bg-card">
+        <div className="divide-y divide-gray-100">
+          {paginatedCompanies.map((company) => {
+            const periodLabel = formatPeriod(company.subscription_period)
+            return (
+              <div
                 key={company.id}
-                className="cursor-pointer border-b border-border/30 hover:bg-muted/30"
+                className="flex items-center gap-4 px-5 py-4 transition-colors hover:bg-gray-50/50 cursor-pointer sm:px-6"
                 onClick={() => router.push(`/admin/clients/${company.id}`)}
               >
-                <TableCell className="font-semibold uppercase">
-                  {company.name || "Sans nom"}
-                </TableCell>
-                <TableCell className="text-center">
-                  {company.userCount}
-                </TableCell>
-                <TableCell className="hidden font-semibold uppercase lg:table-cell">
-                  {company.mainSiteName || "-"}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {formatPeriod(company.subscription_period)}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {formatDate(company.subscription_start_date)}
-                </TableCell>
-                <TableCell>
-                  {formatDate(company.subscription_end_date)}
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                {/* Initials avatar */}
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-xs font-bold text-gray-500">
+                  {getInitials(company.name || "?")}
+                </div>
+
+                {/* Company info */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="truncate font-bold text-foreground">
+                      {company.name || "Sans nom"}
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 text-sm text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      {company.userCount}
+                    </span>
+                  </div>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5">
+                    {company.mainSiteName && (
+                      <p className="text-xs text-muted-foreground">{company.mainSiteName}</p>
+                    )}
+                    {periodLabel && (
+                      <p className="text-xs text-muted-foreground">{periodLabel}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Payment status */}
+                <div className="hidden shrink-0 sm:block">
                   {company.customer_id_stripe ? (
                     <CompanyPaymentStatusBadge
                       status={paymentStatuses[company.customer_id_stripe] || "none"}
                     />
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
+                  ) : null}
+                </div>
+
+                {/* Subscription status */}
+                <div className="shrink-0">
                   <SubscriptionStatusBadge status={company.subscriptionStatus} />
-                </TableCell>
-                <TableCell onClick={(e) => e.stopPropagation()}>
+                </div>
+
+                {/* Actions menu */}
+                <div onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
-                        <MoreHorizontal className="h-4 w-4" />
+                      <button
+                        type="button"
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      >
+                        <MoreVertical className="h-4 w-4" />
                         <span className="sr-only">Actions</span>
-                      </Button>
+                      </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => router.push(`/admin/clients/${company.id}`)}
+                      >
+                        Voir détails
+                      </DropdownMenuItem>
                       {company.subscriptionStatus !== "inactif" && (
                         <CancelSubscriptionModal
                           companyId={company.id}
@@ -325,11 +196,6 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
                           }
                         />
                       )}
-                      <DropdownMenuItem
-                        onClick={() => router.push(`/admin/clients/${company.id}`)}
-                      >
-                        Voir détails
-                      </DropdownMenuItem>
                       {isTechAdmin && (
                         <DropdownMenuItem
                           onClick={() => setConfirmDelete(company)}
@@ -341,26 +207,42 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                </div>
+              </div>
+            )
+          })}
+        </div>
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <PaginationInfo
-            currentPage={currentPage}
-            pageSize={PAGE_SIZE}
-            totalItems={sortedCompanies.length}
-          />
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-          />
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {startItem}–{endItem} sur {companies.length}
+          </p>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => p - 1)}
+              disabled={currentPage === 1}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="px-2 text-sm text-muted-foreground">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(p => p + 1)}
+              disabled={currentPage === totalPages}
+              className="h-8 w-8 p-0"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       )}
 

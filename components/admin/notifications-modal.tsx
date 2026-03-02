@@ -1,15 +1,15 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Bell, CalendarCheck, Circle, FileText, Pin, TicketIcon } from "lucide-react"
+import { Bell, CalendarDays, Clock, FileText, CalendarCheck, TicketIcon, CheckCheck, MapPin, ChevronDown } from "lucide-react"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 
 interface NotificationsModalProps {
   open: boolean
@@ -24,8 +24,8 @@ interface SiteOption {
   label: string
 }
 
-// Type unifié pour tickets + contrats
 type NotificationType = "ticket" | "contract" | "booking"
+type FilterTab = "all" | "contract" | "booking"
 
 interface NotificationItem {
   id: string
@@ -39,12 +39,6 @@ interface NotificationItem {
   updatedAt: string
   pinned: boolean
   sourceId: string
-}
-
-const sourceTableMap: Record<NotificationType, string> = {
-  ticket: "support_tickets",
-  contract: "contracts",
-  booking: "bookings",
 }
 
 // Clé localStorage par utilisateur
@@ -64,21 +58,28 @@ function setLastReadAt(email: string | null, date: string) {
 }
 
 const ticketStatusConfig: Record<string, { label: string; className: string }> = {
-  todo: { label: "À traiter", className: "bg-yellow-100 text-yellow-700" },
-  in_progress: { label: "En cours", className: "bg-blue-100 text-blue-700" },
-  done: { label: "Résolu", className: "bg-green-100 text-green-700" },
+  todo: { label: "À traiter", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  in_progress: { label: "En cours", className: "border border-[#221D1A]/20 text-[#221D1A] bg-[#221D1A]/5" },
+  done: { label: "Résolu", className: "border border-green-200 text-green-600 bg-green-50" },
 }
 
 const bookingStatusConfig: Record<string, { label: string; className: string }> = {
-  confirmed: { label: "Confirmée", className: "bg-indigo-100 text-indigo-700" },
-  pending: { label: "En attente", className: "bg-yellow-100 text-yellow-700" },
-  cancelled: { label: "Annulée", className: "bg-gray-100 text-gray-500" },
+  confirmed: { label: "Confirmée", className: "border border-[#221D1A]/20 text-[#221D1A] bg-[#221D1A]/5" },
+  pending: { label: "En attente", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  cancelled: { label: "Annulée", className: "border border-gray-200 text-gray-400 bg-gray-50" },
 }
 
 const contractStatusConfig: Record<string, { label: string; className: string }> = {
-  active: { label: "Actif", className: "bg-green-100 text-green-700" },
-  suspended: { label: "Suspendu", className: "bg-yellow-100 text-yellow-700" },
-  terminated: { label: "Résilié", className: "bg-gray-100 text-gray-500" },
+  active: { label: "Actif", className: "border border-green-200 text-green-600 bg-green-50" },
+  suspended: { label: "Suspendu", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  terminated: { label: "Terminé", className: "border border-gray-200 text-gray-400 bg-gray-50" },
+}
+
+const resourceTypeLabels: Record<string, string> = {
+  meeting_room: "Salle de réunion",
+  flex_desk: "Poste flexible",
+  bench: "Espace ouvert",
+  fixed_desk: "Poste fixe",
 }
 
 async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
@@ -106,7 +107,7 @@ async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSit
   return (data ?? []).map((t: Record<string, unknown>) => {
     const user = t.user as { first_name: string | null; last_name: string | null } | null
     const site = t.site as { name: string } | null
-    const status = ticketStatusConfig[t.status as string] ?? { label: t.status as string, className: "bg-muted text-muted-foreground" }
+    const status = ticketStatusConfig[t.status as string] ?? { label: t.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
     const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
 
     return {
@@ -126,7 +127,7 @@ async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSit
 }
 
 async function fetchContracts(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
-  let query = supabase
+  const query = supabase
     .from("contracts")
     .select(`
       id, status, start_date, created_at, Number_of_seats,
@@ -152,14 +153,14 @@ async function fetchContracts(supabase: ReturnType<typeof createClient>, filterS
     .map((c: Record<string, unknown>) => {
       const plan = c.plans as { name: string } | null
       const company = c.companies as { name: string; main_site_id: string | null; sites: { name: string } | null } | null
-      const status = contractStatusConfig[c.status as string] ?? { label: c.status as string, className: "bg-muted text-muted-foreground" }
+      const status = contractStatusConfig[c.status as string] ?? { label: c.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
       const seats = c.Number_of_seats as number | null
 
       return {
         id: `contract-${c.id}`,
         type: "contract" as NotificationType,
         title: `Nouveau contrat : ${plan?.name ?? "Plan inconnu"}`,
-        subtitle: company?.name ? `${company.name}${seats ? ` · ${seats} place${seats > 1 ? "s" : ""}` : ""}` : null,
+        subtitle: company?.name ? `${company.name}${seats ? ` \u00B7 ${seats} poste${seats > 1 ? "s" : ""} de travail` : ""}` : null,
         siteName: company?.sites?.name ?? null,
         siteId: company?.main_site_id ?? null,
         statusLabel: status.label,
@@ -172,7 +173,7 @@ async function fetchContracts(supabase: ReturnType<typeof createClient>, filterS
 }
 
 async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
-  let query = supabase
+  const query = supabase
     .from("bookings")
     .select(`
       id, status, start_date, end_date, seats_count, created_at, updated_at,
@@ -198,15 +199,16 @@ async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSi
     .map((b: Record<string, unknown>) => {
       const user = b.user as { first_name: string | null; last_name: string | null } | null
       const resource = b.resource as { name: string | null; type: string | null; site_id: string | null; sites: { name: string } | null } | null
-      const status = bookingStatusConfig[b.status as string] ?? { label: b.status as string, className: "bg-muted text-muted-foreground" }
+      const status = bookingStatusConfig[b.status as string] ?? { label: b.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
       const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
-      const startDate = b.start_date as string | null
+      const seats = b.seats_count as number | null
+      const resourceType = resource?.type ? (resourceTypeLabels[resource.type] || resource.type) : null
 
       return {
         id: `booking-${b.id}`,
         type: "booking" as NotificationType,
-        title: `Réservation : ${resource?.name ?? "Ressource"}`,
-        subtitle: userName ? `${userName}${startDate ? ` · ${new Date(startDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}` : ""}` : null,
+        title: `Réservation : ${userName || resource?.name || "Réservation"}`,
+        subtitle: resourceType ? `${resourceType}${seats ? ` \u00B7 ${seats} personne${seats > 1 ? "s" : ""}` : ""}` : null,
         siteName: resource?.sites?.name ?? null,
         siteId: resource?.site_id ?? null,
         statusLabel: status.label,
@@ -217,6 +219,12 @@ async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSi
       }
     })
 }
+
+const TABS: { value: FilterTab; label: string }[] = [
+  { value: "all", label: "Tous" },
+  { value: "contract", label: "Contrats" },
+  { value: "booking", label: "Réservations" },
+]
 
 export function NotificationsModal({
   open,
@@ -229,22 +237,16 @@ export function NotificationsModal({
   const [selectedSite, setSelectedSite] = useState<string>(siteId ?? "all")
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [lastReadAt, setLastReadAtState] = useState<string | null>(null)
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
+  const [filterTab, setFilterTab] = useState<FilterTab>("all")
+  const [siteDropdownOpen, setSiteDropdownOpen] = useState(false)
   const hasBeenOpened = useRef(false)
-  const [authId, setAuthId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthId(data.user?.id ?? null)
-    })
-  }, [])
-  // Load lastReadAt from localStorage on mount (per-user)
+  // Load lastReadAt from localStorage on mount
   useEffect(() => {
     setLastReadAtState(getLastReadAt(userEmail))
   }, [userEmail])
 
-  // Fetch sites pour le filtre
+  // Fetch sites
   useEffect(() => {
     if (!open) return
 
@@ -264,88 +266,19 @@ export function NotificationsModal({
     fetchSites()
   }, [open])
 
-  // Fetch pinned notification IDs for this admin
-  const fetchPinnedIds = useCallback(async () => {
-    if (!authId) return new Set<string>()
-    const supabase = createClient()
-    const { data } = await supabase
-      .from("admin_notifications")
-      .select("source_table, source_id")
-      .eq("admin_user", authId)
-      .eq("pinned", true)
-
-    const ids = new Set<string>()
-    if (data) {
-      for (const row of data) {
-        // Reverse map: source_table → type prefix
-        const typePrefix = row.source_table === "support_tickets" ? "ticket"
-          : row.source_table === "contracts" ? "contract"
-          : row.source_table === "bookings" ? "booking"
-          : null
-        if (typePrefix) {
-          ids.add(`${typePrefix}-${row.source_id}`)
-        }
-      }
-    }
-    return ids
-  }, [authId])
-
   const fetchAllNotifications = useCallback(async (filterSiteId?: string | null) => {
     const supabase = createClient()
-    const [tickets, contracts, bookings, pinned] = await Promise.all([
+    const [tickets, contracts, bookings] = await Promise.all([
       fetchTickets(supabase, filterSiteId),
       fetchContracts(supabase, filterSiteId),
       fetchBookings(supabase, filterSiteId),
-      fetchPinnedIds(),
     ])
 
-    setPinnedIds(pinned)
-
     const merged = [...tickets, ...contracts, ...bookings]
-      .map((n) => ({ ...n, pinned: pinned.has(n.id) }))
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
     setNotifications(merged)
-  }, [fetchPinnedIds])
-
-  // Toggle pin for a notification
-  const togglePin = useCallback(async (notif: NotificationItem) => {
-    if (!authId) return
-    const supabase = createClient()
-    const sourceTable = sourceTableMap[notif.type]
-    const newPinned = !notif.pinned
-
-    // Upsert: check if row exists
-    const { data: existing } = await supabase
-      .from("admin_notifications")
-      .select("id")
-      .eq("admin_user", authId)
-      .eq("source_table", sourceTable)
-      .eq("source_id", notif.sourceId)
-      .maybeSingle()
-
-    if (existing) {
-      await supabase
-        .from("admin_notifications")
-        .update({ pinned: newPinned })
-        .eq("id", existing.id)
-    } else {
-      await supabase
-        .from("admin_notifications")
-        .insert({ admin_user: authId, source_table: sourceTable, source_id: notif.sourceId, pinned: newPinned })
-    }
-
-    // Update local state
-    setNotifications((prev) =>
-      prev.map((n) => n.id === notif.id ? { ...n, pinned: newPinned } : n)
-    )
-    setPinnedIds((prev) => {
-      const next = new Set(prev)
-      if (newPinned) next.add(notif.id)
-      else next.delete(notif.id)
-      return next
-    })
-  }, [authId])
+  }, [])
 
   // Fetch when modal opens or filter changes
   useEffect(() => {
@@ -369,19 +302,19 @@ export function NotificationsModal({
     onUnreadCountChange?.(computeUnreadCount(notifications, lastReadAt))
   }, [notifications, lastReadAt, onUnreadCountChange, computeUnreadCount])
 
-  // Fetch pour le badge au mount (scope = site de l'admin)
+  // Fetch for badge on mount
   useEffect(() => {
     fetchAllNotifications(siteId)
   }, [siteId, fetchAllNotifications])
 
-  // Track ouverture
+  // Track opening
   useEffect(() => {
     if (open) {
       hasBeenOpened.current = true
     }
   }, [open])
 
-  // Mark as read quand la modale se FERME
+  // Mark as read when modal closes
   useEffect(() => {
     if (!open && hasBeenOpened.current) {
       hasBeenOpened.current = false
@@ -396,145 +329,204 @@ export function NotificationsModal({
     return new Date(updatedAt) > new Date(lastReadAt)
   }
 
-  const unreadCount = computeUnreadCount(notifications, lastReadAt)
+  const handleMarkAllRead = () => {
+    const now = new Date().toISOString()
+    setLastReadAt(userEmail, now)
+    setLastReadAtState(now)
+  }
+
+  // Filter by tab
+  const filteredNotifications = filterTab === "all"
+    ? notifications
+    : notifications.filter(n => n.type === filterTab)
+
+  const allSiteOptions: SiteOption[] = [{ value: "all", label: "Tous les sites" }, ...sites]
+  const selectedSiteLabel = allSiteOptions.find(s => s.value === selectedSite)?.label || "Tous les sites"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bell className="size-5" />
-            Notifications
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[560px] gap-0 overflow-hidden p-0" aria-describedby={undefined}>
+        {/* Header */}
+        <div className="px-6 pb-4 pt-6">
+          <div className="flex items-center gap-3 pr-14">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#221D1A]/5">
+              <Bell className="h-5 w-5 text-[#221D1A]" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
+              <p className="text-sm text-muted-foreground">Gérez vos activités récentes</p>
+            </div>
+          </div>
+        </div>
 
-        {unreadCount > 0 && (
-          <div className="flex items-center gap-2.5 rounded-lg border border-red-200/60 bg-red-500/[0.06] px-3 py-2.5">
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/80 px-1.5 text-[11px] font-semibold text-white">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-            <span className="text-sm text-red-900/70">
-              nouvelle{unreadCount > 1 ? "s" : ""} notification{unreadCount > 1 ? "s" : ""}
-            </span>
+        {/* Filter bar */}
+        <div className="flex items-center justify-between px-6 pb-4">
+          {/* Site dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
+              className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-gray-50"
+            >
+              <MapPin className="h-3.5 w-3.5 text-[#221D1A]" />
+              {selectedSiteLabel}
+              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", siteDropdownOpen && "rotate-180")} />
+            </button>
+            {siteDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setSiteDropdownOpen(false)} />
+                <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-48 overflow-y-auto rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+                  {allSiteOptions.map(site => (
+                    <button
+                      key={site.value}
+                      type="button"
+                      className={cn(
+                        "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50",
+                        selectedSite === site.value && "bg-[#221D1A]/5 font-medium text-[#221D1A]"
+                      )}
+                      onClick={() => {
+                        setSelectedSite(site.value)
+                        setSiteDropdownOpen(false)
+                      }}
+                    >
+                      {site.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Mark all as read */}
+          <button
+            type="button"
+            onClick={handleMarkAllRead}
+            className="flex items-center gap-1.5 text-sm font-medium text-[#221D1A] transition-colors hover:text-[#221D1A]/80"
+          >
+            <CheckCheck className="h-4 w-4" />
+            Tout marquer comme lu
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex border-b border-gray-100 px-6">
+          {TABS.map(tab => (
+            <button
+              key={tab.value}
+              type="button"
+              className={cn(
+                "relative px-4 py-2.5 text-sm font-medium transition-colors",
+                filterTab === tab.value
+                  ? "text-[#221D1A]"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={() => setFilterTab(tab.value)}
+            >
+              {tab.label}
+              {filterTab === tab.value && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#221D1A]" />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Notification list */}
+        {filteredNotifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-50">
+              <Bell className="h-7 w-7 text-gray-300" />
+            </div>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Aucune notification pour le moment.
+            </p>
+          </div>
+        ) : (
+          <div className="max-h-[380px] overflow-y-auto">
+            {filteredNotifications.map((notif) => {
+              const unread = isUnread(notif.updatedAt)
+              return renderNotifItem(notif, unread)
+            })}
           </div>
         )}
 
-        <div className="space-y-4">
-          <SearchableSelect
-            options={[{ value: "all", label: "Tous les sites" }, ...sites]}
-            value={selectedSite}
-            onValueChange={setSelectedSite}
-            placeholder="Filtrer par site"
-          />
-
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                <Bell className="h-7 w-7 text-muted-foreground/40" />
-              </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Aucune notification pour le moment.
-              </p>
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-              {(() => {
-                const pinnedNotifs = notifications.filter((n) => n.pinned)
-                const unpinnedNotifs = notifications.filter((n) => !n.pinned)
-                const unreadNotifs = unpinnedNotifs.filter((n) => isUnread(n.updatedAt))
-                const readNotifs = unpinnedNotifs.filter((n) => !isUnread(n.updatedAt))
-                const sections: React.ReactNode[] = []
-
-                if (pinnedNotifs.length > 0) {
-                  sections.push(
-                    <p key="pinned-label" className="flex items-center gap-1 text-xs font-medium text-muted-foreground px-1">
-                      <Pin className="size-3" />
-                      Épinglées
-                    </p>
-                  )
-                  sections.push(...pinnedNotifs.map((n) => renderNotif(n, isUnread(n.updatedAt))))
-                }
-
-                if (unreadNotifs.length > 0) {
-                  sections.push(
-                    <p key="new-label" className="text-xs font-medium text-muted-foreground px-1">
-                      Nouvelles
-                    </p>
-                  )
-                  sections.push(...unreadNotifs.map((n) => renderNotif(n, true)))
-                }
-
-                if (readNotifs.length > 0) {
-                  sections.push(
-                    <p key="old-label" className="text-xs font-medium text-muted-foreground px-1 pt-2">
-                      Plus anciennes
-                    </p>
-                  )
-                  sections.push(...readNotifs.map((n) => renderNotif(n, false)))
-                }
-
-                return sections
-              })()}
-            </div>
-          )}
+        {/* Footer */}
+        <div className="p-4">
+          <button
+            type="button"
+            onClick={() => onOpenChange(false)}
+            className="w-full rounded-[12px] bg-[#221D1A] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#221D1A]/90"
+          >
+            Voir toutes les notifications
+          </button>
         </div>
       </DialogContent>
     </Dialog>
   )
 
-  function renderNotif(notif: NotificationItem, unread: boolean) {
-    const TypeIcon = notif.type === "contract" ? FileText : notif.type === "booking" ? CalendarCheck : TicketIcon
+  function renderNotifItem(notif: NotificationItem, unread: boolean) {
+    const TypeIcon = notif.type === "contract"
+      ? FileText
+      : notif.type === "booking"
+        ? CalendarCheck
+        : TicketIcon
+
+    const iconBgClass = notif.type === "contract"
+      ? "bg-[#221D1A]/5"
+      : notif.type === "booking"
+        ? "bg-amber-50"
+        : "bg-purple-50"
+
+    const iconTextClass = notif.type === "contract"
+      ? "text-[#221D1A]"
+      : notif.type === "booking"
+        ? "text-amber-500"
+        : "text-purple-500"
+
+    const date = new Date(notif.updatedAt)
 
     return (
       <div
         key={notif.id}
-        className={`group flex items-start justify-between rounded-lg border p-3 text-sm transition-colors cursor-pointer hover:bg-muted/50 ${
-          unread ? "border-primary/30 bg-primary/5" : ""
-        }`}
-        onClick={() => togglePin(notif)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") togglePin(notif) }}
+        className={cn(
+          "flex items-start gap-3 border-b border-gray-50 px-6 py-4",
+          unread && "border-l-[3px] border-l-[#221D1A] bg-[#221D1A]/5"
+        )}
       >
-        <div className="flex items-start gap-2 min-w-0 flex-1">
-          {notif.pinned ? (
-            <Pin className="mt-0.5 size-4 shrink-0 fill-amber-500 text-amber-500" />
-          ) : unread ? (
-            <Circle className="mt-1 size-2 shrink-0 fill-red-500 text-red-500" />
-          ) : (
-            <TypeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        {/* Icon */}
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", iconBgClass)}>
+          <TypeIcon className={cn("h-4.5 w-4.5", iconTextClass)} />
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <p className={cn("text-sm text-foreground", unread ? "font-semibold" : "font-medium")}>
+            {notif.title}
+          </p>
+          {notif.subtitle && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {notif.subtitle}
+            </p>
           )}
-          <div className="flex flex-col gap-1 min-w-0">
-            <span className={`truncate ${unread ? "font-semibold" : "font-medium"}`}>
-              {notif.title}
+          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground/60">
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-3 w-3" />
+              {format(date, "d MMM yyyy", { locale: fr })}
             </span>
-            {notif.subtitle && (
-              <span className="text-muted-foreground text-xs truncate">
-                {notif.subtitle}
-              </span>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              {notif.siteName && (
-                <span className="truncate">{notif.siteName}</span>
-              )}
-              <span>
-                {new Date(notif.updatedAt).toLocaleDateString("fr-FR", {
-                  day: "2-digit",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            </div>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {format(date, "HH:mm")}
+            </span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Pin className={`size-3.5 transition-opacity ${notif.pinned ? "text-amber-500 opacity-100" : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"}`} />
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${notif.statusClassName}`}
-          >
+
+        {/* Status badge + unread dot */}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", notif.statusClassName)}>
             {notif.statusLabel}
           </span>
+          {unread && (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#221D1A]" />
+          )}
         </div>
       </div>
     )

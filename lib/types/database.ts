@@ -2,7 +2,7 @@ export type SiteStatus = "open" | "closed"
 
 export type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
 
-export type Equipment =
+export type KnownEquipment =
   | "barista"
   | "stationnement_velo"
   | "impression"
@@ -16,6 +16,9 @@ export type Equipment =
   | "micro_ondes"
   | "restauration"
   | "wifi"
+
+// Allows known equipment + custom equipment strings
+export type Equipment = KnownEquipment | (string & {})
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
