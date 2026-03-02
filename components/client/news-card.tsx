@@ -102,9 +102,12 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
   // Full variant for client news feed page
   return (
     <article className={cn(
-      "overflow-hidden rounded-[20px] bg-card",
-      isUnread && "ring-2 ring-[#DC2626]"
+      "relative overflow-hidden rounded-[20px] bg-card",
+      isUnread && "bg-foreground/[0.03] ring-1 ring-foreground/10"
     )}>
+      {isUnread && (
+        <div className="absolute left-2 top-3 bottom-3 w-1 rounded-full bg-[#DC2626]" />
+      )}
       {post.image_url && (
         <img
           src={post.image_url}
@@ -127,7 +130,7 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
             </span>
           )}
         </div>
-        <p className="whitespace-pre-line text-sm text-foreground">
+        <p className={cn("whitespace-pre-line text-sm text-foreground", isUnread && "font-semibold")}>
           {post.content}
         </p>
         <div className="mt-4 flex items-center gap-2 text-xs text-foreground/50">

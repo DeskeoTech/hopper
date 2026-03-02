@@ -6,7 +6,7 @@ import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-mod
 import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
-import { getCompanyPaymentStatus, getSubscriptionStatuses } from "@/lib/actions/stripe"
+import { getCompanyPaymentStatus, getSubscriptionStatuses, getCustomerPayments } from "@/lib/actions/stripe"
 import type { StripeSubscriptionStatus } from "@/lib/actions/stripe"
 import { CompanyPaymentStatusBadge } from "@/components/admin/companies/company-payment-status-badge"
 import { DocumentsSection } from "@/components/admin/company-edit/documents-section"
@@ -16,6 +16,7 @@ import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { PassesSection } from "@/components/admin/company-passes/passes-section"
 import { SpacebringSubscriptionCard } from "@/components/admin/company-edit/spacebring-subscription-card"
+import { PaymentHistorySection } from "@/components/admin/company-payments/payment-history-section"
 import { cn } from "@/lib/utils"
 import type { CreditMovement, AdminPassForDisplay, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
@@ -103,12 +104,15 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       .filter((id): id is string => !!id)
   )]
 
-  const [companyPaymentStatus, subscriptionStatusesResult] = await Promise.all([
+  const [companyPaymentStatus, subscriptionStatusesResult, customerChargesResult] = await Promise.all([
     company.customer_id_stripe
       ? getCompanyPaymentStatus(company.customer_id_stripe)
       : null,
     uniqueSubscriptionIds.length > 0
       ? getSubscriptionStatuses(uniqueSubscriptionIds)
+      : null,
+    company.customer_id_stripe
+      ? getCustomerPayments(company.customer_id_stripe)
       : null,
   ])
 
@@ -116,6 +120,10 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     subscriptionStatusesResult && "statuses" in subscriptionStatusesResult
       ? subscriptionStatusesResult.statuses
       : {}
+
+  const customerPayments = customerChargesResult && "payments" in customerChargesResult
+    ? customerChargesResult.payments
+    : []
 
   // Phase 2: Fetch bookings (depends on user IDs)
   const userIds = users?.map((u) => u.id) || []
@@ -522,6 +530,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                 context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
                 searchParams={resolvedSearchParams}
               />
+            ),
+          },
+          {
+            value: "paiements",
+            label: "Historique des paiements",
+            content: (
+              <PaymentHistorySection payments={customerPayments} />
             ),
           },
         ]}
