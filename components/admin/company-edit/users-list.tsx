@@ -355,7 +355,15 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false, isDesk
                   return (
                     <TableRow key={user.id} className="border-b border-border/30 hover:bg-muted/30">
                       <TableCell className="font-semibold uppercase">
-                        {getFullName(user)}
+                        <EditUserModal
+                          user={user}
+                          companyId={companyId}
+                          trigger={
+                            <button className="cursor-pointer text-left hover:underline">
+                              {getFullName(user)}
+                            </button>
+                          }
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {user.email || "-"}
