@@ -172,7 +172,15 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
           .single()
 
         if (companyData?.customer_id_stripe) {
-          stripeCustomerId = companyData.customer_id_stripe
+          // Vérifier que le customer existe dans Stripe (peut ne pas exister si
+          // créé en test et utilisé en live, ou supprimé)
+          try {
+            await stripe.customers.retrieve(companyData.customer_id_stripe)
+            stripeCustomerId = companyData.customer_id_stripe
+          } catch {
+            // Customer introuvable dans Stripe, on l'ignore
+            console.warn(`Stripe customer ${companyData.customer_id_stripe} not found, skipping`)
+          }
         }
       }
     }
