@@ -5,7 +5,7 @@ import type { User, Company } from "@/lib/types/database"
 export const userInfoSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis"),
   last_name: z.string().min(1, "Le nom est requis"),
-  phone: z.string().min(1, "Le numéro de téléphone est requis"),
+  phone: z.string().nullable(),
 })
 
 // Schema for company info validation
@@ -29,7 +29,7 @@ export interface CompleteProfileFormData {
 // Helper to check if user info is complete
 export function isUserInfoComplete(user: User | null): boolean {
   if (!user) return false
-  return !!(user.first_name && user.last_name && user.phone)
+  return !!(user.first_name && user.last_name)
 }
 
 // Helper to check if company info is complete
