@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { toParisDate, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
@@ -269,8 +270,10 @@ export async function createMeetingRoomBooking(data: {
   }
 
   // 2. Check credits availability
-  // Fetch all credits for the company, then filter valid ones in JS
-  const { data: allCredits, error: creditsError } = await supabase
+  // Use admin client to bypass RLS on credits table (users without contract_id on their credits can't read them)
+  const adminSupabase = createAdminClient()
+
+  const { data: allCredits, error: creditsError } = await adminSupabase
     .from("credits")
     .select("id, remaining_balance, expiration")
     .eq("company_id", data.companyId)
@@ -320,9 +323,9 @@ export async function createMeetingRoomBooking(data: {
     return { error: bookingError.message }
   }
 
-  // 4. Deduct credits
+  // 4. Deduct credits (use admin client to bypass RLS)
   const newBalance = credits.remaining_balance - data.creditsToUse
-  const { error: creditUpdateError } = await supabase
+  const { error: creditUpdateError } = await adminSupabase
     .from("credits")
     .update({
       remaining_balance: newBalance,
@@ -335,8 +338,8 @@ export async function createMeetingRoomBooking(data: {
     return { error: "Erreur lors de la déduction des crédits" }
   }
 
-  // 5. Create credit transaction record
-  await supabase.from("credit_transactions").insert({
+  // 5. Create credit transaction record (use admin client to bypass RLS)
+  await adminSupabase.from("credit_transactions").insert({
     credit_id: credits.id,
     company_id: data.companyId,
     booking_id: booking.id,
@@ -403,8 +406,11 @@ export async function cancelBooking(
       .single()
 
     if (user?.company_id) {
+      // Use admin client for credit operations to bypass RLS
+      const adminSupabase = createAdminClient()
+
       // Find the credit record for this company (with valid credits or any recent one)
-      const { data: creditRecord } = await supabase
+      const { data: creditRecord } = await adminSupabase
         .from("credits")
         .select("id, remaining_balance")
         .eq("company_id", user.company_id)
@@ -415,7 +421,7 @@ export async function cancelBooking(
       if (creditRecord) {
         // Refund the credits
         const newBalance = creditRecord.remaining_balance + booking.credits_used
-        await supabase
+        await adminSupabase
           .from("credits")
           .update({
             remaining_balance: newBalance,
@@ -423,7 +429,7 @@ export async function cancelBooking(
           .eq("id", creditRecord.id)
 
         // Create credit transaction record for refund
-        await supabase.from("credit_transactions").insert({
+        await adminSupabase.from("credit_transactions").insert({
           credit_id: creditRecord.id,
           company_id: user.company_id,
           booking_id: bookingId,
@@ -556,8 +562,9 @@ export async function createBookingFromAdmin(data: {
     }
   }
 
-  // Find the credit record to deduct from
-  const { data: creditRecord, error: creditRecordError } = await supabase
+  // Find the credit record to deduct from (use admin client to bypass RLS)
+  const adminSupabase = createAdminClient()
+  const { data: creditRecord, error: creditRecordError } = await adminSupabase
     .from("credits")
     .select("id, remaining_balance")
     .eq("company_id", companyId)
@@ -591,9 +598,9 @@ export async function createBookingFromAdmin(data: {
     return { error: bookingError.message }
   }
 
-  // Deduct credits
+  // Deduct credits (use admin client to bypass RLS)
   const newBalance = creditRecord.remaining_balance - creditsNeeded
-  const { error: creditUpdateError } = await supabase
+  const { error: creditUpdateError } = await adminSupabase
     .from("credits")
     .update({
       remaining_balance: newBalance,
@@ -606,8 +613,8 @@ export async function createBookingFromAdmin(data: {
     return { error: "Erreur lors de la déduction des crédits" }
   }
 
-  // Create credit transaction record
-  await supabase.from("credit_transactions").insert({
+  // Create credit transaction record (use admin client to bypass RLS)
+  await adminSupabase.from("credit_transactions").insert({
     credit_id: creditRecord.id,
     company_id: companyId,
     booking_id: booking.id,
