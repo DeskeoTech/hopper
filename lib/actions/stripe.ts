@@ -2,6 +2,7 @@
 
 import Stripe from "stripe"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 const PASS_PRICES = {
   day: 3000, // 30€ in cents
@@ -152,17 +153,19 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
     const cancelUrl = `${baseUrl}${redirectPath}?canceled=true`
 
     // --- Chercher le customer Stripe dans Supabase pour verrouiller l'email ---
+    // Utiliser le client admin car l'utilisateur public n'a pas forcément accès
+    // aux tables users/companies via RLS
     let stripeCustomerId: string | undefined
     if (customerEmail) {
-      const supabase = await createClient()
-      const { data: userData } = await supabase
+      const adminClient = createAdminClient()
+      const { data: userData } = await adminClient
         .from("users")
         .select("company_id")
         .eq("email", customerEmail)
         .single()
 
       if (userData?.company_id) {
-        const { data: companyData } = await supabase
+        const { data: companyData } = await adminClient
           .from("companies")
           .select("customer_id_stripe")
           .eq("id", userData.company_id)
@@ -176,11 +179,13 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
 
     if (isSubscription) {
       // Récupérer le stripe_product_id depuis la table plans (test vs live)
+      // Utiliser le client admin car cette requête est faite côté serveur
+      // et l'utilisateur public n'a pas accès à la table plans via RLS
       const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")
       const stripeProductIdColumn = isTestMode ? "stripe_product_id_test" : "stripe_product_id_live"
 
-      const supabase = await createClient()
-      const { data: plan } = await supabase
+      const adminClient = createAdminClient()
+      const { data: plan } = await adminClient
         .from("plans")
         .select(stripeProductIdColumn)
         .eq("name", "Hopper Pass Month")
@@ -502,7 +507,7 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
       return { error: "Session non payée" }
     }
 
-    const supabase = await createClient()
+    const supabase = createAdminClient()
 
     // Idempotency check: don't create duplicate bookings
     const { data: existingBooking } = await supabase
