@@ -354,18 +354,32 @@ export async function deleteUser(
   userId: string,
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
+  const supabase = await createClient()
+
   const authUser = await getUser()
   if (!authUser?.email) {
     return { success: false, error: "Non authentifié" }
   }
 
-  if (authUser.email !== "tech@deskeo.fr") {
+  // Allow tech admin or any Hopper admin
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("id, is_hopper_admin")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!currentUser?.is_hopper_admin && authUser.email !== "tech@deskeo.fr") {
     return { success: false, error: "Accès non autorisé" }
   }
 
-  const supabase = createAdminClient()
+  // Prevent deleting yourself
+  if (currentUser?.id === userId) {
+    return { success: false, error: "Vous ne pouvez pas supprimer votre propre compte" }
+  }
 
-  const { error } = await supabase
+  const adminSupabase = createAdminClient()
+
+  const { error } = await adminSupabase
     .from("users")
     .delete()
     .eq("id", userId)
