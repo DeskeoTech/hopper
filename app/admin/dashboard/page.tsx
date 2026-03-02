@@ -244,6 +244,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
     // KPI réservations semaine
     weeklyBookingsCountResult,
+
   ] = await Promise.all([
     // Nombre de sites
     supabase.from("sites").select("*", { count: "exact", head: true }).eq("status", "open"),
@@ -308,6 +309,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       .eq("status", "confirmed")
       .gte("start_date", weekStart.toISOString())
       .lte("start_date", weekEnd.toISOString()),
+
   ])
 
   // Calculs des métriques
@@ -373,8 +375,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const resources = resourcesResult.data || []
   const bookingsWeek = bookingsThisWeekResult.data || []
 
-  // Grouper les ressources flex_desk par site et calculer la capacité totale
-  const flexDeskResources = resources.filter((r) => r.type === "flex_desk")
+  // Grouper les ressources desk (bench + flex_desk) par site et calculer la capacité totale
+  const flexDeskResources = resources.filter((r) => r.type === "flex_desk" || r.type === "bench")
   const siteCapacities = new Map<string, { name: string; capacity: number }>()
   flexDeskResources.forEach((r) => {
     if (r.site_id && r.site) {
@@ -512,6 +514,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   // Trier par disponibilité décroissante
   benchAvailabilityBySite.sort((a, b) => b.available - a.available)
   meetingRoomAvailabilityBySite.sort((a, b) => b.available - a.available)
+
 
   return (
     <div className="mx-auto max-w-[1325px] space-y-6 px-2 lg:px-3">
@@ -651,16 +654,18 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
           {/* Clients */}
           <div className="rounded-[20px] bg-card p-5">
-            <h2 className="font-header text-lg uppercase tracking-wide mb-4">Clients</h2>
-            <div className="space-y-4">
-              <div>
-                <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Membres Actifs</p>
-                <p className="font-header text-[28px]">{activeUsersCount.toLocaleString("fr-FR")}</p>
+            <div className="flex items-start justify-between mb-3">
+              <h2 className="font-header text-lg uppercase tracking-wide">Clients</h2>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] uppercase font-medium">Entreprises</span>
+                <span className="font-header text-[22px]">{companiesCount}</span>
               </div>
-              <div className="h-px bg-border" />
-              <div>
-                <p className="text-[14px] text-muted-foreground uppercase font-medium mb-1">Entreprises</p>
-                <p className="font-header text-[28px]">{companiesCount}</p>
+              <div className="flex justify-between items-center">
+                <span className="text-[14px] uppercase font-medium">Membres actifs</span>
+                <span className="font-header text-[22px]">{activeUsersCount.toLocaleString("fr-FR")}</span>
               </div>
             </div>
           </div>

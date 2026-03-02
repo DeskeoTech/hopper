@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, XCircle, Trash2 } from "lucide-react"
+import { getCompanyPaymentStatuses, type CompanyPaymentStatus } from "@/lib/actions/stripe"
+import { CompanyPaymentStatusBadge } from "./companies/company-payment-status-badge"
 import {
   Table,
   TableBody,
@@ -58,6 +60,20 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
   const [currentPage, setCurrentPage] = useState(1)
   const [confirmDelete, setConfirmDelete] = useState<CompanyWithCounts | null>(null)
   const [loading, setLoading] = useState(false)
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<string, CompanyPaymentStatus>>({})
+
+  const fetchPaymentStatuses = useCallback(async (companiesOnPage: CompanyWithCounts[]) => {
+    const customerIds = companiesOnPage
+      .filter((c) => c.customer_id_stripe)
+      .map((c) => c.customer_id_stripe!)
+
+    if (customerIds.length === 0) return
+
+    const result = await getCompanyPaymentStatuses(customerIds)
+    if ("statuses" in result) {
+      setPaymentStatuses((prev) => ({ ...prev, ...result.statuses }))
+    }
+  }, [])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -125,6 +141,11 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
   useEffect(() => {
     setCurrentPage(1)
   }, [companies.length])
+
+  // Fetch payment statuses for visible companies
+  useEffect(() => {
+    fetchPaymentStatuses(paginatedCompanies)
+  }, [paginatedCompanies, fetchPaymentStatuses])
 
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field) {
@@ -225,6 +246,9 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
                   <SortIcon field="endDate" />
                 </div>
               </TableHead>
+              <TableHead className="hidden text-xs font-bold uppercase tracking-wide lg:table-cell">
+                Paiement
+              </TableHead>
               <TableHead
                 className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("status")}
@@ -263,6 +287,15 @@ export function CompaniesTable({ companies, isTechAdmin = false }: CompaniesTabl
                 </TableCell>
                 <TableCell>
                   {formatDate(company.subscription_end_date)}
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {company.customer_id_stripe ? (
+                    <CompanyPaymentStatusBadge
+                      status={paymentStatuses[company.customer_id_stripe] || "none"}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <SubscriptionStatusBadge status={company.subscriptionStatus} />

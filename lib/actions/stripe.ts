@@ -355,3 +355,227 @@ export async function getTestSessions(): Promise<{ sessions: StripeSessionData[]
     return { error: "Erreur lors de la récupération des sessions" }
   }
 }
+
+export async function getPaymentStatus(sessionId: string): Promise<{
+  paymentStatus: "paid" | "unpaid" | "no_payment_required" | null
+  sessionStatus: "open" | "complete" | "expired" | null
+  amountTotal: number | null
+  currency: string | null
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    return {
+      paymentStatus: session.payment_status as "paid" | "unpaid" | "no_payment_required" | null,
+      sessionStatus: session.status as "open" | "complete" | "expired" | null,
+      amountTotal: session.amount_total,
+      currency: session.currency,
+    }
+  } catch (error) {
+    console.error("Stripe get payment status error:", error)
+    return { error: "Erreur lors de la récupération du statut de paiement" }
+  }
+}
+
+// --- Company payment status ---
+
+export type CompanyPaymentStatus = "ok" | "failed" | "none"
+
+export async function getCompanyPaymentStatus(stripeCustomerId: string): Promise<{
+  status: CompanyPaymentStatus
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const charges = await stripe.charges.list({
+      customer: stripeCustomerId,
+      limit: 20,
+    })
+
+    const hasFailed = charges.data.some((c) => c.status === "failed")
+    return { status: hasFailed ? "failed" : "ok" }
+  } catch (error) {
+    console.error("Stripe company payment status error:", error)
+    return { error: "Erreur lors de la récupération du statut de paiement" }
+  }
+}
+
+export async function getCompanyPaymentStatuses(customerIds: string[]): Promise<{
+  statuses: Record<string, CompanyPaymentStatus>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, CompanyPaymentStatus> = {}
+
+    await Promise.all(
+      customerIds.map(async (id) => {
+        try {
+          const charges = await stripe.charges.list({
+            customer: id,
+            limit: 20,
+          })
+          const hasFailed = charges.data.some((c) => c.status === "failed")
+          results[id] = hasFailed ? "failed" : "ok"
+        } catch {
+          results[id] = "ok"
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch company status error:", error)
+    return { error: "Erreur lors de la récupération des statuts" }
+  }
+}
+
+export async function getPaymentStatuses(sessionIds: string[]): Promise<{
+  statuses: Record<string, { paymentStatus: string; sessionStatus: string }>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, { paymentStatus: string; sessionStatus: string }> = {}
+
+    await Promise.all(
+      sessionIds.map(async (id) => {
+        try {
+          const session = await stripe.checkout.sessions.retrieve(id)
+          results[id] = {
+            paymentStatus: session.payment_status,
+            sessionStatus: session.status || "unknown",
+          }
+        } catch {
+          results[id] = { paymentStatus: "unknown", sessionStatus: "unknown" }
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch status error:", error)
+    return { error: "Erreur lors de la récupération des statuts" }
+  }
+}
+
+// --- Subscription status ---
+
+export type StripeSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "paused" | "trialing" | "unknown"
+
+export async function getSubscriptionStatuses(subscriptionIds: string[]): Promise<{
+  statuses: Record<string, StripeSubscriptionStatus>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, StripeSubscriptionStatus> = {}
+
+    await Promise.all(
+      subscriptionIds.map(async (id) => {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(id)
+          results[id] = subscription.status as StripeSubscriptionStatus
+        } catch {
+          results[id] = "unknown"
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch subscription status error:", error)
+    return { error: "Erreur lors de la récupération des statuts d'abonnement" }
+  }
+}
+
+// --- Create booking from completed Stripe checkout session ---
+
+export async function createBookingFromStripeSession(sessionId: string): Promise<{
+  success: boolean
+  bookingId?: string
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    // Only create booking for completed payments
+    if (session.payment_status !== "paid" && session.status !== "complete") {
+      return { error: "Session non payée" }
+    }
+
+    const supabase = await createClient()
+
+    // Idempotency check: don't create duplicate bookings
+    const { data: existingBooking } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("stripe_checkout_session_id", sessionId)
+      .maybeSingle()
+
+    if (existingBooking) {
+      return { success: true, bookingId: existingBooking.id }
+    }
+
+    // Extract metadata
+    const siteId = session.metadata?.siteName // siteName field contains the site ID
+    const startDate = session.metadata?.start_date
+    const endDate = session.metadata?.end_date
+    const quantity = session.metadata?.quantity ? parseInt(session.metadata.quantity) : 1
+    const referral = session.metadata?.referral || null
+    const customerEmail = session.customer_details?.email || null
+
+    if (!siteId || !startDate || !endDate) {
+      return { error: "Metadata manquantes dans la session Stripe" }
+    }
+
+    // Find a bench or flex_desk resource at this site
+    const { data: resource } = await supabase
+      .from("resources")
+      .select("id")
+      .eq("site_id", siteId)
+      .in("type", ["bench", "flex_desk"])
+      .eq("status", "available")
+      .limit(1)
+      .maybeSingle()
+
+    if (!resource) {
+      return { error: "Aucune ressource disponible sur ce site" }
+    }
+
+    // Find user by email
+    let userId: string | null = null
+    if (customerEmail) {
+      const { data: user } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", customerEmail)
+        .maybeSingle()
+
+      userId = user?.id || null
+    }
+
+    // Create the booking
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .insert({
+        user_id: userId,
+        resource_id: resource.id,
+        start_date: `${startDate}T09:00:00Z`,
+        end_date: `${endDate}T18:00:00Z`,
+        status: "confirmed",
+        seats_count: quantity,
+        stripe_checkout_session_id: sessionId,
+        ...(referral ? { referral } : {}),
+      })
+      .select("id")
+      .single()
+
+    if (bookingError) {
+      console.error("Booking creation error:", bookingError)
+      return { error: "Erreur lors de la création de la réservation" }
+    }
+
+    return { success: true, bookingId: booking.id }
+  } catch (error) {
+    console.error("Create booking from Stripe session error:", error)
+    return { error: "Erreur lors de la création de la réservation" }
+  }
+}

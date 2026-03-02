@@ -6,6 +6,9 @@ import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-mod
 import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
+import { getCompanyPaymentStatus, getSubscriptionStatuses } from "@/lib/actions/stripe"
+import type { StripeSubscriptionStatus } from "@/lib/actions/stripe"
+import { CompanyPaymentStatusBadge } from "@/components/admin/companies/company-payment-status-badge"
 import { DocumentsSection } from "@/components/admin/company-edit/documents-section"
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
@@ -76,6 +79,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         start_date,
         end_date,
         Number_of_seats,
+        Subscription_ID,
         plans (name, recurrence, price_per_seat_month)
       `)
       .eq("company_id", id)
@@ -91,6 +95,27 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   }
 
   const totalCredits = creditsResult ?? 0
+
+  // Fetch company payment status and subscription statuses from Stripe
+  const uniqueSubscriptionIds = [...new Set(
+    (passesData || [])
+      .map((c) => c.Subscription_ID as string | null)
+      .filter((id): id is string => !!id)
+  )]
+
+  const [companyPaymentStatus, subscriptionStatusesResult] = await Promise.all([
+    company.customer_id_stripe
+      ? getCompanyPaymentStatus(company.customer_id_stripe)
+      : null,
+    uniqueSubscriptionIds.length > 0
+      ? getSubscriptionStatuses(uniqueSubscriptionIds)
+      : null,
+  ])
+
+  const subscriptionStatuses: Record<string, StripeSubscriptionStatus> =
+    subscriptionStatusesResult && "statuses" in subscriptionStatusesResult
+      ? subscriptionStatusesResult.statuses
+      : {}
 
   // Phase 2: Fetch bookings (depends on user IDs)
   const userIds = users?.map((u) => u.id) || []
@@ -131,6 +156,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       price_per_seat_month: plan?.price_per_seat_month ?? null,
       number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
       assigned_users_count: contractUserCounts[c.id] || 0,
+      subscription_id: (c.Subscription_ID as string | null) || null,
     }
   })
 
@@ -462,6 +488,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     stripeCustomerId={company.customer_id_stripe}
                     stripeCustomerEmail={company.contact_email}
                     companyName={company.name || undefined}
+                    subscriptionStatuses={subscriptionStatuses}
                   />
 
                   {/* Stripe - hidden for hors-plateforme clients */}
@@ -472,6 +499,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                         Stripe
                       </h2>
                       <div className="space-y-3">
+                        {companyPaymentStatus && "status" in companyPaymentStatus && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Paiement</span>
+                            <CompanyPaymentStatusBadge status={companyPaymentStatus.status} />
+                          </div>
+                        )}
                         <div>
                           <span className="text-xs text-muted-foreground">Customer ID</span>
                           <p className="font-mono text-xs text-foreground break-all">{company.customer_id_stripe}</p>

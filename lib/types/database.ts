@@ -218,6 +218,7 @@ export interface FlexDeskAvailability {
 
 // Booking types
 export type BookingStatus = "confirmed" | "cancelled" | "pending"
+export type PaymentStatus = "paid" | "unpaid" | "no_payment_required" | "expired"
 
 export interface Booking {
   id: string
@@ -232,6 +233,7 @@ export interface Booking {
   notes: string | null
   hubspot_deal_id: string | null
   netsuite_invoice_id: string | null
+  stripe_checkout_session_id: string | null
   referral: string | null
   created_at: string
   updated_at: string
@@ -276,6 +278,7 @@ export interface AdminPassForDisplay {
   price_per_seat_month: number | null
   number_of_seats: number | null
   assigned_users_count: number
+  subscription_id: string | null
 }
 
 // Unified reservation item (booking or contract)
