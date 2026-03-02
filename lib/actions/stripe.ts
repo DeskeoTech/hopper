@@ -275,8 +275,9 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
       return { url: session.url!, sessionId: session.id }
     }
   } catch (error) {
-    console.error("Stripe checkout error:", error)
-    return { error: "Erreur lors de la création de la session de paiement" }
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe checkout error:", errMsg, error)
+    return { error: `Erreur lors de la création de la session de paiement: ${errMsg}` }
   }
 }
 
