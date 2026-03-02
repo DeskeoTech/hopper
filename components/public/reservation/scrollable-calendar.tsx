@@ -179,14 +179,14 @@ const MonthGrid = memo(function MonthGrid({
           const isMonthStart = isMonthMode && isSameDay(day, monthStartDate!)
           const isMonthContinuation = isMonthMode && !isMonthStart && !isUnavailable && !isBefore(day, monthStartDate!)
 
-          // Range styling for week pass
-          const isWeekRange = passType === "week" && selectedDates.length > 1
-          const sortedDates = isWeekRange
+          // Range styling for day and week passes
+          const isRange = (passType === "day" || passType === "week") && selectedDates.length > 1
+          const sortedDates = isRange
             ? [...selectedDates].sort((a, b) => a.getTime() - b.getTime())
             : []
-          const isStart = isWeekRange && sortedDates.length > 0 && isSameDay(day, sortedDates[0])
-          const isEnd = isWeekRange && sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
-          const isMiddle = isWeekRange && isSelected && !isStart && !isEnd
+          const isStart = isRange && sortedDates.length > 0 && isSameDay(day, sortedDates[0])
+          const isEnd = isRange && sortedDates.length > 0 && isSameDay(day, sortedDates[sortedDates.length - 1])
+          const isMiddle = isRange && isSelected && !isStart && !isEnd
 
           return (
             <button
@@ -199,8 +199,8 @@ const MonthGrid = memo(function MonthGrid({
                 isUnavailable && !isMonthContinuation && "text-muted-foreground/30 cursor-not-allowed",
                 (isWeekendDay || isHolidayDay || isClosureDay) && !isMonthContinuation && "line-through decoration-muted-foreground/40",
                 isTodayDay && !isSelected && !isMonthStart && !isMonthContinuation && "border-2 border-foreground",
-                // Day mode: all selected dates get same style
-                passType === "day" && isSelected && "bg-foreground text-background font-bold",
+                // Day mode: single date selection
+                passType === "day" && selectedDates.length <= 1 && isSelected && "bg-foreground text-background font-bold",
                 // Month mode: start date dark, continuation beige
                 isMonthStart && "bg-foreground text-background font-bold rounded-r-none",
                 isMonthContinuation && "rounded-none bg-[#F1E8DC] text-foreground",
@@ -279,8 +279,21 @@ export function ScrollableCalendar({
       if (isClosure(date, closuresAsDate)) return
 
       if (passType === "day") {
-        // Use stable toggle callback from parent (no selectedDates dependency)
-        onToggleDate(date)
+        if (selectedDates.length === 1) {
+          if (isSameDay(date, selectedDates[0])) {
+            // Click same date → deselect
+            onDatesChange([])
+          } else {
+            // Second click → create range of business days (excludes weekends, holidays, closures)
+            const [from, to] = isBefore(date, selectedDates[0]) ? [date, selectedDates[0]] : [selectedDates[0], date]
+            const businessDays = eachDayOfInterval({ start: from, end: to })
+              .filter(d => !isWeekend(d) && !isHoliday(d, holidays) && !isClosure(d, closuresAsDate))
+            onDatesChange(businessDays)
+          }
+        } else {
+          // No selection or range exists → start new selection
+          onDatesChange([date])
+        }
       } else if (passType === "week") {
         // Auto-select 5 business days from clicked date (excluding closures)
         const allUnavailable = [...holidays, ...closuresAsDate]
@@ -291,7 +304,7 @@ export function ScrollableCalendar({
         onDatesChange([date])
       }
     },
-    [passType, holidays, closuresAsDate, minDate, onDatesChange, onToggleDate]
+    [passType, holidays, closuresAsDate, minDate, onDatesChange, selectedDates]
   )
 
   const handleReset = useCallback(() => {
@@ -431,6 +444,7 @@ export function ScrollableCalendar({
                 monthDate={addMonths(today, i)}
                 selectedDates={selectedDates}
                 holidays={holidays}
+                closures={closuresAsDate}
                 today={today}
                 minDate={minDate}
                 passType={passType}

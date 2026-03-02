@@ -242,7 +242,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
         if (!isOpen && fullscreenPhoto) return
         handleClose()
       }}>
-        <DialogContent className="!flex flex-col max-w-[90vw] md:max-w-4xl max-h-[90vh] p-0 gap-0 overflow-hidden">
+        <DialogContent className="!flex flex-col left-0 top-0 translate-x-0 translate-y-0 max-w-none h-[100dvh] sm:rounded-none md:left-[50%] md:top-[50%] md:translate-x-[-50%] md:translate-y-[-50%] md:max-w-4xl md:max-h-[90vh] md:h-auto md:rounded-[20px] p-0 gap-0 overflow-hidden">
           <VisuallyHidden>
             <DialogTitle>{t("siteDetails.title", { siteName: site.name })}</DialogTitle>
           </VisuallyHidden>

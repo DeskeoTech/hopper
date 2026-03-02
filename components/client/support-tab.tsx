@@ -176,12 +176,12 @@ export function SupportTab() {
   return (
     <div className="space-y-6">
       {/* Ticket Form */}
-      <div className="rounded-[16px] bg-card p-6">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
+        <div className="mb-5 sm:mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <MessageCircle className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("sendTicket")}</h2>
+          <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("sendTicket")}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -338,18 +338,18 @@ export function SupportTab() {
           )}
 
           {/* Boutons */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+              className="rounded-full bg-foreground/5 px-5 py-3 sm:py-2.5 text-base sm:text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
               {tc("cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-full bg-[#1B1918] px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 sm:py-2.5 text-base sm:text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -365,12 +365,12 @@ export function SupportTab() {
       </div>
 
       {/* Tickets List */}
-      <div className="rounded-[16px] bg-card p-6">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
+        <div className="mb-5 sm:mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <Clock className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("myRequests")}</h2>
+          <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("myRequests")}</h2>
         </div>
 
         {loadingTickets ? (
