@@ -56,15 +56,15 @@ export function MesCoordonneesTab() {
   }
 
   return (
-    <div className="rounded-[16px] bg-card p-6">
-      <div className="mb-6 flex items-center gap-3">
+    <div className="rounded-[16px] bg-card p-4 sm:p-6">
+      <div className="mb-5 sm:mb-6 flex items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
           <User className="h-5 w-5 text-foreground/70" />
         </div>
-        <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
+        <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-4">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="firstName">{tc("firstName")}</Label>
@@ -132,7 +132,7 @@ export function MesCoordonneesTab() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
+          className="w-full rounded-full bg-[#1B1918] px-6 py-3.5 sm:py-3 text-base sm:text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

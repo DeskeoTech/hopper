@@ -86,15 +86,15 @@ export function FacturationTab() {
         </div>
       )}
 
-      <div className="rounded-[16px] bg-card p-6">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <Receipt className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
+          <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("title")}</h2>
         </div>
 
-        <p className="mb-6 text-muted-foreground">
+        <p className="mb-6 text-base sm:text-sm text-muted-foreground">
           {t("description")}
         </p>
 
@@ -102,9 +102,9 @@ export function FacturationTab() {
           type="button"
           onClick={handleOpenBillingPortal}
           disabled={isLoading}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3.5 sm:py-3 text-base sm:text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50 sm:w-auto"
         >
-          <ExternalLink className="h-4 w-4" />
+          <ExternalLink className="h-5 w-5 sm:h-4 sm:w-4" />
           {t("openPortal")}
         </button>
 
