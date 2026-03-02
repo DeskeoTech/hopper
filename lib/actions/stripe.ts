@@ -615,3 +615,79 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
     return { error: "Erreur lors de la création de la réservation" }
   }
 }
+
+// --- Customer payment history (invoices + charges) ---
+
+export interface StripePaymentData {
+  id: string
+  amount: number
+  currency: string
+  status: string
+  created: number
+  description: string | null
+  hosted_invoice_url: string | null
+  invoice_pdf: string | null
+}
+
+export async function getCustomerPayments(stripeCustomerId: string): Promise<{
+  payments: StripePaymentData[]
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+
+    // Fetch both invoices and charges in parallel
+    const [invoices, charges] = await Promise.all([
+      stripe.invoices.list({
+        customer: stripeCustomerId,
+        limit: 100,
+      }),
+      stripe.charges.list({
+        customer: stripeCustomerId,
+        limit: 100,
+      }),
+    ])
+
+    // Map invoices
+    const invoicePayments: StripePaymentData[] = invoices.data.map((inv) => ({
+      id: inv.id,
+      amount: inv.amount_paid || inv.total,
+      currency: inv.currency,
+      status: inv.status || "unknown",
+      created: inv.created,
+      description: inv.lines.data[0]?.description || "Facture",
+      hosted_invoice_url: inv.hosted_invoice_url,
+      invoice_pdf: inv.invoice_pdf,
+    }))
+
+    // Get invoice IDs to avoid duplicating charges that are linked to invoices
+    const invoiceIds = new Set(invoices.data.map((inv) => inv.id))
+
+    // Map charges that are NOT linked to an invoice (one-time payments)
+    const chargePayments: StripePaymentData[] = charges.data
+      .filter((c) => {
+        const invId = typeof c.invoice === "string" ? c.invoice : c.invoice?.id
+        return !invId || !invoiceIds.has(invId)
+      })
+      .map((c) => ({
+        id: c.id,
+        amount: c.amount,
+        currency: c.currency,
+        status: c.status,
+        created: c.created,
+        description: c.description || "Paiement",
+        hosted_invoice_url: c.receipt_url,
+        invoice_pdf: null,
+      }))
+
+    // Merge and sort by date (most recent first)
+    const payments = [...invoicePayments, ...chargePayments].sort(
+      (a, b) => b.created - a.created
+    )
+
+    return { payments }
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe customer payments error:", errMsg, error)
+    return { error: `Erreur Stripe: ${errMsg}` }
+  }
+}
