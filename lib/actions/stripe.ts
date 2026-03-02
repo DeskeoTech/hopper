@@ -569,15 +569,22 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
 
       userId = user?.id || null
 
-      // Sauvegarder le customer ID Stripe dans la company si un nouveau a été créé
+      // Sauvegarder le customer ID Stripe dans la company uniquement si différent
       const stripeCustomerId = typeof session.customer === "string"
         ? session.customer
         : session.customer?.id
       if (stripeCustomerId && user?.company_id) {
-        await supabase
+        const { data: company } = await supabase
           .from("companies")
-          .update({ customer_id_stripe: stripeCustomerId })
+          .select("customer_id_stripe")
           .eq("id", user.company_id)
+          .single()
+        if (company?.customer_id_stripe !== stripeCustomerId) {
+          await supabase
+            .from("companies")
+            .update({ customer_id_stripe: stripeCustomerId })
+            .eq("id", user.company_id)
+        }
       }
     }
 
