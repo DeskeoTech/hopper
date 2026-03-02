@@ -2,6 +2,7 @@
 
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { MapPin, Newspaper, Pencil, Pin, Trash2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { NewsPostWithSite } from "@/lib/types/database"
@@ -9,11 +10,12 @@ import type { NewsPostWithSite } from "@/lib/types/database"
 interface NewsCardProps {
   post: NewsPostWithSite
   variant?: "compact" | "full"
+  isUnread?: boolean
   onEdit?: (postId: string) => void
   onDelete?: (postId: string) => void
 }
 
-export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCardProps) {
+export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, onDelete }: NewsCardProps) {
   const t = useTranslations("dashboard.news")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
@@ -99,7 +101,10 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
 
   // Full variant for client news feed page
   return (
-    <article className="overflow-hidden rounded-[20px] bg-card">
+    <article className={cn(
+      "overflow-hidden rounded-[20px] bg-card",
+      isUnread && "ring-2 ring-[#DC2626]"
+    )}>
       {post.image_url && (
         <img
           src={post.image_url}

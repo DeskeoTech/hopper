@@ -414,6 +414,11 @@ export interface NewsPostWithSite extends NewsPost {
   author_last_name: string | null
 }
 
+export interface ClientNotificationDisplay {
+  id: string
+  source_id: string 
+  user_id: string
+}
 // Site closure types
 export interface SiteClosure {
   id: string
