@@ -3,6 +3,8 @@ import { SiteCard } from "@/components/admin/site-card"
 import { SitesSearch } from "@/components/admin/sites/sites-search"
 import { CreateSiteModal } from "@/components/admin/sites/create-site-modal"
 import { getDeskeoUsers } from "@/lib/actions/sites"
+import { nowInParis, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
+import { format } from "date-fns"
 import { Building2 } from "lucide-react"
 import { Suspense } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -34,9 +36,9 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     .not("capacity", "is", null)
 
   // Get today's confirmed bookings for flex resources
-  const today = new Date().toISOString().split("T")[0]
-  const startOfDay = `${today}T00:00:00Z`
-  const endOfDay = `${today}T23:59:59Z`
+  const today = format(nowInParis(), "yyyy-MM-dd")
+  const startOfDay = parisStartOfDay(today)
+  const endOfDay = parisEndOfDay(today)
 
   const flexResourceIds = flexResources?.map((r) => r.id) || []
   const { data: todayBookings } = flexResourceIds.length > 0

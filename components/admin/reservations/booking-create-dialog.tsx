@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useTransition } from "react"
 import { format, addDays, eachDayOfInterval, isWeekend } from "date-fns"
 import { fr } from "date-fns/locale"
+import { createParisDate, toParisDate } from "@/lib/timezone"
 import {
   ChevronLeft,
   ChevronRight,
@@ -194,8 +195,8 @@ export function BookingCreateDialog({
         } else {
           const unavailable: string[] = []
           result.bookings.forEach((booking) => {
-            const startHour = new Date(booking.start_date).getHours()
-            const endHour = new Date(booking.end_date).getHours()
+            const startHour = toParisDate(booking.start_date).getHours()
+            const endHour = toParisDate(booking.end_date).getHours()
             for (let h = startHour; h < endHour; h++) {
               unavailable.push(`${h.toString().padStart(2, "0")}:00`)
             }
@@ -305,8 +306,8 @@ export function BookingCreateDialog({
 
       for (const day of datesToBook) {
         const dateStr = format(day, "yyyy-MM-dd")
-        const startDate = new Date(`${dateStr}T${firstSlot}:00`)
-        const endDate = new Date(`${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00`)
+        const startDate = createParisDate(dateStr, firstSlot)
+        const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`)
 
         const result = await createBookingFromAdmin({
           userId,
