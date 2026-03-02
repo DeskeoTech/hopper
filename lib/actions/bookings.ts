@@ -555,14 +555,13 @@ export async function createBookingFromAdmin(data: {
   }
 
   // Find the credit record to deduct from
-  const today = new Date().toISOString().split("T")[0]
   const { data: creditRecord, error: creditRecordError } = await supabase
     .from("credits")
-    .select("id, remaining_credits, contracts!inner(company_id, status)")
-    .eq("contracts.company_id", companyId)
-    .eq("contracts.status", "active")
-    .lte("period", today)
-    .order("period", { ascending: false })
+    .select("id, remaining_balance")
+    .eq("company_id", companyId)
+    .gt("remaining_balance", 0)
+    .or("expiration.is.null,expiration.gt.now()")
+    .order("created_at", { ascending: false })
     .limit(1)
     .single()
 
@@ -591,12 +590,11 @@ export async function createBookingFromAdmin(data: {
   }
 
   // Deduct credits
-  const newBalance = creditRecord.remaining_credits - creditsNeeded
+  const newBalance = creditRecord.remaining_balance - creditsNeeded
   const { error: creditUpdateError } = await supabase
     .from("credits")
     .update({
-      remaining_credits: newBalance,
-      updated_at: new Date().toISOString(),
+      remaining_balance: newBalance,
     })
     .eq("id", creditRecord.id)
 
@@ -614,7 +612,7 @@ export async function createBookingFromAdmin(data: {
     user_id: data.userId,
     transaction_type: "consumption",
     amount: creditsNeeded,
-    balance_before: creditRecord.remaining_credits,
+    balance_before: creditRecord.remaining_balance,
     balance_after: newBalance,
     reason: "Réservation de salle de réunion",
   })
