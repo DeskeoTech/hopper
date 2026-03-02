@@ -42,8 +42,8 @@ export default async function ComptePage() {
       })()
     : Promise.resolve({ data: null } as { data: null })
 
-  // Run bookings, contracts, and news queries in parallel
-  const [bookingsResult, contractsResult, posts] = await Promise.all([
+  // Run bookings, contracts, news, and unread notifications in parallel
+  const [bookingsResult, contractsResult, posts, unreadNotifsResult] = await Promise.all([
     // Only fetch upcoming/ongoing bookings (server-side filter instead of client-side)
     supabase
       .from("bookings")
@@ -63,6 +63,11 @@ export default async function ComptePage() {
     contractsQueryBuilder,
 
     getNewsPosts({ mainSiteId }),
+
+    supabase
+      .from("client_notifications")
+      .select("id, source_id, user_id")
+      .eq("user_id", userProfile.id),
   ])
 
   // Process contracts
@@ -144,6 +149,7 @@ export default async function ComptePage() {
       contracts={contracts}
       posts={posts}
       isAdmin={isAdmin}
+      unreadNotifications={unreadNotifsResult.data ?? []}
     />
   )
 }

@@ -11,6 +11,7 @@ import { NewsCard } from "./news-card"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay, NewsPostWithSite } from "@/lib/types/database"
 import { useTranslations } from "next-intl"
+import { markNewsAsRead } from "@/lib/actions/news"
 
 const HERO_IMAGE_URL = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
 
@@ -19,9 +20,11 @@ interface AccountPageProps {
   contracts: ContractForDisplay[]
   posts: NewsPostWithSite[]
   isAdmin: boolean
+  unreadNotifications?: { id: string; source_id: string; user_id: string }[]
 }
 
-export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPageProps) {
+export function AccountPage({ bookings, contracts, posts, isAdmin, unreadNotifications = [] }: AccountPageProps) {
+  const [unreadCount, setUnreadCount] = useState(unreadNotifications.length)
   const t = useTranslations("")
   const { user } = useClientLayout()
   const [activeTab, setActiveTab] = useState<"reservations" | "actualites">("reservations")
@@ -79,7 +82,13 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setActiveTab("reservations")}
+              onClick={() => {
+                if (activeTab === "actualites" && unreadCount > 0) {
+                  setUnreadCount(0)
+                  markNewsAsRead(unreadNotifications.map((n) => n.id))
+                }
+                setActiveTab("reservations")
+              }}
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
                 activeTab === "reservations"
@@ -93,13 +102,18 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
               type="button"
               onClick={() => setActiveTab("actualites")}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
+                "relative rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
                 activeTab === "actualites"
                   ? "bg-[#1B1918] text-white"
                   : "bg-foreground/5 text-foreground"
               )}
             >
               {t("dashboard.tabs.news")}
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#DC2626] px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
           </div>
 
@@ -111,7 +125,12 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
             posts.length > 0 ? (
               <div className="space-y-3">
                 {visiblePosts.map((post) => (
-                  <NewsCard key={post.id} post={post} variant="full" />
+                  <NewsCard
+                    key={post.id}
+                    post={post}
+                    variant="full"
+                    isUnread={unreadNotifications.some((n) => n.source_id === post.id)}
+                  />
                 ))}
 
                 {totalNewsPages > 1 && (
