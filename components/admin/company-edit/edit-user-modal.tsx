@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 import { updateUser } from "@/lib/actions/users"
 import type { User, UserRole } from "@/lib/types/database"
 
@@ -69,7 +70,12 @@ export function EditUserModal({ user, companyId, trigger }: EditUserModalProps) 
       badge_returned: badgeReturned,
     })
     setLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
     if (result.success) {
+      toast.success("Utilisateur modifié avec succès")
       setOpen(false)
       setConfirmOpen(false)
     }
