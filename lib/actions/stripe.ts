@@ -178,8 +178,12 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
             await stripe.customers.retrieve(companyData.customer_id_stripe)
             stripeCustomerId = companyData.customer_id_stripe
           } catch {
-            // Customer introuvable dans Stripe, on l'ignore
-            console.warn(`Stripe customer ${companyData.customer_id_stripe} not found, skipping`)
+            // Customer introuvable dans Stripe, on vide le champ en base
+            console.warn(`Stripe customer ${companyData.customer_id_stripe} not found, clearing from DB`)
+            await adminClient
+              .from("companies")
+              .update({ customer_id_stripe: null })
+              .eq("id", userData.company_id)
           }
         }
       }
@@ -565,16 +569,22 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
 
       userId = user?.id || null
 
-      // Sauvegarder le customer ID Stripe dans la company si un nouveau a été créé
+      // Sauvegarder le customer ID Stripe dans la company uniquement si différent
       const stripeCustomerId = typeof session.customer === "string"
         ? session.customer
         : session.customer?.id
       if (stripeCustomerId && user?.company_id) {
-        await supabase
+        const { data: company } = await supabase
           .from("companies")
-          .update({ customer_id_stripe: stripeCustomerId })
+          .select("customer_id_stripe")
           .eq("id", user.company_id)
-          .is("customer_id_stripe", null)
+          .single()
+        if (company?.customer_id_stripe !== stripeCustomerId) {
+          await supabase
+            .from("companies")
+            .update({ customer_id_stripe: stripeCustomerId })
+            .eq("id", user.company_id)
+        }
       }
     }
 
