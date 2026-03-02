@@ -4,7 +4,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useState, useTransition } from "react"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 
 export function SitesSearch() {
   const router = useRouter()
@@ -38,29 +37,24 @@ export function SitesSearch() {
   const hasFilters = search
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-      <div className="relative flex-1">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="text"
-          placeholder="Rechercher par nom ou adresse..."
-          value={search}
-          onChange={handleSearchChange}
-          className="pl-9"
-        />
-      </div>
-
+    <div className="relative">
+      <Search className="absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <Input
+        type="text"
+        placeholder="Rechercher par nom, ville ou adresse..."
+        value={search}
+        onChange={handleSearchChange}
+        className="h-12 rounded-[16px] border-none bg-card pl-12 pr-10 shadow-sm ring-1 ring-foreground/5 focus-visible:ring-2 focus-visible:ring-foreground/20"
+      />
       {hasFilters && (
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
+          type="button"
           onClick={clearFilters}
           disabled={isPending}
-          className="gap-1"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         >
           <X className="h-4 w-4" />
-          Effacer
-        </Button>
+        </button>
       )}
     </div>
   )

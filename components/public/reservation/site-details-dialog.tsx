@@ -21,13 +21,11 @@ import {
   Sun,
   Wifi,
   Phone,
-  Monitor,
   Printer,
   UtensilsCrossed,
-  Flame,
   Bike,
   Droplets,
-  Zap,
+  Microwave,
   Users,
   Dumbbell,
   Building,
@@ -40,7 +38,7 @@ import { cn } from "@/lib/utils"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { extractDistrict } from "@/lib/utils/extract-district"
-import type { Site, DayOfWeek, TransportationStop } from "@/lib/types/database"
+import type { Site, DayOfWeek, TransportationStop, Equipment } from "@/lib/types/database"
 
 const SiteLocationMap = dynamic(
   () => import("./site-location-map").then((m) => ({ default: m.SiteLocationMap })),
@@ -66,20 +64,20 @@ interface SiteDetailsDialogProps {
 
 const DAYS_ORDER: DayOfWeek[] = ["lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi", "dimanche"]
 
-function getEquipmentIcon(equipment: string): React.ReactNode {
-  const eq = equipment.toLowerCase()
-  if (eq.includes("barista") || eq.includes("café") || eq.includes("coffee")) return <Coffee className="h-4 w-4" />
-  if (eq.includes("terrasse") || eq.includes("extérieur") || eq.includes("rooftop")) return <Sun className="h-4 w-4" />
-  if (eq.includes("wifi") || eq.includes("internet")) return <Wifi className="h-4 w-4" />
-  if (eq.includes("phone") || eq.includes("cabine") || eq.includes("téléphone")) return <Phone className="h-4 w-4" />
-  if (eq.includes("écran") || eq.includes("monitor") || eq.includes("tv")) return <Monitor className="h-4 w-4" />
-  if (eq.includes("imprimante") || eq.includes("print") || eq.includes("impression")) return <Printer className="h-4 w-4" />
-  if (eq.includes("restauration") || eq.includes("restaurant")) return <UtensilsCrossed className="h-4 w-4" />
-  if (eq.includes("micro") || eq.includes("ondes") || eq.includes("chauff")) return <Flame className="h-4 w-4" />
-  if (eq.includes("vélo") || eq.includes("bike")) return <Bike className="h-4 w-4" />
-  if (eq.includes("fontaine") || eq.includes("eau") || eq.includes("water") || eq.includes("douche")) return <Droplets className="h-4 w-4" />
-  if (eq.includes("sport") || eq.includes("gym")) return <Dumbbell className="h-4 w-4" />
-  return <Zap className="h-4 w-4" />
+const equipmentIcons: Record<Equipment, React.ReactNode> = {
+  barista: <Coffee className="h-4 w-4" />,
+  stationnement_velo: <Bike className="h-4 w-4" />,
+  impression: <Printer className="h-4 w-4" />,
+  douches: <Droplets className="h-4 w-4" />,
+  salle_sport: <Dumbbell className="h-4 w-4" />,
+  terrasse: <Sun className="h-4 w-4" />,
+  rooftop: <Building className="h-4 w-4" />,
+  cafe: <Coffee className="h-4 w-4" />,
+  phonebooth: <Phone className="h-4 w-4" />,
+  fontaine_eau: <Droplets className="h-4 w-4" />,
+  micro_ondes: <Microwave className="h-4 w-4" />,
+  restauration: <UtensilsCrossed className="h-4 w-4" />,
+  wifi: <Wifi className="h-4 w-4" />,
 }
 
 
@@ -128,7 +126,7 @@ function Accordion({
 
 export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDetailsDialogProps) {
   const t = useTranslations("reservation")
-  const tEquip = useTranslations("equipmentDetails")
+  const tEquip = useTranslations("equipment")
   const locale = useLocale();
   const contentRef = useRef<HTMLDivElement>(null)
   const sectionRefs = useRef<Record<string, HTMLDivElement | null>>({})
@@ -422,7 +420,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                   <div className="space-y-1">
                     {site.equipments.map((equipment) => (
                       <div key={equipment} className="flex items-center gap-2 py-2 text-sm">
-                        <span className="text-muted-foreground">{getEquipmentIcon(equipment)}</span>
+                        <span className="text-muted-foreground">{equipmentIcons[equipment] || <Star className="h-4 w-4" />}</span>
                         {tEquip(equipment)}
                       </div>
                     ))}

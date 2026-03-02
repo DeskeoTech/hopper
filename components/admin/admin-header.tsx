@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
 import { LogOut, Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -50,22 +49,10 @@ export function AdminHeader({ userEmail, siteName, siteId, adminId }: AdminHeade
   }, [])
 
   return (
-    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-[#f0e8dc] px-4 md:h-20 md:px-6">
+    <header className="sticky top-0 z-50 flex h-16 items-center justify-between bg-background px-4 md:h-20 md:px-6">
       <div className="flex items-center gap-3">
         <MobileNav />
         <h1 className="type-h3 text-foreground">{title}</h1>
-      </div>
-
-      {/* Centered Logo */}
-      <div className="absolute left-1/2 -translate-x-1/2">
-        <Image
-          src="https://7abaef3fdedbe876fc93938b593e38d3.cdn.bubble.io/f1769541414085x621762003247008800/pasted-image-1766415040793%20%281%29.png"
-          alt="Hopper Logo"
-          width={400}
-          height={160}
-          className="h-14 w-auto md:h-20"
-          priority
-        />
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">

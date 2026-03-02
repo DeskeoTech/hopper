@@ -1,19 +1,20 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureSupabaseAuthUser } from "@/lib/actions/auth"
 import type { UserRole, UserStatus, User } from "@/lib/types/database"
 
 export async function getCompanyUsers(companyId: string): Promise<{ data: User[] | null; error: string | null }> {
-  const supabase = await createClient()
-
   // Verify the current user has permission to view company users
   const authUser = await getUser()
   if (!authUser?.email) {
     return { data: null, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { data: currentUser } = await supabase
     .from("users")
@@ -43,13 +44,14 @@ export async function updateUserRoleByAdmin(
   companyId: string,
   newRole: "admin" | "user"
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
   // Verify the current user has permission
   const authUser = await getUser()
   if (!authUser?.email) {
     return { success: false, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { data: currentUser } = await supabase
     .from("users")
@@ -89,13 +91,14 @@ export async function deactivateUserByAdmin(
   userId: string,
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
   // Verify the current user has permission
   const authUser = await getUser()
   if (!authUser?.email) {
     return { success: false, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { data: currentUser } = await supabase
     .from("users")
@@ -143,12 +146,13 @@ export async function createUser(
     badge_returned?: boolean
   }
 ) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
@@ -193,12 +197,13 @@ export async function updateUser(
     badge_returned?: boolean
   }
 ) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("users")
@@ -223,12 +228,13 @@ export async function updateUser(
 }
 
 export async function toggleUserStatus(userId: string, companyId: string, newStatus: UserStatus) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("users")
@@ -250,13 +256,14 @@ export async function getCompanySeatsInfo(companyId: string): Promise<{
   data: { activeUsers: number; maxSeats: number } | null
   error: string | null
 }> {
-  const supabase = await createClient()
-
   // Verify the current user has permission
   const authUser = await getUser()
   if (!authUser?.email) {
     return { data: null, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { data: currentUser } = await supabase
     .from("users")
@@ -354,12 +361,13 @@ export async function deleteUser(
   userId: string,
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { success: false, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   // Allow tech admin or any Hopper admin
   const { data: currentUser } = await supabase
@@ -377,9 +385,7 @@ export async function deleteUser(
     return { success: false, error: "Vous ne pouvez pas supprimer votre propre compte" }
   }
 
-  const adminSupabase = createAdminClient()
-
-  const { error } = await adminSupabase
+  const { error } = await supabase
     .from("users")
     .delete()
     .eq("id", userId)
@@ -405,13 +411,14 @@ export async function createUserByAdmin(
     badge_returned?: boolean
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
   // Verify the current user has permission
   const authUser = await getUser()
   if (!authUser?.email) {
     return { success: false, error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { data: currentUser } = await supabase
     .from("users")
