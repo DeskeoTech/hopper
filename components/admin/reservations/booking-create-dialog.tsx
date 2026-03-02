@@ -14,6 +14,7 @@ import {
   Check,
   FileText,
   Users,
+  X,
 } from "lucide-react"
 import {
   Dialog,
@@ -54,6 +55,7 @@ import {
   getBusinessDaysCentered,
   isSameDay,
   isToday as checkIsToday,
+  isFrenchHoliday,
 } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
@@ -103,8 +105,8 @@ export function BookingCreateDialog({
   const [status, setStatus] = useState<"confirmed" | "pending">("confirmed")
   const [notes, setNotes] = useState("")
   const [isME, setIsME] = useState(false)
-  const [meEndDate, setMeEndDate] = useState<Date | null>(null)
-  const [meCalendarOpen, setMeCalendarOpen] = useState(false)
+  const [endDate, setEndDate] = useState<Date | null>(null)
+  const [endDateCalendarOpen, setEndDateCalendarOpen] = useState(false)
 
   // Calendar state
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
@@ -133,8 +135,8 @@ export function BookingCreateDialog({
       setStatus("confirmed")
       setNotes("")
       setIsME(false)
-      setMeEndDate(null)
-      setMeCalendarOpen(false)
+      setEndDate(null)
+      setEndDateCalendarOpen(false)
       setSelectedDate(new Date())
       setViewCenterDate(new Date())
       setRooms([])
@@ -235,6 +237,7 @@ export function BookingCreateDialog({
       setSelectedStartHour(null)
       setSelectedSlots([])
       setCalendarOpen(false)
+      if (endDate && date >= endDate) setEndDate(null)
       if (view !== "planning") setView("planning")
     }
   }
@@ -245,6 +248,7 @@ export function BookingCreateDialog({
     setSelectedRoom(null)
     setSelectedStartHour(null)
     setSelectedSlots([])
+    if (endDate && date >= endDate) setEndDate(null)
     if (view !== "planning") setView("planning")
   }
 
@@ -290,12 +294,16 @@ export function BookingCreateDialog({
     startTransition(async () => {
       // Build list of dates to book
       const datesToBook: Date[] = []
-      if (isME && meEndDate && meEndDate > selectedDate) {
-        const allDays = eachDayOfInterval({ start: selectedDate, end: meEndDate })
+      if (endDate && endDate > selectedDate) {
+        const allDays = eachDayOfInterval({ start: selectedDate, end: endDate })
         for (const day of allDays) {
-          if (!isWeekend(day)) {
+          if (!isWeekend(day) && !isFrenchHoliday(day)) {
             datesToBook.push(day)
           }
+        }
+        if (datesToBook.length > 90) {
+          setError(`La plage est trop longue (${datesToBook.length} jours ouvrés, maximum 90)`)
+          return
         }
       } else {
         datesToBook.push(selectedDate)
@@ -306,14 +314,14 @@ export function BookingCreateDialog({
 
       for (const day of datesToBook) {
         const dateStr = format(day, "yyyy-MM-dd")
-        const startDate = createParisDate(dateStr, firstSlot)
-        const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`)
+        const dayStartDate = createParisDate(dateStr, firstSlot)
+        const dayEndDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`)
 
         const result = await createBookingFromAdmin({
           userId,
           resourceId: selectedRoom.id,
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString(),
+          startDate: dayStartDate.toISOString(),
+          endDate: dayEndDate.toISOString(),
           status,
           notes: notes.trim() || undefined,
           referral: isME ? "M&E" : undefined,
@@ -398,8 +406,8 @@ export function BookingCreateDialog({
               <Check className="h-8 w-8 text-green-500" />
             </div>
             <p className="text-sm font-medium text-foreground">
-              {isME && meEndDate && meEndDate > selectedDate
-                ? `${eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} réservation(s) créée(s) avec succès !`
+              {endDate && endDate > selectedDate
+                ? `${eachDayOfInterval({ start: selectedDate, end: endDate }).filter(d => !isWeekend(d) && !isFrenchHoliday(d)).length} réservation(s) créée(s) avec succès !`
                 : "La réservation a été créée avec succès !"}
             </p>
           </div>
@@ -668,13 +676,13 @@ export function BookingCreateDialog({
                           {format(selectedDate, "EEEE d MMMM yyyy", {
                             locale: fr,
                           })}
-                          {isME && meEndDate && meEndDate > selectedDate && (
+                          {endDate && endDate > selectedDate && (
                             <span>
                               {" → "}
-                              {format(meEndDate, "EEEE d MMMM yyyy", { locale: fr })}
+                              {format(endDate, "EEEE d MMMM yyyy", { locale: fr })}
                               {" "}
                               <span className="text-xs text-muted-foreground font-normal">
-                                ({eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} {t("days")})
+                                ({eachDayOfInterval({ start: selectedDate, end: endDate }).filter(d => !isWeekend(d) && !isFrenchHoliday(d)).length} {t("days")})
                               </span>
                             </span>
                           )}
@@ -709,69 +717,73 @@ export function BookingCreateDialog({
 
                   {/* Admin options */}
                   <div className="space-y-3">
+                    {/* Date range - End date picker (always visible) */}
+                    <div className="space-y-1.5 rounded-[12px] border border-foreground/10 p-3">
+                      <Label className="text-xs text-muted-foreground">
+                        {t("endDate")}
+                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Popover open={endDateCalendarOpen} onOpenChange={setEndDateCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start rounded-[12px] text-left font-normal",
+                                !endDate && "text-muted-foreground"
+                              )}
+                              disabled={isPending}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {endDate
+                                ? format(endDate, "EEEE d MMMM yyyy", { locale: fr })
+                                : "Même jour (optionnel)"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={endDate || undefined}
+                              onSelect={(date) => {
+                                setEndDate(date || null)
+                                setEndDateCalendarOpen(false)
+                              }}
+                              disabled={(date) =>
+                                date <= selectedDate || isWeekend(date) || isFrenchHoliday(date)
+                              }
+                              defaultMonth={selectedDate}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {endDate && (
+                          <button
+                            type="button"
+                            onClick={() => setEndDate(null)}
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full hover:bg-foreground/5 text-muted-foreground"
+                            disabled={isPending}
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                      {endDate && endDate > selectedDate && (
+                        <p className="text-xs text-muted-foreground">
+                          {eachDayOfInterval({ start: selectedDate, end: endDate }).filter(d => !isWeekend(d) && !isFrenchHoliday(d)).length} {t("day")}(s) {t("businessDay")}
+                        </p>
+                      )}
+                    </div>
+
                     {/* M&E checkbox */}
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id="is-me"
                         checked={isME}
-                        onCheckedChange={(checked) => {
-                          setIsME(checked === true)
-                          if (!checked) {
-                            setMeEndDate(null)
-                          }
-                        }}
+                        onCheckedChange={(checked) => setIsME(checked === true)}
                         disabled={isPending}
                       />
                       <Label htmlFor="is-me" className="text-sm font-medium cursor-pointer">
                         {t("reservation")} M&E (Meetings & Events)
                       </Label>
                     </div>
-
-                    {/* Date range picker when M&E is checked */}
-                    {isME && (
-                      <div className="space-y-1.5 rounded-[12px] border border-foreground/10 p-3">
-                        <Label className="text-xs text-muted-foreground">
-                          {t("endDate")}
-                        </Label>
-                        <Popover open={meCalendarOpen} onOpenChange={setMeCalendarOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start rounded-[12px] text-left font-normal",
-                                !meEndDate && "text-muted-foreground"
-                              )}
-                              disabled={isPending}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {meEndDate
-                                ? format(meEndDate, "EEEE d MMMM yyyy", { locale: fr })
-                                : "Sélectionner la date de fin"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={meEndDate || undefined}
-                              onSelect={(date) => {
-                                setMeEndDate(date || null)
-                                setMeCalendarOpen(false)
-                              }}
-                              disabled={(date) =>
-                                date <= selectedDate || isWeekend(date)
-                              }
-                              defaultMonth={selectedDate}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        {meEndDate && meEndDate > selectedDate && (
-                          <p className="text-xs text-muted-foreground">
-                            {eachDayOfInterval({ start: selectedDate, end: meEndDate }).filter(d => !isWeekend(d)).length} {t("day")}(s)
-                            {t("businessDay")}
-                          </p>
-                        )}
-                      </div>
-                    )}
 
                     <div className="space-y-1.5">
                       <Label className="text-xs text-muted-foreground">{t("status")}</Label>
