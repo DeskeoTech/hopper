@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
+import { toParisDate, createParisDate } from "@/lib/timezone"
 import { CalendarIcon, ChevronLeft, ChevronRight, Loader2, Users } from "lucide-react"
 import {
   Dialog,
@@ -48,9 +49,9 @@ export function EditBookingDialog({
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
 
-  const initialDate = parseISO(booking.start_date)
-  const initialStartHour = new Date(booking.start_date).getHours()
-  const initialEndHour = new Date(booking.end_date).getHours()
+  const initialDate = toParisDate(booking.start_date)
+  const initialStartHour = toParisDate(booking.start_date).getHours()
+  const initialEndHour = toParisDate(booking.end_date).getHours()
 
   // Build initial slots from booking
   const buildInitialSlots = () => {
@@ -89,8 +90,8 @@ export function EditBookingDialog({
           // Exclude current booking's slots from unavailable
           const unavailable: string[] = []
           result.bookings.forEach((b) => {
-            const startHour = new Date(b.start_date).getHours()
-            const endHour = new Date(b.end_date).getHours()
+            const startHour = toParisDate(b.start_date).getHours()
+            const endHour = toParisDate(b.end_date).getHours()
             for (let h = startHour; h < endHour; h++) {
               const slot = `${h.toString().padStart(2, "0")}:00`
               // Only mark as unavailable if it's not from the current booking being edited
@@ -134,8 +135,8 @@ export function EditBookingDialog({
     const lastHour = parseInt(lastSlot.split(":")[0]) + 1
 
     const dateStr = format(selectedDate, "yyyy-MM-dd")
-    const startDate = `${dateStr}T${firstSlot}:00Z`
-    const endDate = `${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00Z`
+    const startDate = createParisDate(dateStr, firstSlot).toISOString()
+    const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`).toISOString()
 
     const result = await updateBooking({
       bookingId: booking.id,

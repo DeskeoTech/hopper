@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { format } from "date-fns"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
+import { toParisDate, createParisDate } from "@/lib/timezone"
 import {
   ChevronLeft,
   ChevronRight,
@@ -188,8 +189,8 @@ export function RoomBookingContent({
         } else {
           const unavailable: string[] = []
           result.bookings.forEach((booking) => {
-            const startHour = new Date(booking.start_date).getHours()
-            const endHour = new Date(booking.end_date).getHours()
+            const startHour = toParisDate(booking.start_date).getHours()
+            const endHour = toParisDate(booking.end_date).getHours()
             for (let h = startHour; h < endHour; h++) {
               unavailable.push(`${h.toString().padStart(2, "0")}:00`)
             }
@@ -292,8 +293,8 @@ export function RoomBookingContent({
     const lastHour = parseInt(lastSlot.split(":")[0]) + 1
 
     const dateStr = format(selectedDate, "yyyy-MM-dd")
-    const startDate = `${dateStr}T${firstSlot}:00Z`
-    const endDate = `${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00Z`
+    const startDate = createParisDate(dateStr, firstSlot).toISOString()
+    const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`).toISOString()
 
     const result = await createMeetingRoomBooking({
       userId,

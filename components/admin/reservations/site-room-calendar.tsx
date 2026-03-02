@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback } from "react"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { format, parseISO, addDays, subDays, isToday, isSameDay } from "date-fns"
 import { fr } from "date-fns/locale"
+import { toParisDate } from "@/lib/timezone"
 import { ChevronLeft, ChevronRight, Users, DoorOpen, CalendarOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -65,15 +66,15 @@ export function SiteRoomCalendar({
   const roomBookings = useMemo(() => {
     const dateStr = format(currentDate, "yyyy-MM-dd")
     const filteredBookings = bookings.filter((b) => {
-      const bookingDate = format(parseISO(b.start_date), "yyyy-MM-dd")
+      const bookingDate = format(toParisDate(b.start_date), "yyyy-MM-dd")
       return bookingDate === dateStr && b.resource_type === "meeting_room"
     })
 
     return filteredBookings.map((b): RoomBooking => ({
       id: b.id,
       resourceId: b.resource_id,
-      startHour: new Date(b.start_date).getHours(),
-      endHour: new Date(b.end_date).getHours(),
+      startHour: toParisDate(b.start_date).getHours(),
+      endHour: toParisDate(b.end_date).getHours(),
       title: b.notes,
       userName: [b.user_first_name, b.user_last_name].filter(Boolean).join(" ") || null,
       status: b.status,

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { toParisDate, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 export async function getMeetingRoomsBySite(
@@ -60,8 +61,8 @@ export async function checkAvailability(
 ): Promise<{ bookings: Array<{ start_date: string; end_date: string }>; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   const { data: bookings, error } = await supabase
     .from("bookings")
@@ -95,8 +96,8 @@ export async function getRoomBookingsForDate(
 ): Promise<{ bookings: RoomBooking[]; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   // Get all meeting room IDs for this site first
   const { data: rooms, error: roomsError } = await supabase
@@ -143,8 +144,8 @@ export async function getRoomBookingsForDate(
       id: b.id,
       resourceId: b.resource_id,
       userId: b.user_id,
-      startHour: new Date(b.start_date).getHours(),
-      endHour: new Date(b.end_date).getHours(),
+      startHour: toParisDate(b.start_date).getHours(),
+      endHour: toParisDate(b.end_date).getHours(),
       title: b.notes,
       userName: user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || null : null,
       notes: b.notes,
