@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { toParisDate, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 export async function getMeetingRoomsBySite(
@@ -60,8 +61,8 @@ export async function checkAvailability(
 ): Promise<{ bookings: Array<{ start_date: string; end_date: string }>; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   const { data: bookings, error } = await supabase
     .from("bookings")
@@ -95,8 +96,8 @@ export async function getRoomBookingsForDate(
 ): Promise<{ bookings: RoomBooking[]; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   // Get all meeting room IDs for this site first
   const { data: rooms, error: roomsError } = await supabase
@@ -143,8 +144,8 @@ export async function getRoomBookingsForDate(
       id: b.id,
       resourceId: b.resource_id,
       userId: b.user_id,
-      startHour: new Date(b.start_date).getHours(),
-      endHour: new Date(b.end_date).getHours(),
+      startHour: toParisDate(b.start_date).getHours(),
+      endHour: toParisDate(b.end_date).getHours(),
       title: b.notes,
       userName: user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || null : null,
       notes: b.notes,
@@ -556,14 +557,13 @@ export async function createBookingFromAdmin(data: {
   }
 
   // Find the credit record to deduct from
-  const today = new Date().toISOString().split("T")[0]
   const { data: creditRecord, error: creditRecordError } = await supabase
     .from("credits")
-    .select("id, remaining_credits, contracts!inner(company_id, status)")
-    .eq("contracts.company_id", companyId)
-    .eq("contracts.status", "active")
-    .lte("period", today)
-    .order("period", { ascending: false })
+    .select("id, remaining_balance")
+    .eq("company_id", companyId)
+    .gt("remaining_balance", 0)
+    .or("expiration.is.null,expiration.gt.now()")
+    .order("created_at", { ascending: false })
     .limit(1)
     .single()
 
@@ -592,12 +592,11 @@ export async function createBookingFromAdmin(data: {
   }
 
   // Deduct credits
-  const newBalance = creditRecord.remaining_credits - creditsNeeded
+  const newBalance = creditRecord.remaining_balance - creditsNeeded
   const { error: creditUpdateError } = await supabase
     .from("credits")
     .update({
-      remaining_credits: newBalance,
-      updated_at: new Date().toISOString(),
+      remaining_balance: newBalance,
     })
     .eq("id", creditRecord.id)
 
@@ -615,7 +614,7 @@ export async function createBookingFromAdmin(data: {
     user_id: data.userId,
     transaction_type: "consumption",
     amount: creditsNeeded,
-    balance_before: creditRecord.remaining_credits,
+    balance_before: creditRecord.remaining_balance,
     balance_after: newBalance,
     reason: "Réservation de salle de réunion",
   })

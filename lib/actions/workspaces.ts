@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
 import type { FlexPassOffer, FlexDeskAvailability } from "@/lib/types/database"
 
 export async function getFlexPasses(): Promise<{
@@ -58,8 +59,8 @@ export async function getFlexDeskAvailability(
   }
 
   // 2. Count confirmed bookings for this date
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   const { data: bookings, error: bookingsError } = await supabase
     .from("bookings")

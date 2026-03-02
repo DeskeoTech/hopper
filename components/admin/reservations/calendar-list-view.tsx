@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
+import { toParisDate } from "@/lib/timezone"
 import { ArrowUpDown, ArrowUp, ArrowDown, CalendarX } from "lucide-react"
 import { getPaymentStatuses } from "@/lib/actions/stripe"
 import { PaymentStatusBadge } from "./payment-status-badge"
@@ -72,8 +73,8 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
           bValue = new Date(b.start_date).getTime()
           break
         case "time":
-          aValue = format(parseISO(a.start_date), "HH:mm")
-          bValue = format(parseISO(b.start_date), "HH:mm")
+          aValue = format(toParisDate(a.start_date), "HH:mm")
+          bValue = format(toParisDate(b.start_date), "HH:mm")
           break
         case "resource":
           aValue = (a.resource_name || "").toLowerCase()
@@ -230,15 +231,15 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-semibold">
-                      {format(parseISO(booking.start_date), "dd/MM/yyyy", { locale: fr })}
+                      {format(toParisDate(booking.start_date), "dd/MM/yyyy", { locale: fr })}
                     </span>
                     <span className="text-xs text-muted-foreground sm:hidden">
-                      {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} - {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
+                      {format(toParisDate(booking.start_date), "HH:mm", { locale: fr })} - {format(toParisDate(booking.end_date), "HH:mm", { locale: fr })}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} - {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
+                  {format(toParisDate(booking.start_date), "HH:mm", { locale: fr })} - {format(toParisDate(booking.end_date), "HH:mm", { locale: fr })}
                 </TableCell>
                 <TableCell className="font-semibold uppercase">
                   {booking.resource_name || "-"}

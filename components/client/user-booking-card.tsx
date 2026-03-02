@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
+import { toParisDate } from "@/lib/timezone"
 import { MapPin } from "lucide-react"
 import { getPaymentStatus } from "@/lib/actions/stripe"
 import { CancelBookingDialog } from "./cancel-booking-dialog"
@@ -33,10 +34,10 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
     }
   }, [booking.stripe_checkout_session_id])
 
-  const parsedDate = parseISO(booking.start_date)
+  const parsedDate = toParisDate(booking.start_date)
   const formattedDate = format(parsedDate, "dd/MM/yyyy", { locale: dateLocale })
   const startTime = format(parsedDate, "HH:mm", { locale: dateLocale })
-  const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: dateLocale })
+  const endTime = format(toParisDate(booking.end_date), "HH:mm", { locale: dateLocale })
   const fullDate = format(parsedDate, "EEEE d MMMM yyyy", { locale: dateLocale })
 
   const isCancelled = booking.status === "cancelled"

@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { nowInParis } from "@/lib/timezone"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 /**
@@ -28,8 +29,8 @@ export async function getCurrentlyAvailableMeetingRooms(
     return { rooms: [] }
   }
 
-  // Get current hour boundaries
-  const now = new Date()
+  // Get current hour boundaries in Paris timezone
+  const now = nowInParis()
   const currentHourStart = new Date(now)
   currentHourStart.setMinutes(0, 0, 0)
   const currentHourEnd = new Date(currentHourStart)

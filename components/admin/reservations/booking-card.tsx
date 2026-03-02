@@ -1,5 +1,6 @@
-import { format, parseISO } from "date-fns"
+import { format } from "date-fns"
 import { fr } from "date-fns/locale"
+import { toParisDate } from "@/lib/timezone"
 import { MapPin, User, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { BookingStatusBadge } from "./booking-status-badge"
@@ -18,10 +19,10 @@ const resourceTypeLabels: Record<string, string> = {
 }
 
 export function BookingCard({ booking, compact = false }: BookingCardProps) {
-  const startTime = format(parseISO(booking.start_date), "HH:mm", {
+  const startTime = format(toParisDate(booking.start_date), "HH:mm", {
     locale: fr,
   })
-  const endTime = format(parseISO(booking.end_date), "HH:mm", { locale: fr })
+  const endTime = format(toParisDate(booking.end_date), "HH:mm", { locale: fr })
   const userName =
     booking.user_first_name || booking.user_last_name
       ? `${booking.user_first_name || ""} ${booking.user_last_name || ""}`.trim()
