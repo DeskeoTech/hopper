@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Users, Coins, DoorOpen, ChevronLeft, ChevronRight, X, Tv, Video, PenTool, Layers } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatTime } from "@/lib/utils"
 import type { MeetingRoomResource, ResourceEquipment } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -350,7 +350,7 @@ export function SingleRoomTimeline({ room, bookings, onSlotClick, selectedDate }
                 )}
                 {height > 70 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                    {booking.startHour}h - {booking.endHour}h
+                    {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                   </p>
                 )}
               </div>
@@ -653,7 +653,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                           </p>
                           {height > 35 && (
                             <p className="text-[8px] text-muted-foreground/70 mt-0.5">
-                              {booking.startHour}h-{booking.endHour}h
+                              {formatTime(booking.startHour)}-{formatTime(booking.endHour)}
                             </p>
                           )}
                         </div>
@@ -780,7 +780,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                         </p>
                         {isOwnBooking && height > 50 && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {booking.startHour}h - {booking.endHour}h
+                            {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                           </p>
                         )}
                       </div>
