@@ -170,3 +170,25 @@ export async function removeCredits(
   revalidatePath(`/admin/clients/${companyId}`)
   return { success: true, error: null }
 }
+
+export async function markCreditsNotified(
+  creditId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("credits")
+    .update({ is_notified: true })
+    .eq("id", creditId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  return { success: true, error: null }
+}

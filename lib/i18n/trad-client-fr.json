@@ -196,6 +196,12 @@
       "purchase": "Achat",
       "allocation": "Attribution",
       "expiration": "Expiration"
+    },
+    "info": {
+      "title": "Vous avez reçu des crédits !",
+      "credits": "crédits",
+      "expiresOn": "Expire le",
+      "understood": "Compris"
     }
   },
   "billing": {
