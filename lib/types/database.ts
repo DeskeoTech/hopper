@@ -376,7 +376,7 @@ export interface SupportTicket {
   airtable_id: string | null
   user_id: string | null
   site_id: string | null
-  request_type: TicketRequestType | null
+  request_type: string | null
   request_subtype: string | null
   subject: string | null
   comment: string | null

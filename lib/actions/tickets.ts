@@ -3,12 +3,12 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
-import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
+import type { TicketStatus, SupportTicket } from "@/lib/types/database"
 
 export async function createTicket(data: {
   user_id: string | null
   site_id?: string | null
-  request_type: TicketRequestType
+  request_type: string
   request_subtype?: string | null
   subject?: string | null
   comment: string
