@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
+import { toParisDate } from "@/lib/timezone"
 import { ArrowUpDown, ArrowUp, ArrowDown, CalendarX } from "lucide-react"
+import { getPaymentStatuses } from "@/lib/actions/stripe"
+import { PaymentStatusBadge } from "./payment-status-badge"
 import {
   Table,
   TableBody,
@@ -30,6 +33,24 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
   const [sortField, setSortField] = useState<SortField>("date")
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc")
   const [currentPage, setCurrentPage] = useState(1)
+  const [paymentStatuses, setPaymentStatuses] = useState<Record<string, { paymentStatus: string; sessionStatus: string }>>({})
+
+  const fetchPaymentStatuses = useCallback(async () => {
+    const sessionIds = bookings
+      .filter((b) => b.stripe_checkout_session_id)
+      .map((b) => b.stripe_checkout_session_id!)
+
+    if (sessionIds.length === 0) return
+
+    const result = await getPaymentStatuses(sessionIds)
+    if ("statuses" in result) {
+      setPaymentStatuses(result.statuses)
+    }
+  }, [bookings])
+
+  useEffect(() => {
+    fetchPaymentStatuses()
+  }, [fetchPaymentStatuses])
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -52,8 +73,8 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
           bValue = new Date(b.start_date).getTime()
           break
         case "time":
-          aValue = format(parseISO(a.start_date), "HH:mm")
-          bValue = format(parseISO(b.start_date), "HH:mm")
+          aValue = format(toParisDate(a.start_date), "HH:mm")
+          bValue = format(toParisDate(b.start_date), "HH:mm")
           break
         case "resource":
           aValue = (a.resource_name || "").toLowerCase()
@@ -186,6 +207,9 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
                   <SortIcon field="company" />
                 </div>
               </TableHead>
+              <TableHead className="hidden text-xs font-bold uppercase tracking-wide lg:table-cell">
+                Paiement
+              </TableHead>
               <TableHead
                 className="cursor-pointer select-none text-xs font-bold uppercase tracking-wide"
                 onClick={() => handleSort("status")}
@@ -207,15 +231,15 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
                 <TableCell>
                   <div className="flex flex-col">
                     <span className="font-semibold">
-                      {format(parseISO(booking.start_date), "dd/MM/yyyy", { locale: fr })}
+                      {format(toParisDate(booking.start_date), "dd/MM/yyyy", { locale: fr })}
                     </span>
                     <span className="text-xs text-muted-foreground sm:hidden">
-                      {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} - {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
+                      {format(toParisDate(booking.start_date), "HH:mm", { locale: fr })} - {format(toParisDate(booking.end_date), "HH:mm", { locale: fr })}
                     </span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  {format(parseISO(booking.start_date), "HH:mm", { locale: fr })} - {format(parseISO(booking.end_date), "HH:mm", { locale: fr })}
+                  {format(toParisDate(booking.start_date), "HH:mm", { locale: fr })} - {format(toParisDate(booking.end_date), "HH:mm", { locale: fr })}
                 </TableCell>
                 <TableCell className="font-semibold uppercase">
                   {booking.resource_name || "-"}
@@ -235,6 +259,16 @@ export function CalendarListView({ bookings, onBookingClick }: CalendarListViewP
                 </TableCell>
                 <TableCell className="hidden font-semibold uppercase lg:table-cell">
                   {booking.company_name || "-"}
+                </TableCell>
+                <TableCell className="hidden lg:table-cell">
+                  {booking.stripe_checkout_session_id ? (
+                    <PaymentStatusBadge
+                      paymentStatus={paymentStatuses[booking.stripe_checkout_session_id]?.paymentStatus || null}
+                      sessionStatus={paymentStatuses[booking.stripe_checkout_session_id]?.sessionStatus || null}
+                    />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
                 <TableCell>
                   <BookingStatusBadge status={booking.status} />

@@ -228,6 +228,25 @@ export async function updateNewsPost(postId: string, formData: FormData) {
   return { success: true }
 }
 
+export async function markNewsAsRead(notificationIds: string[]) {
+  if (notificationIds.length === 0) return { success: true }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("client_notifications")
+    .delete()
+    .in("id", notificationIds)
+
+  if (error) {
+    console.error("Error marking news as read:", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/compte")
+  return { success: true }
+}
+
 export async function deleteNewsPost(postId: string) {
   if (!postId) {
     return { error: "ID de l'actualité requis" }

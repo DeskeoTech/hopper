@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
+import { toParisDate, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 export async function getMeetingRoomsBySite(
@@ -60,8 +62,8 @@ export async function checkAvailability(
 ): Promise<{ bookings: Array<{ start_date: string; end_date: string }>; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   const { data: bookings, error } = await supabase
     .from("bookings")
@@ -86,7 +88,7 @@ export interface RoomBooking {
   endHour: number
   title: string | null
   userName: string | null
-  notes : notes | null
+  notes: string | null
 }
 
 export async function getRoomBookingsForDate(
@@ -95,8 +97,8 @@ export async function getRoomBookingsForDate(
 ): Promise<{ bookings: RoomBooking[]; error?: string }> {
   const supabase = await createClient()
 
-  const startOfDay = `${date}T00:00:00Z`
-  const endOfDay = `${date}T23:59:59Z`
+  const startOfDay = parisStartOfDay(date)
+  const endOfDay = parisEndOfDay(date)
 
   // Get all meeting room IDs for this site first
   const { data: rooms, error: roomsError } = await supabase
@@ -143,10 +145,11 @@ export async function getRoomBookingsForDate(
       id: b.id,
       resourceId: b.resource_id,
       userId: b.user_id,
-      startHour: new Date(b.start_date).getHours(),
-      endHour: new Date(b.end_date).getHours(),
+      startHour: toParisDate(b.start_date).getHours(),
+      endHour: toParisDate(b.end_date).getHours(),
       title: b.notes,
       userName: user ? [user.first_name, user.last_name].filter(Boolean).join(" ") || null : null,
+      notes: b.notes,
     }
   })
 
@@ -220,7 +223,8 @@ export async function createMeetingRoomBooking(data: {
   creditsToUse: number
   companyId: string
   referral?: string
-  notes?: string 
+  notes?: string
+  stripeCheckoutSessionId?: string
 }): Promise<{ success?: boolean; error?: string; bookingId?: string }> {
   const supabase = await createClient()
 
@@ -266,8 +270,10 @@ export async function createMeetingRoomBooking(data: {
   }
 
   // 2. Check credits availability
-  // Fetch all credits for the company, then filter valid ones in JS
-  const { data: allCredits, error: creditsError } = await supabase
+  // Use admin client to bypass RLS on credits table (users without contract_id on their credits can't read them)
+  const adminSupabase = createAdminClient()
+
+  const { data: allCredits, error: creditsError } = await adminSupabase
     .from("credits")
     .select("id, remaining_balance, expiration")
     .eq("company_id", data.companyId)
@@ -308,6 +314,7 @@ export async function createMeetingRoomBooking(data: {
       credits_used: data.creditsToUse,
       ...(data.referral ? { referral: data.referral } : {}),
       ...(data.notes ? { notes: data.notes } : {}),
+      ...(data.stripeCheckoutSessionId ? { stripe_checkout_session_id: data.stripeCheckoutSessionId } : {}),
     })
     .select("id")
     .single()
@@ -316,9 +323,9 @@ export async function createMeetingRoomBooking(data: {
     return { error: bookingError.message }
   }
 
-  // 4. Deduct credits
+  // 4. Deduct credits (use admin client to bypass RLS)
   const newBalance = credits.remaining_balance - data.creditsToUse
-  const { error: creditUpdateError } = await supabase
+  const { error: creditUpdateError } = await adminSupabase
     .from("credits")
     .update({
       remaining_balance: newBalance,
@@ -331,8 +338,8 @@ export async function createMeetingRoomBooking(data: {
     return { error: "Erreur lors de la déduction des crédits" }
   }
 
-  // 5. Create credit transaction record
-  await supabase.from("credit_transactions").insert({
+  // 5. Create credit transaction record (use admin client to bypass RLS)
+  await adminSupabase.from("credit_transactions").insert({
     credit_id: credits.id,
     company_id: data.companyId,
     booking_id: booking.id,
@@ -399,8 +406,11 @@ export async function cancelBooking(
       .single()
 
     if (user?.company_id) {
+      // Use admin client for credit operations to bypass RLS
+      const adminSupabase = createAdminClient()
+
       // Find the credit record for this company (with valid credits or any recent one)
-      const { data: creditRecord } = await supabase
+      const { data: creditRecord } = await adminSupabase
         .from("credits")
         .select("id, remaining_balance")
         .eq("company_id", user.company_id)
@@ -411,7 +421,7 @@ export async function cancelBooking(
       if (creditRecord) {
         // Refund the credits
         const newBalance = creditRecord.remaining_balance + booking.credits_used
-        await supabase
+        await adminSupabase
           .from("credits")
           .update({
             remaining_balance: newBalance,
@@ -419,7 +429,7 @@ export async function cancelBooking(
           .eq("id", creditRecord.id)
 
         // Create credit transaction record for refund
-        await supabase.from("credit_transactions").insert({
+        await adminSupabase.from("credit_transactions").insert({
           credit_id: creditRecord.id,
           company_id: user.company_id,
           booking_id: bookingId,
@@ -552,15 +562,15 @@ export async function createBookingFromAdmin(data: {
     }
   }
 
-  // Find the credit record to deduct from
-  const today = new Date().toISOString().split("T")[0]
-  const { data: creditRecord, error: creditRecordError } = await supabase
+  // Find the credit record to deduct from (use admin client to bypass RLS)
+  const adminSupabase = createAdminClient()
+  const { data: creditRecord, error: creditRecordError } = await adminSupabase
     .from("credits")
-    .select("id, remaining_credits, contracts!inner(company_id, status)")
-    .eq("contracts.company_id", companyId)
-    .eq("contracts.status", "active")
-    .lte("period", today)
-    .order("period", { ascending: false })
+    .select("id, remaining_balance")
+    .eq("company_id", companyId)
+    .gt("remaining_balance", 0)
+    .or("expiration.is.null,expiration.gt.now()")
+    .order("created_at", { ascending: false })
     .limit(1)
     .single()
 
@@ -588,13 +598,12 @@ export async function createBookingFromAdmin(data: {
     return { error: bookingError.message }
   }
 
-  // Deduct credits
-  const newBalance = creditRecord.remaining_credits - creditsNeeded
-  const { error: creditUpdateError } = await supabase
+  // Deduct credits (use admin client to bypass RLS)
+  const newBalance = creditRecord.remaining_balance - creditsNeeded
+  const { error: creditUpdateError } = await adminSupabase
     .from("credits")
     .update({
-      remaining_credits: newBalance,
-      updated_at: new Date().toISOString(),
+      remaining_balance: newBalance,
     })
     .eq("id", creditRecord.id)
 
@@ -604,15 +613,15 @@ export async function createBookingFromAdmin(data: {
     return { error: "Erreur lors de la déduction des crédits" }
   }
 
-  // Create credit transaction record
-  await supabase.from("credit_transactions").insert({
+  // Create credit transaction record (use admin client to bypass RLS)
+  await adminSupabase.from("credit_transactions").insert({
     credit_id: creditRecord.id,
     company_id: companyId,
     booking_id: booking.id,
     user_id: data.userId,
     transaction_type: "consumption",
     amount: creditsNeeded,
-    balance_before: creditRecord.remaining_credits,
+    balance_before: creditRecord.remaining_balance,
     balance_after: newBalance,
     reason: "Réservation de salle de réunion",
   })

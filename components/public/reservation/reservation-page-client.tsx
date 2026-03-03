@@ -4,12 +4,18 @@ import { useState, useCallback, useEffect } from "react"
 import { useSearchParams } from "next/navigation"
 import { PublicHeader } from "@/components/public/public-header"
 import { SitesList } from "./sites-list"
-import { SitesMapView } from "./sites-map-view"
+import dynamic from "next/dynamic"
+
+const SitesMapView = dynamic(() => import("./sites-map-view").then((m) => ({ default: m.SitesMapView })), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-muted animate-pulse" />,
+})
 import { BookingDialog, BOOKING_STATE_KEY, type SavedBookingState } from "./booking-dialog"
 import { SiteDetailsDialog } from "./site-details-dialog"
 import { PaymentSuccessModal } from "./payment-success-modal"
 import { MobileToggle } from "./mobile-toggle"
 import { ReservationProvider } from "./reservation-context"
+import { createBookingFromStripeSession } from "@/lib/actions/stripe"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import { useTranslations } from "next-intl"
@@ -18,6 +24,7 @@ import type { Site } from "@/lib/types/database"
 interface SiteWithPhotos extends Site {
   photos: string[]
   capacity: number
+  closureDates?: string[]
 }
 
 interface ReservationPageClientProps {
@@ -63,6 +70,11 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
     const cleanUrl = params.size > 0 ? `/?${params.toString()}` : "/"
 
     if (success === "true") {
+      // Create booking from completed Stripe session
+      const sessionId = searchParams.get("session_id")
+      if (sessionId) {
+        createBookingFromStripeSession(sessionId).catch(console.error)
+      }
       setPaymentSuccessOpen(true)
       localStorage.removeItem(BOOKING_STATE_KEY)
       window.history.replaceState({}, "", cleanUrl)

@@ -47,8 +47,8 @@ export default async function ComptePage() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
 
-  // Run bookings, contracts, news, and unnotified credits queries in parallel
-  const [bookingsResult, contractsResult, posts, unnotifiedCreditsResult] = await Promise.all([
+  // Run bookings, contracts, news, unread notifications, and unnotified credits queries in parallel
+  const [bookingsResult, contractsResult, posts, unreadNotifsResult, unnotifiedCreditsResult] = await Promise.all([
     // Only fetch upcoming/ongoing bookings (server-side filter instead of client-side)
     supabase
       .from("bookings")
@@ -68,6 +68,11 @@ export default async function ComptePage() {
     contractsQueryBuilder,
 
     getNewsPosts({ mainSiteId }),
+
+    supabase
+      .from("client_notifications")
+      .select("id, source_id, user_id")
+      .eq("user_id", userProfile.id),
 
     // Unnotified credits created this month
     userProfile.company_id
@@ -138,6 +143,8 @@ export default async function ComptePage() {
         notes: b.notes,
         hubspot_deal_id: b.hubspot_deal_id,
         netsuite_invoice_id: b.netsuite_invoice_id,
+        stripe_checkout_session_id: b.stripe_checkout_session_id,
+        referral: b.referral,
         created_at: b.created_at,
         updated_at: b.updated_at,
         resource_name: resource?.name || null,
@@ -168,6 +175,7 @@ export default async function ComptePage() {
       contracts={contracts}
       posts={posts}
       isAdmin={isAdmin}
+      unreadNotifications={unreadNotifsResult.data ?? []}
       unnotifiedCredit={unnotifiedCredit}
     />
   )

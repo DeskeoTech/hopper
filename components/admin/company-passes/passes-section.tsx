@@ -9,6 +9,7 @@ import { StripePortalButton } from "@/components/admin/company-edit/stripe-actio
 import { PassDetailModal } from "./pass-detail-modal"
 import { CreatePassModal } from "./create-pass-modal"
 import type { AdminPassForDisplay } from "@/lib/types/database"
+import type { StripeSubscriptionStatus } from "@/lib/actions/stripe"
 
 interface PassesSectionProps {
   passes: AdminPassForDisplay[]
@@ -16,6 +17,7 @@ interface PassesSectionProps {
   stripeCustomerId?: string | null
   stripeCustomerEmail?: string | null
   companyName?: string
+  subscriptionStatuses?: Record<string, StripeSubscriptionStatus>
 }
 
 const MAX_VISIBLE = 5
@@ -26,6 +28,7 @@ export function PassesSection({
   stripeCustomerId,
   stripeCustomerEmail,
   companyName,
+  subscriptionStatuses = {},
 }: PassesSectionProps) {
   const [selectedPass, setSelectedPass] = useState<AdminPassForDisplay | null>(null)
   const [showAll, setShowAll] = useState(false)
@@ -69,6 +72,7 @@ export function PassesSection({
                 key={pass.id}
                 pass={pass}
                 onClick={() => setSelectedPass(pass)}
+                stripeStatus={pass.subscription_id ? subscriptionStatuses[pass.subscription_id] : undefined}
               />
             ))}
 
@@ -105,12 +109,25 @@ export function PassesSection({
   )
 }
 
+const STRIPE_STATUS_CONFIG: Record<string, { label: string; className: string }> = {
+  active: { label: "Stripe: actif", className: "bg-green-100 text-green-700" },
+  trialing: { label: "Stripe: essai", className: "bg-blue-100 text-blue-700" },
+  past_due: { label: "Stripe: impayé", className: "bg-red-100 text-red-700" },
+  unpaid: { label: "Stripe: impayé", className: "bg-red-100 text-red-700" },
+  canceled: { label: "Stripe: annulé", className: "bg-gray-100 text-gray-600" },
+  incomplete: { label: "Stripe: incomplet", className: "bg-orange-100 text-orange-700" },
+  incomplete_expired: { label: "Stripe: expiré", className: "bg-gray-100 text-gray-600" },
+  paused: { label: "Stripe: en pause", className: "bg-orange-100 text-orange-700" },
+}
+
 function PassCard({
   pass,
   onClick,
+  stripeStatus,
 }: {
   pass: AdminPassForDisplay
   onClick: () => void
+  stripeStatus?: StripeSubscriptionStatus
 }) {
   const startDate = pass.start_date ? parseISO(pass.start_date) : null
   const endDate = pass.end_date ? parseISO(pass.end_date) : null
@@ -170,6 +187,11 @@ function PassCard({
           <span className="flex items-center gap-1">
             <Users className="h-3 w-3" />
             {pass.assigned_users_count}/{pass.number_of_seats}
+          </span>
+        )}
+        {stripeStatus && STRIPE_STATUS_CONFIG[stripeStatus] && (
+          <span className={cn("shrink-0 rounded-sm px-1.5 py-0.5 text-xs font-medium", STRIPE_STATUS_CONFIG[stripeStatus].className)}>
+            {STRIPE_STATUS_CONFIG[stripeStatus].label}
           </span>
         )}
       </div>

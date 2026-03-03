@@ -377,6 +377,89 @@ export async function deleteCompanyKbis(companyId: string, storagePath: string) 
   return { success: true }
 }
 
+export async function uploadCompanyDocument(
+  companyId: string,
+  documentType: "identity_document" | "rib",
+  formData: FormData
+) {
+  const supabase = createAdminClient()
+
+  const file = formData.get("file") as File
+  if (!file) {
+    return { error: "Aucun fichier fourni" }
+  }
+
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"]
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Format non accepté. Utilisez PDF, JPG ou PNG." }
+  }
+
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { error: "Le fichier est trop volumineux (max 10 Mo)" }
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "pdf"
+  const fileName = `${companyId}/${documentType}/${Date.now()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("company-documents")
+    .upload(fileName, file, { cacheControl: "3600", upsert: false })
+
+  if (uploadError) {
+    return { error: "Erreur lors de l'upload du fichier" }
+  }
+
+  const columnName = documentType === "identity_document"
+    ? "identity_document_storage_path"
+    : "rib_storage_path"
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ [columnName]: fileName, updated_at: new Date().toISOString() })
+    .eq("id", companyId)
+
+  if (updateError) {
+    await supabase.storage.from("company-documents").remove([fileName])
+    return { error: "Erreur lors de la mise à jour" }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
+export async function deleteCompanyDocument(
+  companyId: string,
+  documentType: "identity_document" | "rib",
+  storagePath: string
+) {
+  const supabase = createAdminClient()
+
+  const { error: removeError } = await supabase.storage
+    .from("company-documents")
+    .remove([storagePath])
+
+  if (removeError) {
+    return { error: "Erreur lors de la suppression du fichier" }
+  }
+
+  const columnName = documentType === "identity_document"
+    ? "identity_document_storage_path"
+    : "rib_storage_path"
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ [columnName]: null, updated_at: new Date().toISOString() })
+    .eq("id", companyId)
+
+  if (updateError) {
+    return { error: "Erreur lors de la mise à jour" }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
 export async function updateSpacebringSubscription(
   companyId: string,
   data: {

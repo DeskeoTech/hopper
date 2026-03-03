@@ -38,6 +38,7 @@ import {
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { AddUserModal } from "./add-user-modal"
 import { EditUserModal } from "./edit-user-modal"
+import { toast } from "sonner"
 import { toggleUserStatus, toggleHopperAdmin, deleteUser } from "@/lib/actions/users"
 import { cn } from "@/lib/utils"
 import type { User } from "@/lib/types/database"
@@ -193,24 +194,39 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false, isDesk
     if (!confirmUser) return
     setLoading(true)
     const isActive = confirmUser.status === "active"
-    await toggleUserStatus(confirmUser.id, companyId, isActive ? "inactive" : "active")
+    const result = await toggleUserStatus(confirmUser.id, companyId, isActive ? "inactive" : "active")
     setLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(isActive ? "Utilisateur désactivé" : "Utilisateur activé")
+    }
     setConfirmUser(null)
   }
 
   const handleToggleHopperAdmin = async () => {
     if (!confirmAdminToggle) return
     setLoading(true)
-    await toggleHopperAdmin(confirmAdminToggle.id, companyId, !confirmAdminToggle.is_hopper_admin)
+    const result = await toggleHopperAdmin(confirmAdminToggle.id, companyId, !confirmAdminToggle.is_hopper_admin)
     setLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(confirmAdminToggle.is_hopper_admin ? "Droits Hopper Admin retirés" : "Droits Hopper Admin accordés")
+    }
     setConfirmAdminToggle(null)
   }
 
   const handleDeleteUser = async () => {
     if (!confirmDelete) return
     setLoading(true)
-    await deleteUser(confirmDelete.id, companyId)
+    const result = await deleteUser(confirmDelete.id, companyId)
     setLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success("Utilisateur supprimé")
+    }
     setConfirmDelete(null)
   }
 
@@ -339,7 +355,15 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false, isDesk
                   return (
                     <TableRow key={user.id} className="border-b border-border/30 hover:bg-muted/30">
                       <TableCell className="font-semibold uppercase">
-                        {getFullName(user)}
+                        <EditUserModal
+                          user={user}
+                          companyId={companyId}
+                          trigger={
+                            <button className="cursor-pointer text-left hover:underline">
+                              {getFullName(user)}
+                            </button>
+                          }
+                        />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {user.email || "-"}
@@ -441,15 +465,13 @@ export function UsersList({ companyId, initialUsers, isTechAdmin = false, isDesk
                                 </>
                               )}
                             </DropdownMenuItem>
-                            {isTechAdmin && (
-                              <DropdownMenuItem
-                                onClick={() => setConfirmDelete(user)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Supprimer
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() => setConfirmDelete(user)}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Supprimer
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>

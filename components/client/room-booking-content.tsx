@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react"
 import { format } from "date-fns"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
+import { toParisDate, createParisDate } from "@/lib/timezone"
 import {
   ChevronLeft,
   ChevronRight,
@@ -188,8 +189,8 @@ export function RoomBookingContent({
         } else {
           const unavailable: string[] = []
           result.bookings.forEach((booking) => {
-            const startHour = new Date(booking.start_date).getHours()
-            const endHour = new Date(booking.end_date).getHours()
+            const startHour = toParisDate(booking.start_date).getHours()
+            const endHour = toParisDate(booking.end_date).getHours()
             for (let h = startHour; h < endHour; h++) {
               unavailable.push(`${h.toString().padStart(2, "0")}:00`)
             }
@@ -292,8 +293,8 @@ export function RoomBookingContent({
     const lastHour = parseInt(lastSlot.split(":")[0]) + 1
 
     const dateStr = format(selectedDate, "yyyy-MM-dd")
-    const startDate = `${dateStr}T${firstSlot}:00Z`
-    const endDate = `${dateStr}T${lastHour.toString().padStart(2, "0")}:00:00Z`
+    const startDate = createParisDate(dateStr, firstSlot).toISOString()
+    const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`).toISOString()
 
     const result = await createMeetingRoomBooking({
       userId,
@@ -829,28 +830,6 @@ export function RoomBookingContent({
                         </span>
                       )}
                     </div>
-                    <div className="border-t pt-3">
-                    <p className="type-body font-medium">{selectedRoom.name}</p>
-                    {selectedRoom.capacity && (
-                      <p className="type-body-sm text-muted-foreground">
-                        {t("capacityPersons", { count: selectedRoom.capacity })}
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Notes input */}
-                  <div className="border-t pt-3">
-                    <label htmlFor="booking-notes" className="type-body-sm font-medium mb-1.5 block">
-                      {t("notes")}
-                    </label>
-                    <textarea
-                      id="booking-notes"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      placeholder={t("notesPlaceholder")}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 type-body-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-none"
-                    />
-                  </div>
                   </div>
                   <div className="sm:text-right">
                     <p className="type-body-sm text-muted-foreground">
@@ -963,6 +942,20 @@ export function RoomBookingContent({
                     </p>
                   )}
                 </div>
+              </div>
+
+              {/* Notes input */}
+              <div className="rounded-[16px] bg-foreground/5 p-4">
+                <label htmlFor="booking-notes" className="type-body-sm font-medium mb-1.5 block">
+                  {t("notes")}
+                </label>
+                <textarea
+                  id="booking-notes"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder={t("notesPlaceholder")}
+                  className="w-full rounded-[12px] border border-input bg-background px-3 py-2 type-body-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 min-h-[80px] resize-none"
+                />
               </div>
 
               <div className="rounded-[16px] bg-[#1B1918] p-4 text-white">

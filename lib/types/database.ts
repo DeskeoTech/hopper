@@ -2,7 +2,7 @@ export type SiteStatus = "open" | "closed"
 
 export type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
 
-export type Equipment =
+export type KnownEquipment =
   | "barista"
   | "stationnement_velo"
   | "impression"
@@ -16,6 +16,9 @@ export type Equipment =
   | "micro_ondes"
   | "restauration"
   | "wifi"
+
+// Allows known equipment + custom equipment strings
+export type Equipment = KnownEquipment | (string & {})
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
@@ -54,6 +57,7 @@ export interface Site {
   contact_last_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  capacity: number | null
   is_nomad: boolean
   created_at: string
   updated_at: string
@@ -126,6 +130,8 @@ export interface Company {
   main_site_id: string | null
   logo_storage_path: string | null
   kbis_storage_path: string | null
+  identity_document_storage_path: string | null
+  rib_storage_path: string | null
   onboarding_done: boolean | null
   from_spacebring: boolean | null
   spacebring_plan_name: string | null
@@ -218,6 +224,7 @@ export interface FlexDeskAvailability {
 
 // Booking types
 export type BookingStatus = "confirmed" | "cancelled" | "pending"
+export type PaymentStatus = "paid" | "unpaid" | "no_payment_required" | "expired"
 
 export interface Booking {
   id: string
@@ -232,6 +239,7 @@ export interface Booking {
   notes: string | null
   hubspot_deal_id: string | null
   netsuite_invoice_id: string | null
+  stripe_checkout_session_id: string | null
   referral: string | null
   created_at: string
   updated_at: string
@@ -276,6 +284,7 @@ export interface AdminPassForDisplay {
   price_per_seat_month: number | null
   number_of_seats: number | null
   assigned_users_count: number
+  subscription_id: string | null
 }
 
 // Unified reservation item (booking or contract)
@@ -408,6 +417,11 @@ export interface NewsPostWithSite extends NewsPost {
   author_last_name: string | null
 }
 
+export interface ClientNotificationDisplay {
+  id: string
+  source_id: string 
+  user_id: string
+}
 // Site closure types
 export interface SiteClosure {
   id: string

@@ -62,11 +62,11 @@ export function MesCreditsTab() {
   return (
     <div className="space-y-6">
       {/* Credit Balance Card */}
-      <div className="rounded-[16px] bg-card p-4">
+      <div className="rounded-[16px] bg-card p-5 sm:p-4">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-muted-foreground">{t("currentBalance")}</p>
-            <p className="text-2xl font-bold text-foreground">
+            <p className="text-sm sm:text-xs text-muted-foreground">{t("currentBalance")}</p>
+            <p className="text-3xl sm:text-2xl font-bold text-foreground">
               {credits?.remaining ?? 0}
             </p>
           </div>
@@ -74,12 +74,12 @@ export function MesCreditsTab() {
             <button
               type="button"
               onClick={() => setInfoModalOpen(true)}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors"
+              className="flex h-12 w-12 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors"
             >
-              <Info className="h-5 w-5 text-foreground/70" />
+              <Info className="h-6 w-6 sm:h-5 sm:w-5 text-foreground/70" />
             </button>
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-              <Coins className="h-5 w-5 text-foreground/70" />
+            <div className="flex h-12 w-12 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+              <Coins className="h-6 w-6 sm:h-5 sm:w-5 text-foreground/70" />
             </div>
           </div>
         </div>
@@ -88,10 +88,10 @@ export function MesCreditsTab() {
       {/* Buy Credits Button */}
       <button
         type="button"
-        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
+        className="flex w-full items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-4 sm:py-3.5 text-base sm:text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90"
         onClick={handleBuyCredits}
       >
-        <ShoppingCart className="h-4 w-4" />
+        <ShoppingCart className="h-5 w-5 sm:h-4 sm:w-4" />
         {t("buyCredits")}
       </button>
 
@@ -107,11 +107,11 @@ export function MesCreditsTab() {
       />
 
       {/* Credits History */}
-      <div className="rounded-[16px] bg-card p-6">
-        <h3 className="mb-4 font-header text-lg font-bold uppercase tracking-tight">{t("history")}</h3>
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
+        <h3 className="mb-4 font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("history")}</h3>
 
         {creditMovements.length === 0 ? (
-          <p className="text-muted-foreground">{t("noMovements")}</p>
+          <p className="text-base sm:text-sm text-muted-foreground">{t("noMovements")}</p>
         ) : (
           <div className="space-y-4">
             {/* Filter */}
@@ -126,8 +126,54 @@ export function MesCreditsTab() {
               />
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto rounded-[12px] bg-foreground/[0.02]">
+            {/* Mobile: Card layout */}
+            <div className="space-y-2.5 sm:hidden">
+              {filteredMovements.length === 0 ? (
+                <p className="text-center text-sm text-muted-foreground py-4">{t("noMovementsFilter")}</p>
+              ) : (
+                filteredMovements.map((movement) => (
+                  <div key={movement.id} className="rounded-[12px] bg-foreground/[0.03] p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-1 text-xs font-medium",
+                          typeColors[movement.type as CreditMovementType | "purchase"]
+                        )}
+                      >
+                        {t(`types.${movement.type}`)}
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1 text-base font-bold",
+                          movement.amount > 0 ? "text-green-600" : "text-red-600"
+                        )}
+                      >
+                        {movement.amount > 0 ? (
+                          <>
+                            <ArrowUp className="h-4 w-4" />+{movement.amount}
+                          </>
+                        ) : (
+                          <>
+                            <ArrowDown className="h-4 w-4" />
+                            {movement.amount}
+                          </>
+                        )}
+                      </span>
+                    </div>
+                    {movement.description && (
+                      <p className="text-sm text-foreground/70 mb-1.5 line-clamp-2">{movement.description}</p>
+                    )}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{new Date(movement.date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US")}</span>
+                      <span>{t("tableHeaders.balanceAfter")}: {movement.balance_after}</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop: Table */}
+            <div className="hidden sm:block overflow-x-auto rounded-[12px] bg-foreground/[0.02]">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -135,7 +181,7 @@ export function MesCreditsTab() {
                     <TableHead>{t("tableHeaders.type")}</TableHead>
                     <TableHead className="text-right">{t("tableHeaders.amount")}</TableHead>
                     <TableHead className="hidden md:table-cell">{t("tableHeaders.reason")}</TableHead>
-                    <TableHead className="hidden sm:table-cell text-right">{t("tableHeaders.balanceAfter")}</TableHead>
+                    <TableHead className="text-right">{t("tableHeaders.balanceAfter")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -183,7 +229,7 @@ export function MesCreditsTab() {
                         <TableCell className="hidden md:table-cell max-w-[200px] truncate">
                           {movement.description}
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell text-right font-medium">
+                        <TableCell className="text-right font-medium">
                           {movement.balance_after}
                         </TableCell>
                       </TableRow>

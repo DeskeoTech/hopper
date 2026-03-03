@@ -2,6 +2,7 @@
 
 import Stripe from "stripe"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 const PASS_PRICES = {
   day: 3000, // 30€ in cents
@@ -152,35 +153,51 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
     const cancelUrl = `${baseUrl}${redirectPath}?canceled=true`
 
     // --- Chercher le customer Stripe dans Supabase pour verrouiller l'email ---
+    // Utiliser le client admin car l'utilisateur public n'a pas forcément accès
+    // aux tables users/companies via RLS
     let stripeCustomerId: string | undefined
     if (customerEmail) {
-      const supabase = await createClient()
-      const { data: userData } = await supabase
+      const adminClient = createAdminClient()
+      const { data: userData } = await adminClient
         .from("users")
         .select("company_id")
         .eq("email", customerEmail)
         .single()
 
       if (userData?.company_id) {
-        const { data: companyData } = await supabase
+        const { data: companyData } = await adminClient
           .from("companies")
           .select("customer_id_stripe")
           .eq("id", userData.company_id)
           .single()
 
         if (companyData?.customer_id_stripe) {
-          stripeCustomerId = companyData.customer_id_stripe
+          // Vérifier que le customer existe dans Stripe (peut ne pas exister si
+          // créé en test et utilisé en live, ou supprimé)
+          try {
+            await stripe.customers.retrieve(companyData.customer_id_stripe)
+            stripeCustomerId = companyData.customer_id_stripe
+          } catch {
+            // Customer introuvable dans Stripe, on vide le champ en base
+            console.warn(`Stripe customer ${companyData.customer_id_stripe} not found, clearing from DB`)
+            await adminClient
+              .from("companies")
+              .update({ customer_id_stripe: null })
+              .eq("id", userData.company_id)
+          }
         }
       }
     }
 
     if (isSubscription) {
       // Récupérer le stripe_product_id depuis la table plans (test vs live)
+      // Utiliser le client admin car cette requête est faite côté serveur
+      // et l'utilisateur public n'a pas accès à la table plans via RLS
       const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")
       const stripeProductIdColumn = isTestMode ? "stripe_product_id_test" : "stripe_product_id_live"
 
-      const supabase = await createClient()
-      const { data: plan } = await supabase
+      const adminClient = createAdminClient()
+      const { data: plan } = await adminClient
         .from("plans")
         .select(stripeProductIdColumn)
         .eq("name", "Hopper Pass Month")
@@ -275,8 +292,9 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
       return { url: session.url!, sessionId: session.id }
     }
   } catch (error) {
-    console.error("Stripe checkout error:", error)
-    return { error: "Erreur lors de la création de la session de paiement" }
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe checkout error:", errMsg, error)
+    return { error: `Erreur lors de la création de la session de paiement: ${errMsg}` }
   }
 }
 
@@ -353,5 +371,323 @@ export async function getTestSessions(): Promise<{ sessions: StripeSessionData[]
   } catch (error) {
     console.error("Stripe sessions list error:", error)
     return { error: "Erreur lors de la récupération des sessions" }
+  }
+}
+
+export async function getPaymentStatus(sessionId: string): Promise<{
+  paymentStatus: "paid" | "unpaid" | "no_payment_required" | null
+  sessionStatus: "open" | "complete" | "expired" | null
+  amountTotal: number | null
+  currency: string | null
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    return {
+      paymentStatus: session.payment_status as "paid" | "unpaid" | "no_payment_required" | null,
+      sessionStatus: session.status as "open" | "complete" | "expired" | null,
+      amountTotal: session.amount_total,
+      currency: session.currency,
+    }
+  } catch (error) {
+    console.error("Stripe get payment status error:", error)
+    return { error: "Erreur lors de la récupération du statut de paiement" }
+  }
+}
+
+// --- Company payment status ---
+
+export type CompanyPaymentStatus = "ok" | "failed" | "none"
+
+export async function getCompanyPaymentStatus(stripeCustomerId: string): Promise<{
+  status: CompanyPaymentStatus
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const charges = await stripe.charges.list({
+      customer: stripeCustomerId,
+      limit: 20,
+    })
+
+    const hasFailed = charges.data.some((c) => c.status === "failed")
+    return { status: hasFailed ? "failed" : "ok" }
+  } catch (error) {
+    console.error("Stripe company payment status error:", error)
+    return { error: "Erreur lors de la récupération du statut de paiement" }
+  }
+}
+
+export async function getCompanyPaymentStatuses(customerIds: string[]): Promise<{
+  statuses: Record<string, CompanyPaymentStatus>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, CompanyPaymentStatus> = {}
+
+    await Promise.all(
+      customerIds.map(async (id) => {
+        try {
+          const charges = await stripe.charges.list({
+            customer: id,
+            limit: 20,
+          })
+          const hasFailed = charges.data.some((c) => c.status === "failed")
+          results[id] = hasFailed ? "failed" : "ok"
+        } catch {
+          results[id] = "ok"
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch company status error:", error)
+    return { error: "Erreur lors de la récupération des statuts" }
+  }
+}
+
+export async function getPaymentStatuses(sessionIds: string[]): Promise<{
+  statuses: Record<string, { paymentStatus: string; sessionStatus: string }>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, { paymentStatus: string; sessionStatus: string }> = {}
+
+    await Promise.all(
+      sessionIds.map(async (id) => {
+        try {
+          const session = await stripe.checkout.sessions.retrieve(id)
+          results[id] = {
+            paymentStatus: session.payment_status,
+            sessionStatus: session.status || "unknown",
+          }
+        } catch {
+          results[id] = { paymentStatus: "unknown", sessionStatus: "unknown" }
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch status error:", error)
+    return { error: "Erreur lors de la récupération des statuts" }
+  }
+}
+
+// --- Subscription status ---
+
+export type StripeSubscriptionStatus = "active" | "past_due" | "canceled" | "unpaid" | "incomplete" | "paused" | "trialing" | "unknown"
+
+export async function getSubscriptionStatuses(subscriptionIds: string[]): Promise<{
+  statuses: Record<string, StripeSubscriptionStatus>
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const results: Record<string, StripeSubscriptionStatus> = {}
+
+    await Promise.all(
+      subscriptionIds.map(async (id) => {
+        try {
+          const subscription = await stripe.subscriptions.retrieve(id)
+          results[id] = subscription.status as StripeSubscriptionStatus
+        } catch {
+          results[id] = "unknown"
+        }
+      })
+    )
+
+    return { statuses: results }
+  } catch (error) {
+    console.error("Stripe batch subscription status error:", error)
+    return { error: "Erreur lors de la récupération des statuts d'abonnement" }
+  }
+}
+
+// --- Create booking from completed Stripe checkout session ---
+
+export async function createBookingFromStripeSession(sessionId: string): Promise<{
+  success: boolean
+  bookingId?: string
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+    const session = await stripe.checkout.sessions.retrieve(sessionId)
+
+    // Only create booking for completed payments
+    if (session.payment_status !== "paid" && session.status !== "complete") {
+      return { error: "Session non payée" }
+    }
+
+    const supabase = createAdminClient()
+
+    // Idempotency check: don't create duplicate bookings
+    const { data: existingBooking } = await supabase
+      .from("bookings")
+      .select("id")
+      .eq("stripe_checkout_session_id", sessionId)
+      .maybeSingle()
+
+    if (existingBooking) {
+      return { success: true, bookingId: existingBooking.id }
+    }
+
+    // Extract metadata
+    const siteId = session.metadata?.siteName // siteName field contains the site ID
+    const startDate = session.metadata?.start_date
+    const endDate = session.metadata?.end_date
+    const quantity = session.metadata?.quantity ? parseInt(session.metadata.quantity) : 1
+    const referral = session.metadata?.referral || null
+    const customerEmail = session.customer_details?.email || null
+
+    if (!siteId || !startDate || !endDate) {
+      return { error: "Metadata manquantes dans la session Stripe" }
+    }
+
+    // Find a bench or flex_desk resource at this site
+    const { data: resource } = await supabase
+      .from("resources")
+      .select("id")
+      .eq("site_id", siteId)
+      .in("type", ["bench", "flex_desk"])
+      .eq("status", "available")
+      .limit(1)
+      .maybeSingle()
+
+    if (!resource) {
+      return { error: "Aucune ressource disponible sur ce site" }
+    }
+
+    // Find user by email and update company's Stripe customer ID if needed
+    let userId: string | null = null
+    if (customerEmail) {
+      const { data: user } = await supabase
+        .from("users")
+        .select("id, company_id")
+        .eq("email", customerEmail)
+        .maybeSingle()
+
+      userId = user?.id || null
+
+      // Sauvegarder le customer ID Stripe dans la company uniquement si différent
+      const stripeCustomerId = typeof session.customer === "string"
+        ? session.customer
+        : session.customer?.id
+      if (stripeCustomerId && user?.company_id) {
+        const { data: company } = await supabase
+          .from("companies")
+          .select("customer_id_stripe")
+          .eq("id", user.company_id)
+          .single()
+        if (company?.customer_id_stripe !== stripeCustomerId) {
+          await supabase
+            .from("companies")
+            .update({ customer_id_stripe: stripeCustomerId })
+            .eq("id", user.company_id)
+        }
+      }
+    }
+
+    // Create the booking
+    const { data: booking, error: bookingError } = await supabase
+      .from("bookings")
+      .insert({
+        user_id: userId,
+        resource_id: resource.id,
+        start_date: `${startDate}T09:00:00Z`,
+        end_date: `${endDate}T18:00:00Z`,
+        status: "confirmed",
+        seats_count: quantity,
+        stripe_checkout_session_id: sessionId,
+        ...(referral ? { referral } : {}),
+      })
+      .select("id")
+      .single()
+
+    if (bookingError) {
+      console.error("Booking creation error:", bookingError)
+      return { error: "Erreur lors de la création de la réservation" }
+    }
+
+    return { success: true, bookingId: booking.id }
+  } catch (error) {
+    console.error("Create booking from Stripe session error:", error)
+    return { error: "Erreur lors de la création de la réservation" }
+  }
+}
+
+// --- Customer payment history (invoices + charges) ---
+
+export interface StripePaymentData {
+  id: string
+  amount: number
+  currency: string
+  status: string
+  created: number
+  description: string | null
+  hosted_invoice_url: string | null
+  invoice_pdf: string | null
+}
+
+export async function getCustomerPayments(stripeCustomerId: string): Promise<{
+  payments: StripePaymentData[]
+} | { error: string }> {
+  try {
+    const stripe = getStripe()
+
+    // Fetch both invoices and charges in parallel
+    const [invoices, charges] = await Promise.all([
+      stripe.invoices.list({
+        customer: stripeCustomerId,
+        limit: 100,
+      }),
+      stripe.charges.list({
+        customer: stripeCustomerId,
+        limit: 100,
+      }),
+    ])
+
+    // Map invoices
+    const invoicePayments: StripePaymentData[] = invoices.data.map((inv) => ({
+      id: inv.id,
+      amount: inv.amount_paid || inv.total,
+      currency: inv.currency,
+      status: inv.status || "unknown",
+      created: inv.created,
+      description: inv.lines.data[0]?.description || "Facture",
+      hosted_invoice_url: inv.hosted_invoice_url,
+      invoice_pdf: inv.invoice_pdf,
+    }))
+
+    // Get invoice IDs to avoid duplicating charges that are linked to invoices
+    const invoiceIds = new Set(invoices.data.map((inv) => inv.id))
+
+    // Map charges that are NOT linked to an invoice (one-time payments)
+    const chargePayments: StripePaymentData[] = charges.data
+      .filter((c) => {
+        const invId = typeof c.invoice === "string" ? c.invoice : c.invoice?.id
+        return !invId || !invoiceIds.has(invId)
+      })
+      .map((c) => ({
+        id: c.id,
+        amount: c.amount,
+        currency: c.currency,
+        status: c.status,
+        created: c.created,
+        description: c.description || "Paiement",
+        hosted_invoice_url: c.receipt_url,
+        invoice_pdf: null,
+      }))
+
+    // Merge and sort by date (most recent first)
+    const payments = [...invoicePayments, ...chargePayments].sort(
+      (a, b) => b.created - a.created
+    )
+
+    return { payments }
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe customer payments error:", errMsg, error)
+    return { error: `Erreur Stripe: ${errMsg}` }
   }
 }

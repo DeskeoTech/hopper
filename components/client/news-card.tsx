@@ -2,6 +2,7 @@
 
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { MapPin, Newspaper, Pencil, Pin, Trash2 } from "lucide-react"
+import { cn } from "@/lib/utils"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
 import type { NewsPostWithSite } from "@/lib/types/database"
@@ -9,11 +10,12 @@ import type { NewsPostWithSite } from "@/lib/types/database"
 interface NewsCardProps {
   post: NewsPostWithSite
   variant?: "compact" | "full"
+  isUnread?: boolean
   onEdit?: (postId: string) => void
   onDelete?: (postId: string) => void
 }
 
-export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCardProps) {
+export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, onDelete }: NewsCardProps) {
   const t = useTranslations("dashboard.news")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
@@ -45,19 +47,12 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              {post.is_pinned && (
-                <Pin className="h-3 w-3 flex-shrink-0 text-primary" />
-              )}
-              <h3 className="truncate text-sm font-semibold text-foreground">
-                {post.title}
-              </h3>
-            </div>
-            {post.excerpt && (
-              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
-                {post.excerpt}
-              </p>
+            {post.is_pinned && (
+              <Pin className="h-3 w-3 flex-shrink-0 text-primary mb-1" />
             )}
+            <p className="text-sm text-foreground line-clamp-3">
+              {post.content || post.title}
+            </p>
             <div className="mt-2 flex items-center gap-2 text-[10px] text-foreground/50">
               {(post.author_first_name || post.author_last_name) && (
                 <span className="font-medium">
@@ -106,7 +101,13 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
 
   // Full variant for client news feed page
   return (
-    <article className="overflow-hidden rounded-[20px] bg-card">
+    <article className={cn(
+      "relative overflow-hidden rounded-[20px] bg-card",
+      isUnread && "bg-foreground/[0.03] ring-1 ring-foreground/10"
+    )}>
+      {isUnread && (
+        <div className="absolute left-2 top-3 bottom-3 w-1 rounded-full bg-[#DC2626]" />
+      )}
       {post.image_url && (
         <img
           src={post.image_url}
@@ -129,10 +130,7 @@ export function NewsCard({ post, variant = "compact", onEdit, onDelete }: NewsCa
             </span>
           )}
         </div>
-        <h2 className="font-header text-xl font-semibold text-foreground">
-          {post.title}
-        </h2>
-        <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">
+        <p className={cn("whitespace-pre-line text-sm text-foreground", isUnread && "font-semibold")}>
           {post.content}
         </p>
         <div className="mt-4 flex items-center gap-2 text-xs text-foreground/50">

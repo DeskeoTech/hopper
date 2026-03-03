@@ -1,9 +1,12 @@
 "use client"
 
 import { useState, useTransition, useEffect, useMemo } from "react"
-import { format, parseISO, isPast } from "date-fns"
+import { format, isPast } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Calendar, Clock, MapPin, User, Building2, Loader2 } from "lucide-react"
+import { toParisDate, createParisDate } from "@/lib/timezone"
+import { Calendar, Clock, MapPin, User, Building2, Loader2, MessageSquare, CreditCard } from "lucide-react"
+import { getPaymentStatus } from "@/lib/actions/stripe"
+import { PaymentStatusBadge } from "./payment-status-badge"
 import {
   Dialog,
   DialogContent,
@@ -43,6 +46,10 @@ export function BookingEditDialog({
   const [isPending, startTransition] = useTransition()
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentInfo, setPaymentInfo] = useState<{
+    paymentStatus: string | null
+    sessionStatus: string | null
+  } | null>(null)
 
   // Form state for date modification
   const [date, setDate] = useState("")
@@ -52,12 +59,25 @@ export function BookingEditDialog({
   // Reset form when dialog opens or booking changes
   useEffect(() => {
     if (open && booking) {
-      const startDate = parseISO(booking.start_date)
-      const endDate = parseISO(booking.end_date)
+      const startDate = toParisDate(booking.start_date)
+      const endDate = toParisDate(booking.end_date)
       setDate(format(startDate, "yyyy-MM-dd"))
       setStartTime(format(startDate, "HH:mm"))
       setEndTime(format(endDate, "HH:mm"))
       setError(null)
+      setPaymentInfo(null)
+
+      // Fetch payment status from Stripe
+      if (booking.stripe_checkout_session_id) {
+        getPaymentStatus(booking.stripe_checkout_session_id).then((result) => {
+          if ("paymentStatus" in result) {
+            setPaymentInfo({
+              paymentStatus: result.paymentStatus,
+              sessionStatus: result.sessionStatus,
+            })
+          }
+        })
+      }
     }
   }, [open, booking])
 
@@ -79,12 +99,8 @@ export function BookingEditDialog({
       return
     }
 
-    const newStartDate = `${date}T${startTime}:00`
-    const newEndDate = `${date}T${endTime}:00`
-
-    // Validate that the dates are valid
-    const startDateObj = new Date(newStartDate)
-    const endDateObj = new Date(newEndDate)
+    const startDateObj = createParisDate(date, startTime)
+    const endDateObj = createParisDate(date, endTime)
     if (isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime())) {
       setError("Date ou heure invalide")
       return
@@ -126,7 +142,7 @@ export function BookingEditDialog({
   // Check if booking is in the past (end date has passed)
   const isBookingPast = useMemo(() => {
     if (!booking) return false
-    return isPast(parseISO(booking.end_date))
+    return isPast(toParisDate(booking.end_date))
   }, [booking])
 
   if (!booking) return null
@@ -195,6 +211,39 @@ export function BookingEditDialog({
                 </div>
               )}
             </div>
+
+            {/* Client notes */}
+            {booking.notes && (
+              <div className="rounded-[16px] border border-border/10 bg-muted/30 p-4">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Commentaire client</p>
+                    <p className="text-sm">{booking.notes}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment status */}
+            {booking.stripe_checkout_session_id && (
+              <div className="rounded-[16px] border border-border/10 bg-muted/30 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Paiement</span>
+                  </div>
+                  {paymentInfo ? (
+                    <PaymentStatusBadge
+                      paymentStatus={paymentInfo.paymentStatus}
+                      sessionStatus={paymentInfo.sessionStatus}
+                    />
+                  ) : (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Date/time modification form */}
             {!isReadOnly && (
@@ -307,7 +356,7 @@ export function BookingEditDialog({
               <strong>{booking.resource_name}</strong> pour{" "}
               <strong>{userName}</strong> le{" "}
               <strong>
-                {format(parseISO(booking.start_date), "d MMMM yyyy", {
+                {format(toParisDate(booking.start_date), "d MMMM yyyy", {
                   locale: fr,
                 })}
               </strong>{" "}

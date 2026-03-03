@@ -6,6 +6,9 @@ import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-mod
 import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
+import { getCompanyPaymentStatus, getSubscriptionStatuses, getCustomerPayments } from "@/lib/actions/stripe"
+import type { StripeSubscriptionStatus } from "@/lib/actions/stripe"
+import { CompanyPaymentStatusBadge } from "@/components/admin/companies/company-payment-status-badge"
 import { DocumentsSection } from "@/components/admin/company-edit/documents-section"
 import { UsersList } from "@/components/admin/company-edit/users-list"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
@@ -13,6 +16,7 @@ import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { PassesSection } from "@/components/admin/company-passes/passes-section"
 import { SpacebringSubscriptionCard } from "@/components/admin/company-edit/spacebring-subscription-card"
+import { PaymentHistorySection } from "@/components/admin/company-payments/payment-history-section"
 import { cn } from "@/lib/utils"
 import type { CreditMovement, AdminPassForDisplay, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
@@ -46,7 +50,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       .single(),
     supabase
       .from("users")
-      .select("id, first_name, last_name, email, phone, role, status, contract_id, site_id, company_id, photo_storage_path, badge_number, badge_returned, is_hopper_admin, cgu_accepted_at, created_at, updated_at")
+      .select("*")
       .eq("company_id", id)
       .order("last_name")
       .order("first_name"),
@@ -76,6 +80,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         start_date,
         end_date,
         Number_of_seats,
+        Subscription_ID,
         plans (name, recurrence, price_per_seat_month)
       `)
       .eq("company_id", id)
@@ -91,6 +96,34 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   }
 
   const totalCredits = creditsResult ?? 0
+
+  // Fetch company payment status and subscription statuses from Stripe
+  const uniqueSubscriptionIds = [...new Set(
+    (passesData || [])
+      .map((c) => c.Subscription_ID as string | null)
+      .filter((id): id is string => !!id)
+  )]
+
+  const [companyPaymentStatus, subscriptionStatusesResult, customerChargesResult] = await Promise.all([
+    company.customer_id_stripe
+      ? getCompanyPaymentStatus(company.customer_id_stripe)
+      : null,
+    uniqueSubscriptionIds.length > 0
+      ? getSubscriptionStatuses(uniqueSubscriptionIds)
+      : null,
+    company.customer_id_stripe
+      ? getCustomerPayments(company.customer_id_stripe)
+      : null,
+  ])
+
+  const subscriptionStatuses: Record<string, StripeSubscriptionStatus> =
+    subscriptionStatusesResult && "statuses" in subscriptionStatusesResult
+      ? subscriptionStatusesResult.statuses
+      : {}
+
+  const customerPayments = customerChargesResult && "payments" in customerChargesResult
+    ? customerChargesResult.payments
+    : []
 
   // Phase 2: Fetch bookings (depends on user IDs)
   const userIds = users?.map((u) => u.id) || []
@@ -131,6 +164,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       price_per_seat_month: plan?.price_per_seat_month ?? null,
       number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
       assigned_users_count: contractUserCounts[c.id] || 0,
+      subscription_id: (c.Subscription_ID as string | null) || null,
     }
   })
 
@@ -154,7 +188,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     const movementType = typeMapping[tx.transaction_type] || "adjustment"
 
     // Get resource name from booking if available
-    const resourceName = (tx.booking as { resource: { name: string } | null } | null)?.resource?.name
+    const resourceName = (tx.booking as unknown as { resource: { name: string } | null } | null)?.resource?.name
 
     // Determine display amount (negative for consumption, positive for refund/allocation)
     let displayAmount: number
@@ -207,7 +241,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     .filter((booking) => !bookingIdsWithTransactions.has(booking.id))
     .flatMap((booking) => {
       const creditsUsed = booking.credits_used || 0
-      const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
+      const resourceName = (booking.resource as unknown as { name: string } | null)?.name || "Ressource"
       const movements: CreditMovement[] = []
 
       // Add consumption movement for the booking
@@ -263,8 +297,17 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
   const usersCount = users?.length ?? 0
   const activePassesCount = adminPasses.filter((p) => p.status === "active").length
 
+  // Initials for avatar
+  const initials = (company.name || "?")
+    .split(/\s+/)
+    .map((w: string) => w[0])
+    .filter(Boolean)
+    .join("")
+    .toUpperCase()
+    .slice(0, 2)
+
   return (
-    <div className="space-y-6">
+    <div className="mx-auto max-w-[1325px] space-y-8 px-2 lg:px-3">
       {/* Back Button */}
       <Link
         href="/admin/clients"
@@ -274,51 +317,79 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         Retour aux clients
       </Link>
 
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted sm:h-14 sm:w-14">
-          <Briefcase className="h-5 w-5 text-foreground sm:h-7 sm:w-7" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <h1 className="type-h2 text-foreground">{company.name || "Sans nom"}</h1>
-            <span
-              className={cn(
-                "rounded-sm px-2 py-0.5 text-xs font-medium",
-                isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
-              )}
-            >
-              {isActive ? "Actif" : "Inactif"}
-            </span>
-            {company.from_spacebring && (
-              <span className="rounded-sm bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">
-                Hors plateforme
-              </span>
-            )}
-            <EditHeaderModal
-              companyId={company.id}
-              initialName={company.name}
-              initialType={company.company_type}
-              isActive={isActive}
-            />
+      {/* Hero Profile Section */}
+      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-5">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[16px] bg-card text-2xl font-bold text-foreground/60">
+            {initials}
           </div>
-          {company.company_type && (
-            <p className="mt-1 text-muted-foreground">{companyTypeLabel}</p>
-          )}
-          {/* Quick stats */}
-          <div className="mt-3 flex flex-wrap gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Users className="h-4 w-4" />
-              {usersCount} utilisateur{usersCount !== 1 ? "s" : ""}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Coins className="h-4 w-4" />
-              {totalCredits} crédit{totalCredits !== 1 ? "s" : ""}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <FileText className="h-4 w-4" />
-              {activePassesCount} pass actif{activePassesCount !== 1 ? "s" : ""}
-            </span>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold uppercase tracking-tight text-foreground">{company.name || "Sans nom"}</h1>
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
+                  isActive ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                )}
+              >
+                {isActive ? "Actif" : "Inactif"}
+              </span>
+              {company.from_spacebring && (
+                <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-amber-700">
+                  Hors plateforme
+                </span>
+              )}
+            </div>
+            <div className="mt-1.5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+              {company.company_type && (
+                <span>{companyTypeLabel}</span>
+              )}
+              {company.registration_date && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3.5 w-3.5" />
+                  Inscrit le {new Date(company.registration_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <EditHeaderModal
+            companyId={company.id}
+            initialName={company.name}
+            initialType={company.company_type}
+            isActive={isActive}
+          />
+        </div>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="flex items-center gap-4 rounded-[20px] bg-card p-5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+            <Users className="h-5 w-5 text-foreground" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Utilisateurs</p>
+            <p className="text-2xl font-bold text-foreground">{usersCount}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-[20px] bg-card p-5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-amber-50">
+            <Coins className="h-5 w-5 text-amber-600" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Crédits</p>
+            <p className="text-2xl font-bold text-foreground">{totalCredits}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4 rounded-[20px] bg-card p-5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-purple-50">
+            <FileText className="h-5 w-5 text-purple-600" />
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Passes actifs</p>
+            <p className="text-2xl font-bold text-foreground">{activePassesCount}</p>
           </div>
         </div>
       </div>
@@ -333,107 +404,59 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
             content: (
               <div className="grid gap-6 lg:grid-cols-3">
                 {/* Main Content - Left Column */}
-                <div className="space-y-6 lg:col-span-2">
-                  {/* Contact & Site - 2 column layout on desktop */}
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {/* Contact Info */}
-                    <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                      <EditContactModal
-                        companyId={company.id}
-                        initialAddress={company.address}
-                        initialPhone={company.phone}
-                        initialEmail={company.contact_email}
-                      />
-                      <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                        <Mail className="h-5 w-5" />
-                        Contact
-                      </h2>
-                      {company.address || company.phone || company.contact_email ? (
-                        <div className="space-y-3">
-                          {company.contact_email && (
-                            <div className="flex items-start gap-3">
-                              <Mail className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                              <div className="min-w-0">
-                                <span className="text-xs text-muted-foreground">Email</span>
-                                <p className="truncate text-sm text-foreground">{company.contact_email}</p>
-                              </div>
-                            </div>
-                          )}
-                          {company.phone && (
-                            <div className="flex items-start gap-3">
-                              <Phone className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <span className="text-xs text-muted-foreground">Téléphone</span>
-                                <p className="text-sm text-foreground">{company.phone}</p>
-                              </div>
-                            </div>
-                          )}
-                          {company.address && (
-                            <div className="flex items-start gap-3">
-                              <MapPin className="mt-0.5 h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <span className="text-xs text-muted-foreground">Adresse</span>
-                                <p className="text-sm text-foreground break-words">{company.address}</p>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Non renseigné</p>
-                      )}
+                <div className="min-w-0 space-y-6 lg:col-span-2">
+                  {/* Informations Générales Card */}
+                  <div className="rounded-[20px] bg-card overflow-hidden">
+                    <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
+                      <h3 className="font-bold text-foreground">Informations Générales</h3>
+                      <div className="flex gap-2">
+                        <EditContactModal
+                          companyId={company.id}
+                          initialAddress={company.address}
+                          initialPhone={company.phone}
+                          initialEmail={company.contact_email}
+                        />
+                        <EditMainSiteModal
+                          companyId={company.id}
+                          initialSiteId={company.main_site_id}
+                          sites={allSites || []}
+                        />
+                      </div>
                     </div>
-
-                    {/* Site principal */}
-                    <div className="relative rounded-lg bg-card p-4 sm:p-6">
-                      <EditMainSiteModal
-                        companyId={company.id}
-                        initialSiteId={company.main_site_id}
-                        sites={allSites || []}
-                      />
-                      <h2 className="mb-4 flex items-center gap-2 type-h3 text-foreground">
-                        <Building2 className="h-5 w-5" />
-                        Site principal
-                      </h2>
-                      {company.main_site ? (
-                        <Link
-                          href={`/admin/sites/${company.main_site.id}`}
-                          className="group flex items-center justify-between rounded-sm border border-border p-3 hover:bg-muted/50 transition-colors"
-                        >
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-foreground">{company.main_site.name}</p>
-                            <p className="truncate text-sm text-muted-foreground">{company.main_site.address}</p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2 pl-2">
-                            <span
-                              className={cn(
-                                "rounded-sm px-2 py-0.5 text-xs font-medium",
-                                company.main_site.status === "open"
-                                  ? "bg-green-100 text-green-700"
-                                  : "bg-gray-100 text-gray-600"
-                              )}
-                            >
-                              {company.main_site.status === "open" ? "Ouvert" : "Fermé"}
-                            </span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                          </div>
-                        </Link>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">Aucun site associé</p>
-                      )}
+                    <div className="grid grid-cols-1 gap-y-5 gap-x-10 p-6 md:grid-cols-2">
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Email</label>
+                        <p className="text-sm font-medium text-foreground">{company.contact_email || "—"}</p>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Téléphone</label>
+                        <p className="text-sm font-medium text-foreground">{company.phone || "—"}</p>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Site Principal</label>
+                        {company.main_site ? (
+                          <Link
+                            href={`/admin/sites/${company.main_site.id}`}
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:underline"
+                          >
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                            {company.main_site.name}
+                          </Link>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">—</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-bold uppercase tracking-wider text-muted-foreground">Adresse</label>
+                        <p className="text-sm font-medium text-foreground break-words">{company.address || "—"}</p>
+                      </div>
                     </div>
                   </div>
-
-                  {/* Documents */}
-                  <DocumentsSection
-                    companyId={company.id}
-                    kbisStoragePath={company.kbis_storage_path}
-                    companyType={company.company_type}
-                  />
 
                   {/* Users */}
                   <UsersList companyId={company.id} initialUsers={users || []} isTechAdmin={isTechAdmin} isDeskeoCompany={!!company.name?.toLowerCase().includes("deskeo")} />
 
-                  {/* Credits - full width in main column for the history table */}
+                  {/* Credits */}
                   <CreditsSection
                     companyId={company.id}
                     companyName={company.name || undefined}
@@ -455,61 +478,48 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     startDate={company.spacebring_start_date}
                   />
 
-                  {/* Pass */}
+                  {/* Documents */}
+                  <DocumentsSection
+                    companyId={company.id}
+                    kbisStoragePath={company.kbis_storage_path}
+                    identityDocumentStoragePath={company.identity_document_storage_path ?? null}
+                    ribStoragePath={company.rib_storage_path ?? null}
+                    companyType={company.company_type}
+                  />
+
+                  {/* Passes */}
                   <PassesSection
                     passes={adminPasses}
                     companyId={company.id}
                     stripeCustomerId={company.customer_id_stripe}
                     stripeCustomerEmail={company.contact_email}
                     companyName={company.name || undefined}
+                    subscriptionStatuses={subscriptionStatuses}
                   />
 
-                  {/* Stripe - hidden for hors-plateforme clients */}
+                  {/* Stripe */}
                   {company.customer_id_stripe && !company.from_spacebring && (
-                    <div className="rounded-lg bg-card p-4 sm:p-6">
-                      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                        <CreditCard className="h-5 w-5" />
-                        Stripe
-                      </h2>
-                      <div className="space-y-3">
-                        <div>
-                          <span className="text-xs text-muted-foreground">Customer ID</span>
-                          <p className="font-mono text-xs text-foreground break-all">{company.customer_id_stripe}</p>
+                    <div className="rounded-[20px] bg-[#f0f0ff] p-5">
+                      <div className="mb-4 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5 text-[#635BFF]" />
+                          <span className="text-sm font-bold text-foreground">Stripe</span>
                         </div>
+                        {companyPaymentStatus && "status" in companyPaymentStatus && (
+                          <CompanyPaymentStatusBadge status={companyPaymentStatus.status} />
+                        )}
+                      </div>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Customer ID</span>
+                          <span className="font-mono text-xs text-foreground">{company.customer_id_stripe.slice(0, 18)}...</span>
+                        </div>
+                      </div>
+                      <div className="mt-3">
                         <StripeDashboardButton customerId={company.customer_id_stripe} />
                       </div>
                     </div>
                   )}
-
-                  {/* Registration Info */}
-                  <div className="rounded-lg bg-card p-4 sm:p-6">
-                    <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-foreground">
-                      <Clock className="h-5 w-5" />
-                      Dates
-                    </h2>
-                    <div className="space-y-3 text-sm">
-                      {company.registration_date && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">Inscription</span>
-                          <span className="text-foreground">
-                            {new Date(company.registration_date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                          </span>
-                        </div>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Création</span>
-                        <span className="text-foreground">
-                          {new Date(company.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Mise à jour</span>
-                        <span className="text-foreground">
-                          {new Date(company.updated_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
             ),
@@ -522,6 +532,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                 context={{ type: "company", companyId: company.id, companyName: company.name || "" }}
                 searchParams={resolvedSearchParams}
               />
+            ),
+          },
+          {
+            value: "paiements",
+            label: "Historique des paiements",
+            content: (
+              <PaymentHistorySection payments={customerPayments} />
             ),
           },
         ]}

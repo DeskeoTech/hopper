@@ -46,7 +46,7 @@ export async function DashboardForecast({ selectedDate }: DashboardForecastProps
   ])
 
   const resources = resourcesResult.data || []
-  const flexDeskResources = resources.filter((r) => r.type === "flex_desk")
+  const flexDeskResources = resources.filter((r) => r.type === "flex_desk" || r.type === "bench")
 
   const siteCapacities = new Map<string, { name: string; capacity: number }>()
   flexDeskResources.forEach((r) => {

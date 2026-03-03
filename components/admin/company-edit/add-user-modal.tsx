@@ -31,6 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { toast } from "sonner"
 import { createUser } from "@/lib/actions/users"
 import type { UserRole } from "@/lib/types/database"
 
@@ -67,7 +68,12 @@ export function AddUserModal({ companyId }: AddUserModalProps) {
       badge_returned: badgeReturned,
     })
     setLoading(false)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
     if (result.success) {
+      toast.success("Utilisateur créé avec succès")
       // Reset form
       setFirstName("")
       setLastName("")

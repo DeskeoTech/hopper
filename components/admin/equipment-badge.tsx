@@ -1,8 +1,8 @@
 import type React from "react"
 import type { Equipment } from "@/lib/types/database"
-import { Coffee, Bike, Printer, ShowerHead, Dumbbell, TreePine, Building, Phone, Droplets, Microwave, UtensilsCrossed, Wifi } from "lucide-react"
+import { Coffee, Bike, Printer, ShowerHead, Dumbbell, TreePine, Building, Phone, Droplets, Microwave, UtensilsCrossed, Wifi, Box } from "lucide-react"
 
-const equipmentConfig: Record<Equipment, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
+const equipmentConfig: Record<string, { label: string; icon: React.ComponentType<{ className?: string }> }> = {
   barista: { label: "Barista", icon: Coffee },
   stationnement_velo: { label: "Parking vélos", icon: Bike },
   impression: { label: "Impression", icon: Printer },
@@ -24,14 +24,13 @@ interface EquipmentBadgeProps {
 
 export function EquipmentBadge({ equipment }: EquipmentBadgeProps) {
   const config = equipmentConfig[equipment]
-  if (!config) return null
-
-  const Icon = config.icon
+  const Icon = config?.icon ?? Box
+  const label = config?.label ?? equipment
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted px-3 py-1.5 text-xs font-medium text-foreground">
       <Icon className="h-3.5 w-3.5" />
-      {config.label}
+      {label}
     </span>
   )
 }

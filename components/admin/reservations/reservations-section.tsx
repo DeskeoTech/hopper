@@ -114,6 +114,17 @@ export async function ReservationsSection({
   const companies = companiesResult.data || []
   const users = usersResult.data || []
 
+  // Fetch site closures for site context
+  let siteClosureDates: string[] = []
+  if (context.type === "site") {
+    const { data: closures } = await supabase
+      .from("site_closures")
+      .select("date")
+      .eq("site_id", context.siteId)
+      .gte("date", new Date().toISOString().split("T")[0])
+    siteClosureDates = closures?.map((c) => c.date) || []
+  }
+
   // Fetch meeting rooms for site context (for rooms view)
   let meetingRooms: MeetingRoomResource[] = []
   if (context.type === "site") {
@@ -186,6 +197,8 @@ export async function ReservationsSection({
         notes: b.notes,
         hubspot_deal_id: b.hubspot_deal_id,
         netsuite_invoice_id: b.netsuite_invoice_id,
+        stripe_checkout_session_id: b.stripe_checkout_session_id,
+        referral: b.referral,
         created_at: b.created_at,
         updated_at: b.updated_at,
         resource_name: resource?.name || null,
@@ -306,6 +319,7 @@ export async function ReservationsSection({
           paramPrefix={paramPrefix}
           meetingRooms={meetingRooms}
           showRoomsView={context.type === "site"}
+          siteClosureDates={siteClosureDates}
         />
       </Suspense>
     </div>

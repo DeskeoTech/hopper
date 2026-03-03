@@ -24,7 +24,7 @@ function Calendar({
     <DayPicker
       locale={dateFnsLocale}
       showOutsideDays={showOutsideDays}
-      className={cn("p-3", className)}
+      className={cn("p-3 relative", className)}
       classNames={{
         months: "flex flex-col sm:flex-row gap-2",
         month: "flex flex-col gap-4",
