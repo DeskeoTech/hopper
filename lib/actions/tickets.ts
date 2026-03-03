@@ -47,6 +47,17 @@ export async function uploadTicketAttachment(ticketId: string, formData: FormDat
 
   const supabase = createAdminClient()
 
+  // Resolve profile user ID from auth email
+  const { data: userProfile } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!userProfile) {
+    return { error: "Non autorisé" }
+  }
+
   // Verify the user owns the ticket
   const { data: ticket } = await supabase
     .from("support_tickets")
@@ -54,7 +65,7 @@ export async function uploadTicketAttachment(ticketId: string, formData: FormDat
     .eq("id", ticketId)
     .single()
 
-  if (!ticket || ticket.user_id !== authUser.id) {
+  if (!ticket || ticket.user_id !== userProfile.id) {
     return { error: "Non autorisé" }
   }
 
