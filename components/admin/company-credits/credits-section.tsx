@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { Coins, Plus } from "lucide-react"
+import { Coins } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { CreditsHistoryTable } from "./credits-history-table"
 import { CreditAdjustmentModal } from "./credit-adjustment-modal"
 import type { CreditMovement } from "@/lib/types/database"
@@ -35,15 +36,9 @@ export function CreditsSection({ companyId, companyName, totalCredits, movements
               <p className="text-sm text-muted-foreground">crédits disponibles</p>
             </div>
             <div className="mt-4 sm:mt-0">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="relative flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 transition-all hover:bg-primary/20 hover:scale-105 cursor-pointer"
-              >
-                <Coins className="h-8 w-8 text-primary" />
-                <div className="absolute -top-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                  <Plus className="h-3.5 w-3.5" />
-                </div>
-              </button>
+              <Button onClick={() => setIsModalOpen(true)} size="sm">
+                Ajouter / retirer des crédits
+              </Button>
             </div>
           </div>
         </div>
