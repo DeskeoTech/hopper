@@ -386,6 +386,16 @@ export interface SupportTicket {
   updated_at: string
 }
 
+export interface TicketAttachment {
+  id: string
+  ticket_id: string | null
+  storage_path: string
+  filename: string | null
+  mime_type: string | null
+  size_bytes: number | null
+  created_at: string
+}
+
 export interface SupportTicketWithDetails extends SupportTicket {
   user_first_name: string | null
   user_last_name: string | null

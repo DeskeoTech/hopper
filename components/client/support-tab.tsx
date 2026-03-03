@@ -27,7 +27,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useTranslations, useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
-import { createTicket, getUserTickets } from "@/lib/actions/tickets"
+import { createTicket, getUserTickets, uploadTicketAttachment } from "@/lib/actions/tickets"
 import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
 import { REQUEST_TYPE_LABELS, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
@@ -143,6 +143,18 @@ export function SupportTab() {
     if (result.error) {
       setError(result.error)
     } else {
+      // Upload attachment if present
+      if (attachedFile && result.ticketId) {
+        const formData = new FormData()
+        formData.append("file", attachedFile)
+        const uploadResult = await uploadTicketAttachment(result.ticketId, formData)
+        if (uploadResult.error) {
+          setError(uploadResult.error)
+          setLoading(false)
+          return
+        }
+      }
+
       setSuccess(true)
       setRequestType("")
       setRequestSubtype("")

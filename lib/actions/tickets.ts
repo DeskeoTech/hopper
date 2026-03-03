@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
+import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
 
 export async function createTicket(data: {
@@ -36,6 +37,73 @@ export async function createTicket(data: {
   revalidatePath("/admin/tickets")
   revalidatePath("/mon-compte")
   return { success: true, ticketId: ticket.id }
+}
+
+export async function uploadTicketAttachment(ticketId: string, formData: FormData) {
+  const authUser = await getUser()
+  if (!authUser) {
+    return { error: "Non autorisé" }
+  }
+
+  const supabase = createAdminClient()
+
+  // Verify the user owns the ticket
+  const { data: ticket } = await supabase
+    .from("support_tickets")
+    .select("user_id")
+    .eq("id", ticketId)
+    .single()
+
+  if (!ticket || ticket.user_id !== authUser.id) {
+    return { error: "Non autorisé" }
+  }
+
+  const file = formData.get("file") as File
+  if (!file) {
+    return { error: "Aucun fichier fourni" }
+  }
+
+  const allowedTypes = [
+    "application/pdf",
+    "image/jpeg",
+    "image/png",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ]
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Format non accepté. Utilisez PDF, JPG, PNG ou DOC." }
+  }
+
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { error: "Le fichier est trop volumineux (max 10 Mo)" }
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "pdf"
+  const fileName = `${ticketId}/${Date.now()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("ticket-attachments")
+    .upload(fileName, file, { cacheControl: "3600", upsert: false })
+
+  if (uploadError) {
+    return { error: "Erreur lors de l'upload du fichier" }
+  }
+
+  const { error: dbError } = await supabase.from("ticket_attachments").insert({
+    ticket_id: ticketId,
+    storage_path: fileName,
+    filename: file.name,
+    mime_type: file.type,
+    size_bytes: file.size,
+  })
+
+  if (dbError) {
+    await supabase.storage.from("ticket-attachments").remove([fileName])
+    return { error: "Erreur lors de l'enregistrement de la pièce jointe" }
+  }
+
+  return { success: true }
 }
 
 export async function getUserTickets(userId: string): Promise<{ data: SupportTicket[] | null; error: string | null }> {
