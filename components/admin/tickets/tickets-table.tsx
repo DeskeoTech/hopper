@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
-import type { SupportTicketWithDetails, TicketStatus, TicketRequestType } from "@/lib/types/database"
-import { REQUEST_TYPE_LABELS, getSubtypeLabel } from "@/lib/constants/ticket-options"
+import type { SupportTicketWithDetails, TicketStatus } from "@/lib/types/database"
+import { getRequestTypeLabel, getSubtypeLabel } from "@/lib/constants/ticket-options"
 
 type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name" | "site_name"
 type SortOrder = "asc" | "desc"
@@ -128,8 +128,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
     )
   }
 
-  const getRequestTypeLabel = (type: TicketRequestType | null) => {
-    return type ? (REQUEST_TYPE_LABELS[type] || type) : "-"
+  const getTypeLabel = (type: string | null) => {
+    return getRequestTypeLabel(type)
   }
 
   const getUserName = (ticket: SupportTicketWithDetails) => {
@@ -229,7 +229,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <div>
-                    <span>{getRequestTypeLabel(ticket.request_type)}</span>
+                    <span>{getTypeLabel(ticket.request_type)}</span>
                     {ticket.request_subtype && (
                       <span className="block text-xs text-muted-foreground">
                         {getSubtypeLabel(ticket.request_type, ticket.request_subtype) || ticket.request_subtype}

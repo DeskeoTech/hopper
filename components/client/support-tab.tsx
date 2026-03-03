@@ -28,8 +28,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useTranslations, useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { createTicket, getUserTickets, uploadTicketAttachment } from "@/lib/actions/tickets"
-import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
-import { REQUEST_TYPE_LABELS, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
+import type { TicketStatus, SupportTicket } from "@/lib/types/database"
+import { getRequestTypeLabel, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
 
 const STATUS_CONFIG: Record<TicketStatus, { icon: typeof Circle; className: string }> = {
@@ -72,7 +72,7 @@ export function SupportTab() {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(true)
 
-  const [requestType, setRequestType] = useState<TicketRequestType | "">("")
+  const [requestType, setRequestType] = useState("")
   const [requestSubtype, setRequestSubtype] = useState("")
   const [siteId, setSiteId] = useState(selectedSiteId || "")
   const [subject, setSubject] = useState("")
@@ -113,7 +113,7 @@ export function SupportTab() {
       setError(t("validation.selectType"))
       return
     }
-    const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType]
+    const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType]
     if (subtypeOptions && subtypeOptions.length > 0 && !requestSubtype) {
       setError(t("validation.selectSubtype"))
       return
@@ -134,7 +134,7 @@ export function SupportTab() {
     const result = await createTicket({
       user_id: user?.id || null,
       site_id: siteId || null,
-      request_type: requestType as TicketRequestType,
+      request_type: requestType,
       request_subtype: requestSubtype || null,
       subject: subject.trim(),
       comment: comment.trim(),
@@ -239,7 +239,7 @@ export function SupportTab() {
               options={REQUEST_TYPE_OPTIONS}
               value={requestType}
               onValueChange={(value) => {
-                setRequestType(value as TicketRequestType)
+                setRequestType(value)
                 setRequestSubtype("")
               }}
               placeholder={t("choose")}
@@ -249,13 +249,13 @@ export function SupportTab() {
           </div>
 
           {/* Type de demande (sous-catégorie) */}
-          {requestType && REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] && (
+          {requestType && REQUEST_SUBTYPE_OPTIONS[requestType] && (
             <div className="space-y-2 overflow-hidden transition-all duration-200">
               <Label htmlFor="requestSubtype">
                 {t("requestType")} <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
-                options={REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] || []}
+                options={REQUEST_SUBTYPE_OPTIONS[requestType] || []}
                 value={requestSubtype}
                 onValueChange={setRequestSubtype}
                 placeholder={t("specify")}
@@ -413,7 +413,7 @@ export function SupportTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="text-xs font-medium text-muted-foreground">
-                          {REQUEST_TYPE_LABELS[ticket.request_type || "autre"]}
+                          {getRequestTypeLabel(ticket.request_type)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(ticket.created_at)}
