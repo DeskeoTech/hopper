@@ -42,8 +42,13 @@ export default async function ComptePage() {
       })()
     : Promise.resolve({ data: null } as { data: null })
 
-  // Run bookings, contracts, and news queries in parallel
-  const [bookingsResult, contractsResult, posts] = await Promise.all([
+  // Check for unnotified credits this month
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString()
+
+  // Run bookings, contracts, news, and unnotified credits queries in parallel
+  const [bookingsResult, contractsResult, posts, unnotifiedCreditsResult] = await Promise.all([
     // Only fetch upcoming/ongoing bookings (server-side filter instead of client-side)
     supabase
       .from("bookings")
@@ -63,6 +68,19 @@ export default async function ComptePage() {
     contractsQueryBuilder,
 
     getNewsPosts({ mainSiteId }),
+
+    // Unnotified credits created this month
+    userProfile.company_id
+      ? supabase
+          .from("credits")
+          .select("id, reason, allocated_credits, expiration")
+          .eq("company_id", userProfile.company_id!)
+          .gte("created_at", startOfMonth)
+          .lte("created_at", endOfMonth)
+          .eq("is_notified", false)
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null } as { data: null }),
   ])
 
   // Process contracts
@@ -136,12 +154,21 @@ export default async function ComptePage() {
       }
     })
 
+  // Unnotified credit (if any)
+  const unnotifiedCredit = unnotifiedCreditsResult.data as {
+    id: string
+    reason: string | null
+    allocated_credits: number
+    expiration: string | null
+  } | null
+
   return (
     <AccountPage
       bookings={transformedBookings}
       contracts={contracts}
       posts={posts}
       isAdmin={isAdmin}
+      unnotifiedCredit={unnotifiedCredit}
     />
   )
 }

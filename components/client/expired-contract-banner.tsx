@@ -1,13 +1,27 @@
 "use client"
 
+import { Component, type ReactNode } from "react"
 import { useTranslations } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 
-export function ExpiredContractBanner() {
+class BannerErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  render() {
+    if (this.state.hasError) return null
+    return this.props.children
+  }
+}
+
+function ExpiredContractBannerInner() {
   const { user, plan, isDeskeoEmployee } = useClientLayout()
   const t = useTranslations("expiredBanner")
 
-  // Don't show for Deskeo employees (unlimited access) or if user has an active plan
   if (isDeskeoEmployee || plan) {
     return null
   }
@@ -19,7 +33,6 @@ export function ExpiredContractBanner() {
 
   return (
     <>
-      {/* Fixed banner at top */}
       <div
         onClick={handleClick}
         className="fixed top-0 left-0 right-0 z-50 cursor-pointer bg-primary py-2 text-center transition-opacity hover:opacity-90 overflow-hidden"
@@ -28,8 +41,15 @@ export function ExpiredContractBanner() {
           {t("message")}
         </p>
       </div>
-      {/* Spacer to push content below the fixed banner */}
       <div className="h-[34px] sm:h-[42px]" />
     </>
+  )
+}
+
+export function ExpiredContractBanner() {
+  return (
+    <BannerErrorBoundary>
+      <ExpiredContractBannerInner />
+    </BannerErrorBoundary>
   )
 }

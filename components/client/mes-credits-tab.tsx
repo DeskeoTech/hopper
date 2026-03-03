@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { ArrowDown, ArrowUp, Coins, ShoppingCart } from "lucide-react"
+import { ArrowDown, ArrowUp, Coins, Info, ShoppingCart } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -15,6 +15,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
 import { AdminContactDialog } from "./admin-contact-dialog"
+import { CreditsInfoModal } from "./credits-info-modal"
 import type { CreditMovementType } from "@/lib/types/database"
 
 const typeColors: Record<CreditMovementType | "purchase", string> = {
@@ -42,6 +43,7 @@ export function MesCreditsTab() {
     { value: "expiration", label: t("types.expiration") },
   ]
   const [adminDialogOpen, setAdminDialogOpen] = useState(false)
+  const [infoModalOpen, setInfoModalOpen] = useState(false)
 
   const handleBuyCredits = () => {
     if (!isAdmin) {
@@ -68,8 +70,17 @@ export function MesCreditsTab() {
               {credits?.remaining ?? 0}
             </p>
           </div>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-            <Coins className="h-5 w-5 text-foreground/70" />
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setInfoModalOpen(true)}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5 hover:bg-foreground/10 transition-colors"
+            >
+              <Info className="h-5 w-5 text-foreground/70" />
+            </button>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+              <Coins className="h-5 w-5 text-foreground/70" />
+            </div>
           </div>
         </div>
       </div>
@@ -83,6 +94,9 @@ export function MesCreditsTab() {
         <ShoppingCart className="h-4 w-4" />
         {t("buyCredits")}
       </button>
+
+      {/* Credits Info Modal */}
+      <CreditsInfoModal open={infoModalOpen} onOpenChange={setInfoModalOpen} />
 
       {/* Admin Contact Dialog for non-admin users */}
       <AdminContactDialog

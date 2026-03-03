@@ -8,22 +8,32 @@ import { SitesListSection } from "./dashboard/sites-list-section"
 import { UserBookingsSection } from "./user-bookings-section"
 import { ContractsListSection } from "./contracts-list-section"
 import { NewsCard } from "./news-card"
+import { CreditsInfoModal } from "./credits-info-modal"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay, NewsPostWithSite } from "@/lib/types/database"
 import { useTranslations } from "next-intl"
 
 const HERO_IMAGE_URL = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
 
+export interface UnnotifiedCredit {
+  id: string
+  reason: string | null
+  allocated_credits: number
+  expiration: string | null
+}
+
 interface AccountPageProps {
   bookings: BookingWithDetails[]
   contracts: ContractForDisplay[]
   posts: NewsPostWithSite[]
   isAdmin: boolean
+  unnotifiedCredit?: UnnotifiedCredit | null
 }
 
-export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPageProps) {
+export function AccountPage({ bookings, contracts, posts, isAdmin, unnotifiedCredit }: AccountPageProps) {
   const t = useTranslations("")
   const { user } = useClientLayout()
+  const [creditsInfoOpen, setCreditsInfoOpen] = useState(!!unnotifiedCredit)
   const [activeTab, setActiveTab] = useState<"reservations" | "actualites">("reservations")
   const [newsPage, setNewsPage] = useState(0)
   const NEWS_PER_PAGE = 4
@@ -157,6 +167,13 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
         {/* Sites List */}
         <SitesListSection />
       </div>
+
+      {/* Credits Info Modal */}
+      <CreditsInfoModal
+        open={creditsInfoOpen}
+        onOpenChange={setCreditsInfoOpen}
+        credit={unnotifiedCredit}
+      />
     </div>
   )
 }
