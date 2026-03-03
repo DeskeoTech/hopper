@@ -295,11 +295,11 @@ export async function createMeetingRoomBooking(data: {
     return { error: "Aucun crédit disponible" }
   }
 
-  // Use the first valid credit record
-  const credits = validCredits[0]
+  // Sum all valid credits for availability check
+  const totalAvailable = validCredits.reduce((sum, c) => sum + c.remaining_balance, 0)
 
-  if (credits.remaining_balance < data.creditsToUse) {
-    return { error: `Crédits insuffisants (${credits.remaining_balance} restants, ${data.creditsToUse} requis)` }
+  if (totalAvailable < data.creditsToUse) {
+    return { error: `Crédits insuffisants (${totalAvailable} restants, ${data.creditsToUse} requis)` }
   }
 
   // 3. Create booking
@@ -323,34 +323,50 @@ export async function createMeetingRoomBooking(data: {
     return { error: bookingError.message }
   }
 
-  // 4. Deduct credits (use admin client to bypass RLS)
-  const newBalance = credits.remaining_balance - data.creditsToUse
-  const { error: creditUpdateError } = await adminSupabase
-    .from("credits")
-    .update({
-      remaining_balance: newBalance,
-    })
-    .eq("id", credits.id)
+  // 4. Deduct credits across multiple records (oldest first / FIFO)
+  const sortedCredits = [...validCredits].reverse() // validCredits is newest-first, reverse for FIFO
+  let remainingToDeduct = data.creditsToUse
+  const deductions: { creditId: string; amount: number; balanceBefore: number; balanceAfter: number }[] = []
 
-  if (creditUpdateError) {
-    // Rollback booking if credit deduction fails
-    await supabase.from("bookings").delete().eq("id", booking.id)
-    return { error: "Erreur lors de la déduction des crédits" }
+  for (const credit of sortedCredits) {
+    if (remainingToDeduct <= 0) break
+
+    const deduct = Math.min(remainingToDeduct, credit.remaining_balance)
+    const newBalance = credit.remaining_balance - deduct
+
+    const { error: creditUpdateError } = await adminSupabase
+      .from("credits")
+      .update({ remaining_balance: newBalance })
+      .eq("id", credit.id)
+
+    if (creditUpdateError) {
+      // Rollback: restore previously deducted credits and delete booking
+      for (const d of deductions) {
+        await adminSupabase.from("credits").update({ remaining_balance: d.balanceBefore }).eq("id", d.creditId)
+      }
+      await supabase.from("bookings").delete().eq("id", booking.id)
+      return { error: "Erreur lors de la déduction des crédits" }
+    }
+
+    deductions.push({ creditId: credit.id, amount: deduct, balanceBefore: credit.remaining_balance, balanceAfter: newBalance })
+    remainingToDeduct -= deduct
   }
 
-  // 5. Create credit transaction record (use admin client to bypass RLS)
-  await adminSupabase.from("credit_transactions").insert({
-    credit_id: credits.id,
-    company_id: data.companyId,
-    booking_id: booking.id,
-    user_id: data.userId,
-    transaction_type: "consumption",
-    amount: data.creditsToUse,
-    balance_before: credits.remaining_balance,
-    balance_after: newBalance,
-    reason: "Réservation de salle de réunion",
-    performed_by: data.userId,
-  })
+  // 5. Create credit transaction records (use admin client to bypass RLS)
+  for (const d of deductions) {
+    await adminSupabase.from("credit_transactions").insert({
+      credit_id: d.creditId,
+      company_id: data.companyId,
+      booking_id: booking.id,
+      user_id: data.userId,
+      transaction_type: "consumption",
+      amount: d.amount,
+      balance_before: d.balanceBefore,
+      balance_after: d.balanceAfter,
+      reason: "Réservation de salle de réunion",
+      performed_by: data.userId,
+    })
+  }
 
   revalidatePath("/")
   return { success: true, bookingId: booking.id }
