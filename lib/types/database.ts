@@ -57,6 +57,7 @@ export interface Site {
   contact_last_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  capacity: number | null
   is_nomad: boolean
   created_at: string
   updated_at: string
