@@ -38,7 +38,7 @@ import {
 } from "@/lib/actions/bookings"
 import { disabledDateMatcher, createSiteAwareDisabledMatcher, getNextBusinessDay, getNextBusinessDays, getBusinessDaysFrom, getBusinessDaysCentered, getPreviousBusinessDay, isSameDay, isToday } from "@/lib/dates"
 import { getSiteClosureDates } from "@/lib/actions/sites"
-import { cn } from "@/lib/utils"
+import { cn, formatTime, formatDuration } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -189,10 +189,14 @@ export function RoomBookingContent({
         } else {
           const unavailable: string[] = []
           result.bookings.forEach((booking) => {
-            const startHour = toParisDate(booking.start_date).getHours()
-            const endHour = toParisDate(booking.end_date).getHours()
-            for (let h = startHour; h < endHour; h++) {
-              unavailable.push(`${h.toString().padStart(2, "0")}:00`)
+            const start = toParisDate(booking.start_date)
+            const end = toParisDate(booking.end_date)
+            const startH = start.getHours() + start.getMinutes() / 60
+            const endH = end.getHours() + end.getMinutes() / 60
+            for (let h = startH; h < endH; h += 0.5) {
+              const hours = Math.floor(h)
+              const minutes = Math.round((h % 1) * 60)
+              unavailable.push(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`)
             }
           })
           setUnavailableSlots(unavailable)
@@ -204,12 +208,14 @@ export function RoomBookingContent({
   // Pre-select the clicked slot when entering slots view
   useEffect(() => {
     if (view === "slots" && selectedStartHour !== null) {
-      setSelectedSlots([`${selectedStartHour.toString().padStart(2, "0")}:00`])
+      const hours = Math.floor(selectedStartHour)
+      const minutes = Math.round((selectedStartHour % 1) * 60)
+      setSelectedSlots([`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`])
     }
   }, [view, selectedStartHour])
 
   const selectedSite = sites.find((s) => s.id === selectedSiteId)
-  const creditsNeeded = selectedSlots.length * (selectedRoom?.hourly_credit_rate || 1)
+  const creditsNeeded = selectedSlots.length * ((selectedRoom?.hourly_credit_rate ?? 0) / 2)
   const hasEnoughCredits = remainingCredits >= creditsNeeded
 
   // Handle site change - reset selection
@@ -290,11 +296,16 @@ export function RoomBookingContent({
     const sortedSlots = [...selectedSlots].sort()
     const firstSlot = sortedSlots[0]
     const lastSlot = sortedSlots[sortedSlots.length - 1]
-    const lastHour = parseInt(lastSlot.split(":")[0]) + 1
+    // Add 30 minutes to the last slot start to get the end time
+    const [lastH, lastM] = lastSlot.split(":").map(Number)
+    const endMinutes = lastM + 30
+    const endH = lastH + Math.floor(endMinutes / 60)
+    const endMin = endMinutes % 60
+    const endTimeStr = `${endH.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`
 
     const dateStr = format(selectedDate, "yyyy-MM-dd")
     const startDate = createParisDate(dateStr, firstSlot).toISOString()
-    const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`).toISOString()
+    const endDate = createParisDate(dateStr, endTimeStr).toISOString()
 
     const result = await createMeetingRoomBooking({
       userId,
@@ -928,9 +939,16 @@ export function RoomBookingContent({
                   <div>
                     <p className="type-body-sm text-muted-foreground">{tc("time")}</p>
                     <p className="type-body font-medium">
-                      {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
-                      {parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1}
-                      h ({selectedSlots.length} {selectedSlots.length > 1 ? tc("hours") : tc("hour")})
+                      {(() => {
+                        const sorted = [...selectedSlots].sort()
+                        const [fH, fM] = sorted[0].split(":").map(Number)
+                        const [lH, lM] = sorted[sorted.length - 1].split(":").map(Number)
+                        const endMin = lM + 30
+                        const eH = lH + Math.floor(endMin / 60)
+                        const eM = endMin % 60
+                        const duration = sorted.length * 0.5
+                        return `${formatTime(fH + fM / 60)} - ${formatTime(eH + eM / 60)} (${formatDuration(duration)})`
+                      })()}
                     </p>
                   </div>
                 </div>
@@ -1155,8 +1173,15 @@ export function RoomBookingContent({
                       <div>
                         <p className="type-body-sm text-muted-foreground">{tc("time")}</p>
                         <p className="type-body font-medium">
-                          {selectedSlots.sort()[0].replace(":00", "h")} -{" "}
-                          {parseInt(selectedSlots.sort()[selectedSlots.length - 1].split(":")[0]) + 1}h
+                          {(() => {
+                            const sorted = [...selectedSlots].sort()
+                            const [fH, fM] = sorted[0].split(":").map(Number)
+                            const [lH, lM] = sorted[sorted.length - 1].split(":").map(Number)
+                            const endMin = lM + 30
+                            const eH = lH + Math.floor(endMin / 60)
+                            const eM = endMin % 60
+                            return `${formatTime(fH + fM / 60)} - ${formatTime(eH + eM / 60)}`
+                          })()}
                         </p>
                       </div>
                     </div>

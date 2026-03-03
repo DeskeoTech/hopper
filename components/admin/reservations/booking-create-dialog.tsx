@@ -197,10 +197,14 @@ export function BookingCreateDialog({
         } else {
           const unavailable: string[] = []
           result.bookings.forEach((booking) => {
-            const startHour = toParisDate(booking.start_date).getHours()
-            const endHour = toParisDate(booking.end_date).getHours()
-            for (let h = startHour; h < endHour; h++) {
-              unavailable.push(`${h.toString().padStart(2, "0")}:00`)
+            const bStart = toParisDate(booking.start_date)
+            const bEnd = toParisDate(booking.end_date)
+            const startH = bStart.getHours() + bStart.getMinutes() / 60
+            const endH = bEnd.getHours() + bEnd.getMinutes() / 60
+            for (let h = startH; h < endH; h += 0.5) {
+              const hours = Math.floor(h)
+              const minutes = Math.round((h % 1) * 60)
+              unavailable.push(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`)
             }
           })
           setUnavailableSlots(unavailable)
@@ -212,7 +216,9 @@ export function BookingCreateDialog({
   // Pre-select the clicked slot when entering slots view
   useEffect(() => {
     if (view === "slots" && selectedStartHour !== null) {
-      setSelectedSlots([`${selectedStartHour.toString().padStart(2, "0")}:00`])
+      const hours = Math.floor(selectedStartHour)
+      const minutes = Math.round((selectedStartHour % 1) * 60)
+      setSelectedSlots([`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`])
     }
   }, [view, selectedStartHour])
 
@@ -289,7 +295,11 @@ export function BookingCreateDialog({
     const sortedSlots = [...selectedSlots].sort()
     const firstSlot = sortedSlots[0]
     const lastSlot = sortedSlots[sortedSlots.length - 1]
-    const lastHour = parseInt(lastSlot.split(":")[0]) + 1
+    // Add 30 minutes to the last slot start to get the end time
+    const [lastH, lastM] = lastSlot.split(":").map(Number)
+    const endMinutes = lastM + 30
+    const endHr = lastH + Math.floor(endMinutes / 60)
+    const endMn = endMinutes % 60
 
     startTransition(async () => {
       // Build list of dates to book
@@ -315,7 +325,7 @@ export function BookingCreateDialog({
       for (const day of datesToBook) {
         const dateStr = format(day, "yyyy-MM-dd")
         const dayStartDate = createParisDate(dateStr, firstSlot)
-        const dayEndDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`)
+        const dayEndDate = createParisDate(dateStr, `${endHr.toString().padStart(2, "0")}:${endMn.toString().padStart(2, "0")}`)
 
         const result = await createBookingFromAdmin({
           userId,

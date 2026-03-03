@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/popover"
 import { BookingEditDialog } from "./booking-edit-dialog"
 import { ViewToggle, type ViewMode } from "./view-toggle"
-import { cn } from "@/lib/utils"
+import { cn, formatTime } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 import type { BookingWithDetails } from "@/lib/types/database"
 
@@ -70,16 +70,19 @@ export function SiteRoomCalendar({
       return bookingDate === dateStr && b.resource_type === "meeting_room"
     })
 
-    return filteredBookings.map((b): RoomBooking => ({
+    return filteredBookings.map((b): RoomBooking => {
+      const startDate = toParisDate(b.start_date)
+      const endDate = toParisDate(b.end_date)
+      return {
       id: b.id,
       resourceId: b.resource_id,
-      startHour: toParisDate(b.start_date).getHours(),
-      endHour: toParisDate(b.end_date).getHours(),
+      startHour: startDate.getHours() + startDate.getMinutes() / 60,
+      endHour: endDate.getHours() + endDate.getMinutes() / 60,
       title: b.notes,
       userName: [b.user_first_name, b.user_last_name].filter(Boolean).join(" ") || null,
       status: b.status,
       companyName: b.company_name,
-    }))
+    }})
   }, [bookings, currentDate])
 
   // Group bookings by room
@@ -408,7 +411,7 @@ export function SiteRoomCalendar({
                         )}
                         {height > 70 && (
                           <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                            {booking.startHour}h - {booking.endHour}h
+                            {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                           </p>
                         )}
                         {isCancelled && height > 45 && (
