@@ -482,6 +482,8 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   <DocumentsSection
                     companyId={company.id}
                     kbisStoragePath={company.kbis_storage_path}
+                    identityDocumentStoragePath={company.identity_document_storage_path ?? null}
+                    ribStoragePath={company.rib_storage_path ?? null}
                     companyType={company.company_type}
                   />
 

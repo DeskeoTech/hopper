@@ -130,6 +130,8 @@ export interface Company {
   main_site_id: string | null
   logo_storage_path: string | null
   kbis_storage_path: string | null
+  identity_document_storage_path: string | null
+  rib_storage_path: string | null
   onboarding_done: boolean | null
   from_spacebring: boolean | null
   spacebring_plan_name: string | null
