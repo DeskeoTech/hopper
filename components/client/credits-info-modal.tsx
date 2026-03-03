@@ -23,7 +23,7 @@ export function CreditsInfoModal({ open, onOpenChange, credit }: CreditsInfoModa
     }
   }, [open, credit?.id])
 
-  if (!open || !credit) return null
+  if (!open || !credit || !credit.allocated_credits) return null
 
   const expirationDate = credit.expiration
     ? new Date(credit.expiration).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
