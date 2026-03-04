@@ -186,7 +186,7 @@ export function SupportTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       {/* Ticket Form */}
       <div className="rounded-[16px] bg-card p-4 sm:p-6">
         <div className="mb-5 sm:mb-6 flex items-center gap-3">
@@ -399,7 +399,7 @@ export function SupportTab() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[360px] space-y-3 overflow-y-auto">
             {tickets.map((ticket) => {
               const statusConfig = STATUS_CONFIG[ticket.status || "todo"]
               const StatusIcon = statusConfig.icon

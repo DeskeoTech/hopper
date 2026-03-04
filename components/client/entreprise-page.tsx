@@ -202,6 +202,7 @@ export function EntreprisePage({
   }
 
   return (
+    <div className="min-h-screen bg-[#f0e8dc]">
     <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
       {/* Back link */}
       <Link
@@ -349,7 +350,7 @@ export function EntreprisePage({
           {users.length === 0 ? (
             <p className="text-sm text-foreground/50">{t("noUsers")}</p>
           ) : (
-            <div className="space-y-2">
+            <div className="max-h-[720px] space-y-2 overflow-y-auto">
               {users.map((user) => {
                 const isCurrentUser = user.id === currentUserId
                 const isDisabled = user.status === "inactive"
@@ -631,6 +632,7 @@ export function EntreprisePage({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   )
 }
