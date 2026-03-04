@@ -16,6 +16,7 @@ interface AssignUserToContractProps {
   numberOfSeats: number | null
   assignedUsersCount: number
   onUserAssigned: () => void
+  isSpacebring?: boolean
 }
 
 export function AssignUserToContract({
@@ -24,6 +25,7 @@ export function AssignUserToContract({
   numberOfSeats,
   assignedUsersCount,
   onUserAssigned,
+  isSpacebring = false,
 }: AssignUserToContractProps) {
   const t = useTranslations("assignUser")
   const tc = useTranslations("common")
@@ -36,14 +38,15 @@ export function AssignUserToContract({
 
   const isFull = numberOfSeats !== null && assignedUsersCount >= numberOfSeats
 
-  // Load available users
+  // Load available users (not needed for Spacebring)
   useEffect(() => {
+    if (isSpacebring) return
     setLoading(true)
     getCompanyUsersNotInContract(contractId, companyId).then((result) => {
       setAvailableUsers(result.data || [])
       setLoading(false)
     })
-  }, [contractId, companyId])
+  }, [contractId, companyId, isSpacebring])
 
   // Filter users by search
   const filteredUsers = useMemo(() => {
@@ -73,9 +76,11 @@ export function AssignUserToContract({
 
   const handleUserCreated = () => {
     // Refresh available users and notify parent
-    getCompanyUsersNotInContract(contractId, companyId).then((result) => {
-      setAvailableUsers(result.data || [])
-    })
+    if (!isSpacebring) {
+      getCompanyUsersNotInContract(contractId, companyId).then((result) => {
+        setAvailableUsers(result.data || [])
+      })
+    }
     onUserAssigned()
   }
 
@@ -100,10 +105,10 @@ export function AssignUserToContract({
       {isFull ? (
         <div className="rounded-[12px] bg-orange-500/10 p-4">
           <p className="text-sm text-orange-700">
-            {t("allSeatsOccupied")}
+            {isSpacebring ? t("allSeatsOccupiedOffPlatform") : t("allSeatsOccupied")}
           </p>
         </div>
-      ) : (
+      ) : isSpacebring ? null : (
         <>
           {/* Search bar */}
           <div className="relative">
@@ -174,6 +179,7 @@ export function AssignUserToContract({
         contractId={contractId}
         companyId={companyId}
         onUserCreated={handleUserCreated}
+        isSpacebring={isSpacebring}
       />
     </div>
   )

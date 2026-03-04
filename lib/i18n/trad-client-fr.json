@@ -368,6 +368,7 @@
     "title": "Assigner un utilisateur",
     "searchUser": "Rechercher un utilisateur...",
     "allSeatsOccupied": "Tous les postes sont occupés. Augmentez le nombre de postes sur Stripe pour ajouter un utilisateur.",
+    "allSeatsOccupiedOffPlatform": "Tous les postes sont occupés. Contactez votre gestionnaire pour ajouter des postes supplémentaires.",
     "noUserFound": "Aucun utilisateur trouvé",
     "allAssigned": "Tous les utilisateurs sont déjà assignés"
   },
