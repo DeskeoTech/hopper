@@ -6,7 +6,7 @@ import { Users, ChevronDown, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { CompanyPaymentStatus, StripeSubscriptionStatus } from "@/lib/actions/stripe"
 
-const ITEMS_PER_PAGE = 10
+const ITEMS_PER_PAGE = 7
 
 interface ActiveClient {
   id: string
