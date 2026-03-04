@@ -54,5 +54,5 @@ export function SiteLocationMap({ lat, lng }: { lat: number; lng: number }) {
     }
   }, [lat, lng, locale])
 
-  return <div ref={mapContainerRef} className="h-full w-full rounded-2xl" />
+  return <div ref={mapContainerRef} className="h-full w-full" />
 }

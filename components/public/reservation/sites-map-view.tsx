@@ -191,5 +191,5 @@ export function SitesMapView({
     prevHoveredRef.current = hoveredSiteId
   }, [hoveredSiteId, isLoaded, filteredSites])
 
-  return <div ref={mapContainerRef} className="h-full w-full rounded-2xl" />
+  return <div ref={mapContainerRef} className="h-full w-full" />
 }

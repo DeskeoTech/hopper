@@ -122,7 +122,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
 
   return (
     <ReservationProvider>
-    <div className="flex h-screen flex-col">
+    <div className="reservation-layout flex h-screen flex-col overflow-hidden">
       {/* Header */}
       <PublicHeader selectedCity={selectedCity} onCityChange={setSelectedCity} />
       {/* Main Content */}
@@ -149,7 +149,7 @@ export function ReservationPageClient({ initialSites }: ReservationPageClientPro
         {/* Map View */}
         <div
           className={cn(
-            "w-full lg:w-1/2 lg:block",
+            "w-full lg:w-1/2 lg:block h-full",
             mobileView === "list" && "hidden"
           )}
         >
