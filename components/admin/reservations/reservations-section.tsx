@@ -14,7 +14,7 @@ import {
 import type { BookingWithDetails, ResourceType, MeetingRoomResource } from "@/lib/types/database"
 import type { HiddenFilter } from "./reservations-filters"
 import type { ViewMode } from "./view-toggle"
-import { Calendar } from "lucide-react"
+import { Calendar, Download } from "lucide-react"
 
 export type ReservationContext =
   | { type: "site"; siteId: string; siteName: string }
@@ -295,15 +295,27 @@ export async function ReservationsSection({
   return (
     <div className="rounded-lg bg-card p-6">
       {showHeader && (
-        <div className="mb-6">
-          <h2 className="flex items-center gap-2 type-h3 text-foreground">
-            <Calendar className="h-5 w-5" />
-            Reservations
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {transformedBookings.length} reservation
-            {transformedBookings.length !== 1 ? "s" : ""}
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 type-h3 text-foreground">
+              <Calendar className="h-5 w-5" />
+              Reservations
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {transformedBookings.length} reservation
+              {transformedBookings.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          {context.type === "site" && (
+            <a
+              href={`/api/sites/${context.siteId}/ical`}
+              download
+              className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exporter iCal</span>
+            </a>
+          )}
         </div>
       )}
 
