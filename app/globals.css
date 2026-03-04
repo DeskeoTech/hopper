@@ -151,6 +151,11 @@
   html {
     scrollbar-gutter: stable;
   }
+  html:has(.reservation-layout),
+  html:has(.reservation-layout) body {
+    overflow: hidden;
+    height: 100vh;
+  }
   body {
     @apply bg-background text-foreground;
     overflow-x: hidden;
