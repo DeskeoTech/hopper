@@ -226,7 +226,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto px-6">
-              <div className="rounded-2xl bg-white p-4 md:p-5">
+              <div className="rounded-2xl bg-card p-4 md:p-5">
                 <ScrollableCalendar
                   selectedDates={selectedDates}
                   onDatesChange={setSelectedDates}
@@ -241,7 +241,7 @@ export function BookingDialog({ site, open, onOpenChange, customerEmail, referra
             </div>
 
             {/* Footer */}
-            <div className="bg-white border-t border-border/40 px-6 py-4 space-y-4">
+            <div className="bg-card border-t border-border/40 px-6 py-4 space-y-4">
               {/* Pass summary */}
               {selectedDates.length > 0 && (
                 <div className="flex items-start justify-between">
