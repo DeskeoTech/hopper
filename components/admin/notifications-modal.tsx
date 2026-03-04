@@ -5,6 +5,7 @@ import { Bell, CalendarDays, Clock, FileText, CalendarCheck, TicketIcon, CheckCh
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { format } from "date-fns"
@@ -353,7 +354,7 @@ export function NotificationsModal({
               <Bell className="h-5 w-5 text-[#221D1A]" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">Notifications</h2>
+              <DialogTitle className="text-lg font-semibold text-foreground">Notifications</DialogTitle>
               <p className="text-sm text-muted-foreground">Gérez vos activités récentes</p>
             </div>
           </div>
