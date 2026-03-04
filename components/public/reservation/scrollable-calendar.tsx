@@ -424,7 +424,7 @@ export function ScrollableCalendar({
 
       {/* Mobile: Sticky weekdays header + 12 months scroll */}
       <div className="sm:hidden">
-        <div className="sticky top-0 z-10 grid grid-cols-7 gap-1 py-2 bg-white border-b border-black/10">
+        <div className="sticky top-0 z-10 grid grid-cols-7 gap-1 py-2 bg-card border-b border-black/10">
           {daysShort.map((day, i) => (
             <div
               key={i}
@@ -544,8 +544,8 @@ export function ScrollableCalendar({
               className={cn(
                 "relative flex flex-col items-start gap-2 rounded-[16px] p-3 text-left transition-all",
                 passType === "week"
-                  ? "bg-white ring-2 ring-foreground"
-                  : "bg-white hover:bg-white/80"
+                  ? "bg-card ring-2 ring-foreground"
+                  : "bg-card hover:bg-card/80"
               )}
             >
               <div className="flex w-full items-center justify-between">
@@ -579,8 +579,8 @@ export function ScrollableCalendar({
               className={cn(
                 "relative flex flex-col items-start gap-2 rounded-[16px] p-3 text-left transition-all",
                 passType === "month"
-                  ? "bg-white ring-2 ring-foreground"
-                  : "bg-white hover:bg-white/80"
+                  ? "bg-card ring-2 ring-foreground"
+                  : "bg-card hover:bg-card/80"
               )}
             >
               <div className="flex w-full items-center justify-between">

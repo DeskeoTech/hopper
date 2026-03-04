@@ -368,7 +368,7 @@ export function NotificationsModal({
             <button
               type="button"
               onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
-              className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-gray-50"
+              className="flex items-center gap-2 rounded-full border border-gray-200 bg-card px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-card/80"
             >
               <MapPin className="h-3.5 w-3.5 text-[#221D1A]" />
               {selectedSiteLabel}
@@ -377,7 +377,7 @@ export function NotificationsModal({
             {siteDropdownOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setSiteDropdownOpen(false)} />
-                <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-48 overflow-y-auto rounded-xl border border-gray-100 bg-white py-1 shadow-lg">
+                <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-48 overflow-y-auto rounded-xl border border-gray-100 bg-card py-1 shadow-lg">
                   {allSiteOptions.map(site => (
                     <button
                       key={site.value}
