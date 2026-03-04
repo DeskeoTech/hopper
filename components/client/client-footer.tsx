@@ -5,7 +5,7 @@ export function ClientFooter() {
   const t = useTranslations("footer")
 
   return (
-    <footer className="border-t border-foreground/5 bg-background px-4 pb-24 pt-6 md:px-6 md:pb-6">
+    <footer className="border-t border-foreground/5 bg-card px-4 pb-24 pt-6 md:px-6 md:pb-6">
       <div className="mx-auto flex flex-col items-center gap-3 text-center">
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
           <Link
