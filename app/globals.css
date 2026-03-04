@@ -6,20 +6,20 @@
      DESIGN SYSTEM - HOPPER
      ========================================
      Palette: 3 couleurs principales + 1 erreur
-     - bg-primary: #F0E8DC (fond principal clair)
+     - bg-primary: #FCFBF9 (fond principal clair)
      - text-primary: #1B1918 (dark - texte, bordures, CTAs)
      - bg-secondary: #D9D0C4 (beige foncé - cards, panels)
      - error: rouge pastel (validation uniquement)
   ======================================== */
 
   /* Design System Colors */
-  --color-bg-primary: #F0E8DC;
+  --color-bg-primary: #FCFBF9;
   --color-text-primary: #1B1918;
   --color-bg-secondary: #D9D0C4;
   --color-error: oklch(0.7 0.15 25);
 
   /* Mappings shadcn/ui */
-  --background: #F0E8DC;
+  --background: #FCFBF9;
   --foreground: #1B1918;
   --card: #F5F0EB;
   --card-foreground: #1B1918;
@@ -142,6 +142,12 @@
   --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+}
+
+/* Client-only overrides (user-facing interface) */
+.client-layout {
+  --background: #F0E8DC;
+  --color-bg-primary: #F0E8DC;
 }
 
 @layer base {

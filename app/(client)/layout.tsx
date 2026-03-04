@@ -341,7 +341,7 @@ export default async function ClientLayout({
       )}
       <ExpiredContractBanner />
       <PwaInstallPrompt />
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="client-layout min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
           <ClientHeader />
           <main className="flex-1 overflow-x-hidden">{children}</main>
