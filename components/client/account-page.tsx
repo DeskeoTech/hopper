@@ -44,7 +44,7 @@ export function AccountPage({ bookings, contracts, posts, isAdmin, unreadNotific
   const visiblePosts = posts.slice(newsPage * NEWS_PER_PAGE, (newsPage + 1) * NEWS_PER_PAGE)
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-[#efe8dc] min-h-screen">
       {/* Hero Image - Full bleed on mobile, contained on desktop */}
       <div className="-mx-4 -mt-4 md:mx-0 md:mt-0">
         {/* Mobile: full bleed hero */}
@@ -56,11 +56,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin, unreadNotific
               className="h-full w-full object-cover"
             />
             {/* Top gradient + blur effect (header transition) */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#efe8dc] via-[#efe8dc]/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-[#efe8dc]/60 to-transparent" />
             {/* Bottom gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent sm:via-background/40" />
-            <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-background to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#efe8dc] via-[#efe8dc]/20 to-transparent sm:via-[#efe8dc]/40" />
+            <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-[#efe8dc] to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
           </div>
         </div>
 
@@ -73,11 +73,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin, unreadNotific
               className="h-full w-full object-cover"
             />
             {/* Top gradient + blur effect (header transition) */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent rounded-t-[20px]" />
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#efe8dc] via-[#efe8dc]/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-[#efe8dc]/60 to-transparent rounded-t-[20px]" />
             {/* Bottom gradient + blur effect (selector transition) */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/50 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-background to-transparent rounded-b-[20px]" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#efe8dc] via-[#efe8dc]/50 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-[#efe8dc] to-transparent rounded-b-[20px]" />
           </div>
         </div>
       </div>

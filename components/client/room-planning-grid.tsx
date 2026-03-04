@@ -384,11 +384,11 @@ export function RoomHeaders({ rooms, onPhotoClick }: RoomHeadersProps) {
           <div className="w-10 shrink-0" />
 
           {/* Room headers */}
-          <div className="flex flex-1 gap-1 overflow-x-auto">
+          <div className="flex flex-1 overflow-x-auto">
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="flex-1 min-w-[60px] text-center"
+                className="shrink-0 w-[calc(100%/3)] text-center"
               >
                 {/* Room photo */}
                 {room.photoUrls && room.photoUrls.length > 0 ? (
@@ -603,7 +603,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                   <div
                     key={room.id}
                     className={cn(
-                      "flex-1 min-w-[60px] relative",
+                      "shrink-0 w-[calc(100%/3)] relative",
                       roomIndex > 0 && "border-l border-foreground/10"
                     )}
                   >
