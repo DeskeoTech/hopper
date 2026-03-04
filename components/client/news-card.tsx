@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useRef, useEffect } from "react"
 import { format, parseISO, formatDistanceToNow, differenceInDays } from "date-fns"
 import { MapPin, Newspaper, Pencil, Pin, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -20,6 +21,16 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
   const t = useTranslations("dashboard.news")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
+  const [expanded, setExpanded] = useState(false)
+  const [isClamped, setIsClamped] = useState(false)
+  const textRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const el = textRef.current
+    if (el && variant === "compact" && !expanded) {
+      setIsClamped(el.scrollHeight > el.clientHeight)
+    }
+  }, [post.content, variant, expanded])
 
   const formattedDate = post.published_at
     ? (() => {
@@ -51,9 +62,21 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
             {post.is_pinned && !onTogglePin && (
               <Pin className="h-3 w-3 flex-shrink-0 text-primary mb-1" />
             )}
-            <p className="text-sm text-foreground line-clamp-3">
+            <p
+              ref={textRef}
+              className={cn("text-sm text-foreground", !expanded && "line-clamp-3")}
+            >
               {post.content || post.title}
             </p>
+            {isClamped && (
+              <button
+                type="button"
+                onClick={() => setExpanded(!expanded)}
+                className="mt-1 text-xs font-medium text-primary hover:underline"
+              >
+                {expanded ? "Voir moins" : "Voir plus"}
+              </button>
+            )}
             <div className="mt-2 flex items-center gap-2 text-[10px] text-foreground/50">
               {(post.author_first_name || post.author_last_name) && (
                 <span className="font-medium">

@@ -69,7 +69,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
         placeholder="Quoi de neuf ?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="min-h-[80px] resize-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/60"
+        className="min-h-[120px] resize-y border-0 bg-transparent p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/60"
       />
 
       {imagePreview && (
