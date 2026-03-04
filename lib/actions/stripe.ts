@@ -3,6 +3,7 @@
 import Stripe from "stripe"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { isBookingOverlapError, BOOKING_CONFLICT_MESSAGE } from "@/lib/utils/booking-errors"
 
 const PASS_PRICES = {
   day: 3000, // 30€ in cents
@@ -547,7 +548,7 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
     // Find a bench or flex_desk resource at this site
     const { data: resource } = await supabase
       .from("resources")
-      .select("id")
+      .select("id, type")
       .eq("site_id", siteId)
       .in("type", ["bench", "flex_desk"])
       .eq("status", "available")
@@ -599,12 +600,17 @@ export async function createBookingFromStripeSession(sessionId: string): Promise
         status: "confirmed",
         seats_count: quantity,
         stripe_checkout_session_id: sessionId,
+        resource_type: resource.type,
         ...(referral ? { referral } : {}),
       })
       .select("id")
       .single()
 
     if (bookingError) {
+      if (isBookingOverlapError(bookingError)) {
+        console.error("Booking overlap detected for Stripe session:", sessionId)
+        return { error: BOOKING_CONFLICT_MESSAGE }
+      }
       console.error("Booking creation error:", bookingError)
       return { error: "Erreur lors de la création de la réservation" }
     }

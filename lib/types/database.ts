@@ -241,6 +241,7 @@ export interface Booking {
   netsuite_invoice_id: string | null
   stripe_checkout_session_id: string | null
   referral: string | null
+  resource_type: string | null
   created_at: string
   updated_at: string
 }

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { toParisDate, parisStartOfDay, parisEndOfDay } from "@/lib/timezone"
+import { isBookingOverlapError, BOOKING_CONFLICT_MESSAGE } from "@/lib/utils/booking-errors"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 export async function getMeetingRoomsBySite(
@@ -60,7 +61,8 @@ export async function checkAvailability(
   resourceId: string,
   date: string // YYYY-MM-DD
 ): Promise<{ bookings: Array<{ start_date: string; end_date: string }>; error?: string }> {
-  const supabase = await createClient()
+  // Use admin client to bypass RLS — all users need to see all bookings for availability
+  const supabase = createAdminClient()
 
   const startOfDay = parisStartOfDay(date)
   const endOfDay = parisEndOfDay(date)
@@ -95,7 +97,8 @@ export async function getRoomBookingsForDate(
   siteId: string,
   date: string // YYYY-MM-DD
 ): Promise<{ bookings: RoomBooking[]; error?: string }> {
-  const supabase = await createClient()
+  // Use admin client to bypass RLS — all users need to see all bookings for the planning grid
+  const supabase = createAdminClient()
 
   const startOfDay = parisStartOfDay(date)
   const endOfDay = parisEndOfDay(date)
@@ -210,6 +213,9 @@ export async function updateBookingDate(data: {
     .eq("id", data.bookingId)
 
   if (updateError) {
+    if (isBookingOverlapError(updateError)) {
+      return { error: BOOKING_CONFLICT_MESSAGE }
+    }
     return { error: updateError.message }
   }
 
@@ -315,6 +321,7 @@ export async function createMeetingRoomBooking(data: {
         end_date: data.endDate,
         status: "confirmed",
         credits_used: data.creditsToUse,
+        resource_type: "meeting_room",
         ...(data.referral ? { referral: data.referral } : {}),
         ...(data.notes ? { notes: data.notes } : {}),
         ...(data.stripeCheckoutSessionId ? { stripe_checkout_session_id: data.stripeCheckoutSessionId } : {}),
@@ -323,6 +330,9 @@ export async function createMeetingRoomBooking(data: {
       .single()
 
     if (bookingError) {
+      if (isBookingOverlapError(bookingError)) {
+        return { error: BOOKING_CONFLICT_MESSAGE }
+      }
       return { error: bookingError.message }
     }
 
@@ -385,6 +395,7 @@ export async function createMeetingRoomBooking(data: {
       end_date: data.endDate,
       status: "confirmed",
       credits_used: 0,
+      resource_type: "meeting_room",
       ...(data.referral ? { referral: data.referral } : {}),
       ...(data.notes ? { notes: data.notes } : {}),
       ...(data.stripeCheckoutSessionId ? { stripe_checkout_session_id: data.stripeCheckoutSessionId } : {}),
@@ -393,6 +404,9 @@ export async function createMeetingRoomBooking(data: {
     .single()
 
   if (bookingError) {
+    if (isBookingOverlapError(bookingError)) {
+      return { error: BOOKING_CONFLICT_MESSAGE }
+    }
     return { error: bookingError.message }
   }
 
@@ -563,10 +577,10 @@ export async function createBookingFromAdmin(data: {
     }
   }
 
-  // Get resource hourly credit rate and site_id
+  // Get resource hourly credit rate, type, and site_id
   const { data: resource, error: resourceError } = await supabase
     .from("resources")
-    .select("hourly_credit_rate, site_id")
+    .select("hourly_credit_rate, site_id, type")
     .eq("id", data.resourceId)
     .single()
 
@@ -639,11 +653,15 @@ export async function createBookingFromAdmin(data: {
       notes: data.notes || null,
       referral: data.referral || null,
       credits_used: creditsNeeded,
+      resource_type: resource.type,
     })
     .select("id")
     .single()
 
   if (bookingError) {
+    if (isBookingOverlapError(bookingError)) {
+      return { error: BOOKING_CONFLICT_MESSAGE }
+    }
     return { error: bookingError.message }
   }
 
@@ -760,6 +778,9 @@ export async function updateBooking(data: {
     .eq("id", data.bookingId)
 
   if (updateError) {
+    if (isBookingOverlapError(updateError)) {
+      return { error: BOOKING_CONFLICT_MESSAGE }
+    }
     return { error: updateError.message }
   }
 
