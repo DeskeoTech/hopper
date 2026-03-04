@@ -95,7 +95,7 @@ export function EditNewsPostDialog({ post, sites, open, onOpenChange }: EditNews
             placeholder="Contenu de l'actualité"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="min-h-[120px] resize-none text-sm"
+            className="min-h-[120px] resize-y text-sm"
           />
 
           {imagePreview && (
