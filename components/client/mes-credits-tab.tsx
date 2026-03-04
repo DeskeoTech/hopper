@@ -60,7 +60,7 @@ export function MesCreditsTab() {
   }, [creditMovements, typeFilter])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12">
       {/* Credit Balance Card */}
       <div className="rounded-[16px] bg-card p-5 sm:p-4">
         <div className="flex items-center justify-between gap-3">
@@ -127,7 +127,7 @@ export function MesCreditsTab() {
             </div>
 
             {/* Mobile: Card layout */}
-            <div className="space-y-2.5 sm:hidden">
+            <div className="space-y-2.5 sm:hidden max-h-[1080px] overflow-y-auto">
               {filteredMovements.length === 0 ? (
                 <p className="text-center text-sm text-muted-foreground py-4">{t("noMovementsFilter")}</p>
               ) : (
@@ -173,7 +173,7 @@ export function MesCreditsTab() {
             </div>
 
             {/* Desktop: Table */}
-            <div className="hidden sm:block overflow-x-auto rounded-[12px] bg-foreground/[0.02]">
+            <div className="hidden sm:block overflow-x-auto overflow-y-auto max-h-[660px] rounded-[12px] bg-foreground/[0.02]">
               <Table>
                 <TableHeader>
                   <TableRow>
