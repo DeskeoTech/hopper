@@ -4,7 +4,7 @@ import { useState } from "react"
 import { ChevronDown } from "lucide-react"
 import { toast } from "sonner"
 import { NewsCard } from "@/components/client/news-card"
-import { deleteNewsPost } from "@/lib/actions/news"
+import { deleteNewsPost, toggleNewsPin } from "@/lib/actions/news"
 import { EditNewsPostDialog } from "@/components/admin/accueil/edit-news-post-dialog"
 import {
   AlertDialog,
@@ -35,6 +35,15 @@ export function NewsFeedSection({ posts, sites }: NewsFeedSectionProps) {
   const hasMore = visibleCount < posts.length
 
   const editingPost = editingId ? posts.find((p) => p.id === editingId) ?? null : null
+
+  async function handleTogglePin(postId: string, isPinned: boolean) {
+    const result = await toggleNewsPin(postId, isPinned)
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(isPinned ? "Actualité épinglée" : "Actualité désépinglée")
+    }
+  }
 
   async function handleConfirmDelete() {
     if (!deletingId) return
@@ -69,6 +78,7 @@ export function NewsFeedSection({ posts, sites }: NewsFeedSectionProps) {
               key={post.id}
               post={post}
               variant="compact"
+              onTogglePin={handleTogglePin}
               onEdit={(id) => setEditingId(id)}
               onDelete={(id) => setDeletingId(id)}
             />

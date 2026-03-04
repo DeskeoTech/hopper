@@ -36,6 +36,9 @@ export async function getNewsPosts(
   // Filter: global posts OR site-specific posts for user's site
   if (options?.mainSiteId) {
     query = query.or(`site_id.is.null,site_id.eq.${options.mainSiteId}`)
+    // Client view: only show pinned posts or posts from the last 72h
+    const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+    query = query.or(`is_pinned.eq.true,published_at.gte.${cutoff}`)
   } else if (options?.siteId) {
     query = query.or(`site_id.is.null,site_id.eq.${options.siteId}`)
   }
@@ -131,7 +134,7 @@ export async function createNewsPost(formData: FormData) {
     site_id: siteId || null,
     image_storage_path: imageStoragePath,
     published_at: new Date().toISOString(),
-    is_pinned: false,
+    is_pinned: formData.get("is_pinned") === "true",
     created_by: createdBy,
   })
 
@@ -244,6 +247,27 @@ export async function markNewsAsRead(notificationIds: string[]) {
   }
 
   revalidatePath("/compte")
+  return { success: true }
+}
+
+export async function toggleNewsPin(postId: string, isPinned: boolean) {
+  if (!postId) {
+    return { error: "ID de l'actualité requis" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("news_posts")
+    .update({ is_pinned: isPinned })
+    .eq("id", postId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/actualites")
   return { success: true }
 }
 

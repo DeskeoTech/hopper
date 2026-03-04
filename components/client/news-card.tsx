@@ -13,9 +13,10 @@ interface NewsCardProps {
   isUnread?: boolean
   onEdit?: (postId: string) => void
   onDelete?: (postId: string) => void
+  onTogglePin?: (postId: string, isPinned: boolean) => void
 }
 
-export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, onDelete }: NewsCardProps) {
+export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, onDelete, onTogglePin }: NewsCardProps) {
   const t = useTranslations("dashboard.news")
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
@@ -47,7 +48,7 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
             </div>
           )}
           <div className="min-w-0 flex-1">
-            {post.is_pinned && (
+            {post.is_pinned && !onTogglePin && (
               <Pin className="h-3 w-3 flex-shrink-0 text-primary mb-1" />
             )}
             <p className="text-sm text-foreground line-clamp-3">
@@ -73,8 +74,22 @@ export function NewsCard({ post, variant = "compact", isUnread = false, onEdit, 
             </div>
           </div>
         </div>
-        {(onEdit || onDelete) && (
+        {(onEdit || onDelete || onTogglePin) && (
           <div className="absolute bottom-3 right-3 flex items-center gap-1">
+            {onTogglePin && (
+              <button
+                type="button"
+                onClick={() => onTogglePin(post.id, !post.is_pinned)}
+                className={cn(
+                  "rounded-full p-1.5 transition-colors",
+                  post.is_pinned
+                    ? "text-primary hover:bg-primary/10"
+                    : "text-muted-foreground/50 hover:bg-primary/10 hover:text-primary"
+                )}
+              >
+                <Pin className="h-3.5 w-3.5" fill={post.is_pinned ? "currentColor" : "none"} />
+              </button>
+            )}
             {onEdit && (
               <button
                 type="button"
