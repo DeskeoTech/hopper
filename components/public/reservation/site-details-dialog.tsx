@@ -265,7 +265,7 @@ export function SiteDetailsDialog({ site, open, onOpenChange, onBook }: SiteDeta
                 key={tab.id}
                 onClick={() => scrollToSection(tab.id)}
                 className={cn(
-                  "whitespace-nowrap border-b-2 py-3 text-xs md:text-sm transition-colors duration-200",
+                  "whitespace-nowrap border-b-2 py-3 text-xs md:text-sm transition-colors duration-200 focus:outline-none focus-visible:outline-none",
                   activeTab === tab.id
                     ? "border-foreground text-foreground font-medium"
                     : "border-transparent text-muted-foreground/50 hover:text-muted-foreground"
