@@ -25,7 +25,7 @@ interface SiteOption {
 }
 
 type NotificationType = "ticket" | "contract" | "booking"
-type FilterTab = "all" | "contract" | "booking"
+type FilterTab = "all" | "contract" | "booking" | "ticket"
 
 interface NotificationItem {
   id: string
@@ -224,6 +224,7 @@ const TABS: { value: FilterTab; label: string }[] = [
   { value: "all", label: "Tous" },
   { value: "contract", label: "Contrats" },
   { value: "booking", label: "Réservations" },
+  { value: "ticket", label: "Tickets" },
 ]
 
 export function NotificationsModal({
