@@ -368,6 +368,7 @@
     "title": "Assign a user",
     "searchUser": "Search a user...",
     "allSeatsOccupied": "All seats are occupied. Increase the number of seats on Stripe to add a user.",
+    "allSeatsOccupiedOffPlatform": "All seats are occupied. Contact your manager to add more seats.",
     "noUserFound": "No user found",
     "allAssigned": "All users are already assigned"
   },

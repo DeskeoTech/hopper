@@ -336,6 +336,73 @@ export async function removeUserFromContract(
   return { success: true, error: null }
 }
 
+export async function createCompanyUser(
+  companyId: string,
+  data: {
+    first_name: string
+    last_name: string
+    email: string
+  }
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  const supabase = await createClient()
+
+  // Get current user's company and role
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("company_id, role")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!currentUser) {
+    return { success: false, error: "Utilisateur non trouvé" }
+  }
+
+  // Only admins can create users
+  const isAdmin = currentUser.role === "admin"
+  if (!isAdmin || currentUser.company_id !== companyId) {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  // Check if email already exists
+  const { data: existingUser } = await supabase
+    .from("users")
+    .select("id")
+    .eq("email", data.email)
+    .single()
+
+  if (existingUser) {
+    return { success: false, error: "Un utilisateur avec cet email existe déjà" }
+  }
+
+  // Create the user in the company (no contract assignment)
+  const { error } = await supabase.from("users").insert({
+    company_id: companyId,
+    first_name: data.first_name,
+    last_name: data.last_name,
+    email: data.email,
+    role: "user",
+    status: "active",
+  })
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  // Pre-create Auth account so signInWithOtp sends the magic link
+  const authResult = await ensureSupabaseAuthUser(data.email)
+  if (!authResult.success) {
+    await supabase.from("users").delete().eq("email", data.email)
+    return { success: false, error: authResult.error }
+  }
+
+  return { success: true, error: null }
+}
+
 export async function createUserForContract(
   companyId: string,
   contractId: string,

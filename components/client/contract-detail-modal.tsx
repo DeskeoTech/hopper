@@ -259,14 +259,15 @@ export function ContractDetailModal({
             )}
           </div>
 
-          {/* Assign user section - only visible for admins, not for Spacebring */}
-          {isAdmin && companyId && !isSpacebring && (
+          {/* Assign user section - visible for admins */}
+          {isAdmin && companyId && (
             <AssignUserToContract
               contractId={contract.id}
               companyId={companyId}
               numberOfSeats={contract.number_of_seats}
               assignedUsersCount={users.length}
               onUserAssigned={refreshUsers}
+              isSpacebring={isSpacebring}
             />
           )}
 
