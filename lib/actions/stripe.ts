@@ -436,7 +436,7 @@ export async function getCompanyPaymentStatuses(customerIds: string[]): Promise<
           const hasFailed = charges.data.some((c) => c.status === "failed")
           results[id] = hasFailed ? "failed" : "ok"
         } catch {
-          results[id] = "ok"
+          results[id] = "none"
         }
       })
     )

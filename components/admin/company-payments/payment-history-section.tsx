@@ -16,6 +16,7 @@ import type { StripePaymentData } from "@/lib/actions/stripe"
 
 interface PaymentHistorySectionProps {
   payments: StripePaymentData[]
+  error?: string | null
 }
 
 const ITEMS_PER_PAGE = 15
@@ -42,7 +43,7 @@ const statusColors: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 }
 
-export function PaymentHistorySection({ payments = [] }: PaymentHistorySectionProps) {
+export function PaymentHistorySection({ payments = [], error }: PaymentHistorySectionProps) {
   const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
 
@@ -63,6 +64,30 @@ export function PaymentHistorySection({ payments = [] }: PaymentHistorySectionPr
     (currentPage - 1) * ITEMS_PER_PAGE,
     currentPage * ITEMS_PER_PAGE
   )
+
+  if (error === "no_stripe_customer") {
+    return (
+      <div className="rounded-lg bg-card p-4 sm:p-6">
+        <h2 className="flex items-center gap-2 type-h3 text-foreground mb-4">
+          <ReceiptText className="h-5 w-5" />
+          Historique des paiements
+        </h2>
+        <p className="text-sm text-muted-foreground">Aucun compte Stripe associé à ce client</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-lg bg-card p-4 sm:p-6">
+        <h2 className="flex items-center gap-2 type-h3 text-foreground mb-4">
+          <ReceiptText className="h-5 w-5" />
+          Historique des paiements
+        </h2>
+        <p className="text-sm text-muted-foreground">Affichage indisponible</p>
+      </div>
+    )
+  }
 
   if (payments.length === 0) {
     return (
