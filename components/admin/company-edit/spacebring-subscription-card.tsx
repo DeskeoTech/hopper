@@ -84,7 +84,7 @@ export function SpacebringSubscriptionCard({
   const formTotals = useMemo(() => {
     const seatsNum = formSeats ? parseInt(formSeats, 10) : 0
     const priceNum = formPricePerSeat ? parseFloat(formPricePerSeat) : 0
-    const creditsNum = formCreditsPerPerson ? parseInt(formCreditsPerPerson, 10) : 0
+    const creditsNum = formCreditsPerPerson ? parseFloat(formCreditsPerPerson) : 0
     return {
       totalPrice: Math.round(priceNum * seatsNum * 100) / 100,
       totalCredits: creditsNum * seatsNum,
@@ -101,7 +101,7 @@ export function SpacebringSubscriptionCard({
     setLoading(true)
     const seatsNum = formSeats ? parseInt(formSeats, 10) : null
     const pricePerSeatNum = formPricePerSeat ? parseFloat(formPricePerSeat) : null
-    const creditsPerPersonNum = formCreditsPerPerson ? parseInt(formCreditsPerPerson, 10) : null
+    const creditsPerPersonNum = formCreditsPerPerson ? parseFloat(formCreditsPerPerson) : null
 
     // Save totals to database (price_per_seat * seats, credits_per_person * seats)
     const totalPrice = pricePerSeatNum !== null && seatsNum
@@ -253,6 +253,7 @@ export function SpacebringSubscriptionCard({
                         id="sb-credits-per-person"
                         type="number"
                         min="0"
+                        step="0.5"
                         value={formCreditsPerPerson}
                         onChange={(e) => setFormCreditsPerPerson(e.target.value)}
                         placeholder="0"
@@ -300,7 +301,7 @@ export function SpacebringSubscriptionCard({
                         {formCreditsPerPerson && (
                           <div className="flex items-center justify-between">
                             <span className="text-muted-foreground">
-                              {formCreditsPerPerson} crédit{parseInt(formCreditsPerPerson) > 1 ? "s" : ""} x {formTotals.seats} personne{formTotals.seats > 1 ? "s" : ""}
+                              {formCreditsPerPerson} crédit{parseFloat(formCreditsPerPerson) > 1 ? "s" : ""} x {formTotals.seats} personne{formTotals.seats > 1 ? "s" : ""}
                             </span>
                             <span className="font-semibold text-foreground">
                               {formTotals.totalCredits} crédits/mois

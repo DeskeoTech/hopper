@@ -47,6 +47,7 @@ interface EntreprisePageProps {
   contracts: ContractWithSeats[]
   users: UserWithContract[]
   currentUserId: string
+  spacebringSeats?: number
 }
 
 export function EntreprisePage({
@@ -54,6 +55,7 @@ export function EntreprisePage({
   contracts: initialContracts,
   users: initialUsers,
   currentUserId,
+  spacebringSeats = 0,
 }: EntreprisePageProps) {
   const t = useTranslations("company")
   const tc = useTranslations("common")
@@ -82,8 +84,9 @@ export function EntreprisePage({
   // Contract detail modal state
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
 
-  // Calculate seats info from contracts
-  const totalSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
+  // Calculate seats info from contracts + off-platform subscription
+  const contractSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
+  const totalSeats = contractSeats > 0 ? contractSeats : spacebringSeats
   const activeUsers = users.filter((u) => u.status === "active").length
 
   const handleContractChange = async (userId: string, contractId: string | null) => {
