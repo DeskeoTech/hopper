@@ -66,7 +66,10 @@ export function CompleteProfileModal({
   // If company info is already complete (e.g. invited user), skip company fields
   const companyAlreadyComplete = isCompanyInfoComplete(company)
 
-  const needsKbis = companyType === "multi_employee"
+  const needsKbis =
+    companyType === "multi_employee" &&
+    !company.from_spacebring &&
+    !company.meeting_room_only
   const hasKbis = !!kbisFile || !!existingKbis
 
   const isFormValid = (companyAlreadyComplete
