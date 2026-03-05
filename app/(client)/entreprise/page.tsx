@@ -109,12 +109,18 @@ export default async function EntreprisePageRoute() {
     }
   })
 
+  // Calculate spacebring seats for off-platform companies
+  const spacebringSeats = company?.from_spacebring && company.spacebring_seats
+    ? company.spacebring_seats
+    : 0
+
   return (
     <EntreprisePage
       company={company!}
       contracts={contracts}
       users={users}
       currentUserId={userProfile.id}
+      spacebringSeats={spacebringSeats}
     />
   )
 }

@@ -298,7 +298,20 @@ export async function getCompanySeatsInfo(companyId: string): Promise<{
     return { data: null, error: contractError.message }
   }
 
-  const maxSeats = contract?.Number_of_seats ? Number(contract.Number_of_seats) : 0
+  let maxSeats = contract?.Number_of_seats ? Number(contract.Number_of_seats) : 0
+
+  // If no platform contract seats, check for off-platform (spacebring) seats
+  if (maxSeats === 0) {
+    const { data: company } = await supabase
+      .from("companies")
+      .select("from_spacebring, spacebring_seats")
+      .eq("id", companyId)
+      .single()
+
+    if (company?.from_spacebring && company.spacebring_seats) {
+      maxSeats = company.spacebring_seats
+    }
+  }
 
   return {
     data: {
