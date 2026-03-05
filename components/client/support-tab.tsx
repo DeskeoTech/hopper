@@ -27,7 +27,7 @@ import {
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useTranslations, useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
-import { createTicket, getUserTickets, uploadTicketAttachment } from "@/lib/actions/tickets"
+import { createTicket, getUserTickets } from "@/lib/actions/tickets"
 import type { TicketStatus, SupportTicket } from "@/lib/types/database"
 import { getRequestTypeLabel, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
@@ -104,6 +104,7 @@ export function SupportTab() {
     if (fileInputRef.current) fileInputRef.current.value = ""
     setError(null)
     setSuccess(false)
+    setLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,52 +128,61 @@ export function SupportTab() {
       return
     }
 
+    // Client-side file size check (avoid hitting Next.js body size limit)
+    if (attachedFile && attachedFile.size > 10 * 1024 * 1024) {
+      setError("Le fichier est trop volumineux (max 10 Mo)")
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(false)
 
-    const result = await createTicket({
-      user_id: user?.id || null,
-      site_id: siteId || null,
-      request_type: requestType,
-      request_subtype: requestSubtype || null,
-      subject: subject.trim(),
-      comment: comment.trim(),
-    })
+    try {
+      // Build a single FormData with all fields + file
+      const formData = new FormData()
+      if (siteId) formData.append("site_id", siteId)
+      formData.append("request_type", requestType)
+      if (requestSubtype) formData.append("request_subtype", requestSubtype)
+      formData.append("subject", subject.trim())
+      formData.append("comment", comment.trim())
+      if (attachedFile) formData.append("file", attachedFile)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
-      // Upload attachment if present
-      if (attachedFile && result.ticketId) {
-        const formData = new FormData()
-        formData.append("file", attachedFile)
-        const uploadResult = await uploadTicketAttachment(result.ticketId, formData)
-        if (uploadResult.error) {
-          setError(uploadResult.error)
-          setLoading(false)
-          return
-        }
-      }
+      const result = await createTicket(formData)
 
-      setSuccess(true)
-      setRequestType("")
-      setRequestSubtype("")
-      setSiteId(selectedSiteId || "")
-      setSubject("")
-      setComment("")
-      setAttachedFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-      // Refresh tickets list
-      if (user?.id) {
-        const ticketsResult = await getUserTickets(user.id)
-        if (ticketsResult.data) {
-          setTickets(ticketsResult.data)
+      if (result.error) {
+        setError(result.error)
+      } else {
+        if (result.attachmentError) {
+          setError(result.attachmentError)
         }
+
+        setSuccess(true)
+        setRequestType("")
+        setRequestSubtype("")
+        setSiteId(selectedSiteId || "")
+        setSubject("")
+        setComment("")
+        setAttachedFile(null)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        // Refresh tickets list
+        if (user?.id) {
+          const ticketsResult = await getUserTickets(user.id)
+          if (ticketsResult.data) {
+            setTickets(ticketsResult.data)
+          }
+        }
+        setTimeout(() => setSuccess(false), 3000)
       }
-      setTimeout(() => setSuccess(false), 3000)
+    } catch {
+      setError(
+        attachedFile
+          ? "La pièce jointe est trop volumineuse ou dans un format non supporté. Veuillez réduire sa taille (max 10 Mo) ou la retirer."
+          : "Une erreur est survenue. Veuillez réessayer."
+      )
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const formatDate = (dateString: string) => {

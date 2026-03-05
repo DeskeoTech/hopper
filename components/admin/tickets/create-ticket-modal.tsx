@@ -98,14 +98,14 @@ export function CreateTicketModal() {
 
   const handleConfirm = async () => {
     setLoading(true)
-    const result = await createTicket({
-      user_id: selectedUserId || null,
-      site_id: selectedSiteId || null,
-      request_type: requestType,
-      request_subtype: requestSubtype || null,
-      subject: subject.trim() || null,
-      comment: comment.trim(),
-    })
+    const formData = new FormData()
+    if (selectedUserId) formData.append("user_id", selectedUserId)
+    if (selectedSiteId) formData.append("site_id", selectedSiteId)
+    formData.append("request_type", requestType)
+    if (requestSubtype) formData.append("request_subtype", requestSubtype)
+    if (subject.trim()) formData.append("subject", subject.trim())
+    formData.append("comment", comment.trim())
+    const result = await createTicket(formData)
     setLoading(false)
     if (result.success) {
       setSelectedUserId("")
