@@ -18,7 +18,7 @@ interface SiteSwitcherModalProps {
 
 export function SiteSwitcherModal({ open, onOpenChange }: SiteSwitcherModalProps) {
   const {
-    sitesWithDetails,
+    coworkingSitesWithDetails: sitesWithDetails,
     selectedSiteId,
     isNomad,
     mainSiteId,

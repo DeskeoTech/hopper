@@ -59,6 +59,8 @@ export interface Site {
   contact_phone: string | null
   capacity: number | null
   is_nomad: boolean
+  is_coworking: boolean
+  is_meeting_room: boolean
   created_at: string
   updated_at: string
 }

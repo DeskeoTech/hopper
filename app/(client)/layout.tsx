@@ -57,7 +57,7 @@ export default async function ClientLayout({
 
   // Phase 2: Run ALL independent queries in parallel
   const siteColumns = `
-    id, name, address, is_nomad,
+    id, name, address, is_nomad, is_coworking, is_meeting_room,
     opening_hours, opening_days,
     wifi_ssid, wifi_password,
     equipments, description, description_en,
@@ -268,6 +268,8 @@ export default async function ClientLayout({
     instructions: site.instructions,
     access: site.access,
     transportationLines: site.transportation_lines,
+    isCoworking: site.is_coworking ?? true,
+    isMeetingRoom: site.is_meeting_room ?? true,
   }))
 
   const isAdmin = userProfile.role === "admin"
@@ -326,7 +328,7 @@ export default async function ClientLayout({
       creditMovements={creditMovements}
       plan={userPlan}
       sites={allSites}
-      allSites={allSites.map((s) => ({ id: s.id, name: s.name }))}
+      allSites={allSites.map((s) => ({ id: s.id, name: s.name, is_coworking: s.is_coworking, is_meeting_room: s.is_meeting_room }))}
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
