@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import { EntreprisePage } from "@/components/client/entreprise-page"
 import type { User, Company, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
@@ -16,6 +17,16 @@ export interface ContractWithSeats {
 
 export interface UserWithContract extends User {
   contract_name: string | null
+}
+
+export interface CompanyCreditTransaction {
+  id: string
+  type: string
+  amount: number
+  balance_after: number
+  reason: string | null
+  date: string
+  userName: string | null
 }
 
 export default async function EntreprisePageRoute() {
@@ -114,6 +125,61 @@ export default async function EntreprisePageRoute() {
     ? company.spacebring_seats
     : 0
 
+  // Fetch company credit balance
+  const { data: creditBalance } = await supabase
+    .rpc("get_company_valid_credits", { p_company_id: userProfile.company_id })
+
+  // Fetch company credit transactions + credit records in parallel (admin client to bypass RLS)
+  const adminSupabase = createAdminClient()
+  const [{ data: creditTransactions }, { data: creditRecords }] = await Promise.all([
+    adminSupabase
+      .from("credit_transactions")
+      .select("id, transaction_type, amount, balance_before, balance_after, reason, created_at, user_id, users:user_id(first_name, last_name)")
+      .eq("company_id", userProfile.company_id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+    adminSupabase
+      .from("credits")
+      .select("id, allocated_credits, remaining_balance, reason, expiration, created_at")
+      .eq("company_id", userProfile.company_id)
+      .order("created_at", { ascending: false })
+      .limit(50),
+  ])
+
+  const companyCredits: CompanyCreditTransaction[] = (creditTransactions || []).map((tx) => {
+    const user = tx.users as { first_name: string | null; last_name: string | null } | null
+    const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || null
+    // Use balance_after - balance_before for correct sign (DB amounts are inconsistent)
+    const realAmount = (tx.balance_after as number) - (tx.balance_before as number)
+    return {
+      id: tx.id as string,
+      type: tx.transaction_type as string,
+      amount: realAmount,
+      balance_after: tx.balance_after as number,
+      reason: tx.reason as string | null,
+      date: tx.created_at as string,
+      userName,
+    }
+  })
+
+  // Add credit records (allocation blocks) from credits table
+  if (creditRecords) {
+    for (const cr of creditRecords) {
+      if (!cr.allocated_credits) continue
+      const remaining = cr.remaining_balance ?? 0
+      companyCredits.push({
+        id: `cr-${cr.id}`,
+        type: "allocation",
+        amount: cr.allocated_credits,
+        balance_after: 0,
+        reason: cr.reason || `Attribution de ${cr.allocated_credits} crédits (solde : ${remaining}/${cr.allocated_credits})`,
+        date: cr.created_at!,
+        userName: null,
+      })
+    }
+    companyCredits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
+
   return (
     <EntreprisePage
       company={company!}
@@ -121,6 +187,8 @@ export default async function EntreprisePageRoute() {
       users={users}
       currentUserId={userProfile.id}
       spacebringSeats={spacebringSeats}
+      creditTransactions={companyCredits}
+      creditBalance={creditBalance ?? 0}
     />
   )
 }
