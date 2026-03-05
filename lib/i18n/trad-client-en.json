@@ -457,7 +457,8 @@
     "whiteboard": "Whiteboard",
     "myBooking": "My booking",
     "reserved": "Reserved",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "colleagueBooking": "Colleague"
   },
   "allSites": {
     "title": "All Hopper Sites"

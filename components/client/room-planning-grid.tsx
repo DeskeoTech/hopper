@@ -30,6 +30,7 @@ interface RoomPlanningGridProps {
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
   currentUserId?: string
+  currentUserCompanyId?: string
 }
 
 // Fullscreen photo viewer
@@ -509,10 +510,18 @@ interface RoomTimelineProps {
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
   currentUserId?: string
+  currentUserCompanyId?: string
 }
 
-export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId }: RoomTimelineProps) {
+export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId, currentUserCompanyId }: RoomTimelineProps) {
   const t = useTranslations("planningGrid")
+
+  type BookingCategory = "own" | "colleague" | "other"
+  const getBookingCategory = (booking: RoomBooking): BookingCategory => {
+    if (currentUserId && booking.userId === currentUserId) return "own"
+    if (currentUserCompanyId && booking.companyId === currentUserCompanyId) return "colleague"
+    return "other"
+  }
 
   // Group bookings by room
   const bookingsByRoom = useMemo(() => {
@@ -637,19 +646,25 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                     {roomBookings.map((booking) => {
                       const top = (booking.startHour - 8) * MOBILE_SLOT_HEIGHT
                       const height = (booking.endHour - booking.startHour) * MOBILE_SLOT_HEIGHT
-                      const isOwnBooking = currentUserId && booking.userId === currentUserId
+                      const category = getBookingCategory(booking)
 
                       return (
                         <div
                           key={booking.id}
                           className={cn(
                             "absolute left-0.5 right-0.5 rounded p-1 overflow-hidden pointer-events-none z-10",
-                            isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                            category === "own" && "bg-primary/20",
+                            category === "colleague" && "bg-[#D4C4B0]/50",
+                            category === "other" && "bg-foreground/10"
                           )}
                           style={{ top: top + 1, height: height - 2 }}
                         >
                           <p className="text-[9px] font-medium text-foreground truncate leading-tight">
-                            {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
+                            {category === "own"
+                              ? (booking.title || t("myBooking"))
+                              : category === "colleague"
+                                ? (booking.userName || t("colleagueBooking"))
+                                : t("unavailable")}
                           </p>
                           {height > 35 && (
                             <p className="text-[8px] text-muted-foreground/70 mt-0.5">
@@ -764,21 +779,27 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                   {roomBookings.map((booking) => {
                     const top = (booking.startHour - 8) * SLOT_HEIGHT
                     const height = (booking.endHour - booking.startHour) * SLOT_HEIGHT
-                    const isOwnBooking = currentUserId && booking.userId === currentUserId
+                    const category = getBookingCategory(booking)
 
                     return (
                       <div
                         key={booking.id}
                         className={cn(
                           "absolute left-1 right-1 rounded-md p-1.5 overflow-hidden pointer-events-none z-10",
-                          isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                          category === "own" && "bg-primary/20",
+                          category === "colleague" && "bg-[#D4C4B0]/50",
+                          category === "other" && "bg-foreground/10"
                         )}
                         style={{ top: top + 1, height: height - 2 }}
                       >
                         <p className="text-xs font-medium text-foreground truncate">
-                          {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
+                          {category === "own"
+                            ? (booking.title || t("myBooking"))
+                            : category === "colleague"
+                              ? (booking.userName || t("colleagueBooking"))
+                              : t("unavailable")}
                         </p>
-                        {isOwnBooking && height > 50 && (
+                        {category !== "other" && height > 50 && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
                             {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                           </p>
@@ -805,6 +826,7 @@ export function RoomPlanningGrid({
   onSlotClick,
   selectedDate,
   currentUserId,
+  currentUserCompanyId,
 }: RoomPlanningGridProps) {
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
@@ -836,6 +858,7 @@ export function RoomPlanningGrid({
         onSlotClick={onSlotClick}
         selectedDate={selectedDate}
         currentUserId={currentUserId}
+        currentUserCompanyId={currentUserCompanyId}
       />
     </>
   )
