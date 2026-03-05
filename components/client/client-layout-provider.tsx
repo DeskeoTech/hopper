@@ -52,6 +52,7 @@ interface ClientLayoutContextValue {
   mainSiteId: string | null
   canManageCompany: boolean
   companyAdmin: CompanyAdmin | null
+  isMeetingRoomOnly: boolean
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
@@ -69,6 +70,7 @@ interface ClientLayoutProviderProps {
   isAdmin: boolean
   isDeskeoEmployee: boolean
   companyAdmin: CompanyAdmin | null
+  isMeetingRoomOnly: boolean
 }
 
 export function ClientLayoutProvider({
@@ -84,6 +86,7 @@ export function ClientLayoutProvider({
   isAdmin,
   isDeskeoEmployee,
   companyAdmin,
+  isMeetingRoomOnly,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -138,6 +141,7 @@ export function ClientLayoutProvider({
         mainSiteId,
         canManageCompany,
         companyAdmin,
+        isMeetingRoomOnly,
       }}
     >
       {children}

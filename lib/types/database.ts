@@ -134,6 +134,7 @@ export interface Company {
   rib_storage_path: string | null
   onboarding_done: boolean | null
   from_spacebring: boolean | null
+  meeting_room_only: boolean | null
   spacebring_plan_name: string | null
   spacebring_monthly_price: number | null
   spacebring_monthly_credits: number | null

@@ -51,8 +51,19 @@ export default async function ClientLayout({
 
   const today = new Date().toISOString().split("T")[0]
   const hasCompany = !!userProfile.company_id
+  const companyData = userProfile.companies as Company | null
+  const isMeetingRoomOnly = companyData?.meeting_room_only === true
+  const companyMainSiteId = companyData?.main_site_id || null
 
   // Phase 2: Run ALL independent queries in parallel
+  const siteColumns = `
+    id, name, address, is_nomad,
+    opening_hours, opening_days,
+    wifi_ssid, wifi_password,
+    equipments, description, description_en,
+    instructions, instructions_en, access, access_en, transportation_lines
+  `
+
   const [
     sitesResult,
     photosResult,
@@ -62,18 +73,17 @@ export default async function ClientLayout({
     creditBookingsResult,
     adminResult,
   ] = await Promise.all([
-    // 1. All open sites
-    supabase
-      .from("sites")
-      .select(`
-        id, name, address, is_nomad,
-        opening_hours, opening_days,
-        wifi_ssid, wifi_password,
-        equipments, description, description_en,
-        instructions, instructions_en, access, access_en, transportation_lines
-      `)
-      .eq("status", "open")
-      .order("name"),
+    // 1. Sites: meeting_room_only companies only see their main site (even if closed)
+    isMeetingRoomOnly && companyMainSiteId
+      ? supabase
+          .from("sites")
+          .select(siteColumns)
+          .eq("id", companyMainSiteId)
+      : supabase
+          .from("sites")
+          .select(siteColumns)
+          .eq("status", "open")
+          .order("name"),
 
     // 2. Site photos
     supabase
@@ -275,7 +285,8 @@ export default async function ClientLayout({
     (userProfile.role === "user" || userProfile.role === "admin") &&
     (!userProfile.company_id ||
       !(userProfile.companies as Company | null)?.onboarding_done) &&
-    !isFromSpacebring
+    !isFromSpacebring &&
+    !isMeetingRoomOnly
   const needsProfileCompletion =
     !needsOnboarding &&
     (userProfile.role === "user" || userProfile.role === "admin") &&
@@ -288,7 +299,8 @@ export default async function ClientLayout({
     userProfile.role === "user" &&
     userProfile.company_id &&
     !userProfile.contract_id &&
-    !isFromSpacebring
+    !isFromSpacebring &&
+    !isMeetingRoomOnly
 
   // Auto-update Onboarding flag for users whose company already completed onboarding
   if (
@@ -320,6 +332,7 @@ export default async function ClientLayout({
       isAdmin={isAdmin}
       isDeskeoEmployee={isHopperAdmin}
       companyAdmin={companyAdmin}
+      isMeetingRoomOnly={isMeetingRoomOnly}
     >
       {needsOnboarding && (
         <OnboardingModal
