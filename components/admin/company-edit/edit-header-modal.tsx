@@ -40,6 +40,7 @@ interface EditHeaderModalProps {
   initialName: string | null
   initialType: CompanyType | null
   isActive?: boolean
+  initialMeetingRoomOnly?: boolean
 }
 
 export function EditHeaderModal({
@@ -47,6 +48,7 @@ export function EditHeaderModal({
   initialName,
   initialType,
   isActive = true,
+  initialMeetingRoomOnly = false,
 }: EditHeaderModalProps) {
   const [open, setOpen] = useState(false)
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -54,6 +56,7 @@ export function EditHeaderModal({
   const [name, setName] = useState(initialName || "")
   const [companyType, setCompanyType] = useState<CompanyType | "none">(initialType || "none")
   const [active, setActive] = useState(isActive)
+  const [meetingRoomOnly, setMeetingRoomOnly] = useState(initialMeetingRoomOnly)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -65,6 +68,7 @@ export function EditHeaderModal({
     const result = await updateCompanyHeader(companyId, {
       name: name || null,
       company_type: companyType === "none" ? null : companyType,
+      meeting_room_only: meetingRoomOnly,
     })
 
     if (result.error) {
@@ -133,6 +137,14 @@ export function EditHeaderModal({
                 id="active-switch"
                 checked={active}
                 onCheckedChange={setActive}
+              />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <Label htmlFor="meeting-room-only-switch" className="cursor-pointer">Salles de réunion uniquement</Label>
+              <Switch
+                id="meeting-room-only-switch"
+                checked={meetingRoomOnly}
+                onCheckedChange={setMeetingRoomOnly}
               />
             </div>
             <DialogFooter>

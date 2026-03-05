@@ -137,11 +137,28 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="type-h2 text-foreground">{site.name}</h1>
             <StatusBadge status={site.status} size="md" />
+            {site.status === "open" && site.is_coworking && !site.is_meeting_room && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                Coworking
+              </span>
+            )}
+            {site.status === "open" && !site.is_coworking && site.is_meeting_room && (
+              <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                Salles de réunion
+              </span>
+            )}
+            {site.status === "open" && site.is_coworking && site.is_meeting_room && (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                Coworking + Salles
+              </span>
+            )}
             <EditHeaderModal
               siteId={site.id}
               initialName={site.name}
               initialStatus={site.status}
               initialAddress={site.address}
+              initialIsCoworking={site.is_coworking ?? true}
+              initialIsMeetingRoom={site.is_meeting_room ?? true}
             />
           </div>
           <div className="mt-1 flex items-start gap-2 text-muted-foreground">

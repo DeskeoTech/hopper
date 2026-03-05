@@ -8,7 +8,7 @@ import { BookMeetingRoomModal } from "./book-meeting-room-modal"
 import { SiteInfoModal } from "./site-info-modal"
 
 export function HomepageQuickActions() {
-  const { user, credits, sites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
+  const { user, credits, meetingRoomSites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
 
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [siteInfoModalOpen, setSiteInfoModalOpen] = useState(false)
@@ -61,7 +61,7 @@ export function HomepageQuickActions() {
         companyId={user.company_id || ""}
         mainSiteId={selectedSiteId}
         remainingCredits={credits?.remaining || 0}
-        sites={sites}
+        sites={meetingRoomSites}
         userEmail={user.email || ""}
         hasActivePlan={!!plan}
       />

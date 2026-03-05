@@ -59,6 +59,8 @@ export interface Site {
   contact_phone: string | null
   capacity: number | null
   is_nomad: boolean
+  is_coworking: boolean
+  is_meeting_room: boolean
   created_at: string
   updated_at: string
 }
@@ -134,6 +136,7 @@ export interface Company {
   rib_storage_path: string | null
   onboarding_done: boolean | null
   from_spacebring: boolean | null
+  meeting_room_only: boolean | null
   spacebring_plan_name: string | null
   spacebring_monthly_price: number | null
   spacebring_monthly_credits: number | null

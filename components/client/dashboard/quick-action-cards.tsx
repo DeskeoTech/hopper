@@ -36,7 +36,7 @@ function ActionCard({ title, description, buttonText, onClick }: ActionCardProps
 }
 
 export function QuickActionCards() {
-  const { user, credits, allSites, plan, mainSiteId, isAdmin, companyAdmin } = useClientLayout()
+  const { user, credits, meetingRoomSites, plan, mainSiteId, isAdmin, companyAdmin } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [adminDialogOpen, setAdminDialogOpen] = useState(false)
   const [adminDialogAction, setAdminDialogAction] = useState<"credits" | "desk">("credits")
@@ -95,7 +95,7 @@ export function QuickActionCards() {
           companyId={user.company_id || ""}
           mainSiteId={mainSiteId}
           remainingCredits={credits?.remaining || 0}
-          sites={allSites}
+          sites={meetingRoomSites}
           userEmail={user.email || ""}
           hasActivePlan={!!plan}
         />

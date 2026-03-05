@@ -9,7 +9,7 @@ const HOPPER_RESIDENCE_PLAN_ID = "62ccff00-36a8-45b2-85bc-82c32d26dc62"
 
 export async function updateCompanyHeader(
   companyId: string,
-  data: { name: string | null; company_type: CompanyType | null }
+  data: { name: string | null; company_type: CompanyType | null; meeting_room_only?: boolean }
 ) {
   const supabase = createAdminClient()
 
@@ -18,6 +18,7 @@ export async function updateCompanyHeader(
     .update({
       name: data.name,
       company_type: data.company_type,
+      meeting_room_only: data.meeting_room_only ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", companyId)
@@ -145,6 +146,13 @@ export async function createCompany(data: {
   main_site_id?: string | null
   numberOfSeats?: number | null
   initialCredits?: number | null
+  from_spacebring?: boolean
+  meeting_room_only?: boolean
+  spacebring_plan_name?: string | null
+  spacebring_monthly_price?: number | null
+  spacebring_monthly_credits?: number | null
+  spacebring_seats?: number | null
+  spacebring_start_date?: string | null
 }) {
   const authUser = await getUser()
   if (!authUser?.email) {
@@ -152,6 +160,9 @@ export async function createCompany(data: {
   }
 
   const supabase = await createClient()
+  const isOffPlatform = data.from_spacebring === true
+  const isMeetingRoomOnly = data.meeting_room_only === true
+  const today = new Date().toISOString().split("T")[0]
 
   const { data: company, error } = await supabase
     .from("companies")
@@ -162,6 +173,15 @@ export async function createCompany(data: {
       phone: data.phone || null,
       address: data.address || null,
       main_site_id: data.main_site_id || null,
+      from_spacebring: isOffPlatform,
+      meeting_room_only: isMeetingRoomOnly,
+      spacebring_plan_name: isOffPlatform ? (data.spacebring_plan_name || null) : null,
+      spacebring_monthly_price: isOffPlatform ? (data.spacebring_monthly_price ?? null) : null,
+      spacebring_monthly_credits: isOffPlatform ? (data.spacebring_monthly_credits ?? null) : null,
+      spacebring_seats: isOffPlatform ? (data.spacebring_seats ?? null) : null,
+      spacebring_start_date: isOffPlatform ? (data.spacebring_start_date || null) : null,
+      onboarding_done: isOffPlatform || isMeetingRoomOnly ? true : null,
+      subscription_start_date: (isOffPlatform && data.spacebring_start_date) ? data.spacebring_start_date : (isMeetingRoomOnly ? today : null),
     })
     .select("id")
     .single()

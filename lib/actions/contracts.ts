@@ -2,6 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server"
 import { ensureSupabaseAuthUser } from "@/lib/actions/auth"
+import { getCompanySeatsInfo } from "@/lib/actions/users"
 
 export interface ContractHistoryItem {
   id: string
@@ -366,6 +367,12 @@ export async function createCompanyUser(
   const isAdmin = currentUser.role === "admin"
   if (!isAdmin || currentUser.company_id !== companyId) {
     return { success: false, error: "Accès non autorisé" }
+  }
+
+  // Check seats quota
+  const seatsInfo = await getCompanySeatsInfo(companyId)
+  if (seatsInfo.data && seatsInfo.data.activeUsers >= seatsInfo.data.maxSeats) {
+    return { success: false, error: "Quota de sièges atteint" }
   }
 
   // Check if email already exists
