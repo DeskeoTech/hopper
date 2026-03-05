@@ -6,7 +6,7 @@ import { RoomBookingContent } from "./room-booking-content"
 import { useClientLayout } from "./client-layout-provider"
 
 export function RoomBookingPage() {
-  const { user, credits, sites, selectedSiteId, plan } = useClientLayout()
+  const { user, credits, meetingRoomSites, selectedSiteId, plan } = useClientLayout()
   const searchParams = useSearchParams()
   const referral = searchParams.get("referral") || undefined
   // Key to reset the content when "Annuler" is clicked
@@ -24,7 +24,7 @@ export function RoomBookingPage() {
         companyId={user.company_id || ""}
         mainSiteId={selectedSiteId}
         remainingCredits={credits?.remaining || 0}
-        sites={sites}
+        sites={meetingRoomSites}
         userEmail={user.email || ""}
         hasActivePlan={!!plan}
         isModal={true}

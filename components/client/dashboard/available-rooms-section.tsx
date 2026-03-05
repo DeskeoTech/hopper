@@ -60,7 +60,7 @@ function RoomCard({ room, onClick }: RoomCardProps) {
 }
 
 export function AvailableRoomsSection() {
-  const { user, credits, sites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
+  const { user, credits, meetingRoomSites, selectedSiteId, selectedSiteWithDetails, plan } = useClientLayout()
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [rooms, setRooms] = useState<MeetingRoomResource[]>([])
   const [loading, setLoading] = useState(true)
@@ -144,7 +144,7 @@ export function AvailableRoomsSection() {
         companyId={user.company_id || ""}
         mainSiteId={selectedSiteId}
         remainingCredits={credits?.remaining || 0}
-        sites={sites}
+        sites={meetingRoomSites}
         userEmail={user.email || ""}
         hasActivePlan={!!plan}
       />

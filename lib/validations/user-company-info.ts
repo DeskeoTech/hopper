@@ -29,7 +29,7 @@ export interface CompleteProfileFormData {
 // Helper to check if user info is complete
 export function isUserInfoComplete(user: User | null): boolean {
   if (!user) return false
-  return !!(user.first_name && user.last_name && user.phone)
+  return !!(user.first_name && user.last_name)
 }
 
 // Helper to check if company info is complete

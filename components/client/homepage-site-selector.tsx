@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
 
 export function HomepageSiteSelector() {
-  const { sitesWithDetails, selectedSiteWithDetails: selectedSite, setSelectedSiteId } = useClientLayout()
+  const { coworkingSitesWithDetails: sitesWithDetails, selectedSiteWithDetails: selectedSite, setSelectedSiteId } = useClientLayout()
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
   const containerRef = useRef<HTMLDivElement>(null)

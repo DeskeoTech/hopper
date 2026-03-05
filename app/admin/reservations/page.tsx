@@ -110,7 +110,7 @@ export default async function ReservationsPage({
   ] = await Promise.all([
     query,
     supabase.from("sites").select("id, name").order("name"),
-    supabase.from("sites").select("id, name").eq("status", "open").order("name"),
+    supabase.from("sites").select("id, name").eq("status", "open").eq("is_meeting_room", true).order("name"),
     supabase.from("companies").select("id, name").order("name"),
     supabase
       .from("users")

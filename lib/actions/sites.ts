@@ -7,8 +7,18 @@ import type { SiteStatus, Equipment, TransportationStop, SiteClosure } from "@/l
 
 export async function updateSiteHeader(
   siteId: string,
-  data: { name: string; status: SiteStatus; address: string }
+  data: {
+    name: string
+    status: SiteStatus
+    address: string
+    is_coworking: boolean
+    is_meeting_room: boolean
+  }
 ) {
+  if (data.status === "open" && !data.is_coworking && !data.is_meeting_room) {
+    return { error: "Un site ouvert doit avoir au moins une catégorie (Hopper Coworking ou Salle de réunion)" }
+  }
+
   const supabase = await createClient()
 
   const { error } = await supabase
@@ -17,6 +27,8 @@ export async function updateSiteHeader(
       name: data.name,
       status: data.status,
       address: data.address,
+      is_coworking: data.is_coworking,
+      is_meeting_room: data.is_meeting_room,
     })
     .eq("id", siteId)
 
@@ -24,6 +36,7 @@ export async function updateSiteHeader(
     return { error: error.message }
   }
 
+  revalidatePath("/admin/sites")
   revalidatePath(`/admin/sites/${siteId}`)
   return { success: true }
 }
@@ -316,6 +329,8 @@ export interface CreateSiteData {
   name: string
   address: string
   status: SiteStatus
+  is_coworking: boolean
+  is_meeting_room: boolean
   access: string | null
   instructions: string | null
   wifi_ssid: string | null
@@ -342,6 +357,8 @@ export async function createSite(data: CreateSiteData) {
       name: data.name,
       address: data.address,
       status: data.status || "open",
+      is_coworking: data.is_coworking,
+      is_meeting_room: data.is_meeting_room,
       access: data.access || null,
       instructions: data.instructions || null,
       wifi_ssid: data.wifi_ssid || null,
