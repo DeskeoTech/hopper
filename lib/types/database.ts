@@ -191,7 +191,7 @@ export interface UserCredits {
 }
 
 // Credit movement types for history display
-export type CreditMovementType = "reservation" | "cancellation" | "adjustment" | "allocation" | "expiration"
+export type CreditMovementType = "reservation" | "cancellation" | "adjustment" | "allocation" | "expiration" | "purchase"
 
 export interface CreditMovement {
   id: string

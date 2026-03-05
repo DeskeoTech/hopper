@@ -56,6 +56,7 @@ export default async function ClientLayout({
   const companyMainSiteId = companyData?.main_site_id || null
 
   // Phase 2: Run ALL independent queries in parallel
+  const adminSupabase = createAdminClient()
   const siteColumns = `
     id, name, address, is_nomad, is_coworking, is_meeting_room,
     opening_hours, opening_days,
@@ -72,6 +73,8 @@ export default async function ClientLayout({
     planResult,
     creditBookingsResult,
     adminResult,
+    creditTransactionsResult,
+    creditRecordsResult,
   ] = await Promise.all([
     // 1. Sites: meeting_room_only companies only see their main site (even if closed)
     isMeetingRoomOnly && companyMainSiteId
@@ -134,6 +137,26 @@ export default async function ClientLayout({
           .limit(1)
           .single()
       : Promise.resolve({ data: null } as { data: null }),
+
+    // 8. Credit transactions (admin client to bypass RLS)
+    hasCompany
+      ? adminSupabase
+          .from("credit_transactions")
+          .select("id, transaction_type, amount, balance_before, balance_after, reason, created_at, booking_id")
+          .eq("company_id", userProfile.company_id!)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null } as { data: null }),
+
+    // 9. Credit records (admin client to bypass RLS)
+    hasCompany
+      ? adminSupabase
+          .from("credits")
+          .select("id, allocated_credits, remaining_balance, reason, expiration, created_at")
+          .eq("company_id", userProfile.company_id!)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null } as { data: null }),
   ])
 
   // Process credits
@@ -172,41 +195,100 @@ export default async function ClientLayout({
     }
   }
 
-  // Process credit movements
-  let creditMovements: CreditMovement[] = []
+  // Process credit movements from bookings
+  const bookingMovements: CreditMovement[] = []
   if (creditBookingsResult.data) {
-    const totalCredits = userCredits?.remaining ?? 0
-    let runningBalance = totalCredits
-    creditMovements = (creditBookingsResult.data as Array<Record<string, unknown>>).map((booking) => {
+    for (const booking of creditBookingsResult.data as Array<Record<string, unknown>>) {
       const isCancelled = booking.status === "cancelled"
       const creditsUsed = (booking.credits_used as number) || 0
 
-      let type: CreditMovementType = "reservation"
-      let amount = -creditsUsed
-
-      if (isCancelled) {
-        type = "cancellation"
-        amount = creditsUsed
-      }
+      const type: CreditMovementType = isCancelled ? "cancellation" : "reservation"
+      const amount = isCancelled ? creditsUsed : -creditsUsed
 
       const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
       const description = isCancelled
         ? `Annulation - ${resourceName}`
         : `Réservation - ${resourceName}`
 
-      const movement: CreditMovement = {
+      bookingMovements.push({
         id: booking.id as string,
         date: booking.start_date as string,
         type,
         amount,
         description,
-        balance_after: runningBalance,
+        balance_after: 0,
+      })
+    }
+  }
+
+  // Process credit transactions (allocation, adjustment, expiration, etc.)
+  const txMovements: CreditMovement[] = []
+  if (creditTransactionsResult.data) {
+    const txTypeMap: Record<string, CreditMovementType> = {
+      allocation: "allocation",
+      adjustment: "adjustment",
+      expiration: "expiration",
+      cancellation: "cancellation",
+      purchase: "purchase",
+      refund: "cancellation",
+      consumption: "reservation",
+    }
+    // Collect booking IDs from booking movements to avoid duplicates
+    const bookingMovementIds = new Set(bookingMovements.map((m) => m.id))
+
+    for (const tx of creditTransactionsResult.data as Array<Record<string, unknown>>) {
+      const txType = tx.transaction_type as string
+      const mappedType = txTypeMap[txType]
+      if (!mappedType) continue
+
+      // Skip consumption/refund if we already have the booking movement for it
+      if ((txType === "consumption" || txType === "refund") && tx.booking_id && bookingMovementIds.has(tx.booking_id as string)) {
+        continue
       }
 
-      runningBalance = runningBalance - amount
-      return movement
-    })
+      // Use balance_after - balance_before for correct sign (DB amounts are inconsistent)
+      const realAmount = (tx.balance_after as number) - (tx.balance_before as number)
+
+      txMovements.push({
+        id: tx.id as string,
+        date: tx.created_at as string,
+        type: mappedType,
+        amount: realAmount,
+        description: (tx.reason as string) || "",
+        balance_after: tx.balance_after as number,
+      })
+    }
   }
+
+  // Add credit records (allocation blocks) from credits table
+  if (creditRecordsResult.data) {
+    for (const cr of creditRecordsResult.data as Array<Record<string, unknown>>) {
+      const allocated = cr.allocated_credits as number
+      if (!allocated) continue
+      const remaining = (cr.remaining_balance as number) ?? 0
+      txMovements.push({
+        id: `cr-${cr.id as string}`,
+        date: cr.created_at as string,
+        type: "allocation",
+        amount: allocated,
+        description: (cr.reason as string) || `Attribution de ${allocated} crédits (solde : ${remaining}/${allocated})`,
+        balance_after: 0,
+      })
+    }
+  }
+
+  // Merge and sort by date descending, then recalculate balance_after for booking movements
+  const allMovements = [...bookingMovements, ...txMovements]
+  allMovements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  // Recalculate balance_after for booking movements (tx movements already have it from DB)
+  const totalCredits = userCredits?.remaining ?? 0
+  let runningBalance = totalCredits
+  const creditMovements = allMovements.map((m) => {
+    const movement = { ...m, balance_after: runningBalance }
+    runningBalance = runningBalance - m.amount
+    return movement
+  })
 
   // Process sites
   const allSites = sitesResult.data || []
@@ -311,7 +393,6 @@ export default async function ClientLayout({
     (userProfile.companies as Company | null)?.onboarding_done &&
     !(userProfile as Record<string, unknown>).Onboarding
   ) {
-    const adminSupabase = createAdminClient()
     adminSupabase
       .from("users")
       .update({ Onboarding: true, updated_at: new Date().toISOString() })

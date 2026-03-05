@@ -8,6 +8,7 @@ import {
   ArrowDown,
   ArrowUp,
   Building2,
+  ChevronDown,
   Coins,
   FileText,
   Users,
@@ -42,13 +43,14 @@ import {
 } from "@/lib/actions/users"
 import { assignUserToContract } from "@/lib/actions/user-contracts"
 import { ContractDetailModal } from "./contract-detail-modal"
+import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
 import type { Company, ContractForDisplay } from "@/lib/types/database"
 import type { ContractWithSeats, UserWithContract, CompanyCreditTransaction } from "@/app/(client)/entreprise/page"
 
 const txTypeColors: Record<string, string> = {
   allocation: "bg-teal-100 text-teal-700",
-  consumption: "bg-blue-100 text-blue-700",
+  consumption: "bg-red-100 text-red-700",
   cancellation: "bg-orange-100 text-orange-700",
   adjustment: "bg-purple-100 text-purple-700",
   expiration: "bg-red-100 text-red-700",
@@ -109,6 +111,22 @@ export function EntreprisePage({
 
   // Contract detail modal state
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
+  const [creditsHistoryOpen, setCreditsHistoryOpen] = useState(false)
+  const [creditTypeFilter, setCreditTypeFilter] = useState("all")
+
+  const creditFilterOptions = [
+    { value: "all", label: "Tous" },
+    { value: "allocation", label: "Allocation" },
+    { value: "consumption", label: "Consommation" },
+    { value: "cancellation", label: "Annulation" },
+    { value: "refund", label: "Remboursement" },
+    { value: "adjustment", label: "Ajustement" },
+    { value: "expiration", label: "Expiration" },
+  ]
+
+  const filteredCreditTransactions = creditTypeFilter === "all"
+    ? creditTransactions
+    : creditTransactions.filter((tx) => tx.type === creditTypeFilter)
 
   // Calculate seats info from contracts + off-platform subscription
   const contractSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
@@ -329,8 +347,8 @@ export function EntreprisePage({
         </div>
 
         {/* Section 3: Credits */}
-        <div className="rounded-[16px] bg-card p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-4">
+        <div className="rounded-[16px] bg-card">
+          <div className="flex items-center gap-3 p-4 sm:p-6">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
               <Coins className="h-5 w-5 text-foreground/70" />
             </div>
@@ -345,55 +363,109 @@ export function EntreprisePage({
             </div>
           </div>
 
-          {creditTransactions.length === 0 ? (
-            <p className="text-sm text-foreground/50">Aucun mouvement de crédits.</p>
-          ) : (
-            <div className="max-h-[480px] space-y-2 overflow-y-auto">
-              {creditTransactions.map((tx) => (
-                <div key={tx.id} className="rounded-[12px] bg-background/50 p-3 sm:p-4">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span
-                      className={cn(
-                        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                        txTypeColors[tx.type] || "bg-gray-100 text-gray-700"
-                      )}
-                    >
-                      {txTypeLabels[tx.type] || tx.type}
-                    </span>
-                    <span
-                      className={cn(
-                        "inline-flex items-center gap-1 text-sm font-bold",
-                        tx.amount > 0 ? "text-green-600" : "text-red-600"
-                      )}
-                    >
-                      {tx.amount > 0 ? (
-                        <><ArrowUp className="h-3.5 w-3.5" />+{tx.amount}</>
-                      ) : (
-                        <><ArrowDown className="h-3.5 w-3.5" />{tx.amount}</>
-                      )}
-                    </span>
-                  </div>
-                  {tx.reason && (
-                    <p className="text-xs text-foreground/70 mb-1 line-clamp-2">{tx.reason}</p>
+          {creditTransactions.length > 0 && (
+            <>
+              <div className="mx-4 sm:mx-6 border-t border-foreground/10" />
+              <button
+                type="button"
+                onClick={() => setCreditsHistoryOpen((v) => !v)}
+                className="flex w-full items-center justify-between px-4 py-3 sm:px-6 sm:py-3"
+              >
+                <span className="text-sm font-medium text-foreground/60">Historique des mouvements</span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-foreground/40 transition-transform duration-200",
+                    creditsHistoryOpen && "rotate-180"
                   )}
-                  <div className="flex items-center justify-between text-[11px] text-foreground/40">
-                    <div className="flex items-center gap-2">
-                      <span>
-                        {new Date(tx.date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                      {tx.userName && (
-                        <span>· {tx.userName}</span>
-                      )}
-                    </div>
-                    <span>Solde : {tx.balance_after}</span>
-                  </div>
+                />
+              </button>
+
+              <div
+                className={cn(
+                  "overflow-hidden transition-all duration-200",
+                  creditsHistoryOpen ? "max-h-[2000px] opacity-100" : "max-h-0 opacity-0"
+                )}
+              >
+                <div className="px-4 pb-2 sm:px-6">
+                  <SearchableSelect
+                    options={creditFilterOptions}
+                    value={creditTypeFilter}
+                    onValueChange={setCreditTypeFilter}
+                    placeholder="Filtrer par type"
+                    searchPlaceholder="Rechercher..."
+                    triggerClassName="w-full sm:w-[200px]"
+                  />
                 </div>
-              ))}
-            </div>
+                <div className="max-h-[480px] space-y-2 overflow-y-auto px-4 pb-4 sm:px-6 sm:pb-6">
+                  {filteredCreditTransactions.length === 0 ? (
+                    <p className="text-center text-sm text-foreground/40 py-4">Aucun mouvement pour ce filtre.</p>
+                  ) : filteredCreditTransactions.map((tx, i) => {
+                    const txDate = new Date(tx.date)
+                    const monthKey = `${txDate.getFullYear()}-${txDate.getMonth()}`
+                    const prevTx = i > 0 ? filteredCreditTransactions[i - 1] : null
+                    const prevDate = prevTx ? new Date(prevTx.date) : null
+                    const prevMonthKey = prevDate ? `${prevDate.getFullYear()}-${prevDate.getMonth()}` : null
+                    const showMonthHeader = monthKey !== prevMonthKey
+
+                    return (
+                      <div key={tx.id}>
+                        {showMonthHeader && (
+                          <p className={cn("text-xs font-semibold uppercase text-foreground/40 tracking-wide", i > 0 && "mt-3 mb-1")}>
+                            {txDate.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", { month: "long", year: "numeric" })}
+                          </p>
+                        )}
+                        <div className="rounded-[12px] bg-background/50 p-3 sm:p-4">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span
+                              className={cn(
+                                "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+                                txTypeColors[tx.type] || "bg-gray-100 text-gray-700"
+                              )}
+                            >
+                              {txTypeLabels[tx.type] || tx.type}
+                            </span>
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 text-sm font-bold",
+                                tx.amount > 0 ? "text-green-600" : "text-red-600"
+                              )}
+                            >
+                              {tx.amount > 0 ? (
+                                <><ArrowUp className="h-3.5 w-3.5" />+{tx.amount}</>
+                              ) : (
+                                <><ArrowDown className="h-3.5 w-3.5" />{tx.amount}</>
+                              )}
+                            </span>
+                          </div>
+                          {tx.reason && (
+                            <p className="text-xs text-foreground/70 mb-1 line-clamp-2">{tx.reason}</p>
+                          )}
+                          <div className="flex items-center justify-between text-[11px] text-foreground/40">
+                            <div className="flex items-center gap-2">
+                              <span>
+                                {txDate.toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                              {tx.userName && (
+                                <span>· {tx.userName}</span>
+                              )}
+                            </div>
+                            <span>Solde : {tx.balance_after}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+
+          {creditTransactions.length === 0 && (
+            <p className="px-4 pb-4 sm:px-6 sm:pb-6 text-sm text-foreground/50">Aucun mouvement de crédits.</p>
           )}
         </div>
 
