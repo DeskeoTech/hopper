@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, ExternalLink, Eye } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, ExternalLink, Eye, Send, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -25,10 +25,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
+import { toast } from "sonner"
 import type { SupportTicketWithDetails, TicketStatus } from "@/lib/types/database"
 import { getRequestTypeLabel, getSubtypeLabel } from "@/lib/constants/ticket-options"
+import { replyToFreshdeskTicket } from "@/lib/actions/tickets"
 
 type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name" | "site_name"
 type SortOrder = "asc" | "desc"
@@ -44,6 +47,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
   const [currentPage, setCurrentPage] = useState(1)
   const [selectedTicket, setSelectedTicket] = useState<SupportTicketWithDetails | null>(null)
+  const [replyBody, setReplyBody] = useState("")
+  const [replySending, setReplySending] = useState(false)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -311,7 +316,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
       )}
 
       {/* Ticket detail dialog */}
-      <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
+      <Dialog open={!!selectedTicket} onOpenChange={(open) => { if (!open) { setSelectedTicket(null); setReplyBody("") } }}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Détails du ticket</DialogTitle>
@@ -369,22 +374,61 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </div>
               </div>
               {selectedTicket.freshdesk_ticket_id && (
-                <div className="pt-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() =>
-                      window.open(
-                        `https://mydeskeosupport.freshdesk.com/a/tickets/${selectedTicket.freshdesk_ticket_id}`,
-                        "_blank"
-                      )
-                    }
-                  >
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    Voir dans Freshdesk
-                  </Button>
-                </div>
+                <>
+                  <div className="pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() =>
+                        window.open(
+                          `https://mydeskeosupport.freshdesk.com/a/tickets/${selectedTicket.freshdesk_ticket_id}`,
+                          "_blank"
+                        )
+                      }
+                    >
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Voir dans Freshdesk
+                    </Button>
+                  </div>
+                  <div className="border-t border-border/50 pt-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Répondre</p>
+                    <Textarea
+                      className="mt-2"
+                      placeholder="Saisissez votre réponse..."
+                      value={replyBody}
+                      onChange={(e) => setReplyBody(e.target.value)}
+                      rows={4}
+                      disabled={replySending}
+                    />
+                    <Button
+                      size="sm"
+                      className="mt-2 w-full"
+                      disabled={replySending || !replyBody.trim()}
+                      onClick={async () => {
+                        setReplySending(true)
+                        const result = await replyToFreshdeskTicket(
+                          selectedTicket.freshdesk_ticket_id!,
+                          replyBody
+                        )
+                        setReplySending(false)
+                        if (result.error) {
+                          toast.error(result.error)
+                        } else {
+                          toast.success("Réponse envoyée")
+                          setReplyBody("")
+                        }
+                      }}
+                    >
+                      {replySending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      {replySending ? "Envoi en cours..." : "Envoyer la réponse"}
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           )}
