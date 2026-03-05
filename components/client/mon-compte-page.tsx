@@ -29,7 +29,7 @@ interface MonComptePageProps {
 }
 
 export function MonComptePage({ contracts }: MonComptePageProps) {
-  const { user, credits, plan, isAdmin } = useClientLayout()
+  const { user, credits, plan, isAdmin, isMeetingRoomOnly } = useClientLayout()
   const t = useTranslations("common")
   const tAccount = useTranslations("account")
   const router = useRouter()
@@ -39,12 +39,15 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
 
   // Admin-only tabs
   const adminOnlyTabs = ["forfait", "facturation"]
+  // Tabs hidden for meeting_room_only companies (billed off-platform)
+  const hiddenTabs = isMeetingRoomOnly ? ["facturation"] : []
 
-  // Sanitize tab param: non-admin cannot access admin-only tabs
+  // Sanitize tab param: non-admin cannot access admin-only tabs, meeting_room_only cannot access hidden tabs
   const tabParam = searchParams.get("tab")
-  const initialTab = tabParam && (!adminOnlyTabs.includes(tabParam) || isAdmin)
-    ? tabParam
-    : "coordonnees"
+  const isTabAccessible = tabParam
+    && (!adminOnlyTabs.includes(tabParam) || isAdmin)
+    && !hiddenTabs.includes(tabParam)
+  const initialTab = isTabAccessible ? tabParam : "coordonnees"
   const [activeTab, setActiveTab] = useState(initialTab)
 
   // Preserve site param in navigation
@@ -75,10 +78,12 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
     { value: "contact", label: tAccount("tabs.support"), icon: MessageCircle },
   ]
 
-  // Filter out admin-only tabs for non-admin users
-  const visibleMenuItems = isAdmin
-    ? menuItems
-    : menuItems.filter((item) => !adminOnlyTabs.includes(item.value))
+  // Filter out admin-only tabs for non-admin users and hidden tabs for meeting_room_only
+  const visibleMenuItems = menuItems.filter((item) => {
+    if (!isAdmin && adminOnlyTabs.includes(item.value)) return false
+    if (hiddenTabs.includes(item.value)) return false
+    return true
+  })
 
   return (
     <>
@@ -167,7 +172,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
             <TabsTrigger value="credits" className="whitespace-nowrap px-3 py-2 text-sm">
               {tAccount("tabs.credits")}
             </TabsTrigger>
-            {isAdmin && (
+            {isAdmin && !isMeetingRoomOnly && (
               <TabsTrigger value="facturation" className="whitespace-nowrap px-3 py-2 text-sm">
                 {tAccount("tabs.billing")}
               </TabsTrigger>
@@ -192,7 +197,7 @@ export function MonComptePage({ contracts }: MonComptePageProps) {
           <MesCreditsTab />
         </TabsContent>
 
-        {isAdmin && (
+        {isAdmin && !isMeetingRoomOnly && (
           <TabsContent value="facturation" className="mt-6">
             <FacturationTab />
           </TabsContent>

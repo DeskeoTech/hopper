@@ -339,6 +339,11 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                   Hors plateforme
                 </span>
               )}
+              {company.meeting_room_only && (
+                <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-bold uppercase text-blue-700">
+                  Salles de réunion uniquement
+                </span>
+              )}
             </div>
             <div className="mt-1.5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
               {company.company_type && (
@@ -359,6 +364,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
             initialName={company.name}
             initialType={company.company_type}
             isActive={isActive}
+            initialMeetingRoomOnly={company.meeting_room_only ?? false}
           />
         </div>
       </div>
