@@ -19,6 +19,7 @@ async function getSitesWithPhotos() {
     .from("sites")
     .select("id, name, address, status, latitude, longitude, description, description_en, opening_days, opening_hours, equipments, transportation_lines, is_nomad, capacity")
     .eq("status", "open")
+    .eq("is_coworking", true)
     .order("name")
 
   if (sitesError || !sites) {
