@@ -71,6 +71,7 @@ interface EntreprisePageProps {
   currentUserId: string
   spacebringSeats?: number
   creditTransactions?: CompanyCreditTransaction[]
+  creditBalance?: number
 }
 
 export function EntreprisePage({
@@ -80,6 +81,7 @@ export function EntreprisePage({
   currentUserId,
   spacebringSeats = 0,
   creditTransactions = [],
+  creditBalance = 0,
 }: EntreprisePageProps) {
   const t = useTranslations("company")
   const tc = useTranslations("common")
@@ -326,18 +328,26 @@ export function EntreprisePage({
           )}
         </div>
 
-        {/* Section 3: Credits History */}
-        {creditTransactions.length > 0 && (
-          <div className="rounded-[16px] bg-card p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
-                <Coins className="h-5 w-5 text-foreground/70" />
-              </div>
+        {/* Section 3: Credits */}
+        <div className="rounded-[16px] bg-card p-4 sm:p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+              <Coins className="h-5 w-5 text-foreground/70" />
+            </div>
+            <div className="flex-1">
               <h2 className="font-header text-lg font-bold uppercase tracking-tight">
-                Historique des crédits
+                Crédits
               </h2>
             </div>
+            <div className="text-right">
+              <p className="text-2xl font-bold text-foreground">{creditBalance}</p>
+              <p className="text-xs text-foreground/50">crédits disponibles</p>
+            </div>
+          </div>
 
+          {creditTransactions.length === 0 ? (
+            <p className="text-sm text-foreground/50">Aucun mouvement de crédits.</p>
+          ) : (
             <div className="max-h-[480px] space-y-2 overflow-y-auto">
               {creditTransactions.map((tx) => (
                 <div key={tx.id} className="rounded-[12px] bg-background/50 p-3 sm:p-4">
@@ -384,8 +394,8 @@ export function EntreprisePage({
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Section 4: Users */}
         <div className="rounded-[16px] bg-card p-4 sm:p-6">

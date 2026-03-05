@@ -124,6 +124,10 @@ export default async function EntreprisePageRoute() {
     ? company.spacebring_seats
     : 0
 
+  // Fetch company credit balance
+  const { data: creditBalance } = await supabase
+    .rpc("get_company_valid_credits", { p_company_id: userProfile.company_id })
+
   // Fetch company credit transactions
   const { data: creditTransactions } = await supabase
     .from("credit_transactions")
@@ -154,6 +158,7 @@ export default async function EntreprisePageRoute() {
       currentUserId={userProfile.id}
       spacebringSeats={spacebringSeats}
       creditTransactions={companyCredits}
+      creditBalance={creditBalance ?? 0}
     />
   )
 }
