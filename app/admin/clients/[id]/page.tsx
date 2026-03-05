@@ -125,6 +125,14 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     ? customerChargesResult.payments
     : []
 
+  const customerPaymentsError = !company.customer_id_stripe
+    ? "no_stripe_customer"
+    : customerChargesResult && "error" in customerChargesResult
+      ? customerChargesResult.error
+      : null
+
+
+
   // Phase 2: Fetch bookings (depends on user IDs)
   const userIds = users?.map((u) => u.id) || []
   const { data: bookings } = userIds.length > 0
@@ -544,7 +552,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
             value: "paiements",
             label: "Historique des paiements",
             content: (
-              <PaymentHistorySection payments={customerPayments} />
+              <PaymentHistorySection payments={customerPayments} error={customerPaymentsError} />
             ),
           },
         ]}
