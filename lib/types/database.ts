@@ -351,6 +351,7 @@ export type TicketRequestType =
   | "audiovisuel"
   | "autre"
   | "badges"
+  | "cafe_the"
   | "catering"
   | "chauffage"
   | "climatisation"
@@ -368,11 +369,13 @@ export type TicketRequestType =
   | "isolation_phonique"
   | "juridique"
   | "menage"
+  | "mobilier"
   | "nuisances"
   | "nuisibles"
   | "plomberie"
   | "portes"
   | "ssi"
+  | "telephone_gsm"
   | "videosurveillance_alarme"
 
 export interface SupportTicket {
