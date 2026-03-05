@@ -5,7 +5,10 @@ import Link from "next/link"
 import { useTranslations, useLocale } from "next-intl"
 import {
   ArrowLeft,
+  ArrowDown,
+  ArrowUp,
   Building2,
+  Coins,
   FileText,
   Users,
   Shield,
@@ -39,8 +42,27 @@ import {
 } from "@/lib/actions/users"
 import { assignUserToContract } from "@/lib/actions/user-contracts"
 import { ContractDetailModal } from "./contract-detail-modal"
+import { cn } from "@/lib/utils"
 import type { Company, ContractForDisplay } from "@/lib/types/database"
-import type { ContractWithSeats, UserWithContract } from "@/app/(client)/entreprise/page"
+import type { ContractWithSeats, UserWithContract, CompanyCreditTransaction } from "@/app/(client)/entreprise/page"
+
+const txTypeColors: Record<string, string> = {
+  allocation: "bg-teal-100 text-teal-700",
+  consumption: "bg-blue-100 text-blue-700",
+  cancellation: "bg-orange-100 text-orange-700",
+  adjustment: "bg-purple-100 text-purple-700",
+  expiration: "bg-red-100 text-red-700",
+  refund: "bg-green-100 text-green-700",
+}
+
+const txTypeLabels: Record<string, string> = {
+  allocation: "Allocation",
+  consumption: "Consommation",
+  cancellation: "Annulation",
+  adjustment: "Ajustement",
+  expiration: "Expiration",
+  refund: "Remboursement",
+}
 
 interface EntreprisePageProps {
   company: Company
@@ -48,6 +70,7 @@ interface EntreprisePageProps {
   users: UserWithContract[]
   currentUserId: string
   spacebringSeats?: number
+  creditTransactions?: CompanyCreditTransaction[]
 }
 
 export function EntreprisePage({
@@ -56,6 +79,7 @@ export function EntreprisePage({
   users: initialUsers,
   currentUserId,
   spacebringSeats = 0,
+  creditTransactions = [],
 }: EntreprisePageProps) {
   const t = useTranslations("company")
   const tc = useTranslations("common")
@@ -302,7 +326,68 @@ export function EntreprisePage({
           )}
         </div>
 
-        {/* Section 3: Users */}
+        {/* Section 3: Credits History */}
+        {creditTransactions.length > 0 && (
+          <div className="rounded-[16px] bg-card p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
+                <Coins className="h-5 w-5 text-foreground/70" />
+              </div>
+              <h2 className="font-header text-lg font-bold uppercase tracking-tight">
+                Historique des crédits
+              </h2>
+            </div>
+
+            <div className="max-h-[480px] space-y-2 overflow-y-auto">
+              {creditTransactions.map((tx) => (
+                <div key={tx.id} className="rounded-[12px] bg-background/50 p-3 sm:p-4">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span
+                      className={cn(
+                        "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+                        txTypeColors[tx.type] || "bg-gray-100 text-gray-700"
+                      )}
+                    >
+                      {txTypeLabels[tx.type] || tx.type}
+                    </span>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1 text-sm font-bold",
+                        tx.amount > 0 ? "text-green-600" : "text-red-600"
+                      )}
+                    >
+                      {tx.amount > 0 ? (
+                        <><ArrowUp className="h-3.5 w-3.5" />+{tx.amount}</>
+                      ) : (
+                        <><ArrowDown className="h-3.5 w-3.5" />{tx.amount}</>
+                      )}
+                    </span>
+                  </div>
+                  {tx.reason && (
+                    <p className="text-xs text-foreground/70 mb-1 line-clamp-2">{tx.reason}</p>
+                  )}
+                  <div className="flex items-center justify-between text-[11px] text-foreground/40">
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {new Date(tx.date).toLocaleDateString(locale === "fr" ? "fr-FR" : "en-US", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </span>
+                      {tx.userName && (
+                        <span>· {tx.userName}</span>
+                      )}
+                    </div>
+                    <span>Solde : {tx.balance_after}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Section 4: Users */}
         <div className="rounded-[16px] bg-card p-4 sm:p-6">
           <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">

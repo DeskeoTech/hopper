@@ -18,6 +18,16 @@ export interface UserWithContract extends User {
   contract_name: string | null
 }
 
+export interface CompanyCreditTransaction {
+  id: string
+  type: string
+  amount: number
+  balance_after: number
+  reason: string | null
+  date: string
+  userName: string | null
+}
+
 export default async function EntreprisePageRoute() {
   const authUser = await getUser()
 
@@ -114,6 +124,28 @@ export default async function EntreprisePageRoute() {
     ? company.spacebring_seats
     : 0
 
+  // Fetch company credit transactions
+  const { data: creditTransactions } = await supabase
+    .from("credit_transactions")
+    .select("id, transaction_type, amount, balance_before, balance_after, reason, created_at, user_id, users:user_id(first_name, last_name)")
+    .eq("company_id", userProfile.company_id)
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  const companyCredits = (creditTransactions || []).map((tx) => {
+    const user = tx.users as { first_name: string | null; last_name: string | null } | null
+    const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ") || null
+    return {
+      id: tx.id as string,
+      type: tx.transaction_type as string,
+      amount: tx.amount as number,
+      balance_after: tx.balance_after as number,
+      reason: tx.reason as string | null,
+      date: tx.created_at as string,
+      userName,
+    }
+  })
+
   return (
     <EntreprisePage
       company={company!}
@@ -121,6 +153,7 @@ export default async function EntreprisePageRoute() {
       users={users}
       currentUserId={userProfile.id}
       spacebringSeats={spacebringSeats}
+      creditTransactions={companyCredits}
     />
   )
 }
