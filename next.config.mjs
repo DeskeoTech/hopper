@@ -8,6 +8,9 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   serverExternalPackages: ["maplibre-gl"],
+  serverActions: {
+    bodySizeLimit: "10mb",
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
