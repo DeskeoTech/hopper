@@ -818,6 +818,7 @@ export function RoomBookingContent({
                     onSlotClick={handleSlotClick}
                     selectedDate={selectedDate}
                     currentUserId={userId}
+                    currentUserCompanyId={companyId}
                   />
                 )}
               </div>
@@ -1032,6 +1033,7 @@ export function RoomBookingContent({
                 onSlotClick={handleSlotClick}
                 selectedDate={selectedDate}
                 currentUserId={userId}
+                currentUserCompanyId={companyId}
               />
             )}
 

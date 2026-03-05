@@ -86,6 +86,7 @@ export interface RoomBooking {
   id: string
   resourceId: string
   userId: string
+  companyId: string | null
   startHour: number
   endHour: number
   title: string | null
@@ -131,7 +132,7 @@ export async function getRoomBookingsForDate(
       start_date,
       end_date,
       notes,
-      users:user_id (first_name, last_name)
+      users:user_id (first_name, last_name, company_id)
     `)
     .in("resource_id", roomIds)
     .eq("status", "confirmed")
@@ -143,13 +144,14 @@ export async function getRoomBookingsForDate(
   }
 
   const result: RoomBooking[] = (bookings || []).map((b) => {
-    const user = b.users as { first_name: string | null; last_name: string | null } | null
+    const user = b.users as { first_name: string | null; last_name: string | null; company_id: string | null } | null
     const startDate = toParisDate(b.start_date)
     const endDate = toParisDate(b.end_date)
     return {
       id: b.id,
       resourceId: b.resource_id,
       userId: b.user_id,
+      companyId: user?.company_id || null,
       startHour: startDate.getHours() + startDate.getMinutes() / 60,
       endHour: endDate.getHours() + endDate.getMinutes() / 60,
       title: b.notes,
