@@ -117,6 +117,64 @@ export async function uploadTicketAttachment(ticketId: string, formData: FormDat
   return { success: true }
 }
 
+export async function replyToFreshdeskTicket(
+  freshdeskTicketId: string,
+  body: string
+): Promise<{ success: boolean; error: string | null }> {
+  const authUser = await getUser()
+  if (!authUser?.email) {
+    return { success: false, error: "Non authentifié" }
+  }
+
+  const supabase = await createClient()
+  const { data: user } = await supabase
+    .from("users")
+    .select("is_hopper_admin")
+    .eq("email", authUser.email)
+    .eq("is_hopper_admin", true)
+    .single()
+
+  if (!user) {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  const apiKey = process.env.FRESHDESK_API_KEY
+  const domain = process.env.FRESHDESK_DOMAIN
+  if (!apiKey || !domain) {
+    return { success: false, error: "Configuration Freshdesk manquante" }
+  }
+
+  const trimmedBody = body.trim()
+  if (!trimmedBody) {
+    return { success: false, error: "Le message ne peut pas être vide" }
+  }
+
+  try {
+    const response = await fetch(
+      `https://${domain}.freshdesk.com/api/v2/tickets/${freshdeskTicketId}/reply`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Basic ${Buffer.from(`${apiKey}:X`).toString("base64")}`,
+        },
+        body: JSON.stringify({ body: trimmedBody }),
+      }
+    )
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error("[freshdesk-reply] Error:", response.status, errorText)
+      return { success: false, error: `Erreur Freshdesk (${response.status})` }
+    }
+
+    return { success: true, error: null }
+  } catch (error) {
+    console.error("[freshdesk-reply] Error:", error)
+    return { success: false, error: "Impossible de contacter Freshdesk" }
+  }
+}
+
 export async function getUserTickets(userId: string): Promise<{ data: SupportTicket[] | null; error: string | null }> {
   const supabase = await createClient()
 
