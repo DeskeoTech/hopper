@@ -51,7 +51,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   // Fetch resource photos for all resources of this site
   const resourceIds = resources?.map((r) => r.id) || []
   const { data: resourcePhotos } = resourceIds.length > 0
-    ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("display_order")
+    ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("created_at")
     : { data: null }
 
   // Fetch companies for this site and user counts
