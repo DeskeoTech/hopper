@@ -19,6 +19,9 @@ export interface CompanyBreakdown {
   selfEmployed: number
   multiEmployee: number
   meetingRoomOnly: number
+  selfEmployedNames: string[]
+  multiEmployeeNames: string[]
+  meetingRoomOnlyNames: string[]
 }
 
 export interface WeeklyBookingsByType {
@@ -143,6 +146,114 @@ function KpiCard({
   )
 }
 
+// === Company names list ===
+
+function CompanyNamesList({ names }: { names: string[] }) {
+  if (names.length === 0) {
+    return <p className="text-xs text-muted-foreground text-center py-4">Aucune entreprise</p>
+  }
+  return (
+    <>
+      {names.map((name, i) => (
+        <div key={i} className="flex items-center py-2 px-3 border-b border-border/30 last:border-0">
+          <p className="text-xs font-medium truncate">{name}</p>
+        </div>
+      ))}
+    </>
+  )
+}
+
+// === Companies KPI with expandable lists ===
+
+function CompaniesKpiCard({
+  companiesCount,
+  companyBreakdown,
+}: {
+  companiesCount: number
+  companyBreakdown: CompanyBreakdown
+}) {
+  const [selfExpanded, setSelfExpanded] = useState(false)
+  const [multiExpanded, setMultiExpanded] = useState(false)
+  const [meetingExpanded, setMeetingExpanded] = useState(false)
+
+  return (
+    <KpiCard
+      title="Entreprises"
+      value={companiesCount}
+      icon={Briefcase}
+      dialogTitle="Répartition des entreprises"
+    >
+      <div className="space-y-0">
+        {/* Indépendants expandable row */}
+        <button
+          type="button"
+          onClick={() => setSelfExpanded(!selfExpanded)}
+          className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
+        >
+          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+            Indépendants
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", selfExpanded && "rotate-180")} />
+          </span>
+          <span className="text-sm font-bold tabular-nums">{companyBreakdown.selfEmployed}</span>
+        </button>
+        <div className={cn(
+          "overflow-hidden transition-all duration-200",
+          selfExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        )}>
+          <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+            <CompanyNamesList names={companyBreakdown.selfEmployedNames} />
+          </div>
+        </div>
+
+        {/* Multi-employés expandable row */}
+        <button
+          type="button"
+          onClick={() => setMultiExpanded(!multiExpanded)}
+          className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
+        >
+          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+            Multi-employés
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", multiExpanded && "rotate-180")} />
+          </span>
+          <span className="text-sm font-bold tabular-nums">{companyBreakdown.multiEmployee}</span>
+        </button>
+        <div className={cn(
+          "overflow-hidden transition-all duration-200",
+          multiExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        )}>
+          <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+            <CompanyNamesList names={companyBreakdown.multiEmployeeNames} />
+          </div>
+        </div>
+
+        {/* Salles de réunion uniquement expandable row */}
+        <button
+          type="button"
+          onClick={() => setMeetingExpanded(!meetingExpanded)}
+          className="flex items-center justify-between py-2.5 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
+        >
+          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
+            Salles de réunion uniquement
+            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", meetingExpanded && "rotate-180")} />
+          </span>
+          <span className="text-sm font-bold tabular-nums">{companyBreakdown.meetingRoomOnly}</span>
+        </button>
+        <div className={cn(
+          "overflow-hidden transition-all duration-200",
+          meetingExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+        )}>
+          <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+            <CompanyNamesList names={companyBreakdown.meetingRoomOnlyNames} />
+          </div>
+        </div>
+      </div>
+      <div className="mt-4 pt-3 border-t border-border">
+        <DetailRow label="Total" value={companiesCount} />
+      </div>
+    </KpiCard>
+  )
+}
+
 // === Weekly Bookings KPI with expandable lists ===
 
 function BookingsList({ bookings }: { bookings: BookingDetail[] }) {
@@ -218,7 +329,7 @@ function BookingsKpiCard({
         <button
           type="button"
           onClick={() => setMeetingExpanded(!meetingExpanded)}
-          className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
+          className="flex items-center justify-between py-2.5 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
         >
           <span className="text-sm text-muted-foreground flex items-center gap-1.5">
             Salles de réunion
@@ -346,22 +457,10 @@ export function KpiGrid({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {/* Entreprises */}
-      <KpiCard
-        title="Entreprises"
-        value={companiesCount}
-        icon={Briefcase}
-        dialogTitle="Répartition des entreprises"
-      >
-        <div className="space-y-0">
-          <DetailRow label="Indépendants" value={companyBreakdown.selfEmployed} />
-          <DetailRow label="Multi-employés" value={companyBreakdown.multiEmployee} />
-          <DetailRow label="Salles de réunion uniquement" value={companyBreakdown.meetingRoomOnly} />
-        </div>
-        <div className="mt-4 pt-3 border-t border-border">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-1">Total</p>
-          <p className="font-header text-2xl">{companiesCount}</p>
-        </div>
-      </KpiCard>
+      <CompaniesKpiCard
+        companiesCount={companiesCount}
+        companyBreakdown={companyBreakdown}
+      />
 
       {/* Réservations */}
       <BookingsKpiCard
