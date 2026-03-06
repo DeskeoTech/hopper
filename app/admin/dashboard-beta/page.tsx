@@ -193,7 +193,7 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
       .gte("created_at", prevPeriodStart.toISOString())
       .lte("created_at", prevPeriodEnd.toISOString()),
     // --- Detail queries ---
-    supabase.from("companies").select("company_type, meeting_room_only"),
+    supabase.from("companies").select("name, company_type, meeting_room_only"),
     // Bookings in period with resource type
     supabase
       .from("bookings")
@@ -374,10 +374,16 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
 
   // Company breakdown
   const allCompanies = companiesByTypeResult.data || []
+  const selfEmployedCompanies = allCompanies.filter((c) => c.company_type === "self_employed")
+  const multiEmployeeCompanies = allCompanies.filter((c) => c.company_type === "multi_employee")
+  const meetingRoomOnlyCompanies = allCompanies.filter((c) => c.meeting_room_only === true)
   const companyBreakdown = {
-    selfEmployed: allCompanies.filter((c) => c.company_type === "self_employed").length,
-    multiEmployee: allCompanies.filter((c) => c.company_type === "multi_employee").length,
-    meetingRoomOnly: allCompanies.filter((c) => c.meeting_room_only === true).length,
+    selfEmployed: selfEmployedCompanies.length,
+    multiEmployee: multiEmployeeCompanies.length,
+    meetingRoomOnly: meetingRoomOnlyCompanies.length,
+    selfEmployedNames: selfEmployedCompanies.map((c) => c.name || "—").sort(),
+    multiEmployeeNames: multiEmployeeCompanies.map((c) => c.name || "—").sort(),
+    meetingRoomOnlyNames: meetingRoomOnlyCompanies.map((c) => c.name || "—").sort(),
   }
 
   // Bookings by type
