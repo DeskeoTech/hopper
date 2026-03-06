@@ -16,6 +16,7 @@ const pageTitles: Record<string, string> = {
   "/admin/clients": "Clients",
   "/admin/tickets": "Tickets",
   "/admin/compte": "Mon Compte",
+  "/admin/dashboard-beta": "Dashboard Beta",
 }
 
 interface AdminHeaderProps {

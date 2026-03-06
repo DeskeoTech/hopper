@@ -32,6 +32,31 @@ function getStripe() {
   })
 }
 
+// Returns all configured Stripe clients (primary + fallback)
+function getStripeClients(): Stripe[] {
+  const clients: Stripe[] = []
+  const key1 = process.env.STRIPE_SECRET_KEY
+  const key2 = process.env.STRIPE_SECRET_KEY_2
+  if (key1) clients.push(new Stripe(key1, { apiVersion: "2024-12-18.acacia" }))
+  if (key2) clients.push(new Stripe(key2, { apiVersion: "2024-12-18.acacia" }))
+  if (clients.length === 0) throw new Error("Configuration Stripe manquante")
+  return clients
+}
+
+// Try an operation on the primary Stripe account, fallback to second if it fails
+async function withStripeFallback<T>(fn: (stripe: Stripe) => Promise<T>): Promise<T> {
+  const clients = getStripeClients()
+  let lastError: unknown
+  for (const stripe of clients) {
+    try {
+      return await fn(stripe)
+    } catch (error) {
+      lastError = error
+    }
+  }
+  throw lastError
+}
+
 async function getOrCreateMonthlyPrice(
   stripe: Stripe,
   productId: string,
@@ -405,14 +430,16 @@ export async function getCompanyPaymentStatus(stripeCustomerId: string): Promise
   status: CompanyPaymentStatus
 } | { error: string }> {
   try {
-    const stripe = getStripe()
-    const charges = await stripe.charges.list({
-      customer: stripeCustomerId,
-      limit: 20,
+    return await withStripeFallback(async (stripe) => {
+      const charges = await stripe.charges.list({
+        customer: stripeCustomerId,
+        limit: 1,
+      })
+      // Only check the most recent charge (not all historical charges)
+      const latestCharge = charges.data[0]
+      if (!latestCharge) return { status: "none" as CompanyPaymentStatus }
+      return { status: (latestCharge.status === "failed" ? "failed" : "ok") as CompanyPaymentStatus }
     })
-
-    const hasFailed = charges.data.some((c) => c.status === "failed")
-    return { status: hasFailed ? "failed" : "ok" }
   } catch (error) {
     console.error("Stripe company payment status error:", error)
     return { error: "Erreur lors de la récupération du statut de paiement" }
@@ -423,18 +450,21 @@ export async function getCompanyPaymentStatuses(customerIds: string[]): Promise<
   statuses: Record<string, CompanyPaymentStatus>
 } | { error: string }> {
   try {
-    const stripe = getStripe()
     const results: Record<string, CompanyPaymentStatus> = {}
 
     await Promise.all(
       customerIds.map(async (id) => {
         try {
-          const charges = await stripe.charges.list({
-            customer: id,
-            limit: 20,
+          const result = await withStripeFallback(async (stripe) => {
+            const charges = await stripe.charges.list({
+              customer: id,
+              limit: 1,
+            })
+            const latestCharge = charges.data[0]
+            if (!latestCharge) return "none"
+            return latestCharge.status === "failed" ? "failed" : "ok"
           })
-          const hasFailed = charges.data.some((c) => c.status === "failed")
-          results[id] = hasFailed ? "failed" : "ok"
+          results[id] = result as CompanyPaymentStatus
         } catch {
           results[id] = "ok"
         }
@@ -484,14 +514,16 @@ export async function getSubscriptionStatuses(subscriptionIds: string[]): Promis
   statuses: Record<string, StripeSubscriptionStatus>
 } | { error: string }> {
   try {
-    const stripe = getStripe()
     const results: Record<string, StripeSubscriptionStatus> = {}
 
     await Promise.all(
       subscriptionIds.map(async (id) => {
         try {
-          const subscription = await stripe.subscriptions.retrieve(id)
-          results[id] = subscription.status as StripeSubscriptionStatus
+          const status = await withStripeFallback(async (stripe) => {
+            const subscription = await stripe.subscriptions.retrieve(id)
+            return subscription.status as StripeSubscriptionStatus
+          })
+          results[id] = status
         } catch {
           results[id] = "unknown"
         }
@@ -639,58 +671,58 @@ export async function getCustomerPayments(stripeCustomerId: string): Promise<{
   payments: StripePaymentData[]
 } | { error: string }> {
   try {
-    const stripe = getStripe()
+    return await withStripeFallback(async (stripe) => {
+      // Fetch both invoices and charges in parallel
+      const [invoices, charges] = await Promise.all([
+        stripe.invoices.list({
+          customer: stripeCustomerId,
+          limit: 100,
+        }),
+        stripe.charges.list({
+          customer: stripeCustomerId,
+          limit: 100,
+        }),
+      ])
 
-    // Fetch both invoices and charges in parallel
-    const [invoices, charges] = await Promise.all([
-      stripe.invoices.list({
-        customer: stripeCustomerId,
-        limit: 100,
-      }),
-      stripe.charges.list({
-        customer: stripeCustomerId,
-        limit: 100,
-      }),
-    ])
-
-    // Map invoices
-    const invoicePayments: StripePaymentData[] = invoices.data.map((inv) => ({
-      id: inv.id,
-      amount: inv.amount_paid || inv.total,
-      currency: inv.currency,
-      status: inv.status || "unknown",
-      created: inv.created,
-      description: inv.lines.data[0]?.description || "Facture",
-      hosted_invoice_url: inv.hosted_invoice_url,
-      invoice_pdf: inv.invoice_pdf,
-    }))
-
-    // Get invoice IDs to avoid duplicating charges that are linked to invoices
-    const invoiceIds = new Set(invoices.data.map((inv) => inv.id))
-
-    // Map charges that are NOT linked to an invoice (one-time payments)
-    const chargePayments: StripePaymentData[] = charges.data
-      .filter((c) => {
-        const invId = typeof c.invoice === "string" ? c.invoice : c.invoice?.id
-        return !invId || !invoiceIds.has(invId)
-      })
-      .map((c) => ({
-        id: c.id,
-        amount: c.amount,
-        currency: c.currency,
-        status: c.status,
-        created: c.created,
-        description: c.description || "Paiement",
-        hosted_invoice_url: c.receipt_url,
-        invoice_pdf: null,
+      // Map invoices
+      const invoicePayments: StripePaymentData[] = invoices.data.map((inv) => ({
+        id: inv.id,
+        amount: inv.amount_paid || inv.total,
+        currency: inv.currency,
+        status: inv.status || "unknown",
+        created: inv.created,
+        description: inv.lines.data[0]?.description || "Facture",
+        hosted_invoice_url: inv.hosted_invoice_url,
+        invoice_pdf: inv.invoice_pdf,
       }))
 
-    // Merge and sort by date (most recent first)
-    const payments = [...invoicePayments, ...chargePayments].sort(
-      (a, b) => b.created - a.created
-    )
+      // Get invoice IDs to avoid duplicating charges that are linked to invoices
+      const invoiceIds = new Set(invoices.data.map((inv) => inv.id))
 
-    return { payments }
+      // Map charges that are NOT linked to an invoice (one-time payments)
+      const chargePayments: StripePaymentData[] = charges.data
+        .filter((c) => {
+          const invId = typeof c.invoice === "string" ? c.invoice : c.invoice?.id
+          return !invId || !invoiceIds.has(invId)
+        })
+        .map((c) => ({
+          id: c.id,
+          amount: c.amount,
+          currency: c.currency,
+          status: c.status,
+          created: c.created,
+          description: c.description || "Paiement",
+          hosted_invoice_url: c.receipt_url,
+          invoice_pdf: null,
+        }))
+
+      // Merge and sort by date (most recent first)
+      const payments = [...invoicePayments, ...chargePayments].sort(
+        (a, b) => b.created - a.created
+      )
+
+      return { payments }
+    })
   } catch (error) {
     const errMsg = error instanceof Error ? error.message : String(error)
     console.error("Stripe customer payments error:", errMsg, error)
