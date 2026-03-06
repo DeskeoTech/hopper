@@ -31,10 +31,16 @@ export default async function DashboardBetaPage({ searchParams }: DashboardBetaP
 
   let overviewContent = null
   let salesContent = null
+  let marketingContent = null
+  let reportsContent = null
   if (activeTab === "overview") {
     overviewContent = await loadOverviewData(now, period, periodMode)
   } else if (activeTab === "sales") {
     salesContent = await loadSalesData(now, period, periodMode)
+  } else if (activeTab === "marketing") {
+    marketingContent = await loadMarketingData(now, period, periodMode)
+  } else if (activeTab === "reports") {
+    reportsContent = await loadReportsData(now)
   }
 
   const tabs = [
@@ -51,12 +57,12 @@ export default async function DashboardBetaPage({ searchParams }: DashboardBetaP
     {
       value: "marketing",
       label: "Marketing",
-      content: <MarketingTab />,
+      content: marketingContent ?? <div />,
     },
     {
       value: "reports",
       label: "Rapports",
-      content: <ReportsTab />,
+      content: reportsContent ?? <div />,
     },
   ]
 
@@ -878,6 +884,424 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       period={period}
       periodMode={periodMode}
       bookings={{ total: totalBookingCount, bySite: bookingsBySite }}
+    />
+  )
+}
+
+function getDateGrouping(period: string): "hour" | "day" | "week" | "month" {
+  switch (period) {
+    case "today": return "hour"
+    case "week": return "day"
+    case "month": return "day"
+    case "3months": return "week"
+    case "year": return "month"
+    case "3years": return "month"
+    case "all": return "month"
+    default: return "day"
+  }
+}
+
+function groupByDate(items: { date: string; source: string }[], grouping: "hour" | "day" | "week" | "month") {
+  const map = new Map<string, { spacebring: number; direct: number; me: number }>()
+  for (const item of items) {
+    const d = new Date(item.date)
+    let key: string
+    switch (grouping) {
+      case "hour":
+        key = `${d.getHours()}h`
+        break
+      case "day":
+        key = format(d, "dd/MM", { locale: fr })
+        break
+      case "week": {
+        const weekStart = startOfWeek(d, { weekStartsOn: 1 })
+        key = format(weekStart, "dd/MM", { locale: fr })
+        break
+      }
+      case "month":
+        key = format(d, "MMM yy", { locale: fr })
+        break
+    }
+    const existing = map.get(key) || { spacebring: 0, direct: 0, me: 0 }
+    if (item.source === "Spacebring") existing.spacebring++
+    else if (item.source === "M&E") existing.me++
+    else existing.direct++
+    map.set(key, existing)
+  }
+  return Array.from(map.entries()).map(([label, counts]) => ({
+    label,
+    spacebring: counts.spacebring,
+    direct: counts.direct,
+    me: counts.me,
+  }))
+}
+
+async function loadMarketingData(now: Date, period: string, periodMode: string = "calendar") {
+  const supabase = await createClient()
+  const { start: periodStart, end: periodEnd } = getSalesPeriodRange(now, period, periodMode)
+
+  const createdGte = Math.floor(periodStart.getTime() / 1000)
+  const createdLte = Math.floor(periodEnd.getTime() / 1000)
+
+  const [
+    newCompaniesResult,
+    allCompaniesResult,
+    bookingsResult,
+    sitesResult,
+    coworkingCharges,
+    collectionsCharges,
+  ] = await Promise.all([
+    // 1. New companies in period
+    supabase
+      .from("companies")
+      .select("id, name, created_at, company_type, from_spacebring, onboarding_done, meeting_room_only, customer_id_stripe, main_site_id")
+      .gte("created_at", periodStart.toISOString())
+      .lte("created_at", periodEnd.toISOString()),
+    // 2. All companies
+    supabase
+      .from("companies")
+      .select("id, name, company_type, from_spacebring, onboarding_done, meeting_room_only, created_at, customer_id_stripe, main_site_id"),
+    // 3. Bookings in period with user → company + resource → site
+    supabase
+      .from("bookings")
+      .select(`id, created_at, start_date, status, seats_count, referral,
+        user:users!left(id, first_name, last_name, email, company_id, company:companies!left(id, name, from_spacebring)),
+        resource:resources!inner(id, type, site_id, site:sites!inner(id, name))`)
+      .gte("start_date", periodStart.toISOString())
+      .lte("start_date", periodEnd.toISOString()),
+    // 4. Sites for filter
+    supabase.from("sites").select("id, name").eq("status", "open"),
+    // 5. Stripe charges
+    fetchStripeChargesCached("coworking", createdGte, createdLte),
+    fetchStripeChargesCached("collections", createdGte, createdLte),
+  ])
+
+  const newCompanies = newCompaniesResult.data || []
+  const allCompanies = allCompaniesResult.data || []
+  const bookings = bookingsResult.data || []
+  const sites = (sitesResult.data || []).map((s) => ({ value: s.id, label: s.name })).sort((a, b) => a.label.localeCompare(b.label))
+
+  // KPIs
+  const newCompaniesCount = newCompanies.length
+  const spacebringCount = newCompanies.filter((c) => c.from_spacebring).length
+  const directCount = newCompaniesCount - spacebringCount
+  const onboardedCount = allCompanies.filter((c) => c.onboarding_done).length
+  const onboardingRate = allCompanies.length > 0 ? Math.round((onboardedCount / allCompanies.length) * 100) : 0
+
+  // Signups over time chart data (by source)
+  const dateGrouping = getDateGrouping(period)
+  const signupItems = newCompanies.map((c) => ({
+    date: c.created_at,
+    source: c.from_spacebring ? "Spacebring" : "Direct",
+  }))
+  const signupsOverTime = groupByDate(signupItems, dateGrouping)
+
+  // Signups over time by site
+  const siteNameMap = new Map<string, string>()
+  ;(sitesResult.data || []).forEach((s) => siteNameMap.set(s.id, s.name))
+
+  // Collect all site names used by new companies
+  const siteNamesInSignups = new Set<string>()
+  newCompanies.forEach((c) => {
+    if (c.main_site_id) {
+      const name = siteNameMap.get(c.main_site_id)
+      if (name) siteNamesInSignups.add(name)
+    }
+  })
+  const signupSiteNames = Array.from(siteNamesInSignups).sort()
+
+  // Group by date and site
+  const signupsBySiteMap = new Map<string, Map<string, number>>()
+  for (const c of newCompanies) {
+    const d = new Date(c.created_at)
+    let key: string
+    switch (dateGrouping) {
+      case "hour": key = `${d.getHours()}h`; break
+      case "day": key = format(d, "dd/MM", { locale: fr }); break
+      case "week": key = format(startOfWeek(d, { weekStartsOn: 1 }), "dd/MM", { locale: fr }); break
+      case "month": key = format(d, "MMM yy", { locale: fr }); break
+    }
+    const siteName = c.main_site_id ? (siteNameMap.get(c.main_site_id) || "Autre") : "Autre"
+    const existing = signupsBySiteMap.get(key) || new Map<string, number>()
+    existing.set(siteName, (existing.get(siteName) || 0) + 1)
+    signupsBySiteMap.set(key, existing)
+  }
+
+  const signupsBySite = Array.from(signupsBySiteMap.entries()).map(([label, siteCounts]) => {
+    const entry: Record<string, string | number> = { label }
+    for (const name of signupSiteNames) {
+      entry[name] = siteCounts.get(name) || 0
+    }
+    if (!signupSiteNames.includes("Autre") && siteCounts.has("Autre")) {
+      entry["Autre"] = siteCounts.get("Autre") || 0
+    }
+    return entry
+  })
+
+  // Segmentation pie
+  const segmentation = {
+    selfEmployed: allCompanies.filter((c) => c.company_type === "self_employed" && !c.meeting_room_only).length,
+    multiEmployee: allCompanies.filter((c) => c.company_type === "multi_employee" && !c.meeting_room_only).length,
+    meetingRoomOnly: allCompanies.filter((c) => c.meeting_room_only).length,
+  }
+
+  // Stripe revenue by company
+  const allCharges = [...coworkingCharges, ...collectionsCharges]
+  const stripeCustomerToCompanyId = new Map<string, string>()
+  allCompanies.forEach((c) => {
+    if (c.customer_id_stripe) stripeCustomerToCompanyId.set(c.customer_id_stripe, c.id)
+  })
+
+  const revenueByCompany = new Map<string, number>()
+  for (const charge of allCharges) {
+    if (charge.status !== "succeeded" || !charge.customer) continue
+    const companyId = stripeCustomerToCompanyId.get(charge.customer)
+    if (companyId) {
+      revenueByCompany.set(companyId, (revenueByCompany.get(companyId) || 0) + charge.amount / 100)
+    }
+  }
+
+  // Booking counts by company
+  const bookingCountByCompany = new Map<string, number>()
+  for (const b of bookings) {
+    if (b.status !== "confirmed") continue
+    const user = b.user as { company_id: string | null } | null
+    if (user?.company_id) {
+      bookingCountByCompany.set(user.company_id, (bookingCountByCompany.get(user.company_id) || 0) + 1)
+    }
+  }
+
+  // Source logic for bookings
+  type BookingSource = "Spacebring" | "Direct" | "M&E"
+  function getBookingSource(booking: { referral: string | null; user: unknown }): BookingSource {
+    if (booking.referral === "M&E") return "M&E"
+    const user = booking.user as { company: { from_spacebring: boolean | null } | null } | null
+    if (user?.company?.from_spacebring) return "Spacebring"
+    return "Direct"
+  }
+
+  // Map bookings for table
+  const bookingsTable = bookings.map((b) => {
+    const user = b.user as { id: string; first_name: string | null; last_name: string | null; email: string | null; company_id: string | null; company: { id: string; name: string; from_spacebring: boolean | null } | null } | null
+    const resource = b.resource as { id: string; type: string; site_id: string; site: { id: string; name: string } } | null
+    return {
+      id: b.id,
+      date: b.start_date,
+      clientName: user ? `${user.first_name || ""} ${user.last_name || ""}`.trim() || "—" : "—",
+      clientEmail: user?.email || null,
+      companyName: user?.company?.name || "—",
+      siteName: resource?.site?.name || "—",
+      siteId: resource?.site_id || "",
+      resourceType: resource?.type || "—",
+      source: getBookingSource(b) as string,
+      status: b.status as string,
+      seatsCount: b.seats_count || 1,
+    }
+  })
+
+  // Map companies for table
+  const companiesTable = allCompanies.map((c) => ({
+    id: c.id,
+    name: c.name,
+    createdAt: c.created_at,
+    companyType: c.company_type || "—",
+    source: (c.from_spacebring ? "Spacebring" : "Direct") as string,
+    meetingRoomOnly: c.meeting_room_only || false,
+    onboardingDone: c.onboarding_done || false,
+    bookingsCount: bookingCountByCompany.get(c.id) || 0,
+    revenue: revenueByCompany.get(c.id) || 0,
+  }))
+
+  return (
+    <MarketingTab
+      kpis={{
+        newCompaniesCount,
+        spacebringCount,
+        directCount,
+        onboardingRate,
+      }}
+      signupsOverTime={signupsOverTime}
+      signupsBySite={signupsBySite}
+      signupSiteNames={signupSiteNames}
+      segmentation={segmentation}
+      bookings={bookingsTable}
+      companies={companiesTable}
+      sites={sites}
+      period={period}
+      periodMode={periodMode}
+    />
+  )
+}
+
+async function loadReportsData(now: Date) {
+  const supabase = await createClient()
+  const twelveMonthsAgo = subMonths(now, 12)
+  const createdGte = Math.floor(twelveMonthsAgo.getTime() / 1000)
+  const createdLte = Math.floor(now.getTime() / 1000)
+
+  const [
+    usersResult,
+    companiesResult,
+    bookingsResult,
+    sitesResult,
+    coworkingCharges,
+    collectionsCharges,
+  ] = await Promise.all([
+    // 1. All users with company + site
+    supabase.from("users").select(`id, first_name, last_name, email, phone, role, status,
+      created_at, cgu_accepted_at,
+      company:companies!left(id, name, company_type, from_spacebring, meeting_room_only),
+      site:sites!left(id, name)`),
+    // 2. All companies with main site
+    supabase.from("companies").select(`id, name, company_type, from_spacebring, onboarding_done,
+      meeting_room_only, created_at, customer_id_stripe, main_site_id,
+      spacebring_plan_name, spacebring_monthly_price, spacebring_monthly_credits, spacebring_seats,
+      site:sites!left(id, name)`),
+    // 3. Bookings last 12 months
+    supabase.from("bookings").select(`id, user_id, start_date, status, seats_count,
+      user:users!left(company_id),
+      resource:resources!inner(type)`)
+      .gte("start_date", twelveMonthsAgo.toISOString())
+      .lte("start_date", now.toISOString()),
+    // 4. Sites for filters
+    supabase.from("sites").select("id, name").eq("status", "open"),
+    // 5. Stripe charges 12 months
+    fetchStripeChargesCached("coworking", createdGte, createdLte),
+    fetchStripeChargesCached("collections", createdGte, createdLte),
+  ])
+
+  const allUsers = usersResult.data || []
+  const allCompanies = companiesResult.data || []
+  const allBookings = bookingsResult.data || []
+  const sites = (sitesResult.data || []).map((s) => ({ value: s.id, label: s.name })).sort((a, b) => a.label.localeCompare(b.label))
+  const allCharges = [...coworkingCharges, ...collectionsCharges]
+
+  // Revenue by company via Stripe customer mapping
+  const stripeCustomerToCompanyId = new Map<string, string>()
+  allCompanies.forEach((c) => {
+    if (c.customer_id_stripe) stripeCustomerToCompanyId.set(c.customer_id_stripe, c.id)
+  })
+
+  const revenueByCompany = new Map<string, number>()
+  for (const charge of allCharges) {
+    if (charge.status !== "succeeded" || !charge.customer) continue
+    const companyId = stripeCustomerToCompanyId.get(charge.customer)
+    if (companyId) {
+      revenueByCompany.set(companyId, (revenueByCompany.get(companyId) || 0) + charge.amount / 100)
+    }
+  }
+
+  // Booking counts by company
+  const bookingCountByCompany = new Map<string, number>()
+  for (const b of allBookings) {
+    if (b.status !== "confirmed") continue
+    const user = b.user as { company_id: string | null } | null
+    if (user?.company_id) {
+      bookingCountByCompany.set(user.company_id, (bookingCountByCompany.get(user.company_id) || 0) + 1)
+    }
+  }
+
+  // Map users for table
+  const usersTable = allUsers.map((u) => {
+    const company = u.company as { id: string; name: string; company_type: string | null; from_spacebring: boolean | null; meeting_room_only: boolean | null } | null
+    const site = u.site as { id: string; name: string } | null
+    return {
+      id: u.id,
+      firstName: u.first_name || "",
+      lastName: u.last_name || "",
+      email: u.email || "",
+      phone: u.phone || "",
+      role: u.role || "user",
+      status: u.status || "active",
+      companyName: company?.name || "—",
+      companyType: company?.company_type || "—",
+      siteName: site?.name || "—",
+      siteId: site?.id || "",
+      createdAt: u.created_at || "",
+      hasCgu: !!u.cgu_accepted_at,
+    }
+  })
+
+  // Map companies for table
+  const companiesTable = allCompanies.map((c) => {
+    const site = c.site as { id: string; name: string } | null
+    return {
+      id: c.id,
+      name: c.name || "—",
+      companyType: c.company_type || "—",
+      source: c.from_spacebring ? "Spacebring" : "Direct",
+      meetingRoomOnly: c.meeting_room_only || false,
+      onboardingDone: c.onboarding_done || false,
+      siteName: site?.name || "—",
+      siteId: site?.id || "",
+      planName: c.spacebring_plan_name || "—",
+      monthlyPrice: c.spacebring_monthly_price || null,
+      monthlyCredits: c.spacebring_monthly_credits || null,
+      seats: c.spacebring_seats || null,
+      bookingsCount: bookingCountByCompany.get(c.id) || 0,
+      revenue: revenueByCompany.get(c.id) || 0,
+      createdAt: c.created_at || "",
+    }
+  })
+
+  // Monthly recap (12 months)
+  const bookingsByMonth = new Map<string, { confirmed: number; cancelled: number; meetingRoom: number; flexDesk: number }>()
+  for (const b of allBookings) {
+    const monthKey = format(new Date(b.start_date), "yyyy-MM")
+    const entry = bookingsByMonth.get(monthKey) || { confirmed: 0, cancelled: 0, meetingRoom: 0, flexDesk: 0 }
+    if (b.status === "confirmed") {
+      entry.confirmed++
+      const resourceType = (b.resource as { type: string } | null)?.type
+      if (resourceType === "meeting_room") entry.meetingRoom++
+      else if (resourceType === "flex_desk" || resourceType === "bench") entry.flexDesk++
+    } else if (b.status === "cancelled") {
+      entry.cancelled++
+    }
+    bookingsByMonth.set(monthKey, entry)
+  }
+
+  const newCompaniesByMonth = new Map<string, number>()
+  for (const c of allCompanies) {
+    if (!c.created_at) continue
+    const monthKey = format(new Date(c.created_at), "yyyy-MM")
+    if (monthKey >= format(twelveMonthsAgo, "yyyy-MM")) {
+      newCompaniesByMonth.set(monthKey, (newCompaniesByMonth.get(monthKey) || 0) + 1)
+    }
+  }
+
+  const revenueByMonth = new Map<string, number>()
+  for (const charge of allCharges) {
+    if (charge.status !== "succeeded") continue
+    const monthKey = format(new Date(charge.created * 1000), "yyyy-MM")
+    revenueByMonth.set(monthKey, (revenueByMonth.get(monthKey) || 0) + charge.amount / 100)
+  }
+
+  const monthlyRecap = []
+  for (let i = 0; i < 12; i++) {
+    const d = subMonths(now, i)
+    const monthKey = format(d, "yyyy-MM")
+    const monthLabel = format(d, "MMMM yyyy", { locale: fr })
+    const bData = bookingsByMonth.get(monthKey) || { confirmed: 0, cancelled: 0, meetingRoom: 0, flexDesk: 0 }
+    const total = bData.confirmed + bData.cancelled
+    monthlyRecap.push({
+      month: monthLabel,
+      monthKey,
+      newCompanies: newCompaniesByMonth.get(monthKey) || 0,
+      confirmedBookings: bData.confirmed,
+      cancelledBookings: bData.cancelled,
+      cancellationRate: total > 0 ? Math.round((bData.cancelled / total) * 100) : 0,
+      meetingRoomBookings: bData.meetingRoom,
+      flexDeskBookings: bData.flexDesk,
+      revenue: revenueByMonth.get(monthKey) || 0,
+    })
+  }
+
+  return (
+    <ReportsTab
+      users={usersTable}
+      companies={companiesTable}
+      monthlyRecap={monthlyRecap}
+      sites={sites}
     />
   )
 }
