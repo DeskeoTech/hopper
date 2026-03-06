@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 import type { ResourceType, FloorLevel, ResourceEquipment, ResourcePhoto } from "@/lib/types/database"
 
 interface ResourceData {
@@ -60,45 +61,43 @@ export async function updateResource(resourceId: string, siteId: string, data: R
   return { success: true }
 }
 
-export async function uploadResourcePhoto(resourceId: string, siteId: string, formData: FormData) {
-  const supabase = await createClient()
-  const file = formData.get("file") as File
+export async function createResourcePhotoUploadUrl(resourceId: string, fileName: string) {
+  const supabase = createAdminClient()
 
-  if (!file) {
-    return { error: "Aucun fichier fourni" }
-  }
+  const fileExt = fileName.split(".").pop()
+  const storagePath = `${resourceId}/${Date.now()}.${fileExt}`
 
-  const fileExt = file.name.split(".").pop()
-  const fileName = `${resourceId}/${Date.now()}.${fileExt}`
-
-  const { error: uploadError } = await supabase.storage
+  const { data, error } = await supabase.storage
     .from("resource-photos")
-    .upload(fileName, file)
+    .createSignedUploadUrl(storagePath)
 
-  if (uploadError) {
-    return { error: uploadError.message }
+  if (error) {
+    return { error: error.message }
   }
 
-  const { data: existingPhotos } = await supabase
-    .from("resource_photos")
-    .select("display_order")
-    .eq("resource_id", resourceId)
-    .order("display_order", { ascending: false })
-    .limit(1)
+  return { signedUrl: data.signedUrl, token: data.token, path: storagePath }
+}
 
-  const nextOrder = existingPhotos && existingPhotos.length > 0
-    ? (existingPhotos[0].display_order || 0) + 1
-    : 0
+export async function confirmResourcePhoto(
+  resourceId: string,
+  siteId: string,
+  storagePath: string,
+  filename: string,
+  mimeType: string | null,
+  sizeBytes: number | null
+) {
+  const supabase = createAdminClient()
 
   const { error: dbError } = await supabase.from("resource_photos").insert({
     resource_id: resourceId,
-    storage_path: fileName,
-    filename: file.name,
-    display_order: nextOrder,
+    storage_path: storagePath,
+    filename,
+    mime_type: mimeType,
+    size_bytes: sizeBytes,
   })
 
   if (dbError) {
-    await supabase.storage.from("resource-photos").remove([fileName])
+    await supabase.storage.from("resource-photos").remove([storagePath])
     return { error: dbError.message }
   }
 
@@ -107,7 +106,7 @@ export async function uploadResourcePhoto(resourceId: string, siteId: string, fo
 }
 
 export async function deleteResourcePhoto(resourceId: string, siteId: string, photoId: string, storagePath: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
 
   const { error: storageError } = await supabase.storage
     .from("resource-photos")

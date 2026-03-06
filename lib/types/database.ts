@@ -96,9 +96,10 @@ export interface MeetingRoomResource {
 export interface SitePhoto {
   id: string
   site_id: string
-  url: string
-  alt: string | null
-  order: number
+  storage_path: string
+  filename: string | null
+  mime_type: string | null
+  size_bytes: number | null
   created_at: string
 }
 
@@ -107,7 +108,8 @@ export interface ResourcePhoto {
   resource_id: string
   storage_path: string
   filename: string | null
-  display_order: number
+  mime_type: string | null
+  size_bytes: number | null
   created_at: string
 }
 
