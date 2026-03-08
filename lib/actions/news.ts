@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getStorageUrl } from "@/lib/utils"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
 interface GetNewsPostsOptions {
@@ -52,8 +53,6 @@ export async function getNewsPosts(
   }
 
   // Build image URLs
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-
   return (data || []).map((post) => {
     const author = post.author as { first_name: string | null; last_name: string | null } | null
     return {
@@ -70,7 +69,7 @@ export async function getNewsPosts(
       updated_at: post.updated_at,
       site_name: (post.sites as { name: string } | null)?.name || null,
       image_url: post.image_storage_path
-        ? `${supabaseUrl}/storage/v1/object/public/news-photos/${post.image_storage_path}`
+        ? getStorageUrl("news-photos", post.image_storage_path)
         : null,
       author_first_name: author?.first_name || null,
       author_last_name: author?.last_name || null,

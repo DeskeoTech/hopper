@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+/** Build a public Supabase storage URL */
+export function getStorageUrl(bucket: string, path: string): string {
+  return `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`
+}
+
 /** Format a fractional hour to "Xh00" or "Xh30" */
 export function formatTime(h: number): string {
   const hours = Math.floor(h)

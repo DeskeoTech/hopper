@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getStorageUrl } from "@/lib/utils"
 import { SiteCard } from "@/components/admin/site-card"
 import { SitesSearch } from "@/components/admin/sites/sites-search"
 import { CreateSiteModal } from "@/components/admin/sites/create-site-modal"
@@ -51,11 +52,10 @@ export default async function SitesPage({ searchParams }: SitesPageProps) {
     : { data: [] }
 
   // Build a map of site_id -> first photo URL
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const siteImageMap: Record<string, string> = {}
   sitePhotos?.forEach((photo) => {
     if (!siteImageMap[photo.site_id]) {
-      siteImageMap[photo.site_id] = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+      siteImageMap[photo.site_id] = getStorageUrl("site-photos", photo.storage_path)
     }
   })
 

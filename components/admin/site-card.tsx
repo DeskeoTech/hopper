@@ -1,5 +1,3 @@
-"use client"
-
 import Link from "next/link"
 import Image from "next/image"
 import { Building2, MapPin, ChevronRight, Star, User } from "lucide-react"

@@ -17,6 +17,7 @@ import { EditClosuresModal } from "@/components/admin/site-edit/edit-closures-mo
 import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import type { TransportationStop, Resource, Equipment } from "@/lib/types/database"
+import { getStorageUrl } from "@/lib/utils"
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -83,10 +84,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   }))
 
   // Build public URLs for photos
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const photoUrls = photos?.map((photo) => ({
     ...photo,
-    url: `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`,
+    url: getStorageUrl("site-photos", photo.storage_path),
   })) || []
 
   // Build resource photos map with public URLs
@@ -97,7 +97,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
       if (!resourcePhotosMap[rid]) resourcePhotosMap[rid] = []
       resourcePhotosMap[rid].push({
         id: rp.id,
-        url: `${supabaseUrl}/storage/v1/object/public/resource-photos/${rp.storage_path}`,
+        url: getStorageUrl("resource-photos", rp.storage_path),
         storage_path: rp.storage_path,
         filename: rp.filename,
       })

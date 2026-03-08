@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { Users, Coins, DoorOpen, ChevronLeft, ChevronRight, X, Tv, Video, PenTool, Layers } from "lucide-react"
 import { cn, formatTime } from "@/lib/utils"
@@ -130,10 +131,12 @@ function RoomCard({ room, onClick, onPhotoClick }: RoomCardProps) {
       {/* Photo */}
       <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-[18px]">
         {room.photoUrls && room.photoUrls.length > 0 ? (
-          <img
+          <Image
             src={room.photoUrls[0]}
             alt={room.name}
-            className="w-full h-full object-cover transition-transform hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform hover:scale-105"
             onClick={handlePhotoClick}
           />
         ) : (
@@ -396,12 +399,14 @@ export function RoomHeaders({ rooms, onPhotoClick }: RoomHeadersProps) {
                   <button
                     type="button"
                     onClick={() => handlePhotoClick(room.photoUrls || [], 0)}
-                    className="mx-auto w-10 h-8 rounded overflow-hidden mb-1"
+                    className="relative mx-auto w-10 h-8 rounded overflow-hidden mb-1"
                   >
-                    <img
+                    <Image
                       src={room.photoUrls[0]}
                       alt={room.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="40px"
+                      className="object-cover"
                     />
                   </button>
                 ) : (
@@ -459,12 +464,14 @@ export function RoomHeaders({ rooms, onPhotoClick }: RoomHeadersProps) {
                 <button
                   type="button"
                   onClick={() => handlePhotoClick(room.photoUrls || [], 0)}
-                  className="mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg overflow-hidden mb-2 group"
+                  className="relative mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg overflow-hidden mb-2 group"
                 >
-                  <img
+                  <Image
                     src={room.photoUrls[0]}
                     alt={room.name}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    fill
+                    sizes="80px"
+                    className="object-cover transition-transform group-hover:scale-105"
                   />
                 </button>
               ) : (

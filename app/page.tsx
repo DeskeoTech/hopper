@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { getStorageUrl } from "@/lib/utils"
 import { ReservationPageClient } from "@/components/public/reservation/reservation-page-client"
 import { getTranslations } from "next-intl/server"
 
@@ -12,7 +13,6 @@ export async function generateMetadata() {
 
 async function getSitesWithPhotos() {
   const supabase = await createClient()
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 
   // Fetch open sites
   const { data: sites, error: sitesError } = await supabase
@@ -60,7 +60,7 @@ async function getSitesWithPhotos() {
 
     // Build full URLs for photos from Supabase storage
     const photoUrls = sitePhotos.map(
-      (p) => `${supabaseUrl}/storage/v1/object/public/site-photos/${p.storage_path}`
+      (p) => getStorageUrl("site-photos", p.storage_path)
     )
 
     return {
