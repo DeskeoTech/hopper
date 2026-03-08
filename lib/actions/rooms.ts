@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { nowInParis } from "@/lib/timezone"
+import { getStorageUrl } from "@/lib/utils"
 import type { MeetingRoomResource } from "@/lib/types/database"
 
 /**
@@ -67,10 +68,9 @@ export async function getCurrentlyAvailableMeetingRooms(
     .order("created_at", { ascending: true })
 
   // Build photo URLs map
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const photosByRoom: Record<string, string[]> = {}
   photos?.forEach((photo) => {
-    const url = `${supabaseUrl}/storage/v1/object/public/resource-photos/${photo.storage_path}`
+    const url = getStorageUrl("resource-photos", photo.storage_path)
     if (!photosByRoom[photo.resource_id]) {
       photosByRoom[photo.resource_id] = [url]
     } else {

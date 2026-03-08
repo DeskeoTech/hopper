@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getStorageUrl } from "@/lib/utils"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientHeader } from "@/components/client/client-header"
 import { ClientFooter } from "@/components/client/client-footer"
@@ -297,10 +298,9 @@ export default async function ClientLayout({
   const mainSiteId = userProfile.companies?.main_site_id || null
 
   // Build site photos map
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const sitePhotosMap: Record<string, string[]> = {}
   sitePhotos?.forEach((photo) => {
-    const url = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+    const url = getStorageUrl("site-photos", photo.storage_path)
     if (!sitePhotosMap[photo.site_id]) {
       sitePhotosMap[photo.site_id] = [url]
     } else {

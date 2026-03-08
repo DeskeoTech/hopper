@@ -351,55 +351,6 @@ export async function createPortalSession(customerId: string): Promise<{ url: st
   }
 }
 
-interface StripeSessionData {
-  id: string
-  amountTotal: number | null
-  currency: string | null
-  status: string | null
-  paymentStatus: string | null
-  mode: string | null
-  created: number
-  customerEmail: string | null
-  customer: string | null
-  metadata: Record<string, string> | null
-}
-
-export async function getTestSessions(): Promise<{ sessions: StripeSessionData[] } | { error: string }> {
-  try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      return { error: "Non autorisé" }
-    }
-
-    const stripe = getStripe()
-
-    const sessions = await stripe.checkout.sessions.list({
-      limit: 50,
-    })
-
-    const testSessions = sessions.data
-      .filter((s) => s.metadata?.source === "test-page")
-      .map((s) => ({
-        id: s.id,
-        amountTotal: s.amount_total,
-        currency: s.currency,
-        status: s.status,
-        paymentStatus: s.payment_status,
-        mode: s.mode,
-        created: s.created,
-        customerEmail: s.customer_details?.email || null,
-        customer: typeof s.customer === "string" ? s.customer : s.customer?.id || null,
-        metadata: s.metadata,
-      }))
-
-    return { sessions: testSessions }
-  } catch (error) {
-    console.error("Stripe sessions list error:", error)
-    return { error: "Erreur lors de la récupération des sessions" }
-  }
-}
-
 export async function getPaymentStatus(sessionId: string): Promise<{
   paymentStatus: "paid" | "unpaid" | "no_payment_required" | null
   sessionStatus: "open" | "complete" | "expired" | null

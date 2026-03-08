@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import Image from "next/image"
 import { Loader2, Users, ImageIcon, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
@@ -21,10 +22,12 @@ function RoomCard({ room, onClick }: RoomCardProps) {
       {/* Image with badges */}
       <div className="relative aspect-[4/3] bg-muted overflow-hidden">
         {hasPhoto ? (
-          <img
+          <Image
             src={room.photoUrls![0]}
             alt={room.name}
-            className="h-full w-full object-cover"
+            fill
+            sizes="(max-width: 768px) 220px, 33vw"
+            className="object-cover"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
