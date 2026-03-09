@@ -20,6 +20,7 @@ import {
   X,
   Globe,
   Search,
+  UserMinus,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -36,6 +37,7 @@ import {
   getCompanyUsers,
   getCompanySeatsInfo,
   createUserByAdmin,
+  removeUserFromCompany,
 } from "@/lib/actions/users"
 import { assignUserToContract, toggleOffPlatformLink } from "@/lib/actions/user-contracts"
 import { ContractDetailModal } from "./contract-detail-modal"
@@ -112,6 +114,10 @@ export function EntreprisePage({
 
   // User search state
   const [userSearch, setUserSearch] = useState("")
+
+  // Remove user confirmation state
+  const [removeUserConfirmOpen, setRemoveUserConfirmOpen] = useState(false)
+  const [removingUser, setRemovingUser] = useState(false)
 
   // Contract detail modal state
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
@@ -243,6 +249,41 @@ export function EntreprisePage({
     }
 
     setAddingUser(false)
+  }
+
+  const handleRemoveUser = async () => {
+    if (!selectedUser || !company.id) return
+    setRemovingUser(true)
+    setError(null)
+
+    const result = await removeUserFromCompany(selectedUser.id, company.id)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      // Remove user from local state
+      setUsers((prev) => prev.filter((u) => u.id !== selectedUser.id))
+
+      // Update contract seat counts if user had a contract
+      if (selectedUser.contract_id) {
+        setContracts((prev) =>
+          prev.map((c) =>
+            c.id === selectedUser.contract_id
+              ? { ...c, assigned_seats: Math.max(0, c.assigned_seats - 1) }
+              : c
+          )
+        )
+      }
+
+      // Update off-platform count if user was linked
+      if (selectedUser.off_platform_linked) {
+        setOffPlatformCount((prev) => Math.max(0, prev - 1))
+      }
+
+      setSelectedUser(null)
+    }
+
+    setRemovingUser(false)
+    setRemoveUserConfirmOpen(false)
   }
 
   const progressValue = totalSeats > 0 ? (activeUsers / totalSeats) * 100 : 0
@@ -806,6 +847,21 @@ export function EntreprisePage({
                   )}
                 </div>
 
+                {/* Remove from company */}
+                {selectedUser.id !== currentUserId && (
+                  <div className="border-t border-foreground/10 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setRemoveUserConfirmOpen(true)}
+                      disabled={isUpdating}
+                      className="flex w-full items-center justify-center gap-2 rounded-full border border-red-200 px-4 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:opacity-50"
+                    >
+                      <UserMinus className="h-4 w-4" />
+                      {t("removeUser.button")}
+                    </button>
+                  </div>
+                )}
+
                 <DialogFooter>
                   <button
                     type="button"
@@ -818,6 +874,43 @@ export function EntreprisePage({
               </>
             )
           })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Remove User Confirmation Dialog */}
+      <Dialog open={removeUserConfirmOpen} onOpenChange={setRemoveUserConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("removeUser.title")}</DialogTitle>
+            <DialogDescription>
+              {selectedUser && t("removeUser.description", { name: getUserName(selectedUser) })}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={() => setRemoveUserConfirmOpen(false)}
+              disabled={removingUser}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10 disabled:opacity-50"
+            >
+              {tc("cancel")}
+            </button>
+            <button
+              type="button"
+              onClick={handleRemoveUser}
+              disabled={removingUser}
+              className="flex items-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+            >
+              {removingUser ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t("removeUser.removing")}
+                </>
+              ) : (
+                t("removeUser.confirm")
+              )}
+            </button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -388,6 +388,61 @@ export async function deleteUser(
   return { success: true, error: null }
 }
 
+export async function removeUserFromCompany(
+  userId: string,
+  companyId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase, currentUser } = auth
+
+  // Prevent admin from removing themselves
+  if (currentUser.id === userId) {
+    return { success: false, error: "Vous ne pouvez pas vous retirer vous-même de l'entreprise" }
+  }
+
+  // Verify the user belongs to this company
+  const { data: targetUser } = await supabase
+    .from("users")
+    .select("id, company_id")
+    .eq("id", userId)
+    .eq("company_id", companyId)
+    .single()
+
+  if (!targetUser) {
+    return { success: false, error: "Utilisateur introuvable dans cette entreprise" }
+  }
+
+  // Remove contract assignment if any
+  await supabase
+    .from("user_contracts")
+    .delete()
+    .eq("user_id", userId)
+
+  // Remove company association (set company_id to null, role to user)
+  const { error } = await supabase
+    .from("users")
+    .update({
+      company_id: null,
+      role: "user",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/compte")
+  revalidatePath("/mon-compte")
+  revalidatePath("/entreprise")
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true, error: null }
+}
+
 export async function createUserByAdmin(
   companyId: string,
   data: {
