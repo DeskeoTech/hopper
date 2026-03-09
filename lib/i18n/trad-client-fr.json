@@ -423,6 +423,10 @@
   "expiredBanner": {
     "message": "VOTRE PASS HOPPER A EXPIRÉ, SOUSCRIVEZ-EN UN NOUVEAU ICI"
   },
+  "failedPaymentBanner": {
+    "message": "⚠ VOTRE DERNIER PAIEMENT A ÉCHOUÉ — CLIQUEZ ICI POUR RÉGULARISER",
+    "loading": "REDIRECTION VERS STRIPE..."
+  },
   "adminContact": {
     "title": "Contacter votre administrateur",
     "message": "Pour {action}, veuillez contacter l'administrateur de votre entreprise.",

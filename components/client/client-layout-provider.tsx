@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement, TransportationStop } from "@/lib/types/database"
+import type { CompanyPaymentStatus } from "@/lib/actions/stripe"
 
 interface Site {
   id: string
@@ -59,6 +60,7 @@ interface ClientLayoutContextValue {
   isMeetingRoomOnly: boolean
   meetingRoomSites: Site[]
   coworkingSitesWithDetails: SiteWithDetails[]
+  paymentStatus: CompanyPaymentStatus
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
@@ -77,6 +79,7 @@ interface ClientLayoutProviderProps {
   isDeskeoEmployee: boolean
   companyAdmin: CompanyAdmin | null
   isMeetingRoomOnly: boolean
+  paymentStatus: CompanyPaymentStatus
 }
 
 export function ClientLayoutProvider({
@@ -93,6 +96,7 @@ export function ClientLayoutProvider({
   isDeskeoEmployee,
   companyAdmin,
   isMeetingRoomOnly,
+  paymentStatus,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -152,6 +156,7 @@ export function ClientLayoutProvider({
         isMeetingRoomOnly,
         meetingRoomSites,
         coworkingSitesWithDetails,
+        paymentStatus,
       }}
     >
       {children}

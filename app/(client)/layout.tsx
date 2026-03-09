@@ -8,11 +8,13 @@ import { ClientFooter } from "@/components/client/client-footer"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
+import { FailedPaymentBanner } from "@/components/client/failed-payment-banner"
 import { PwaInstallPrompt } from "@/components/client/pwa-install-prompt"
 import { NoContractModal } from "@/components/client/no-contract-modal"
 import { CguAcceptanceModal } from "@/components/client/cgu-acceptance-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
+import { getCompanyPaymentStatus, type CompanyPaymentStatus } from "@/lib/actions/stripe"
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -159,6 +161,16 @@ export default async function ClientLayout({
           .limit(50)
       : Promise.resolve({ data: null } as { data: null }),
   ])
+
+  // Fetch payment status from Stripe
+  let paymentStatus: CompanyPaymentStatus = "ok"
+  const customerIdStripe = companyData?.customer_id_stripe
+  if (customerIdStripe) {
+    const result = await getCompanyPaymentStatus(customerIdStripe)
+    if ("status" in result) {
+      paymentStatus = result.status
+    }
+  }
 
   // Process credits
   let userCredits: UserCredits | null = null
@@ -416,6 +428,7 @@ export default async function ClientLayout({
       isDeskeoEmployee={isHopperAdmin}
       companyAdmin={companyAdmin}
       isMeetingRoomOnly={isMeetingRoomOnly}
+      paymentStatus={paymentStatus}
     >
       {needsOnboarding && (
         <OnboardingModal
@@ -435,6 +448,7 @@ export default async function ClientLayout({
       {!needsOnboarding && !needsProfileCompletion && !needsCguAcceptance && needsContractAssignment && (
         <NoContractModal open />
       )}
+      <FailedPaymentBanner />
       <ExpiredContractBanner />
       <PwaInstallPrompt />
       <div className="client-layout min-h-screen bg-background overflow-x-hidden">
