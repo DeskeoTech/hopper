@@ -17,6 +17,8 @@ import {
   Plus,
   Loader2,
   Check,
+  X,
+  Globe,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -30,18 +32,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   getCompanyUsers,
   getCompanySeatsInfo,
   createUserByAdmin,
 } from "@/lib/actions/users"
-import { assignUserToContract } from "@/lib/actions/user-contracts"
+import { assignUserToContract, toggleOffPlatformLink } from "@/lib/actions/user-contracts"
 import { ContractDetailModal } from "./contract-detail-modal"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
@@ -72,6 +67,8 @@ interface EntreprisePageProps {
   users: UserWithContract[]
   currentUserId: string
   spacebringSeats?: number
+  offPlatformPlanName?: string | null
+  offPlatformLinkedCount?: number
   creditTransactions?: CompanyCreditTransaction[]
   creditBalance?: number
 }
@@ -82,6 +79,8 @@ export function EntreprisePage({
   users: initialUsers,
   currentUserId,
   spacebringSeats = 0,
+  offPlatformPlanName = null,
+  offPlatformLinkedCount = 0,
   creditTransactions = [],
   creditBalance = 0,
 }: EntreprisePageProps) {
@@ -93,7 +92,6 @@ export function EntreprisePage({
   const [contracts, setContracts] = useState(initialContracts)
   const [error, setError] = useState<string | null>(null)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
-  const [seatsInfo, setSeatsInfo] = useState<{ activeUsers: number; maxSeats: number } | null>(null)
 
   // Add user form state
   const [addUserOpen, setAddUserOpen] = useState(false)
@@ -102,9 +100,11 @@ export function EntreprisePage({
   const [newUserLastName, setNewUserLastName] = useState("")
   const [newUserEmail, setNewUserEmail] = useState("")
 
-  // Link contract modal state
+  // User detail modal state
+  const [selectedUser, setSelectedUser] = useState<UserWithContract | null>(null)
+
+  // Link contract modal state (opened from user detail)
   const [linkContractOpen, setLinkContractOpen] = useState(false)
-  const [userToLink, setUserToLink] = useState<UserWithContract | null>(null)
 
   // No seats dialog state
   const [noSeatsDialogOpen, setNoSeatsDialogOpen] = useState(false)
@@ -113,6 +113,9 @@ export function EntreprisePage({
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
   const [creditsHistoryOpen, setCreditsHistoryOpen] = useState(false)
   const [creditTypeFilter, setCreditTypeFilter] = useState("all")
+
+  // Off-platform seat tracking
+  const [offPlatformCount, setOffPlatformCount] = useState(offPlatformLinkedCount)
 
   const creditFilterOptions = [
     { value: "all", label: "Tous" },
@@ -130,8 +133,10 @@ export function EntreprisePage({
 
   // Calculate seats info from contracts + off-platform subscription
   const contractSeats = contracts.reduce((sum, c) => sum + c.total_seats, 0)
-  const totalSeats = contractSeats > 0 ? contractSeats : spacebringSeats
+  const totalSeats = contractSeats > 0 ? contractSeats + spacebringSeats : spacebringSeats
   const activeUsers = users.filter((u) => u.status === "active").length
+
+  const hasOffPlatform = spacebringSeats > 0
 
   const handleContractChange = async (userId: string, contractId: string | null) => {
     setUpdatingUserId(userId)
@@ -141,11 +146,9 @@ export function EntreprisePage({
     if (result.error) {
       setError(result.error)
     } else {
-      // Find the contract name
       const contract = contracts.find((c) => c.id === contractId)
       const contractName = contract?.plan_name || null
 
-      // Update user's contract locally
       setUsers((prev) =>
         prev.map((u) =>
           u.id === userId
@@ -154,7 +157,6 @@ export function EntreprisePage({
         )
       )
 
-      // Update contract seat counts locally
       const oldUser = users.find((u) => u.id === userId)
       const oldContractId = oldUser?.contract_id
 
@@ -169,20 +171,45 @@ export function EntreprisePage({
           return c
         })
       )
+
+      // Update selected user if open
+      if (selectedUser?.id === userId) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, contract_id: contractId, contract_name: contractName } : prev
+        )
+      }
     }
     setUpdatingUserId(null)
   }
 
-  const openLinkContractModal = (user: UserWithContract) => {
-    setUserToLink(user)
-    setLinkContractOpen(true)
+  const handleToggleOffPlatform = async (userId: string, linked: boolean) => {
+    setUpdatingUserId(userId)
+    setError(null)
+
+    const result = await toggleOffPlatformLink(userId, linked)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, off_platform_linked: linked } : u
+        )
+      )
+      setOffPlatformCount((prev) => linked ? prev + 1 : Math.max(0, prev - 1))
+
+      if (selectedUser?.id === userId) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, off_platform_linked: linked } : prev
+        )
+      }
+    }
+    setUpdatingUserId(null)
   }
 
   const handleLinkContract = async (contractId: string) => {
-    if (!userToLink) return
-    await handleContractChange(userToLink.id, contractId)
+    if (!selectedUser) return
+    await handleContractChange(selectedUser.id, contractId)
     setLinkContractOpen(false)
-    setUserToLink(null)
   }
 
   const handleAddUser = async () => {
@@ -201,7 +228,6 @@ export function EntreprisePage({
     if (result.error) {
       setError(result.error)
     } else {
-      // Refresh users list
       const usersResult = await getCompanyUsers(company.id)
       if (usersResult.data) {
         setUsers(usersResult.data.map((u) => ({ ...u, contract_name: null })))
@@ -248,6 +274,9 @@ export function EntreprisePage({
     return null
   }
 
+  const getUserName = (user: UserWithContract) =>
+    [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"
+
   return (
     <div className="min-h-screen bg-[#f0e8dc]">
     <div className="mx-auto w-full max-w-3xl p-4 md:p-6">
@@ -293,7 +322,7 @@ export function EntreprisePage({
             </h2>
           </div>
 
-          {contracts.length === 0 ? (
+          {contracts.length === 0 && !hasOffPlatform ? (
             <p className="text-sm text-foreground/50">{t("noActivePass")}</p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -342,6 +371,34 @@ export function EntreprisePage({
                   </button>
                 )
               })}
+
+              {/* Off-platform subscription card */}
+              {hasOffPlatform && (
+                <div className="rounded-[12px] bg-background/50 p-4">
+                  <div className="mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5 text-foreground/40" />
+                      <h3 className="font-medium text-sm">
+                        {offPlatformPlanName || "Hors plateforme"}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-foreground/40 mt-0.5">Abonnement hors plateforme</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-foreground/50">{t("seatsUsed")}</span>
+                      <span className="font-medium text-foreground/70">
+                        {offPlatformCount} / {spacebringSeats}
+                      </span>
+                    </div>
+                    <Progress
+                      value={spacebringSeats > 0 ? (offPlatformCount / spacebringSeats) * 100 : 0}
+                      className="h-1.5"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -481,7 +538,6 @@ export function EntreprisePage({
               </h2>
             </div>
 
-            {/* Seats progress bar and add user button */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               {totalSeats > 0 && (
                 <div className="flex-1 min-w-[150px] max-w-[200px]">
@@ -524,16 +580,24 @@ export function EntreprisePage({
               {users.map((user) => {
                 const isCurrentUser = user.id === currentUserId
                 const isDisabled = user.status === "inactive"
-                const isUpdating = updatingUserId === user.id
-                const userName =
-                  [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"
+                const userName = getUserName(user)
+                const hasContract = !!user.contract_id
+                const hasOffPlatformLink = user.off_platform_linked
+                const hasAnyLink = hasContract || hasOffPlatformLink
 
                 return (
-                  <div
+                  <button
                     key={user.id}
-                    className="flex flex-col gap-3 rounded-[12px] bg-background/50 p-3 sm:flex-row sm:items-center"
+                    type="button"
+                    onClick={() => !isDisabled && setSelectedUser(user)}
+                    disabled={isDisabled}
+                    className={cn(
+                      "flex w-full flex-col gap-3 rounded-[12px] bg-background/50 p-3 text-left transition-colors sm:flex-row sm:items-center",
+                      !isDisabled && "cursor-pointer hover:bg-foreground/5",
+                      isDisabled && "opacity-50"
+                    )}
                   >
-                    {/* Avatar/Icon */}
+                    {/* Avatar/Icon + User info */}
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground/5">
                         {user.role === "admin" ? (
@@ -543,7 +607,6 @@ export function EntreprisePage({
                         )}
                       </div>
 
-                      {/* User info */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <span className="truncate text-sm font-medium text-foreground">
@@ -564,68 +627,240 @@ export function EntreprisePage({
                       </div>
                     </div>
 
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-2 flex-wrap">
-                      {/* Contract selector or link button */}
-                      {!isDisabled && user.contract_id ? (
-                        // User has a contract - show dropdown to change or remove
-                        <Select
-                          value={user.contract_id}
-                          onValueChange={(value) =>
-                            handleContractChange(user.id, value === "none" ? null : value)
-                          }
-                          disabled={isUpdating}
-                        >
-                          <SelectTrigger className="h-7 w-auto min-w-[120px] gap-1 border-0 bg-foreground/5 px-2 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">{t("removeFromPass")}</SelectItem>
-                            {contracts.map((contract) => {
-                              const isAssignedToThis = user.contract_id === contract.id
-                              const hasSpace =
-                                contract.assigned_seats < contract.total_seats || isAssignedToThis
-
-                              return (
-                                <SelectItem
-                                  key={contract.id}
-                                  value={contract.id}
-                                  disabled={!hasSpace}
-                                >
-                                  {contract.plan_name}
-                                  {!hasSpace && " (" + t("full") + ")"}
-                                </SelectItem>
-                              )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      ) : !isDisabled ? (
-                        // User has no contract - show link button
-                        <button
-                          type="button"
-                          onClick={() => openLinkContractModal(user)}
-                          disabled={isUpdating || contracts.every((c) => c.assigned_seats >= c.total_seats)}
-                          className="flex items-center gap-1.5 rounded-full bg-foreground/5 px-3 py-1.5 text-xs font-medium text-foreground/70 transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <>
-                              <FileText className="h-3 w-3" />
-                              {t("linkToPass")}
-                            </>
-                          )}
-                        </button>
-                      ) : null}
-
+                    {/* Pass badges */}
+                    <div className="flex shrink-0 items-center gap-1.5 flex-wrap">
+                      {hasContract && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-[11px] font-medium text-foreground/60">
+                          <FileText className="h-3 w-3" />
+                          {user.contract_name || t("pass")}
+                        </span>
+                      )}
+                      {hasOffPlatformLink && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-[11px] font-medium text-foreground/60">
+                          <Globe className="h-3 w-3" />
+                          Hors plateforme
+                        </span>
+                      )}
+                      {!hasAnyLink && !isDisabled && (
+                        <span className="text-xs text-foreground/30">
+                          {t("linkToPass")}
+                        </span>
+                      )}
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
           )}
         </div>
       </div>
+
+      {/* User Detail Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent>
+          {selectedUser && (() => {
+            const userName = getUserName(selectedUser)
+            const isUpdating = updatingUserId === selectedUser.id
+            const hasContract = !!selectedUser.contract_id
+            const hasOffPlatformLink = selectedUser.off_platform_linked
+            const offPlatformFull = offPlatformCount >= spacebringSeats
+
+            return (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{userName}</DialogTitle>
+                  <DialogDescription>{selectedUser.email || "—"}</DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-2">
+                  {/* Platform contracts */}
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2">
+                      {t("pass")}
+                    </p>
+
+                    {hasContract ? (
+                      <div className="flex items-center justify-between rounded-[12px] bg-foreground/5 p-3">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-foreground/40" />
+                          <span className="text-sm font-medium">
+                            {selectedUser.contract_name || t("pass")}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleContractChange(selectedUser.id, null)}
+                          disabled={isUpdating}
+                          className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <X className="h-3 w-3" />
+                          )}
+                          {t("removeFromPass")}
+                        </button>
+                      </div>
+                    ) : contracts.length > 0 ? (
+                      <button
+                        type="button"
+                        onClick={() => setLinkContractOpen(true)}
+                        disabled={isUpdating || contracts.every((c) => c.assigned_seats >= c.total_seats)}
+                        className="flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-dashed border-foreground/15 p-3 text-xs font-medium text-foreground/50 transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        {t("linkToPass")}
+                      </button>
+                    ) : (
+                      <p className="text-sm text-foreground/40">{t("noActivePass")}</p>
+                    )}
+                  </div>
+
+                  {/* Off-platform subscription */}
+                  {hasOffPlatform && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2">
+                        Abonnement hors plateforme
+                      </p>
+
+                      {hasOffPlatformLink ? (
+                        <div className="flex items-center justify-between rounded-[12px] bg-foreground/5 p-3">
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-4 w-4 text-foreground/40" />
+                            <div>
+                              <span className="text-sm font-medium">
+                                {offPlatformPlanName || "Hors plateforme"}
+                              </span>
+                              <p className="text-[11px] text-foreground/40">
+                                {offPlatformCount} / {spacebringSeats} {t("seatsUsed").toLowerCase()}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleOffPlatform(selectedUser.id, false)}
+                            disabled={isUpdating}
+                            className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                          >
+                            {isUpdating ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <X className="h-3 w-3" />
+                            )}
+                            Délier
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleToggleOffPlatform(selectedUser.id, true)}
+                          disabled={isUpdating || offPlatformFull}
+                          className="flex w-full items-center justify-between rounded-[12px] border border-dashed border-foreground/15 p-3 transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Globe className="h-4 w-4 text-foreground/30" />
+                            <span className="text-xs font-medium text-foreground/50">
+                              {offPlatformPlanName || "Hors plateforme"}
+                            </span>
+                          </div>
+                          {offPlatformFull ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
+                              <Check className="h-3 w-3" />
+                              {t("full")}
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-xs font-medium text-foreground/50">
+                              <Plus className="h-3 w-3" />
+                              Lier
+                            </span>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedUser(null)}
+                    className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+                  >
+                    {tc("close")}
+                  </button>
+                </DialogFooter>
+              </>
+            )
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Contract Dialog (from user detail) */}
+      <Dialog open={linkContractOpen} onOpenChange={setLinkContractOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("linkPassDialog.title")}</DialogTitle>
+            <DialogDescription>
+              {selectedUser && (
+                <>
+                  {t("linkPassDialog.selectPass")}{" "}
+                  <span className="font-medium">
+                    {getUserName(selectedUser)}
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            {contracts.length === 0 ? (
+              <p className="text-sm text-foreground/50 text-center py-4">
+                {t("linkPassDialog.noPass")}
+              </p>
+            ) : (
+              contracts.map((contract) => {
+                const isFull = contract.assigned_seats >= contract.total_seats
+                const availableSeats = contract.total_seats - contract.assigned_seats
+
+                return (
+                  <button
+                    key={contract.id}
+                    type="button"
+                    onClick={() => handleLinkContract(contract.id)}
+                    disabled={isFull || updatingUserId === selectedUser?.id}
+                    className="flex w-full items-center justify-between rounded-[12px] bg-foreground/5 p-4 text-left transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div>
+                      <p className="font-medium text-sm">{contract.plan_name}</p>
+                      <p className="text-xs text-foreground/50">
+                        {contract.assigned_seats} / {contract.total_seats} {t("seatsUsed").toLowerCase()}
+                      </p>
+                    </div>
+                    {isFull ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
+                        <Check className="h-3 w-3" />
+                        {t("full")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs text-green-600">
+                        {t("available", { count: availableSeats })}
+                      </span>
+                    )}
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setLinkContractOpen(false)}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
+              {tc("cancel")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add User Dialog */}
       <Dialog open={addUserOpen} onOpenChange={setAddUserOpen}>
@@ -690,75 +925,6 @@ export function EntreprisePage({
               ) : (
                 tc("create")
               )}
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Link Contract Dialog */}
-      <Dialog open={linkContractOpen} onOpenChange={setLinkContractOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("linkPassDialog.title")}</DialogTitle>
-            <DialogDescription>
-              {userToLink && (
-                <>
-                  {t("linkPassDialog.selectPass")}{" "}
-                  <span className="font-medium">
-                    {[userToLink.first_name, userToLink.last_name].filter(Boolean).join(" ") ||
-                      userToLink.email ||
-                      t("linkPassDialog.thisUser")}
-                  </span>
-                </>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-2">
-            {contracts.length === 0 ? (
-              <p className="text-sm text-foreground/50 text-center py-4">
-                {t("linkPassDialog.noPass")}
-              </p>
-            ) : (
-              contracts.map((contract) => {
-                const isFull = contract.assigned_seats >= contract.total_seats
-                const availableSeats = contract.total_seats - contract.assigned_seats
-
-                return (
-                  <button
-                    key={contract.id}
-                    type="button"
-                    onClick={() => handleLinkContract(contract.id)}
-                    disabled={isFull || updatingUserId === userToLink?.id}
-                    className="flex w-full items-center justify-between rounded-[12px] bg-foreground/5 p-4 text-left transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <div>
-                      <p className="font-medium text-sm">{contract.plan_name}</p>
-                      <p className="text-xs text-foreground/50">
-                        {contract.assigned_seats} / {contract.total_seats} {t("seatsUsed").toLowerCase()}
-                      </p>
-                    </div>
-                    {isFull ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
-                        <Check className="h-3 w-3" />
-                        {t("full")}
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs text-green-600">
-                        {t("available", { count: availableSeats })}
-                      </span>
-                    )}
-                  </button>
-                )
-              })
-            )}
-          </div>
-          <DialogFooter>
-            <button
-              type="button"
-              onClick={() => setLinkContractOpen(false)}
-              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
-            >
-              {tc("cancel")}
             </button>
           </DialogFooter>
         </DialogContent>

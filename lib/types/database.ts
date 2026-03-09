@@ -329,6 +329,7 @@ export interface User {
   is_hopper_admin: boolean
   badge_number: string | null
   badge_returned: boolean
+  off_platform_linked: boolean
   cgu_accepted_at: string | null
   created_at: string
   updated_at: string
