@@ -423,6 +423,10 @@
   "expiredBanner": {
     "message": "YOUR HOPPER PASS HAS EXPIRED, SUBSCRIBE TO A NEW ONE HERE"
   },
+  "failedPaymentBanner": {
+    "message": "⚠ YOUR LAST PAYMENT FAILED — CLICK HERE TO UPDATE YOUR PAYMENT METHOD",
+    "loading": "REDIRECTING TO STRIPE..."
+  },
   "adminContact": {
     "title": "Contact your administrator",
     "message": "To {action}, please contact your company administrator.",
