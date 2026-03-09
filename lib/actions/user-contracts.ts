@@ -1,7 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
+import { createAdminClient } from "@/lib/supabase/admin"
 
 export interface ContractSeatsInfo {
   contractId: string
@@ -11,29 +12,41 @@ export interface ContractSeatsInfo {
   availableSeats: number
 }
 
-export async function getContractSeatsInfo(contractId: string): Promise<{
-  data: ContractSeatsInfo | null
-  error: string | null
-}> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
+/** Verify the current user is a company admin. Returns admin supabase client + current user on success. */
+async function verifyAdmin(): Promise<
+  | { authorized: true; supabase: ReturnType<typeof createAdminClient>; currentUser: { id: string; role: string; company_id: string } }
+  | { authorized: false; error: string }
+> {
   const authUser = await getUser()
   if (!authUser?.email) {
-    return { data: null, error: "Non authentifié" }
+    return { authorized: false, error: "Non authentifié" }
   }
 
+  const supabase = createAdminClient()
   const { data: currentUser } = await supabase
     .from("users")
-    .select("role, company_id")
+    .select("id, role, company_id")
     .eq("email", authUser.email)
     .single()
 
   if (!currentUser || currentUser.role !== "admin") {
-    return { data: null, error: "Accès non autorisé" }
+    return { authorized: false, error: "Accès non autorisé" }
   }
 
-  // Get the contract with plan info
+  return { authorized: true, supabase, currentUser }
+}
+
+export async function getContractSeatsInfo(contractId: string): Promise<{
+  data: ContractSeatsInfo | null
+  error: string | null
+}> {
+  const auth = await verifyAdmin()
+  if (!auth.authorized) {
+    return { data: null, error: auth.error }
+  }
+
+  const { supabase, currentUser } = auth
+
   const { data: contract, error: contractError } = await supabase
     .from("contracts")
     .select(`
@@ -49,12 +62,10 @@ export async function getContractSeatsInfo(contractId: string): Promise<{
     return { data: null, error: contractError.message }
   }
 
-  // Verify the contract belongs to the admin's company
   if (contract.company_id !== currentUser.company_id) {
     return { data: null, error: "Accès non autorisé" }
   }
 
-  // Count users assigned to this contract
   const { count: assignedSeats, error: usersError } = await supabase
     .from("users")
     .select("*", { count: "exact", head: true })
@@ -85,25 +96,17 @@ export async function getCompanyContractsWithSeats(companyId: string): Promise<{
   data: ContractSeatsInfo[] | null
   error: string | null
 }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { data: null, error: "Non authentifié" }
+  const auth = await verifyAdmin()
+  if (!auth.authorized) {
+    return { data: null, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("role, company_id")
-    .eq("email", authUser.email)
-    .single()
+  const { supabase, currentUser } = auth
 
-  if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
+  if (currentUser.company_id !== companyId) {
     return { data: null, error: "Accès non autorisé" }
   }
 
-  // Get all contracts for the company
   const { data: contracts, error: contractsError } = await supabase
     .from("contracts")
     .select(`
@@ -120,7 +123,6 @@ export async function getCompanyContractsWithSeats(companyId: string): Promise<{
     return { data: null, error: contractsError.message }
   }
 
-  // Get all users with their contract assignments
   const { data: users, error: usersError } = await supabase
     .from("users")
     .select("contract_id")
@@ -132,7 +134,6 @@ export async function getCompanyContractsWithSeats(companyId: string): Promise<{
     return { data: null, error: usersError.message }
   }
 
-  // Count assignments per contract
   const assignmentCounts: Record<string, number> = {}
   for (const user of users || []) {
     if (user.contract_id) {
@@ -140,7 +141,6 @@ export async function getCompanyContractsWithSeats(companyId: string): Promise<{
     }
   }
 
-  // Map contracts with seat info
   const contractsWithSeats: ContractSeatsInfo[] = (contracts || []).map((contract) => {
     const totalSeats = contract.Number_of_seats ? Number(contract.Number_of_seats) : 0
     const assignedSeats = assignmentCounts[contract.id] || 0
@@ -162,23 +162,12 @@ export async function assignUserToContract(
   userId: string,
   contractId: string | null
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { success: false, error: "Non authentifié" }
+  const auth = await verifyAdmin()
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("id, role, company_id")
-    .eq("email", authUser.email)
-    .single()
-
-  if (!currentUser || currentUser.role !== "admin") {
-    return { success: false, error: "Accès non autorisé" }
-  }
+  const { supabase, currentUser } = auth
 
   // Verify the target user belongs to the same company
   const { data: targetUser, error: targetUserError } = await supabase
@@ -197,7 +186,6 @@ export async function assignUserToContract(
 
   // If assigning to a contract (not removing assignment)
   if (contractId) {
-    // Verify the contract belongs to the same company
     const { data: contract, error: contractError } = await supabase
       .from("contracts")
       .select("id, company_id, Number_of_seats, status")
@@ -262,4 +250,83 @@ export async function unassignUserFromContract(
   userId: string
 ): Promise<{ success: boolean; error: string | null }> {
   return assignUserToContract(userId, null)
+}
+
+export async function toggleOffPlatformLink(
+  userId: string,
+  linked: boolean
+): Promise<{ success: boolean; error: string | null }> {
+  const auth = await verifyAdmin()
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase, currentUser } = auth
+
+  // Verify the target user belongs to the same company
+  const { data: targetUser, error: targetUserError } = await supabase
+    .from("users")
+    .select("id, company_id, off_platform_linked, status")
+    .eq("id", userId)
+    .single()
+
+  if (targetUserError || !targetUser) {
+    return { success: false, error: "Utilisateur non trouvé" }
+  }
+
+  if (targetUser.company_id !== currentUser.company_id) {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  // If linking, check spacebring seats availability
+  if (linked) {
+    const { data: company, error: companyError } = await supabase
+      .from("companies")
+      .select("id, from_spacebring, spacebring_seats")
+      .eq("id", currentUser.company_id)
+      .single()
+
+    if (companyError || !company) {
+      return { success: false, error: "Entreprise non trouvée" }
+    }
+
+    if (!company.from_spacebring || !company.spacebring_seats) {
+      return { success: false, error: "Aucun abonnement hors plateforme configuré" }
+    }
+
+    // Count currently linked users
+    const { count: linkedUsers, error: countError } = await supabase
+      .from("users")
+      .select("*", { count: "exact", head: true })
+      .eq("company_id", currentUser.company_id)
+      .eq("off_platform_linked", true)
+      .eq("status", "active")
+
+    if (countError) {
+      return { success: false, error: countError.message }
+    }
+
+    if ((linkedUsers || 0) >= company.spacebring_seats) {
+      return { success: false, error: "L'abonnement hors plateforme n'a plus de postes disponibles" }
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from("users")
+    .update({
+      off_platform_linked: linked,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+
+  if (updateError) {
+    return { success: false, error: updateError.message }
+  }
+
+  revalidatePath("/compte")
+  revalidatePath("/mon-compte")
+  revalidatePath("/entreprise")
+  revalidatePath(`/admin/clients/${currentUser.company_id}`)
+
+  return { success: true, error: null }
 }

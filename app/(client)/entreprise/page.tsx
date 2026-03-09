@@ -111,6 +111,16 @@ export default async function EntreprisePageRoute() {
     }
   })
 
+  // Calculate spacebring seats for off-platform companies
+  const spacebringSeats = company?.from_spacebring && company.spacebring_seats
+    ? company.spacebring_seats
+    : 0
+
+  // Count off-platform linked users for seat tracking
+  const offPlatformLinkedCount = (usersData || []).filter(
+    (u) => u.off_platform_linked && u.status === "active"
+  ).length
+
   // Transform users
   const users: UserWithContract[] = (usersData || []).map((u) => {
     const contract = u.contracts as { id: string; plans: { name: string } | null } | null
@@ -119,11 +129,6 @@ export default async function EntreprisePageRoute() {
       contract_name: contract?.plans?.name || null,
     }
   })
-
-  // Calculate spacebring seats for off-platform companies
-  const spacebringSeats = company?.from_spacebring && company.spacebring_seats
-    ? company.spacebring_seats
-    : 0
 
   // Fetch company credit balance
   const { data: creditBalance } = await supabase
@@ -187,6 +192,8 @@ export default async function EntreprisePageRoute() {
       users={users}
       currentUserId={userProfile.id}
       spacebringSeats={spacebringSeats}
+      offPlatformPlanName={company?.spacebring_plan_name || null}
+      offPlatformLinkedCount={offPlatformLinkedCount}
       creditTransactions={companyCredits}
       creditBalance={creditBalance ?? 0}
     />
