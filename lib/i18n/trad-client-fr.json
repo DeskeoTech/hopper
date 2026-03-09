@@ -307,6 +307,13 @@
     "full": "complet",
     "available": "{count} dispo",
     "companyAdmin": "Administrateur de l'entreprise",
+    "removeUser": {
+      "button": "Retirer de l'entreprise",
+      "title": "Retirer cet utilisateur ?",
+      "description": "{name} sera retiré(e) de votre entreprise. Cette personne ne pourra plus accéder aux services liés à votre compte.",
+      "confirm": "Retirer",
+      "removing": "Retrait..."
+    },
     "companyType": {
       "selfEmployed": "Auto-entrepreneur",
       "company": "Entreprise"

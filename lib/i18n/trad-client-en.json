@@ -307,6 +307,13 @@
     "full": "full",
     "available": "{count} available",
     "companyAdmin": "Company administrator",
+    "removeUser": {
+      "button": "Remove from company",
+      "title": "Remove this user?",
+      "description": "{name} will be removed from your company. They will no longer have access to services linked to your account.",
+      "confirm": "Remove",
+      "removing": "Removing..."
+    },
     "companyType": {
       "selfEmployed": "Self-employed",
       "company": "Company"
