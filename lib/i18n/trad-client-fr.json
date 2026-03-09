@@ -300,6 +300,8 @@
     "seatsOccupied": "Sièges utilisés",
     "users": "Utilisateurs",
     "noUsers": "Aucun utilisateur",
+    "searchUsers": "Rechercher un utilisateur...",
+    "noSearchResults": "Aucun résultat pour cette recherche",
     "linkToPass": "Lier à un pass",
     "removeFromPass": "Retirer du pass",
     "full": "complet",

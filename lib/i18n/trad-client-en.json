@@ -300,6 +300,8 @@
     "seatsOccupied": "Seats occupied",
     "users": "Users",
     "noUsers": "No users",
+    "searchUsers": "Search for a user...",
+    "noSearchResults": "No results for this search",
     "linkToPass": "Link to a pass",
     "removeFromPass": "Remove from pass",
     "full": "full",

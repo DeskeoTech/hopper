@@ -19,6 +19,7 @@ import {
   Check,
   X,
   Globe,
+  Search,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -108,6 +109,9 @@ export function EntreprisePage({
 
   // No seats dialog state
   const [noSeatsDialogOpen, setNoSeatsDialogOpen] = useState(false)
+
+  // User search state
+  const [userSearch, setUserSearch] = useState("")
 
   // Contract detail modal state
   const [selectedContract, setSelectedContract] = useState<ContractForDisplay | null>(null)
@@ -276,6 +280,14 @@ export function EntreprisePage({
 
   const getUserName = (user: UserWithContract) =>
     [user.first_name, user.last_name].filter(Boolean).join(" ") || "—"
+
+  const filteredUsers = userSearch.trim()
+    ? users.filter((user) => {
+        const q = userSearch.toLowerCase()
+        const name = [user.first_name, user.last_name].filter(Boolean).join(" ").toLowerCase()
+        return name.includes(q) || (user.email?.toLowerCase().includes(q) ?? false)
+      })
+    : users
 
   return (
     <div className="min-h-screen bg-[#f0e8dc]">
@@ -567,6 +579,18 @@ export function EntreprisePage({
             </div>
           </div>
 
+          {users.length > 0 && (
+            <div className="relative mb-4">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-foreground/30" />
+              <Input
+                value={userSearch}
+                onChange={(e) => setUserSearch(e.target.value)}
+                placeholder={t("searchUsers")}
+                className="rounded-full bg-background/50 pl-9 text-sm"
+              />
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 rounded-[12px] bg-destructive/10 p-4">
               <p className="text-sm text-destructive">{error}</p>
@@ -575,9 +599,11 @@ export function EntreprisePage({
 
           {users.length === 0 ? (
             <p className="text-sm text-foreground/50">{t("noUsers")}</p>
+          ) : filteredUsers.length === 0 ? (
+            <p className="text-sm text-foreground/50">{t("noSearchResults")}</p>
           ) : (
             <div className="max-h-[720px] space-y-2 overflow-y-auto">
-              {users.map((user) => {
+              {filteredUsers.map((user) => {
                 const isCurrentUser = user.id === currentUserId
                 const isDisabled = user.status === "inactive"
                 const userName = getUserName(user)
