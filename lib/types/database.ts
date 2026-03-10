@@ -279,6 +279,7 @@ export interface ContractForDisplay {
   end_date: string | null
   plan_name: string
   plan_recurrence: PlanRecurrence | null
+  service_type: PlanServiceType | null
   site_name: string | null
   number_of_seats: number | null
 }

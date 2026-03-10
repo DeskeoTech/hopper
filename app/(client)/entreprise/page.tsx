@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { EntreprisePage } from "@/components/client/entreprise-page"
-import type { User, Company, ContractStatus, PlanRecurrence } from "@/lib/types/database"
+import type { User, Company, ContractStatus, PlanRecurrence, PlanServiceType } from "@/lib/types/database"
 
 export interface ContractWithSeats {
   id: string
@@ -11,6 +11,7 @@ export interface ContractWithSeats {
   end_date: string | null
   plan_name: string
   plan_recurrence: PlanRecurrence | null
+  service_type: PlanServiceType | null
   total_seats: number
   assigned_seats: number
 }
@@ -117,7 +118,7 @@ export default async function EntreprisePageRoute() {
 
   // Transform regular contracts
   const contracts: ContractWithSeats[] = regularContractsData.map((c) => {
-    const plan = c.plans as { name: string; recurrence: PlanRecurrence | null } | null
+    const plan = c.plans as { name: string; recurrence: PlanRecurrence | null; service_type: string | null } | null
     const totalSeats = c.Number_of_seats ? Number(c.Number_of_seats) : 0
     const assignedSeats = contractUserCounts[c.id] || 0
 
@@ -128,6 +129,7 @@ export default async function EntreprisePageRoute() {
       end_date: c.end_date,
       plan_name: plan?.name || "Contrat",
       plan_recurrence: plan?.recurrence || null,
+      service_type: (plan?.service_type as PlanServiceType) || null,
       total_seats: totalSeats,
       assigned_seats: assignedSeats,
     }

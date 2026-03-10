@@ -300,8 +300,10 @@
   },
   "company": {
     "myCompany": "My company",
-    "pass": "Pass",
-    "noActivePass": "No active pass",
+    "pass": "Coworking pass",
+    "noActivePass": "No active coworking pass",
+    "cafePass": "Café pass",
+    "noActiveCafePass": "No active café pass",
     "seatsUsed": "Seats used",
     "seatsOccupied": "Seats occupied",
     "users": "Users",

@@ -459,6 +459,7 @@ export function EntreprisePage({
                         end_date: contract.end_date,
                         plan_name: contract.plan_name,
                         plan_recurrence: contract.plan_recurrence,
+                        service_type: contract.service_type || null,
                         site_name: null,
                         number_of_seats: contract.total_seats,
                       })
