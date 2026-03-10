@@ -436,12 +436,13 @@ export async function uploadCompanyDocument(
 
   const { error: updateError } = await supabase
     .from("companies")
-    .update({ [columnName]: fileName, updated_at: new Date().toISOString() })
+    .update({ [columnName]: fileName })
     .eq("id", companyId)
 
   if (updateError) {
+    console.error("uploadCompanyDocument updateError:", updateError)
     await supabase.storage.from("company-documents").remove([fileName])
-    return { error: "Erreur lors de la mise à jour" }
+    return { error: `Erreur lors de la mise à jour: ${updateError.message}` }
   }
 
   revalidatePath(`/admin/clients/${companyId}`)
@@ -469,11 +470,12 @@ export async function deleteCompanyDocument(
 
   const { error: updateError } = await supabase
     .from("companies")
-    .update({ [columnName]: null, updated_at: new Date().toISOString() })
+    .update({ [columnName]: null })
     .eq("id", companyId)
 
   if (updateError) {
-    return { error: "Erreur lors de la mise à jour" }
+    console.error("deleteCompanyDocument updateError:", updateError)
+    return { error: `Erreur lors de la mise à jour: ${updateError.message}` }
   }
 
   revalidatePath(`/admin/clients/${companyId}`)
