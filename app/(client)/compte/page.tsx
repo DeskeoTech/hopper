@@ -2,7 +2,7 @@ import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { AccountPage } from "@/components/client/account-page"
 import { getNewsPosts } from "@/lib/actions/news"
-import type { BookingWithDetails, ContractForDisplay, ResourceType, PlanRecurrence, FloorLevel } from "@/lib/types/database"
+import type { BookingWithDetails, ContractForDisplay, ResourceType, PlanRecurrence, PlanServiceType, FloorLevel } from "@/lib/types/database"
 
 export default async function ComptePage() {
   const authUser = await getUser()
@@ -33,7 +33,7 @@ export default async function ComptePage() {
     ? (() => {
         let query = supabase
           .from("contracts")
-          .select(`id, status, start_date, end_date, Number_of_seats, plans (name, recurrence)`)
+          .select(`id, status, start_date, end_date, Number_of_seats, plans (name, recurrence, service_type)`)
           .eq("company_id", userProfile.company_id!)
         if (!isAdmin && userProfile.contract_id) {
           query = query.eq("id", userProfile.contract_id)
@@ -90,7 +90,7 @@ export default async function ComptePage() {
 
   // Process contracts
   let contracts: ContractForDisplay[] = ((contractsResult.data as Array<Record<string, unknown>>) || []).map((c) => {
-    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null; service_type: PlanServiceType | null } | null
     return {
       id: c.id as string,
       status: c.status as "active" | "suspended" | "terminated",
@@ -98,6 +98,7 @@ export default async function ComptePage() {
       end_date: c.end_date as string | null,
       plan_name: plan?.name || "Pass",
       plan_recurrence: plan?.recurrence || null,
+      service_type: plan?.service_type || null,
       site_name: null,
       number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
     }
@@ -112,6 +113,7 @@ export default async function ComptePage() {
       end_date: null,
       plan_name: company.spacebring_plan_name,
       plan_recurrence: null,
+      service_type: "plan",
       site_name: null,
       number_of_seats: company.spacebring_seats,
     }]

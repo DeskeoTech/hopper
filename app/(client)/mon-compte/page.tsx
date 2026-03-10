@@ -1,7 +1,7 @@
 import { createClient, getUser } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import { MonComptePage } from "@/components/client/mon-compte-page"
-import type { ContractForDisplay, PlanRecurrence } from "@/lib/types/database"
+import type { ContractForDisplay, PlanRecurrence, PlanServiceType } from "@/lib/types/database"
 
 export default async function MonComptePageRoute() {
   const authUser = await getUser()
@@ -32,14 +32,14 @@ export default async function MonComptePageRoute() {
         start_date,
         end_date,
         Number_of_seats,
-        plans (name, recurrence)
+        plans (name, recurrence, service_type)
       `)
       .eq("company_id", userProfile.company_id)
       .order("start_date", { ascending: false })
       .limit(50)
 
     contracts = (contractsData || []).map((c) => {
-      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null } | null
+      const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null; service_type: PlanServiceType | null } | null
       return {
         id: c.id,
         status: c.status as "active" | "suspended" | "terminated",
@@ -47,6 +47,7 @@ export default async function MonComptePageRoute() {
         end_date: c.end_date,
         plan_name: plan?.name || "Pass",
         plan_recurrence: plan?.recurrence || null,
+        service_type: plan?.service_type || null,
         site_name: null,
         number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
       }
@@ -63,6 +64,7 @@ export default async function MonComptePageRoute() {
       end_date: null,
       plan_name: company.spacebring_plan_name,
       plan_recurrence: null,
+      service_type: "plan",
       site_name: null,
       number_of_seats: company.spacebring_seats,
     }]
