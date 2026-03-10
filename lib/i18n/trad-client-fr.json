@@ -26,7 +26,8 @@
       "noNews": "Aucune actualité pour le moment",
       "feedTitle": "Fil d'actualité",
       "pageTitle": "Actualités",
-      "pinned": "Épinglé"
+      "pinned": "Épinglé",
+      "imagePreview": "Aperçu de l'image"
     },
     "pass": {
       "title": "Pass",
