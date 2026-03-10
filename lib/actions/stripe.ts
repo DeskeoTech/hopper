@@ -24,9 +24,9 @@ function formatDateShort(isoDate: string): string {
 
 // Maps stripe_account identifiers (from DB) to environment variable names
 const STRIPE_ACCOUNT_ENV_MAP: Record<string, string> = {
-  "hopper-coworking": "STRIPE_SECRET_KEY",
+  "hopper-coworking": "STRIPE_SECRET_KEY_HOPPER_COWORKING",
   "icade": "STRIPE_SECRET_KEY_ICADE",
-  "collection": "STRIPE_SECRET_KEY_COLLECTION",
+  "collection": "STRIPE_SECRET_KEY_HOPPER_COLLECTION",
 }
 
 function getStripe(account: string = "hopper-coworking") {
@@ -237,7 +237,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
       // Récupérer le stripe_product_id depuis la table plans (test vs live)
       // Utiliser le client admin car cette requête est faite côté serveur
       // et l'utilisateur public n'a pas accès à la table plans via RLS
-      const isTestMode = process.env.STRIPE_SECRET_KEY?.startsWith("sk_test_")
+      const isTestMode = process.env.STRIPE_SECRET_KEY_HOPPER_COWORKING?.startsWith("sk_test_")
       const stripeProductIdColumn = isTestMode ? "stripe_product_id_test" : "stripe_product_id_live"
 
       const adminClient = createAdminClient()

@@ -478,9 +478,9 @@ interface CachedProduct {
 
 // Maps dashboard account names to environment variable names
 const STRIPE_DASHBOARD_ENV_MAP: Record<string, string> = {
-  "hopper-coworking": "STRIPE_SECRET_KEY",
+  "hopper-coworking": "STRIPE_SECRET_KEY_HOPPER_COWORKING",
   "icade": "STRIPE_SECRET_KEY_ICADE",
-  "collection": "STRIPE_SECRET_KEY_COLLECTION",
+  "collection": "STRIPE_SECRET_KEY_HOPPER_COLLECTION",
 }
 
 function getDashboardStripe(account: string): Stripe | null {
