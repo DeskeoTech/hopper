@@ -167,6 +167,7 @@ export interface Plan {
   service_type: PlanServiceType | null
   notes: string | null
   archived: boolean
+  daily_drink_limit: number | null
   created_at: string
   updated_at: string
   stripe_product_id_test: string | null
@@ -455,6 +456,27 @@ export interface SiteClosure {
   site_id: string
   date: string // "YYYY-MM-DD"
   reason: string | null
+  created_at: string
+}
+
+// Café beverage types
+export interface CafeBeverage {
+  id: string
+  name: string
+  created_at: string
+}
+
+export interface CafeBeveragePlanEligibility {
+  id: string
+  beverage_id: string
+  plan_name: string
+}
+
+export interface CafeConsumption {
+  id: string
+  user_id: string
+  beverage_id: string
+  served_by_admin_id: string
   created_at: string
 }
 
