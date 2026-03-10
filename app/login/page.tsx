@@ -10,10 +10,11 @@ import { LanguageSwitcher, languages } from "@/components/public/language-switch
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; app?: string }>
 }) {
   const user = await getUser()
-  const { error } = await searchParams
+  const { error, app } = await searchParams
+  const isApp = app === "yes"
   const isNotConnected = error === "not_connected"
   const t = await getTranslations("login")
 
@@ -65,7 +66,7 @@ export default async function LoginPage({
               )}
 
               {/* Login Form */}
-              <LoginForm initialError={isNotConnected ? undefined : error} />
+              <LoginForm initialError={isNotConnected ? undefined : error} isApp={isApp} />
               
             </div>
 

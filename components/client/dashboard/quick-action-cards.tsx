@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useClientLayout } from "../client-layout-provider"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
@@ -37,6 +38,8 @@ function ActionCard({ title, description, buttonText, onClick }: ActionCardProps
 
 export function QuickActionCards() {
   const { user, credits, meetingRoomSites, plan, mainSiteId, isAdmin, companyAdmin } = useClientLayout()
+  const searchParams = useSearchParams()
+  const isApp = searchParams.get("app") === "yes"
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
   const [adminDialogOpen, setAdminDialogOpen] = useState(false)
   const [adminDialogAction, setAdminDialogAction] = useState<"credits" | "desk">("credits")
@@ -65,25 +68,29 @@ export function QuickActionCards() {
   return (
     <>
       {/* Action cards grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <ActionCard
-          title={t("buyCredits.title")}
-          description={t("buyCredits.description")}
-          buttonText={t("buyCredits.button")}
-          onClick={handleBuyCredits}
-        />
+      <div className={`grid grid-cols-1 gap-4 ${isApp ? "sm:grid-cols-1" : "sm:grid-cols-3"}`}>
+        {!isApp && (
+          <ActionCard
+            title={t("buyCredits.title")}
+            description={t("buyCredits.description")}
+            buttonText={t("buyCredits.button")}
+            onClick={handleBuyCredits}
+          />
+        )}
         <ActionCard
           title={t("bookRoom.title")}
           description={t("bookRoom.description")}
           buttonText={t("bookRoom.button")}
           onClick={() => setBookingModalOpen(true)}
         />
-        <ActionCard
-          title={t("bookDesk.title")}
-          description={t("bookDesk.description")}
-          buttonText={t("bookDesk.button")}
-          onClick={handleBookDesk}
-        />
+        {!isApp && (
+          <ActionCard
+            title={t("bookDesk.title")}
+            description={t("bookDesk.description")}
+            buttonText={t("bookDesk.button")}
+            onClick={handleBookDesk}
+          />
+        )}
       </div>
 
       {/* Booking Modal - lazy rendered */}
