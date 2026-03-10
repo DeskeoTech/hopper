@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { Calendar, Users, User, Loader2, CreditCard } from "lucide-react"
+import { Calendar, Users, User, Loader2, CreditCard, Plus, X, Search } from "lucide-react"
 import { format, parseISO } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -10,19 +10,31 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
-import { getAdminCafeUsers, type AdminPassUser } from "@/lib/actions/admin-passes"
+import {
+  getAdminCafeUsers,
+  getAdminCompanyUsersNotInCafe,
+  adminAssignUserToCafeContract,
+  type AdminPassUser,
+} from "@/lib/actions/admin-passes"
 import type { AdminPassForDisplay } from "@/lib/types/database"
 
 interface CafeDetailModalProps {
   subscription: AdminPassForDisplay | null
+  companyId: string
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetailModalProps) {
+export function CafeDetailModal({ subscription, companyId, open, onOpenChange }: CafeDetailModalProps) {
   const [users, setUsers] = useState<AdminPassUser[]>([])
   const [loading, setLoading] = useState(false)
+  const [showAssign, setShowAssign] = useState(false)
+  const [availableUsers, setAvailableUsers] = useState<AdminPassUser[]>([])
+  const [loadingAvailable, setLoadingAvailable] = useState(false)
+  const [assigningUserId, setAssigningUserId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const fetchUsers = useCallback(() => {
     if (subscription) {
@@ -39,8 +51,39 @@ export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetail
       fetchUsers()
     } else {
       setUsers([])
+      setShowAssign(false)
+      setSearchQuery("")
     }
   }, [open, subscription, fetchUsers])
+
+  const handleShowAssign = async () => {
+    if (!subscription) return
+    setShowAssign(true)
+    setLoadingAvailable(true)
+    const result = await getAdminCompanyUsersNotInCafe(subscription.id, companyId)
+    setAvailableUsers(result.data || [])
+    setLoadingAvailable(false)
+  }
+
+  const handleAssign = async (userId: string) => {
+    if (!subscription) return
+    setAssigningUserId(userId)
+    const result = await adminAssignUserToCafeContract(userId, subscription.id)
+    if (result.success) {
+      fetchUsers()
+      setAvailableUsers((prev) => prev.filter((u) => u.id !== userId))
+    }
+    setAssigningUserId(null)
+  }
+
+  const handleUnassign = async (userId: string) => {
+    setAssigningUserId(userId)
+    const result = await adminAssignUserToCafeContract(userId, null)
+    if (result.success) {
+      fetchUsers()
+    }
+    setAssigningUserId(null)
+  }
 
   if (!subscription) return null
 
@@ -56,6 +99,17 @@ export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetail
     startDate &&
     startDate <= now &&
     (!endDate || endDate >= now)
+
+  const maxSeats = subscription.number_of_seats ?? 0
+  const isFull = users.length >= maxSeats
+
+  const filteredAvailable = searchQuery.trim()
+    ? availableUsers.filter((u) => {
+        const q = searchQuery.toLowerCase()
+        const name = [u.first_name, u.last_name].filter(Boolean).join(" ").toLowerCase()
+        return name.includes(q) || (u.email?.toLowerCase().includes(q) ?? false)
+      })
+    : availableUsers
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -133,7 +187,7 @@ export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetail
                 <span className="text-muted-foreground">Abonnements : </span>
                 <span className="text-foreground">
                   {subscription.number_of_seats !== null
-                    ? `${subscription.assigned_users_count} / ${subscription.number_of_seats}`
+                    ? `${users.length} / ${subscription.number_of_seats}`
                     : "Non défini"}
                 </span>
               </div>
@@ -182,9 +236,21 @@ export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetail
 
         {/* Assigned users */}
         <div className="space-y-2">
-          <h3 className="text-sm font-medium text-muted-foreground">
-            Utilisateurs assignés
-          </h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-muted-foreground">
+              Utilisateurs assignés
+            </h3>
+            {isOngoing && !isFull && !showAssign && (
+              <button
+                type="button"
+                onClick={handleShowAssign}
+                className="flex items-center gap-1 rounded-sm bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Assigner
+              </button>
+            )}
+          </div>
 
           {loading ? (
             <div className="flex items-center justify-center rounded-lg border border-border p-4">
@@ -220,8 +286,84 @@ export function CafeDetailModal({ subscription, open, onOpenChange }: CafeDetail
                   >
                     {user.status === "active" ? "Actif" : "Inactif"}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleUnassign(user.id)}
+                    disabled={assigningUserId === user.id}
+                    className="shrink-0 rounded-sm p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors disabled:opacity-50"
+                    title="Retirer"
+                  >
+                    {assigningUserId === user.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <X className="h-3.5 w-3.5" />
+                    )}
+                  </button>
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Assign user panel */}
+          {showAssign && (
+            <div className="rounded-lg border border-border p-3 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-muted-foreground">Ajouter un utilisateur</p>
+                <button
+                  type="button"
+                  onClick={() => { setShowAssign(false); setSearchQuery("") }}
+                  className="text-xs text-muted-foreground hover:text-foreground"
+                >
+                  Fermer
+                </button>
+              </div>
+
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Rechercher un utilisateur..."
+                  className="h-8 pl-8 text-xs"
+                />
+              </div>
+
+              {loadingAvailable ? (
+                <div className="flex items-center justify-center p-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredAvailable.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-3">
+                  {searchQuery ? "Aucun résultat" : "Aucun utilisateur disponible"}
+                </p>
+              ) : (
+                <div className="max-h-[200px] overflow-y-auto space-y-1">
+                  {filteredAvailable.map((user) => (
+                    <button
+                      key={user.id}
+                      type="button"
+                      onClick={() => handleAssign(user.id)}
+                      disabled={assigningUserId === user.id || isFull}
+                      className="flex w-full items-center gap-2 rounded-sm p-2 text-left text-sm hover:bg-muted/50 transition-colors disabled:opacity-50"
+                    >
+                      <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs font-medium truncate block">
+                          {user.first_name} {user.last_name}
+                        </span>
+                        {user.email && (
+                          <span className="text-[11px] text-muted-foreground truncate block">{user.email}</span>
+                        )}
+                      </div>
+                      {assigningUserId === user.id ? (
+                        <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-muted-foreground" />
+                      ) : (
+                        <Plus className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -15,6 +15,14 @@ export interface ContractWithSeats {
   assigned_seats: number
 }
 
+export interface CafeContractWithSeats {
+  id: string
+  status: ContractStatus
+  plan_name: string
+  total_seats: number
+  assigned_seats: number
+}
+
 export interface UserWithContract extends User {
   contract_name: string | null
 }
@@ -57,7 +65,7 @@ export default async function EntreprisePageRoute() {
     redirect("/compte")
   }
 
-  // Fetch company contracts with plans
+  // Fetch company contracts with plans (regular + café)
   const { data: contractsData } = await supabase
     .from("contracts")
     .select(`
@@ -66,7 +74,7 @@ export default async function EntreprisePageRoute() {
       start_date,
       end_date,
       Number_of_seats,
-      plans (name, recurrence)
+      plans (name, recurrence, service_type)
     `)
     .eq("company_id", userProfile.company_id)
     .eq("status", "active")
@@ -85,16 +93,30 @@ export default async function EntreprisePageRoute() {
     .eq("company_id", userProfile.company_id)
     .order("last_name", { ascending: true })
 
-  // Count users per contract
+  // Count users per contract (regular + café)
   const contractUserCounts: Record<string, number> = {}
+  const cafeContractUserCounts: Record<string, number> = {}
   for (const user of usersData || []) {
     if (user.contract_id && user.status === "active") {
       contractUserCounts[user.contract_id] = (contractUserCounts[user.contract_id] || 0) + 1
     }
+    if (user.cafe_contract_id && user.status === "active") {
+      cafeContractUserCounts[user.cafe_contract_id] = (cafeContractUserCounts[user.cafe_contract_id] || 0) + 1
+    }
   }
 
-  // Transform contracts
-  const contracts: ContractWithSeats[] = (contractsData || []).map((c) => {
+  // Split contracts into regular and café
+  const regularContractsData = (contractsData || []).filter((c) => {
+    const plan = c.plans as { name: string; recurrence: PlanRecurrence | null; service_type: string | null } | null
+    return plan?.service_type !== "coffee_subscription"
+  })
+  const cafeContractsData = (contractsData || []).filter((c) => {
+    const plan = c.plans as { name: string; recurrence: PlanRecurrence | null; service_type: string | null } | null
+    return plan?.service_type === "coffee_subscription"
+  })
+
+  // Transform regular contracts
+  const contracts: ContractWithSeats[] = regularContractsData.map((c) => {
     const plan = c.plans as { name: string; recurrence: PlanRecurrence | null } | null
     const totalSeats = c.Number_of_seats ? Number(c.Number_of_seats) : 0
     const assignedSeats = contractUserCounts[c.id] || 0
@@ -106,6 +128,21 @@ export default async function EntreprisePageRoute() {
       end_date: c.end_date,
       plan_name: plan?.name || "Contrat",
       plan_recurrence: plan?.recurrence || null,
+      total_seats: totalSeats,
+      assigned_seats: assignedSeats,
+    }
+  })
+
+  // Transform café contracts
+  const cafeContracts: CafeContractWithSeats[] = cafeContractsData.map((c) => {
+    const plan = c.plans as { name: string } | null
+    const totalSeats = c.Number_of_seats ? Number(c.Number_of_seats) : 0
+    const assignedSeats = cafeContractUserCounts[c.id] || 0
+
+    return {
+      id: c.id,
+      status: c.status as ContractStatus,
+      plan_name: plan?.name || "Forfait café",
       total_seats: totalSeats,
       assigned_seats: assignedSeats,
     }
@@ -189,6 +226,7 @@ export default async function EntreprisePageRoute() {
     <EntreprisePage
       company={company!}
       contracts={contracts}
+      cafeContracts={cafeContracts}
       users={users}
       currentUserId={userProfile.id}
       spacebringSeats={spacebringSeats}
