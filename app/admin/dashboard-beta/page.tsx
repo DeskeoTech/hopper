@@ -907,40 +907,6 @@ function getDateGrouping(period: string): "hour" | "day" | "week" | "month" {
   }
 }
 
-function groupByDate(items: { date: string; source: string }[], grouping: "hour" | "day" | "week" | "month") {
-  const map = new Map<string, { spacebring: number; direct: number; me: number }>()
-  for (const item of items) {
-    const d = new Date(item.date)
-    let key: string
-    switch (grouping) {
-      case "hour":
-        key = `${d.getHours()}h`
-        break
-      case "day":
-        key = format(d, "dd/MM", { locale: fr })
-        break
-      case "week": {
-        const weekStart = startOfWeek(d, { weekStartsOn: 1 })
-        key = format(weekStart, "dd/MM", { locale: fr })
-        break
-      }
-      case "month":
-        key = format(d, "MMM yy", { locale: fr })
-        break
-    }
-    const existing = map.get(key) || { spacebring: 0, direct: 0, me: 0 }
-    if (item.source === "Spacebring") existing.spacebring++
-    else if (item.source === "M&E") existing.me++
-    else existing.direct++
-    map.set(key, existing)
-  }
-  return Array.from(map.entries()).map(([label, counts]) => ({
-    label,
-    spacebring: counts.spacebring,
-    direct: counts.direct,
-    me: counts.me,
-  }))
-}
 
 async function loadMarketingData(now: Date, period: string, periodMode: string = "calendar") {
   const supabase = await createClient()
@@ -960,13 +926,13 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     // 1. New companies in period
     supabase
       .from("companies")
-      .select("id, name, created_at, company_type, from_spacebring, onboarding_done, meeting_room_only, customer_id_stripe, main_site_id")
+      .select("id, name, created_at, company_type, from_spacebring, onboarding_done, meeting_room_only, customer_id_stripe, main_site_id, utm_source, utm_medium, utm_campaign")
       .gte("created_at", periodStart.toISOString())
       .lte("created_at", periodEnd.toISOString()),
     // 2. All companies
     supabase
       .from("companies")
-      .select("id, name, company_type, from_spacebring, onboarding_done, meeting_room_only, created_at, customer_id_stripe, main_site_id"),
+      .select("id, name, company_type, from_spacebring, onboarding_done, meeting_room_only, created_at, customer_id_stripe, main_site_id, utm_source, utm_medium, utm_campaign"),
     // 3. Bookings in period with user → company + resource → site
     supabase
       .from("bookings")
@@ -974,7 +940,8 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
         user:users!left(id, first_name, last_name, email, company_id, company:companies!left(id, name, from_spacebring)),
         resource:resources!inner(id, type, site_id, site:sites!inner(id, name))`)
       .gte("start_date", periodStart.toISOString())
-      .lte("start_date", periodEnd.toISOString()),
+      .lte("start_date", periodEnd.toISOString())
+      .limit(10000),
     // 4. Sites for filter
     supabase.from("sites").select("id, name").eq("status", "open"),
     // 5. Stripe charges
@@ -989,20 +956,10 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
 
   // KPIs
   const newCompaniesCount = newCompanies.length
-  const spacebringCount = newCompanies.filter((c) => c.from_spacebring).length
-  const directCount = newCompaniesCount - spacebringCount
-  const onboardedCount = allCompanies.filter((c) => c.onboarding_done).length
-  const onboardingRate = allCompanies.length > 0 ? Math.round((onboardedCount / allCompanies.length) * 100) : 0
+  // All companies are considered "Direct" (Spacebring = Direct)
 
-  // Signups over time chart data (by source)
+  // Signups by site chart data
   const dateGrouping = getDateGrouping(period)
-  const signupItems = newCompanies.map((c) => ({
-    date: c.created_at,
-    source: c.from_spacebring ? "Spacebring" : "Direct",
-  }))
-  const signupsOverTime = groupByDate(signupItems, dateGrouping)
-
-  // Signups over time by site
   const siteNameMap = new Map<string, string>()
   ;(sitesResult.data || []).forEach((s) => siteNameMap.set(s.id, s.name))
 
@@ -1078,11 +1035,9 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
   }
 
   // Source logic for bookings
-  type BookingSource = "Spacebring" | "Direct" | "M&E"
+  type BookingSource = "Direct" | "M&E"
   function getBookingSource(booking: { referral: string | null; user: unknown }): BookingSource {
     if (booking.referral === "M&E") return "M&E"
-    const user = booking.user as { company: { from_spacebring: boolean | null } | null } | null
-    if (user?.company?.from_spacebring) return "Spacebring"
     return "Direct"
   }
 
@@ -1111,22 +1066,23 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     name: c.name,
     createdAt: c.created_at,
     companyType: c.company_type || "—",
-    source: (c.from_spacebring ? "Spacebring" : "Direct") as string,
+    source: "Direct" as string,
     meetingRoomOnly: c.meeting_room_only || false,
-    onboardingDone: c.onboarding_done || false,
     bookingsCount: bookingCountByCompany.get(c.id) || 0,
     revenue: revenueByCompany.get(c.id) || 0,
+    utmSource: c.utm_source || null,
+    utmMedium: c.utm_medium || null,
+    utmCampaign: c.utm_campaign || null,
   }))
 
   return (
     <MarketingTab
       kpis={{
         newCompaniesCount,
-        spacebringCount,
-        directCount,
-        onboardingRate,
+        newCompanies: newCompanies
+          .map((c) => ({ name: c.name, createdAt: c.created_at, utmSource: c.utm_source || null }))
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()),
       }}
-      signupsOverTime={signupsOverTime}
       signupsBySite={signupsBySite}
       signupSiteNames={signupSiteNames}
       segmentation={segmentation}
@@ -1235,7 +1191,7 @@ async function loadReportsData(now: Date) {
       id: c.id,
       name: c.name || "—",
       companyType: c.company_type || "—",
-      source: c.from_spacebring ? "Spacebring" : "Direct",
+      source: "Direct",
       meetingRoomOnly: c.meeting_room_only || false,
       onboardingDone: c.onboarding_done || false,
       siteName: site?.name || "—",
