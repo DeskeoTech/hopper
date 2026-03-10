@@ -2,7 +2,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data"
 
 const propertyId = process.env.GA_PROPERTY_ID
 const clientEmail = process.env.GA_CLIENT_EMAIL
-const privateKey = process.env.GA_PRIVATE_KEY?.replace(/\\n/g, "\n")
+const rawKey = process.env.GA_PRIVATE_KEY || ""
+const privateKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey
 
 let client: BetaAnalyticsDataClient | null = null
 
