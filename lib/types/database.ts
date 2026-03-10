@@ -61,6 +61,7 @@ export interface Site {
   is_nomad: boolean
   is_coworking: boolean
   is_meeting_room: boolean
+  stripe_account: string
   created_at: string
   updated_at: string
 }

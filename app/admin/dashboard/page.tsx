@@ -476,15 +476,27 @@ interface CachedProduct {
   unitPrice: number | null
 }
 
+// Maps dashboard account names to environment variable names
+const STRIPE_DASHBOARD_ENV_MAP: Record<string, string> = {
+  "hopper-coworking": "STRIPE_SECRET_KEY_HOPPER_COWORKING",
+  "icade": "STRIPE_SECRET_KEY_ICADE",
+  "collection": "STRIPE_SECRET_KEY_HOPPER_COLLECTION",
+}
+
+function getDashboardStripe(account: string): Stripe | null {
+  const envVar = STRIPE_DASHBOARD_ENV_MAP[account]
+  if (!envVar) return null
+  const key = process.env[envVar]
+  if (!key) return null
+  return new Stripe(key, { apiVersion: "2024-12-18.acacia" })
+}
+
 // Cached Stripe products fetch — revalidates every hour (products change rarely)
 const fetchStripeProductsCached = unstable_cache(
   async (account: string): Promise<CachedProduct[]> => {
-    const secretKey = account === "coworking"
-      ? process.env.STRIPE_SECRET_KEY
-      : process.env.STRIPE_SECRET_KEY_2
-    if (!secretKey) return []
+    const stripe = getDashboardStripe(account)
+    if (!stripe) return []
     try {
-      const stripe = new Stripe(secretKey, { apiVersion: "2024-12-18.acacia" })
       const products = await stripe.products.list({
         limit: 100,
         active: true,
@@ -510,12 +522,9 @@ const fetchStripeProductsCached = unstable_cache(
 // Cached Stripe fetch — revalidates every 5 minutes
 const fetchStripeChargesCached = unstable_cache(
   async (account: string, createdGte: number, createdLte: number): Promise<CachedCharge[]> => {
-    const secretKey = account === "coworking"
-      ? process.env.STRIPE_SECRET_KEY
-      : process.env.STRIPE_SECRET_KEY_2
-    if (!secretKey) return []
+    const stripe = getDashboardStripe(account)
+    if (!stripe) return []
     try {
-      const stripe = new Stripe(secretKey, { apiVersion: "2024-12-18.acacia" })
       const charges = await stripe.charges.list({
         created: { gte: createdGte, lte: createdLte },
         limit: 100,
@@ -547,12 +556,9 @@ const fetchStripeChargesCached = unstable_cache(
 // Cached Stripe checkout sessions fetch — maps payment_intent → product
 const fetchStripeSessionsCached = unstable_cache(
   async (account: string, createdGte: number, createdLte: number): Promise<CachedSession[]> => {
-    const secretKey = account === "coworking"
-      ? process.env.STRIPE_SECRET_KEY
-      : process.env.STRIPE_SECRET_KEY_2
-    if (!secretKey) return []
+    const stripe = getDashboardStripe(account)
+    if (!stripe) return []
     try {
-      const stripe = new Stripe(secretKey, { apiVersion: "2024-12-18.acacia" })
       const sessions = await stripe.checkout.sessions.list({
         created: { gte: createdGte, lte: createdLte },
         limit: 100,
@@ -664,18 +670,21 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   const salesTotalDays = Math.max(1, Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1)
   const salesBusinessDays = Math.max(1, Math.round(salesTotalDays * 5 / 7))
 
-  // Fetch companies lookup + both Stripe accounts + products + sessions + bookings data in parallel
-  const [companiesStripeResult, coworkingCharges, collectionsCharges, coworkingProducts, collectionsProducts, coworkingSessions, collectionsSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
+  // Fetch companies lookup + all Stripe accounts + products + sessions + bookings data in parallel
+  const [companiesStripeResult, coworkingCharges, icadeCharges, collectionCharges, coworkingProducts, icadeProducts, collectionProducts, coworkingSessions, icadeSessions, collectionSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
     supabase
       .from("companies")
       .select("id, name, customer_id_stripe, main_site_id")
       .not("customer_id_stripe", "is", null),
-    fetchStripeChargesCached("coworking", createdGte, createdLte),
-    fetchStripeChargesCached("collections", createdGte, createdLte),
-    fetchStripeProductsCached("coworking"),
-    fetchStripeProductsCached("collections"),
-    fetchStripeSessionsCached("coworking", createdGte, createdLte),
-    fetchStripeSessionsCached("collections", createdGte, createdLte),
+    fetchStripeChargesCached("hopper-coworking", createdGte, createdLte),
+    fetchStripeChargesCached("icade", createdGte, createdLte),
+    fetchStripeChargesCached("collection", createdGte, createdLte),
+    fetchStripeProductsCached("hopper-coworking"),
+    fetchStripeProductsCached("icade"),
+    fetchStripeProductsCached("collection"),
+    fetchStripeSessionsCached("hopper-coworking", createdGte, createdLte),
+    fetchStripeSessionsCached("icade", createdGte, createdLte),
+    fetchStripeSessionsCached("collection", createdGte, createdLte),
     supabase
       .from("resources")
       .select("id, site_id, type, capacity, site:sites!inner(id, name, status)")
@@ -696,16 +705,16 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     }
   })
 
-  // Merge all charges, products and sessions from both accounts
-  const allCharges = [...coworkingCharges, ...collectionsCharges]
+  // Merge all charges, products and sessions from all accounts
+  const allCharges = [...coworkingCharges, ...icadeCharges, ...collectionCharges]
   // Sort products by name length (longest first) to avoid partial matches
-  const allProducts = [...coworkingProducts, ...collectionsProducts].sort(
+  const allProducts = [...coworkingProducts, ...icadeProducts, ...collectionProducts].sort(
     (a, b) => b.name.length - a.name.length
   )
 
   // Build payment_intent → product mapping from checkout sessions
   const piToProduct = new Map<string, { productId: string; productName: string }>()
-  for (const s of [...coworkingSessions, ...collectionsSessions]) {
+  for (const s of [...coworkingSessions, ...icadeSessions, ...collectionSessions]) {
     piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName })
   }
 
@@ -924,7 +933,8 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     bookingsResult,
     sitesResult,
     coworkingCharges,
-    collectionsCharges,
+    icadeCharges,
+    collectionCharges,
   ] = await Promise.all([
     // 1. New companies in period
     supabase
@@ -948,8 +958,9 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     // 4. Sites for filter
     supabase.from("sites").select("id, name").eq("status", "open"),
     // 5. Stripe charges
-    fetchStripeChargesCached("coworking", createdGte, createdLte),
-    fetchStripeChargesCached("collections", createdGte, createdLte),
+    fetchStripeChargesCached("hopper-coworking", createdGte, createdLte),
+    fetchStripeChargesCached("icade", createdGte, createdLte),
+    fetchStripeChargesCached("collection", createdGte, createdLte),
   ])
 
   const newCompanies = newCompaniesResult.data || []
@@ -1012,7 +1023,7 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
   }
 
   // Stripe revenue by company
-  const allCharges = [...coworkingCharges, ...collectionsCharges]
+  const allCharges = [...coworkingCharges, ...icadeCharges, ...collectionCharges]
   const stripeCustomerToCompanyId = new Map<string, string>()
   allCompanies.forEach((c) => {
     if (c.customer_id_stripe) stripeCustomerToCompanyId.set(c.customer_id_stripe, c.id)
@@ -1126,7 +1137,8 @@ async function loadReportsData(now: Date) {
     bookingsResult,
     sitesResult,
     coworkingCharges,
-    collectionsCharges,
+    icadeCharges,
+    collectionCharges,
   ] = await Promise.all([
     // 1. All users with company + site
     supabase.from("users").select(`id, first_name, last_name, email, phone, role, status,
@@ -1147,15 +1159,16 @@ async function loadReportsData(now: Date) {
     // 4. Sites for filters
     supabase.from("sites").select("id, name").eq("status", "open"),
     // 5. Stripe charges 12 months
-    fetchStripeChargesCached("coworking", createdGte, createdLte),
-    fetchStripeChargesCached("collections", createdGte, createdLte),
+    fetchStripeChargesCached("hopper-coworking", createdGte, createdLte),
+    fetchStripeChargesCached("icade", createdGte, createdLte),
+    fetchStripeChargesCached("collection", createdGte, createdLte),
   ])
 
   const allUsers = usersResult.data || []
   const allCompanies = companiesResult.data || []
   const allBookings = bookingsResult.data || []
   const sites = (sitesResult.data || []).map((s) => ({ value: s.id, label: s.name })).sort((a, b) => a.label.localeCompare(b.label))
-  const allCharges = [...coworkingCharges, ...collectionsCharges]
+  const allCharges = [...coworkingCharges, ...icadeCharges, ...collectionCharges]
 
   // Revenue by company via Stripe customer mapping
   const stripeCustomerToCompanyId = new Map<string, string>()
