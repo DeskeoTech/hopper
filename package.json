@@ -1,6 +1,6 @@
 {
   "name": "my-v0-project",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "scripts": {
     "build": "next build",
@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@date-fns/tz": "^1.4.1",
+    "@google-analytics/data": "^5.2.1",
     "@hookform/resolvers": "^3.10.0",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
