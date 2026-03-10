@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { BarChart3 } from "lucide-react"
 import { fetchGaMetrics, getAvailableGaAccounts } from "@/lib/google-analytics"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format, isToday } from "date-fns"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format, isToday, eachDayOfInterval, isWeekend } from "date-fns"
 import { fr } from "date-fns/locale"
 import { DateNavigator } from "@/components/admin/accueil/date-navigator"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -12,6 +12,10 @@ import { MarketingTab } from "@/components/admin/analytics/marketing-tab"
 import { ReportsTab } from "@/components/admin/analytics/reports-tab"
 import { Suspense } from "react"
 import { unstable_cache } from "next/cache"
+
+function countBusinessDays(start: Date, end: Date): number {
+  return eachDayOfInterval({ start, end }).filter((d) => !isWeekend(d)).length || 1
+}
 
 type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
 
@@ -110,9 +114,8 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
   const prevPeriodEnd = new Date(periodStart.getTime() - 1)
   const prevPeriodStart = new Date(prevPeriodEnd.getTime() - periodDurationMs)
 
-  // Business days in period
-  const overviewTotalDays = Math.max(1, Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1)
-  const overviewBusinessDays = Math.max(1, Math.round(overviewTotalDays * 5 / 7))
+  // Business days in period (excluding weekends)
+  const overviewBusinessDays = countBusinessDays(periodStart, periodEnd)
 
   const [
     companiesResult,
@@ -660,9 +663,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   const createdGte = Math.floor(periodStart.getTime() / 1000)
   const createdLte = Math.floor(periodEnd.getTime() / 1000)
 
-  // Business days in period
-  const salesTotalDays = Math.max(1, Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1)
-  const salesBusinessDays = Math.max(1, Math.round(salesTotalDays * 5 / 7))
+  // Business days in period (excluding weekends)
+  const salesBusinessDays = countBusinessDays(periodStart, periodEnd)
 
   // Fetch companies lookup + both Stripe accounts + products + sessions + bookings data in parallel
   const [companiesStripeResult, coworkingCharges, collectionsCharges, coworkingProducts, collectionsProducts, coworkingSessions, collectionsSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
