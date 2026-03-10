@@ -34,7 +34,9 @@ export async function proxy(request: NextRequest) {
   // If refresh failed and user is null, clear stale auth cookies
   // to prevent the browser from repeatedly trying to refresh with invalid tokens
   if (!user) {
-    const authCookies = request.cookies.getAll().filter((c) => c.name.startsWith("sb-"))
+    const authCookies = request.cookies
+      .getAll()
+      .filter((c) => c.name.startsWith("sb-") && !c.name.includes("code-verifier"))
     if (authCookies.length > 0) {
       authCookies.forEach(({ name }) => {
         supabaseResponse.cookies.delete(name)
