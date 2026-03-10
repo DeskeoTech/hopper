@@ -45,7 +45,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to access admin, redirect to login
-  const adminRoutes = ["/admin"]
+  const adminRoutes = ["/admin", "/cafe"]
   const isAdminRoute = adminRoutes.some(
     (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
   )
