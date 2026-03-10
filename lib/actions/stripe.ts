@@ -22,32 +22,37 @@ function formatDateShort(isoDate: string): string {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" })
 }
 
-function getStripe() {
-  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
-  if (!stripeSecretKey) {
-    throw new Error("Configuration Stripe manquante")
-  }
-  return new Stripe(stripeSecretKey, {
-    apiVersion: "2024-12-18.acacia",
-  })
+// Maps stripe_account identifiers (from DB) to environment variable names
+const STRIPE_ACCOUNT_ENV_MAP: Record<string, string> = {
+  "hopper-coworking": "STRIPE_SECRET_KEY",
+  "icade": "STRIPE_SECRET_KEY_ICADE",
+  "collection": "STRIPE_SECRET_KEY_COLLECTION",
 }
 
-// Returns all configured Stripe clients (primary + fallback)
-function getStripeClients(): Stripe[] {
-  const clients: Stripe[] = []
-  const key1 = process.env.STRIPE_SECRET_KEY
-  const key2 = process.env.STRIPE_SECRET_KEY_2
-  if (key1) clients.push(new Stripe(key1, { apiVersion: "2024-12-18.acacia" }))
-  if (key2) clients.push(new Stripe(key2, { apiVersion: "2024-12-18.acacia" }))
-  if (clients.length === 0) throw new Error("Configuration Stripe manquante")
+function getStripe(account: string = "hopper-coworking") {
+  const envVar = STRIPE_ACCOUNT_ENV_MAP[account]
+  if (!envVar) throw new Error(`Compte Stripe inconnu: ${account}`)
+  const key = process.env[envVar]
+  if (!key) throw new Error(`Variable d'environnement ${envVar} manquante`)
+  return new Stripe(key, { apiVersion: "2024-12-18.acacia" })
+}
+
+// Returns all configured Stripe clients (for operations that need to search across accounts)
+function getAllStripeClients(): { account: string; stripe: Stripe }[] {
+  const clients: { account: string; stripe: Stripe }[] = []
+  for (const [account, envVar] of Object.entries(STRIPE_ACCOUNT_ENV_MAP)) {
+    const key = process.env[envVar]
+    if (key) clients.push({ account, stripe: new Stripe(key, { apiVersion: "2024-12-18.acacia" }) })
+  }
+  if (clients.length === 0) throw new Error("Aucune configuration Stripe trouvée")
   return clients
 }
 
-// Try an operation on the primary Stripe account, fallback to second if it fails
+// Try an operation across all configured Stripe accounts until one succeeds
 async function withStripeFallback<T>(fn: (stripe: Stripe) => Promise<T>): Promise<T> {
-  const clients = getStripeClients()
+  const clients = getAllStripeClients()
   let lastError: unknown
-  for (const stripe of clients) {
+  for (const { stripe } of clients) {
     try {
       return await fn(stripe)
     } catch (error) {
@@ -55,6 +60,17 @@ async function withStripeFallback<T>(fn: (stripe: Stripe) => Promise<T>): Promis
     }
   }
   throw lastError
+}
+
+// Resolve stripe_account for a given siteId from the database
+async function getStripeAccountForSite(siteId: string): Promise<string> {
+  const supabase = createAdminClient()
+  const { data } = await supabase
+    .from("sites")
+    .select("stripe_account")
+    .eq("id", siteId)
+    .single()
+  return data?.stripe_account || "hopper-coworking"
 }
 
 async function getOrCreateMonthlyPrice(
@@ -102,9 +118,11 @@ interface CheckoutParams {
 
 export async function createCheckoutSession(params: CheckoutParams): Promise<{ url: string; sessionId: string } | { error: string }> {
   try {
-    const stripe = getStripe()
-
     const { siteId, siteName, passType, seats, dates, days, weeks, returnPath, includeTax, customerEmail, referral } = params
+
+    // Resolve the correct Stripe account for this site
+    const stripeAccount = await getStripeAccountForSite(siteId)
+    const stripe = getStripe(stripeAccount)
 
     if (!siteId || !siteName || !passType || !seats || !dates || dates.length === 0) {
       return { error: "Paramètres manquants" }
@@ -324,7 +342,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
   }
 }
 
-export async function createPortalSession(customerId: string): Promise<{ url: string } | { error: string }> {
+export async function createPortalSession(customerId: string, stripeAccount?: string): Promise<{ url: string } | { error: string }> {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -332,7 +350,7 @@ export async function createPortalSession(customerId: string): Promise<{ url: st
       return { error: "Non autorisé" }
     }
 
-    const stripe = getStripe()
+    const stripe = getStripe(stripeAccount || "hopper-coworking")
 
     if (!customerId) {
       return { error: "Customer ID manquant" }
@@ -351,14 +369,14 @@ export async function createPortalSession(customerId: string): Promise<{ url: st
   }
 }
 
-export async function getPaymentStatus(sessionId: string): Promise<{
+export async function getPaymentStatus(sessionId: string, stripeAccount?: string): Promise<{
   paymentStatus: "paid" | "unpaid" | "no_payment_required" | null
   sessionStatus: "open" | "complete" | "expired" | null
   amountTotal: number | null
   currency: string | null
 } | { error: string }> {
   try {
-    const stripe = getStripe()
+    const stripe = getStripe(stripeAccount || "hopper-coworking")
     const session = await stripe.checkout.sessions.retrieve(sessionId)
 
     return {
@@ -429,11 +447,11 @@ export async function getCompanyPaymentStatuses(customerIds: string[]): Promise<
   }
 }
 
-export async function getPaymentStatuses(sessionIds: string[]): Promise<{
+export async function getPaymentStatuses(sessionIds: string[], stripeAccount?: string): Promise<{
   statuses: Record<string, { paymentStatus: string; sessionStatus: string }>
 } | { error: string }> {
   try {
-    const stripe = getStripe()
+    const stripe = getStripe(stripeAccount || "hopper-coworking")
     const results: Record<string, { paymentStatus: string; sessionStatus: string }> = {}
 
     await Promise.all(
@@ -490,13 +508,25 @@ export async function getSubscriptionStatuses(subscriptionIds: string[]): Promis
 
 // --- Create booking from completed Stripe checkout session ---
 
-export async function createBookingFromStripeSession(sessionId: string): Promise<{
+export async function createBookingFromStripeSession(sessionId: string, stripeAccount?: string): Promise<{
   success: boolean
   bookingId?: string
 } | { error: string }> {
   try {
-    const stripe = getStripe()
-    const session = await stripe.checkout.sessions.retrieve(sessionId)
+    // If no account specified, try all accounts to find the session
+    let stripe: Stripe
+    let session: Stripe.Checkout.Session
+    if (stripeAccount) {
+      stripe = getStripe(stripeAccount)
+      session = await stripe.checkout.sessions.retrieve(sessionId)
+    } else {
+      const result = await withStripeFallback(async (s) => {
+        const sess = await s.checkout.sessions.retrieve(sessionId)
+        return { stripe: s, session: sess }
+      })
+      stripe = result.stripe
+      session = result.session
+    }
 
     // Only create booking for completed payments
     if (session.payment_status !== "paid" && session.status !== "complete") {
