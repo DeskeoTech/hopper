@@ -2,7 +2,6 @@ import {
   Building2,
   Calendar,
   Briefcase,
-  LayoutDashboard,
   BarChart3,
   Home,
   User,
@@ -20,8 +19,7 @@ export interface NavItem {
 
 export const adminNavigation: NavItem[] = [
   { name: "Accueil", href: "/admin", icon: Home },
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
-  { name: "Dashboard Beta", href: "/admin/dashboard-beta", icon: BarChart3 },
+  { name: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
   { name: "Sites", href: "/admin/sites", icon: Building2 },
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Clients", href: "/admin/clients", icon: Briefcase },

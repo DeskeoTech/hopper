@@ -27,6 +27,7 @@ import {
   Users,
   UserPlus,
   UserCheck,
+  Maximize2,
 } from "lucide-react"
 import {
   BarChart,
@@ -197,14 +198,14 @@ const statusColors: Record<string, string> = {
 }
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string; chart: string }> = {
-  Direct: { bg: "bg-green-100", text: "text-green-700", chart: "#22c55e" },
-  "M&E": { bg: "bg-purple-100", text: "text-purple-700", chart: "#8b5cf6" },
+  Direct: { bg: "bg-stone-100", text: "text-stone-700", chart: "#1B1918" },
+  "M&E": { bg: "bg-amber-50", text: "text-amber-800", chart: "#C4A882" },
 }
 
-const PIE_COLORS = ["#3b82f6", "#f59e0b", "#8b5cf6"]
+const PIE_COLORS = ["#1B1918", "#C4A882", "#8B7355"]
 const PIE_LABELS = ["Indépendants", "Multi-employés", "Salle uniquement"]
 
-const SITE_CHART_COLORS = ["#3b82f6", "#f59e0b", "#10b981", "#ef4444", "#8b5cf6", "#ec4899", "#f97316", "#06b6d4", "#84cc16", "#6366f1"]
+const SITE_CHART_COLORS = ["#1B1918", "#C4A882", "#8B7355", "#D4B896", "#4A3F35", "#A08060", "#6B5B4A", "#E8D5C0", "#BFA07A", "#7A6A5A"]
 
 type BookingSortField = "date" | "clientName" | "siteName" | "source" | "status"
 type CompanySortField = "createdAt" | "name" | "source" | "bookingsCount" | "revenue"
@@ -246,6 +247,50 @@ export function MarketingTab({
   const searchParams = useSearchParams()
   const [selectedGaAccount, setSelectedGaAccount] = useState(gaData?.[0]?.key || "")
   const gaMetrics = gaData?.find((d) => d.key === selectedGaAccount)?.metrics ?? null
+  const [expandedCard, setExpandedCard] = useState<string | null>(null)
+
+  const gaCardInfo: Record<string, { title: string; description: string; detail: string }> = {
+    traffic: {
+      title: "Évolution du trafic",
+      description: "Nombre de visiteurs uniques, sessions et pages vues par jour sur la période sélectionnée.",
+      detail: "Visiteurs = utilisateurs actifs uniques (GA4 activeUsers). Sessions = nombre de visites (une session expire après 30 min d'inactivité). Pages vues = nombre total de pages chargées (screenPageViews). Source : GA4 Data API, dimension « date ».",
+    },
+    newVsReturning: {
+      title: "Nouveaux vs Récurrents",
+      description: "Répartition entre les visiteurs qui découvrent le site et ceux qui reviennent.",
+      detail: "Basé sur la dimension GA4 « newVsReturning ». Un visiteur « nouveau » n'a jamais visité le site (pas de cookie _ga existant). Un « récurrent » a déjà un cookie GA. Métrique : activeUsers.",
+    },
+    devices: {
+      title: "Appareils",
+      description: "Répartition des visiteurs par type d'appareil (desktop, mobile, tablette).",
+      detail: "Dimension GA4 « deviceCategory ». Classifie automatiquement selon le User-Agent du navigateur. Métrique : activeUsers. Utile pour prioriser l'optimisation mobile vs desktop.",
+    },
+    sources: {
+      title: "Sources de trafic",
+      description: "D'où viennent les visiteurs : recherche Google, réseaux sociaux, accès direct, etc.",
+      detail: "Dimension GA4 « sessionDefaultChannelGroup ». Organic Search = résultats Google/Bing naturels. Direct = accès via URL/favori. Referral = lien depuis un autre site. Paid Search = Google Ads. Social = réseaux sociaux. Métrique : sessions.",
+    },
+    topPages: {
+      title: "Pages les plus vues",
+      description: "Les 10 pages du site qui génèrent le plus de vues sur la période.",
+      detail: "Dimension GA4 « pagePath ». Métrique : screenPageViews. Triées par nombre de vues décroissant. Inclut toutes les pages, y compris les rechargements.",
+    },
+    landingPages: {
+      title: "Pages d'entrée",
+      description: "Les premières pages vues par les visiteurs en arrivant sur le site.",
+      detail: "Dimension GA4 « landingPagePlusQueryString ». Métrique : sessions. Montre par quelle page les visiteurs commencent leur visite. Utile pour identifier les pages qui attirent du trafic externe (SEO, campagnes).",
+    },
+    geography: {
+      title: "Géographie",
+      description: "Pays et villes d'où proviennent les visiteurs.",
+      detail: "Dimensions GA4 « country » et « city ». Basé sur l'adresse IP du visiteur (géolocalisation approximative). Métrique : activeUsers. Top 5 pour chaque.",
+    },
+    events: {
+      title: "Événements",
+      description: "Actions trackées sur le site : clics, scrolls, formulaires, etc.",
+      detail: "Dimension GA4 « eventName ». Inclut les événements automatiques (page_view, scroll, first_visit, session_start) et les événements personnalisés configurés. Métrique : eventCount.",
+    },
+  }
 
   function handlePeriodChange(newPeriod: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -597,6 +642,17 @@ export function MarketingTab({
                 <p className="text-xs text-muted-foreground/70 max-w-sm">
                   Aucune donnée GA4 disponible pour ce compte sur cette période.
                 </p>
+                {selectedGaAccount === "hopper" && (
+                  <div className="mt-4 w-full rounded-xl bg-muted/50 px-5 py-4">
+                    <p className="text-xs text-muted-foreground/80 leading-loose">
+                      Le tag GA4 Hopper a été installé récemment sur le site.
+                      Les données commencent à apparaître sous 24 à 48h après l&apos;installation.
+                    </p>
+                    <p className="text-xs text-muted-foreground/80 leading-loose mt-2">
+                      Pour les périodes antérieures, seul le compte Legacy (Deskeo) dispose de données historiques.
+                    </p>
+                  </div>
+                )}
               </div>
             ) : (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
@@ -644,10 +700,11 @@ export function MarketingTab({
           {gaMetrics && <>
           {/* Traffic evolution chart */}
           {gaMetrics.dailyTraffic.length > 1 && (
-            <div className="rounded-[20px] bg-card p-5">
+            <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("traffic")}>
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-header text-sm uppercase tracking-wide">Évolution du trafic</h3>
+                <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
               </div>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -676,10 +733,11 @@ export function MarketingTab({
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {/* New vs Returning */}
             {gaMetrics.newVsReturning.length > 0 && (
-              <div className="rounded-[20px] bg-card p-5">
+              <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("newVsReturning")}>
                 <div className="flex items-center gap-2 mb-4">
                   <Users className="h-4 w-4 text-muted-foreground" />
                   <h3 className="font-header text-sm uppercase tracking-wide">Nouveaux vs Récurrents</h3>
+                  <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
                 </div>
                 {(() => {
                   const total = gaMetrics.newVsReturning.reduce((s, r) => s + r.users, 0)
@@ -688,7 +746,8 @@ export function MarketingTab({
                     value: r.users,
                     pct: total > 0 ? ((r.users / total) * 100).toFixed(1) : "0",
                   }))
-                  const colors = ["#1B1918", "#C4A882"]
+                  const colorMap: Record<string, string> = { Nouveaux: "#1B1918", "Récurrents": "#C4A882" }
+                  const colors = nvr.map((r) => colorMap[r.name] || "#8B7355")
                   return (
                     <div className="flex items-center gap-4">
                       <div className="h-[120px] w-[120px] shrink-0">
@@ -718,10 +777,11 @@ export function MarketingTab({
 
             {/* Devices */}
             {gaMetrics.devices.length > 0 && (
-              <div className="rounded-[20px] bg-card p-5">
+              <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("devices")}>
                 <div className="flex items-center gap-2 mb-4">
                   <Smartphone className="h-4 w-4 text-muted-foreground" />
                   <h3 className="font-header text-sm uppercase tracking-wide">Appareils</h3>
+                  <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
                 </div>
                 {(() => {
                   const total = gaMetrics.devices.reduce((s, d) => s + d.users, 0)
@@ -758,10 +818,11 @@ export function MarketingTab({
 
             {/* Traffic Sources */}
             {gaMetrics.trafficSources.length > 0 && (
-              <div className="rounded-[20px] bg-card p-5">
+              <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("sources")}>
                 <div className="flex items-center gap-2 mb-4">
                   <Globe className="h-4 w-4 text-muted-foreground" />
                   <h3 className="font-header text-sm uppercase tracking-wide">Sources de trafic</h3>
+                  <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
                 </div>
                 <div className="space-y-2">
                   {gaMetrics.trafficSources.slice(0, 8).map((s, i) => {
@@ -785,10 +846,11 @@ export function MarketingTab({
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
             {/* Top pages */}
             {gaMetrics.topPages.length > 0 && (
-              <div className="rounded-[20px] bg-card p-5">
+              <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("topPages")}>
                 <div className="flex items-center gap-2 mb-4">
                   <Eye className="h-4 w-4 text-muted-foreground" />
                   <h3 className="font-header text-sm uppercase tracking-wide">Pages les plus vues</h3>
+                  <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
                 </div>
                 <div className="space-y-2">
                   {gaMetrics.topPages.slice(0, 10).map((page, i) => (
@@ -803,10 +865,11 @@ export function MarketingTab({
 
             {/* Landing pages */}
             {gaMetrics.landingPages.length > 0 && (
-              <div className="rounded-[20px] bg-card p-5">
+              <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("landingPages")}>
                 <div className="flex items-center gap-2 mb-4">
                   <LogIn className="h-4 w-4 text-muted-foreground" />
                   <h3 className="font-header text-sm uppercase tracking-wide">Pages d{"'"}entrée</h3>
+                  <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
                 </div>
                 <div className="space-y-2">
                   {gaMetrics.landingPages.slice(0, 10).map((page, i) => (
@@ -820,10 +883,11 @@ export function MarketingTab({
             )}
 
             {/* Countries + Cities */}
-            <div className="rounded-[20px] bg-card p-5">
+            <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("geography")}>
               <div className="flex items-center gap-2 mb-4">
                 <MapPin className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-header text-sm uppercase tracking-wide">Géographie</h3>
+                <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
               </div>
               {gaMetrics.countries.length > 0 && (
                 <div className="mb-4">
@@ -856,10 +920,11 @@ export function MarketingTab({
 
           {/* Events */}
           {gaMetrics.events.length > 0 && (
-            <div className="rounded-[20px] bg-card p-5">
+            <div className="rounded-[20px] bg-card p-5 cursor-pointer hover:ring-2 hover:ring-foreground/10 transition-all" onClick={() => setExpandedCard("events")}>
               <div className="flex items-center gap-2 mb-4">
                 <Zap className="h-4 w-4 text-muted-foreground" />
                 <h3 className="font-header text-sm uppercase tracking-wide">Événements</h3>
+                <Maximize2 className="h-3.5 w-3.5 text-muted-foreground/50 ml-auto" />
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {gaMetrics.events.slice(0, 15).map((e, i) => (
@@ -871,6 +936,254 @@ export function MarketingTab({
               </div>
             </div>
           )}
+          {/* GA4 Expanded Card Modal */}
+          <Dialog open={!!expandedCard} onOpenChange={() => setExpandedCard(null)}>
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl max-h-[85vh] overflow-y-auto">
+              {expandedCard && gaCardInfo[expandedCard] && (
+                <>
+                  <DialogHeader>
+                    <DialogTitle className="font-header text-lg uppercase tracking-wide">
+                      {gaCardInfo[expandedCard].title}
+                    </DialogTitle>
+                    <p className="text-sm text-muted-foreground">{gaCardInfo[expandedCard].description}</p>
+                  </DialogHeader>
+
+                  <div className="mt-4 min-w-0">
+                    {/* Traffic evolution - expanded */}
+                    {expandedCard === "traffic" && gaMetrics.dailyTraffic.length > 0 && (
+                      <div className="h-[250px] sm:h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart data={gaMetrics.dailyTraffic.map((d) => ({
+                            ...d,
+                            label: `${d.date.slice(6, 8)}/${d.date.slice(4, 6)}`,
+                          }))} margin={{ left: -10, right: 10, top: 5, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis dataKey="label" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
+                            <YAxis tick={{ fontSize: 10 }} width={40} />
+                            <Tooltip
+                              contentStyle={{ borderRadius: 12, fontSize: 12, border: "1px solid hsl(var(--border))" }}
+                              labelFormatter={(label) => `Date : ${label}`}
+                            />
+                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                            <Line type="monotone" dataKey="users" name="Visiteurs" stroke="#1B1918" strokeWidth={2} dot={{ r: 2 }} />
+                            <Line type="monotone" dataKey="sessions" name="Sessions" stroke="#8B7355" strokeWidth={2} dot={{ r: 2 }} />
+                            <Line type="monotone" dataKey="pageViews" name="Pages vues" stroke="#C4A882" strokeWidth={2} dot={{ r: 2 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* New vs Returning - expanded */}
+                    {expandedCard === "newVsReturning" && gaMetrics.newVsReturning.length > 0 && (() => {
+                      const total = gaMetrics.newVsReturning.reduce((s, r) => s + r.users, 0)
+                      const nvr = gaMetrics.newVsReturning.map((r) => ({
+                        name: r.type === "new" ? "Nouveaux" : r.type === "returning" ? "Récurrents" : r.type,
+                        value: r.users,
+                        pct: total > 0 ? ((r.users / total) * 100).toFixed(1) : "0",
+                      }))
+                      const colorMap: Record<string, string> = { Nouveaux: "#1B1918", "Récurrents": "#C4A882" }
+                      const colors = nvr.map((r) => colorMap[r.name] || "#8B7355")
+                      return (
+                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                          <div className="h-[180px] w-[180px] sm:h-[220px] sm:w-[220px] shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie data={nvr} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={2}>
+                                  {nvr.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12 }} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 sm:gap-6">
+                            {nvr.map((r, i) => (
+                              <div key={i} className="text-center">
+                                <div className="h-4 w-4 rounded-full mx-auto mb-2" style={{ backgroundColor: colors[i % colors.length] }} />
+                                <p className="font-header text-2xl tabular-nums">{r.value.toLocaleString("fr-FR")}</p>
+                                <p className="text-sm text-muted-foreground">{r.name} ({r.pct}%)</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Devices - expanded */}
+                    {expandedCard === "devices" && gaMetrics.devices.length > 0 && (() => {
+                      const total = gaMetrics.devices.reduce((s, d) => s + d.users, 0)
+                      const deviceColors: Record<string, string> = { desktop: "#1B1918", mobile: "#8B7355", tablet: "#C4A882" }
+                      const deviceIcons: Record<string, typeof Monitor> = { desktop: Monitor, mobile: Smartphone, tablet: Tablet }
+                      return (
+                        <div className="flex flex-col sm:flex-row items-center gap-6">
+                          <div className="h-[180px] w-[180px] sm:h-[220px] sm:w-[220px] shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <PieChart>
+                                <Pie data={gaMetrics.devices.map(d => ({ name: d.device, value: d.users }))} dataKey="value" cx="50%" cy="50%" innerRadius={40} outerRadius={80} paddingAngle={2}>
+                                  {gaMetrics.devices.map((d, i) => <Cell key={i} fill={deviceColors[d.device] || "#999"} />)}
+                                </Pie>
+                                <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12 }} />
+                              </PieChart>
+                            </ResponsiveContainer>
+                          </div>
+                          <div className="space-y-4 w-full min-w-0 flex-1">
+                            {gaMetrics.devices.map((d, i) => {
+                              const pct = total > 0 ? (d.users / total) * 100 : 0
+                              const Icon = deviceIcons[d.device] || Monitor
+                              return (
+                                <div key={i}>
+                                  <div className="flex items-center justify-between mb-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <Icon className="h-4 w-4 text-muted-foreground" />
+                                      <span className="text-sm font-medium capitalize">{d.device}</span>
+                                    </div>
+                                    <span className="text-xs sm:text-sm font-medium tabular-nums">{d.users.toLocaleString("fr-FR")} ({pct.toFixed(1)}%)</span>
+                                  </div>
+                                  <div className="h-3 rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: deviceColors[d.device] || "#999" }} />
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })()}
+
+                    {/* Traffic Sources - expanded */}
+                    {expandedCard === "sources" && gaMetrics.trafficSources.length > 0 && (
+                      <div className="h-[250px] sm:h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart data={gaMetrics.trafficSources} layout="vertical" margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                            <XAxis type="number" tick={{ fontSize: 10 }} />
+                            <YAxis type="category" dataKey="source" tick={{ fontSize: 10 }} width={80} />
+                            <Tooltip contentStyle={{ borderRadius: 12, fontSize: 12, border: "1px solid hsl(var(--border))" }} />
+                            <Legend wrapperStyle={{ fontSize: 11 }} />
+                            <Bar dataKey="sessions" name="Sessions" fill="#1B1918" radius={[0, 4, 4, 0]} />
+                            <Bar dataKey="users" name="Visiteurs" fill="#C4A882" radius={[0, 4, 4, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                    )}
+
+                    {/* Top Pages - expanded */}
+                    {expandedCard === "topPages" && gaMetrics.topPages.length > 0 && (
+                      <div className="space-y-3">
+                        {gaMetrics.topPages.map((page, i) => {
+                          const maxViews = gaMetrics.topPages[0]?.views || 1
+                          return (
+                            <div key={i}>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs sm:text-sm text-muted-foreground truncate min-w-0">{page.path}</span>
+                                <span className="text-xs sm:text-sm font-medium tabular-nums shrink-0">{page.views.toLocaleString("fr-FR")}</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-[#1B1918]" style={{ width: `${(page.views / maxViews) * 100}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Landing Pages - expanded */}
+                    {expandedCard === "landingPages" && gaMetrics.landingPages.length > 0 && (
+                      <div className="space-y-3">
+                        {gaMetrics.landingPages.map((page, i) => {
+                          const maxSessions = gaMetrics.landingPages[0]?.sessions || 1
+                          return (
+                            <div key={i}>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs sm:text-sm text-muted-foreground truncate min-w-0">{page.path}</span>
+                                <span className="text-xs sm:text-sm font-medium tabular-nums shrink-0">{page.sessions.toLocaleString("fr-FR")}</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-[#8B7355]" style={{ width: `${(page.sessions / maxSessions) * 100}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* Geography - expanded */}
+                    {expandedCard === "geography" && (
+                      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
+                        {gaMetrics.countries.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-3">Pays</p>
+                            <div className="space-y-2">
+                              {gaMetrics.countries.map((c, i) => {
+                                const maxUsers = gaMetrics.countries[0]?.users || 1
+                                return (
+                                  <div key={i}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-sm">{c.country}</span>
+                                      <span className="text-sm font-medium tabular-nums">{c.users.toLocaleString("fr-FR")}</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                      <div className="h-full rounded-full bg-[#1B1918]" style={{ width: `${(c.users / maxUsers) * 100}%` }} />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                        {gaMetrics.cities.length > 0 && (
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-3">Villes</p>
+                            <div className="space-y-2">
+                              {gaMetrics.cities.map((c, i) => {
+                                const maxUsers = gaMetrics.cities[0]?.users || 1
+                                return (
+                                  <div key={i}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-sm">{c.city}</span>
+                                      <span className="text-sm font-medium tabular-nums">{c.users.toLocaleString("fr-FR")}</span>
+                                    </div>
+                                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                      <div className="h-full rounded-full bg-[#8B7355]" style={{ width: `${(c.users / maxUsers) * 100}%` }} />
+                                    </div>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Events - expanded */}
+                    {expandedCard === "events" && gaMetrics.events.length > 0 && (
+                      <div className="space-y-3">
+                        {gaMetrics.events.map((e, i) => {
+                          const maxCount = gaMetrics.events[0]?.count || 1
+                          return (
+                            <div key={i}>
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs sm:text-sm font-mono text-muted-foreground truncate min-w-0">{e.name}</span>
+                                <span className="text-xs sm:text-sm font-medium tabular-nums shrink-0">{e.count.toLocaleString("fr-FR")}</span>
+                              </div>
+                              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                                <div className="h-full rounded-full bg-[#1B1918]" style={{ width: `${(e.count / maxCount) * 100}%` }} />
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Detail section */}
+                  <div className="mt-6 rounded-xl bg-muted/50 p-3 sm:p-4">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Détail du calcul</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{gaCardInfo[expandedCard].detail}</p>
+                  </div>
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
           </>}
         </>
       ) : (
@@ -978,8 +1291,8 @@ export function MarketingTab({
                       formatter={(value: number) => [`${value}`, ""]}
                     />
                     <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                      <Cell fill="#22c55e" />
-                      <Cell fill="#8b5cf6" />
+                      <Cell fill="#1B1918" />
+                      <Cell fill="#C4A882" />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
