@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { BarChart3 } from "lucide-react"
+import { fetchGaMetrics } from "@/lib/google-analytics"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { DateNavigator } from "@/components/admin/accueil/date-navigator"
@@ -1075,6 +1076,11 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     utmCampaign: c.utm_campaign || null,
   }))
 
+  // Fetch Google Analytics metrics
+  const gaStartDate = format(periodStart, "yyyy-MM-dd")
+  const gaEndDate = format(periodEnd, "yyyy-MM-dd")
+  const gaMetrics = await fetchGaMetrics(gaStartDate, gaEndDate)
+
   return (
     <MarketingTab
       kpis={{
@@ -1091,6 +1097,7 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
       sites={sites}
       period={period}
       periodMode={periodMode}
+      gaMetrics={gaMetrics}
     />
   )
 }
