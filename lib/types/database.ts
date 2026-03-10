@@ -144,6 +144,9 @@ export interface Company {
   spacebring_monthly_credits: number | null
   spacebring_seats: number | null
   spacebring_start_date: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
   created_at: string
   updated_at: string
 }

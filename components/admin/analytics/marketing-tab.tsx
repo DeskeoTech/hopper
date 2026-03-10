@@ -11,9 +11,11 @@ import {
   ChevronRight,
   Download,
   Search,
-  Users,
   TrendingUp,
-  CalendarCheck,
+  BarChart3,
+  Eye,
+  Clock,
+  MousePointerClick,
 } from "lucide-react"
 import {
   BarChart,
@@ -25,8 +27,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  CartesianGrid,
-  Legend,
 } from "recharts"
 import {
   Table,
@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Input } from "@/components/ui/input"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { cn } from "@/lib/utils"
 import { convertToCSV } from "@/lib/utils/csv"
 
@@ -45,16 +46,7 @@ import { convertToCSV } from "@/lib/utils/csv"
 
 interface MarketingKpis {
   newCompaniesCount: number
-  spacebringCount: number
-  directCount: number
-  onboardingRate: number
-}
-
-interface SignupDataPoint {
-  label: string
-  spacebring: number
-  direct: number
-  me: number
+  newCompanies: { name: string; createdAt: string; utmSource: string | null }[]
 }
 
 interface Segmentation {
@@ -84,14 +76,24 @@ interface MarketingCompany {
   companyType: string
   source: string
   meetingRoomOnly: boolean
-  onboardingDone: boolean
   bookingsCount: number
   revenue: number
+  utmSource: string | null
+  utmMedium: string | null
+  utmCampaign: string | null
+}
+
+interface GaMetrics {
+  activeUsers: number
+  sessions: number
+  pageViews: number
+  avgSessionDuration: number // in seconds
+  bounceRate: number // 0-1
+  topPages: { path: string; views: number }[]
 }
 
 export interface MarketingTabProps {
   kpis: MarketingKpis
-  signupsOverTime: SignupDataPoint[]
   signupsBySite: Record<string, string | number>[]
   signupSiteNames: string[]
   segmentation: Segmentation
@@ -100,6 +102,7 @@ export interface MarketingTabProps {
   sites: { value: string; label: string }[]
   period: string
   periodMode: string
+  gaMetrics?: GaMetrics | null
 }
 
 // === Constants ===
@@ -118,14 +121,12 @@ const periodOptions = [
 
 const sourceFilterOptions = [
   { value: "all", label: "Toutes les sources" },
-  { value: "Spacebring", label: "Spacebring" },
   { value: "Direct", label: "Direct" },
   { value: "M&E", label: "M&E" },
 ]
 
 const companySourceFilterOptions = [
   { value: "all", label: "Toutes les sources" },
-  { value: "Spacebring", label: "Spacebring" },
   { value: "Direct", label: "Direct" },
 ]
 
@@ -170,7 +171,6 @@ const statusColors: Record<string, string> = {
 }
 
 const SOURCE_COLORS: Record<string, { bg: string; text: string; chart: string }> = {
-  Spacebring: { bg: "bg-blue-100", text: "text-blue-700", chart: "#3b82f6" },
   Direct: { bg: "bg-green-100", text: "text-green-700", chart: "#22c55e" },
   "M&E": { bg: "bg-purple-100", text: "text-purple-700", chart: "#8b5cf6" },
 }
@@ -203,7 +203,6 @@ function SourceBadge({ source }: { source: string }) {
 
 export function MarketingTab({
   kpis,
-  signupsOverTime,
   signupsBySite,
   signupSiteNames,
   segmentation,
@@ -212,6 +211,7 @@ export function MarketingTab({
   sites,
   period,
   periodMode,
+  gaMetrics,
 }: MarketingTabProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -233,8 +233,12 @@ export function MarketingTab({
 
   const showModeToggle = period === "week" || period === "month"
 
+
+  // New companies card expand
+  const [showNewCompanies, setShowNewCompanies] = useState(false)
+
   // Chart toggle
-  const [signupChartView, setSignupChartView] = useState<"source" | "site">("source")
+  const [signupChartView, setSignupChartView] = useState<"source" | "site">("site")
 
   // Table toggle
   const [tableView, setTableView] = useState<"bookings" | "companies">("bookings")
@@ -477,59 +481,126 @@ export function MarketingTab({
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+      <div>
         {/* New companies */}
-        <div className="rounded-[20px] bg-card p-5">
+        <button
+          onClick={() => setShowNewCompanies(true)}
+          className="rounded-[20px] bg-card p-5 text-left hover:ring-2 hover:ring-foreground/10 transition-shadow cursor-pointer"
+        >
           <div className="flex items-center gap-2 mb-1">
             <Building2 className="h-4 w-4 text-muted-foreground" />
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nouvelles entreprises</p>
           </div>
           <p className="font-header text-3xl tabular-nums">{kpis.newCompaniesCount}</p>
-        </div>
-        {/* Spacebring / Direct */}
-        <div className="rounded-[20px] bg-card p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Spacebring / Direct</p>
-          </div>
-          <div className="flex items-baseline gap-3">
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-              <span className="font-header text-2xl tabular-nums">{kpis.spacebringCount}</span>
+        </button>
+        <Dialog open={showNewCompanies} onOpenChange={setShowNewCompanies}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="font-header uppercase tracking-wide">
+                Nouvelles entreprises ({kpis.newCompaniesCount})
+              </DialogTitle>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto">
+              {kpis.newCompanies.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-1 pb-2 border-b border-border/50">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Nom</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Source</span>
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Date</span>
+                  </div>
+                  <div className="space-y-0">
+                    {kpis.newCompanies.map((c, i) => (
+                      <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-x-3 items-center text-sm py-2 px-1 border-b border-border/30 last:border-0">
+                        <span className="truncate font-medium">{c.name}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground">{c.utmSource || "—"}</span>
+                        <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                          {new Date(c.createdAt).toLocaleDateString("fr-FR")}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4 text-center">Aucune nouvelle entreprise sur la période</p>
+              )}
             </div>
-            <span className="text-muted-foreground">/</span>
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-              <span className="font-header text-2xl tabular-nums">{kpis.directCount}</span>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Google Analytics */}
+      <div className="rounded-[20px] bg-card p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <BarChart3 className="h-4 w-4 text-muted-foreground" />
+          <h3 className="font-header text-lg uppercase tracking-wide">Comportement visiteurs</h3>
+          <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
+        </div>
+        {gaMetrics ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Visiteurs</p>
+                </div>
+                <p className="font-header text-2xl tabular-nums">{gaMetrics.activeUsers.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <MousePointerClick className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Sessions</p>
+                </div>
+                <p className="font-header text-2xl tabular-nums">{gaMetrics.sessions.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <BarChart3 className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Pages vues</p>
+                </div>
+                <p className="font-header text-2xl tabular-nums">{gaMetrics.pageViews.toLocaleString("fr-FR")}</p>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Durée moy.</p>
+                </div>
+                <p className="font-header text-2xl tabular-nums">
+                  {Math.floor(gaMetrics.avgSessionDuration / 60)}m{Math.round(gaMetrics.avgSessionDuration % 60).toString().padStart(2, "0")}s
+                </p>
+              </div>
             </div>
+            {gaMetrics.topPages.length > 0 && (
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Pages les plus visitées</p>
+                <div className="space-y-1.5">
+                  {gaMetrics.topPages.slice(0, 5).map((page, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="truncate text-muted-foreground">{page.path}</span>
+                      <span className="ml-2 shrink-0 font-medium tabular-nums">{page.views.toLocaleString("fr-FR")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-3" />
+            <p className="text-sm font-medium text-muted-foreground mb-1">Intégration Google Analytics en attente</p>
+            <p className="text-xs text-muted-foreground/70 max-w-sm">
+              Configurez le compte de service Google Cloud pour afficher les données de trafic et comportement visiteurs.
+            </p>
           </div>
-        </div>
-        {/* Onboarding rate */}
-        <div className="rounded-[20px] bg-card p-5">
-          <div className="flex items-center gap-2 mb-1">
-            <CalendarCheck className="h-4 w-4 text-muted-foreground" />
-            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Taux d&apos;onboarding</p>
-          </div>
-          <p className="font-header text-3xl tabular-nums">{kpis.onboardingRate}%</p>
-        </div>
+        )}
       </div>
 
       {/* Charts */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
-        {/* Bar chart: signups over time */}
+        {/* Pie chart: signups by site or source */}
         <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-center justify-between mb-1">
-            <h3 className="font-header text-lg uppercase tracking-wide">Inscriptions</h3>
+            <h3 className="font-header text-lg uppercase tracking-wide">Source d&apos;inscription</h3>
             <div className="flex items-center gap-1 rounded-full bg-muted p-0.5">
-              <button
-                onClick={() => setSignupChartView("source")}
-                className={cn(
-                  "rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors",
-                  signupChartView === "source" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Par source
-              </button>
               <button
                 onClick={() => setSignupChartView("site")}
                 className={cn(
@@ -539,60 +610,88 @@ export function MarketingTab({
               >
                 Par site
               </button>
+              <button
+                onClick={() => setSignupChartView("source")}
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-[11px] font-medium transition-colors",
+                  signupChartView === "source" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Par type
+              </button>
             </div>
           </div>
           <p className="text-sm text-muted-foreground mb-4">
-            {signupChartView === "source" ? "Par source et dans le temps" : "Par site et dans le temps"}
+            {signupChartView === "site" ? "Répartition par site" : "Direct vs M&E"}
           </p>
-
-          {signupChartView === "source" ? (
-            signupsOverTime.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={signupsOverTime} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, fontSize: 13, border: "1px solid hsl(var(--border))" }}
-                    labelStyle={{ fontWeight: 600 }}
-                  />
-                  <Bar dataKey="spacebring" name="Spacebring" stackId="a" fill="#3b82f6" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="direct" name="Direct" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="me" name="M&E" stackId="a" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-12">Aucune inscription sur la période</p>
-            )
-          ) : (
-            signupsBySite.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={signupsBySite} barCategoryGap="20%">
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                  <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                  <Tooltip
-                    contentStyle={{ borderRadius: 12, fontSize: 13, border: "1px solid hsl(var(--border))" }}
-                    labelStyle={{ fontWeight: 600 }}
-                  />
-                  {signupSiteNames.map((name, i) => (
-                    <Bar
-                      key={name}
-                      dataKey={name}
-                      name={name}
-                      stackId="a"
-                      fill={SITE_CHART_COLORS[i % SITE_CHART_COLORS.length]}
-                      radius={i === signupSiteNames.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+          {(() => {
+            const SOURCE_PIE_COLORS = ["#22c55e", "#8b5cf6"]
+            if (signupChartView === "site") {
+              const siteTotals = signupSiteNames.map((name) => ({
+                name,
+                value: signupsBySite.reduce((sum, row) => sum + (Number(row[name]) || 0), 0),
+              })).filter((d) => d.value > 0)
+              const total = siteTotals.reduce((s, d) => s + d.value, 0)
+              return siteTotals.length > 0 ? (
+                <div className="flex items-center gap-4">
+                  <div className="relative shrink-0 h-[180px] w-[180px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie data={siteTotals} cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={2} dataKey="value">
+                          {siteTotals.map((_, i) => (
+                            <Cell key={i} fill={SITE_CHART_COLORS[i % SITE_CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value: number) => [`${value}`, ""]} contentStyle={{ borderRadius: 12, fontSize: 13 }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="text-center">
+                        <span className="font-header text-xl">{total}</span>
+                        <p className="text-[10px] text-muted-foreground">total</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2 min-w-0 flex-1">
+                    {siteTotals.map((d, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm">
+                        <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: SITE_CHART_COLORS[i % SITE_CHART_COLORS.length] }} />
+                        <span className="truncate text-muted-foreground">{d.name}</span>
+                        <span className="ml-auto font-medium tabular-nums">{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center text-muted-foreground py-12">Aucune inscription sur la période</p>
+              )
+            } else {
+              const directCount = bookings.filter((b) => b.source === "Direct").length
+              const meCount = bookings.filter((b) => b.source === "M&E").length
+              const sourceData = [
+                { name: "Direct", value: directCount },
+                { name: "M&E", value: meCount },
+              ]
+              return directCount + meCount > 0 ? (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={sourceData} barCategoryGap="40%">
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, fontSize: 13, border: "1px solid hsl(var(--border))" }}
+                      formatter={(value: number) => [`${value}`, ""]}
                     />
-                  ))}
-                  <Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-center text-muted-foreground py-12">Aucune inscription sur la période</p>
-            )
-          )}
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                      <Cell fill="#22c55e" />
+                      <Cell fill="#8b5cf6" />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-center text-muted-foreground py-12">Aucune réservation sur la période</p>
+              )
+            }
+          })()}
         </div>
 
         {/* Pie chart: segmentation */}
@@ -857,6 +956,9 @@ export function MarketingTab({
                     <TableHead className="cursor-pointer select-none" onClick={() => toggleCompanySort("source")}>
                       <span className="flex items-center">Source <CSortIcon field="source" /></span>
                     </TableHead>
+                    <TableHead className="hidden lg:table-cell">UTM Source</TableHead>
+                    <TableHead className="hidden lg:table-cell">UTM Medium</TableHead>
+                    <TableHead className="hidden xl:table-cell">UTM Campaign</TableHead>
                     <TableHead className="cursor-pointer select-none text-right" onClick={() => toggleCompanySort("bookingsCount")}>
                       <span className="flex items-center justify-end">Résa. <CSortIcon field="bookingsCount" /></span>
                     </TableHead>
@@ -879,6 +981,9 @@ export function MarketingTab({
                           {c.meetingRoomOnly ? "Salle uniquement" : c.companyType === "self_employed" ? "Indépendant" : c.companyType === "multi_employee" ? "Multi-employé" : c.companyType}
                         </TableCell>
                         <TableCell><SourceBadge source={c.source} /></TableCell>
+                        <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{c.utmSource || "—"}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-xs text-muted-foreground">{c.utmMedium || "—"}</TableCell>
+                        <TableCell className="hidden xl:table-cell text-xs text-muted-foreground">{c.utmCampaign || "—"}</TableCell>
                         <TableCell className="text-right tabular-nums text-sm font-medium">{c.bookingsCount}</TableCell>
                         <TableCell className="text-right tabular-nums text-sm font-medium hidden sm:table-cell">
                           {c.revenue > 0 ? formatEuro(c.revenue) : "—"}
@@ -887,7 +992,7 @@ export function MarketingTab({
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                         Aucune entreprise trouvée
                       </TableCell>
                     </TableRow>
