@@ -509,7 +509,31 @@
     "unlog" : " Vous devez être connecté pour accéder à cette page.",
     "noReservation": "Pas de réservation ?",
     "discoverHopper": "Découvrez et réservez l'expérience Hopper ici",
-    "buttonLink" : "CONNEXION"
+    "buttonLink" : "CONNEXION",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Votre mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "messageApp": "Connectez-vous à votre espace Hopper.",
+    "invalidCredentials": "Email ou mot de passe incorrect.",
+    "forgotPasswordSuccess": "Un email de réinitialisation a été envoyé à",
+    "forgotPasswordMessage": "Entrez votre adresse email pour recevoir un lien de réinitialisation.",
+    "sendResetLink": "ENVOYER LE LIEN",
+    "backToLogin": "Retour à la connexion"
+  },
+  "resetPassword": {
+    "title": "Nouveau mot de passe",
+    "message": "Choisissez votre nouveau mot de passe.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "newPasswordPlaceholder": "Votre nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez votre mot de passe",
+    "submit": "METTRE À JOUR",
+    "updating": "Mise à jour...",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+    "success": "Mot de passe mis à jour avec succès.",
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "redirecting": "Redirection..."
   },
   "sites" : {
     "seeSite" : "Voir les infos du site",
