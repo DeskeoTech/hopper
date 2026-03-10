@@ -890,6 +890,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       companies={companies}
       period={period}
       periodMode={periodMode}
+      periodStartDate={format(periodStart, "d MMM yyyy", { locale: fr })}
+      periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
       bookings={{ total: totalBookingCount, bySite: bookingsBySite }}
     />
   )
@@ -1097,6 +1099,8 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
       sites={sites}
       period={period}
       periodMode={periodMode}
+      periodStartDate={format(periodStart, "d MMM yyyy", { locale: fr })}
+      periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
       gaMetrics={gaMetrics}
     />
   )

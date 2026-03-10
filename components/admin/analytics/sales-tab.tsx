@@ -76,6 +76,8 @@ export interface SalesTabProps {
   companies: { value: string; label: string }[]
   period: string
   periodMode: string
+  periodStartDate: string
+  periodEndDate: string
   bookings: { total: number; bySite: BookingBySite[] }
 }
 
@@ -136,7 +138,7 @@ function formatEuro(value: number): string {
 
 // === Component ===
 
-export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, bookings }: SalesTabProps) {
+export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings }: SalesTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -325,6 +327,9 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             >
               {periodMode === "calendar" ? "Calendaire" : "Glissant"}
             </button>
+            <span className="text-xs text-muted-foreground tabular-nums ml-1">
+              {periodStartDate === periodEndDate ? periodStartDate : `${periodStartDate} — ${periodEndDate}`}
+            </span>
           </>
         )}
       </div>
@@ -1058,6 +1063,53 @@ function ProductDetailModal({
               </div>
             )}
           </div>
+
+          {/* Client list */}
+          {(() => {
+            const clientMap: Record<string, { companyName: string; site: string; count: number; total: number }> = {}
+            for (const p of payments) {
+              if (p.status !== "succeeded") continue
+              const key = p.companyName
+              const site = extractSiteName(p.originalProductName)
+              if (clientMap[key]) {
+                clientMap[key].count++
+                clientMap[key].total += p.amount / 100
+              } else {
+                clientMap[key] = { companyName: p.companyName, site, count: 1, total: p.amount / 100 }
+              }
+            }
+            const clients = Object.values(clientMap).sort((a, b) => b.total - a.total)
+            if (clients.length === 0) return null
+            return (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
+                  Liste des clients ({clients.length})
+                </h4>
+                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">Entreprise</TableHead>
+                        <TableHead className="text-xs">Site</TableHead>
+                        <TableHead className="text-xs text-right">Achats</TableHead>
+                        <TableHead className="text-xs text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.map((c, i) => (
+                        <TableRow key={i}>
+                          <TableCell className="text-sm font-medium truncate max-w-[200px]">{c.companyName}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground truncate max-w-[150px]">{c.site}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-right">{c.count}</TableCell>
+                          <TableCell className="text-sm font-medium tabular-nums text-right">{formatEuro(c.total)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </DialogContent>
     </Dialog>

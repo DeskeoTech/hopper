@@ -16,6 +16,17 @@ import {
   Eye,
   Clock,
   MousePointerClick,
+  Globe,
+  Smartphone,
+  Monitor,
+  Tablet,
+  MapPin,
+  LogIn,
+  LogOut,
+  Zap,
+  Users,
+  UserPlus,
+  UserCheck,
 } from "lucide-react"
 import {
   BarChart,
@@ -27,6 +38,10 @@ import {
   PieChart,
   Pie,
   Cell,
+  LineChart,
+  Line,
+  CartesianGrid,
+  Legend,
 } from "recharts"
 import {
   Table,
@@ -87,9 +102,18 @@ interface GaMetrics {
   activeUsers: number
   sessions: number
   pageViews: number
-  avgSessionDuration: number // in seconds
-  bounceRate: number // 0-1
+  avgSessionDuration: number
+  bounceRate: number
   topPages: { path: string; views: number }[]
+  newVsReturning: { type: string; users: number }[]
+  trafficSources: { source: string; users: number; sessions: number }[]
+  devices: { device: string; users: number }[]
+  countries: { country: string; users: number }[]
+  cities: { city: string; users: number }[]
+  landingPages: { path: string; sessions: number }[]
+  exitPages: { path: string; views: number }[]
+  events: { name: string; count: number }[]
+  dailyTraffic: { date: string; users: number; sessions: number; pageViews: number }[]
 }
 
 export interface MarketingTabProps {
@@ -102,6 +126,8 @@ export interface MarketingTabProps {
   sites: { value: string; label: string }[]
   period: string
   periodMode: string
+  periodStartDate: string
+  periodEndDate: string
   gaMetrics?: GaMetrics | null
 }
 
@@ -211,6 +237,8 @@ export function MarketingTab({
   sites,
   period,
   periodMode,
+  periodStartDate,
+  periodEndDate,
   gaMetrics,
 }: MarketingTabProps) {
   const router = useRouter()
@@ -476,6 +504,9 @@ export function MarketingTab({
             >
               {periodMode === "calendar" ? "Calendaire" : "Glissant"}
             </button>
+            <span className="text-xs text-muted-foreground tabular-nums ml-1">
+              {periodStartDate === periodEndDate ? periodStartDate : `${periodStartDate} — ${periodEndDate}`}
+            </span>
           </>
         )}
       </div>
@@ -529,15 +560,16 @@ export function MarketingTab({
       </div>
 
       {/* Google Analytics */}
-      <div className="rounded-[20px] bg-card p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          <h3 className="font-header text-lg uppercase tracking-wide">Comportement visiteurs</h3>
-          <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
-        </div>
-        {gaMetrics ? (
-          <>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5">
+      {gaMetrics ? (
+        <>
+          {/* GA4 Header + KPIs */}
+          <div className="rounded-[20px] bg-card p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-header text-lg uppercase tracking-wide">Comportement visiteurs</h3>
+              <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
                   <Eye className="h-3.5 w-3.5 text-muted-foreground" />
@@ -568,22 +600,253 @@ export function MarketingTab({
                   {Math.floor(gaMetrics.avgSessionDuration / 60)}m{Math.round(gaMetrics.avgSessionDuration % 60).toString().padStart(2, "0")}s
                 </p>
               </div>
-            </div>
-            {gaMetrics.topPages.length > 0 && (
               <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">Pages les plus visitées</p>
-                <div className="space-y-1.5">
-                  {gaMetrics.topPages.slice(0, 5).map((page, i) => (
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp className="h-3.5 w-3.5 text-muted-foreground" />
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Taux rebond</p>
+                </div>
+                <p className="font-header text-2xl tabular-nums">{(gaMetrics.bounceRate * 100).toFixed(1)}%</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Traffic evolution chart */}
+          {gaMetrics.dailyTraffic.length > 1 && (
+            <div className="rounded-[20px] bg-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-header text-sm uppercase tracking-wide">Évolution du trafic</h3>
+              </div>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={gaMetrics.dailyTraffic.map((d) => ({
+                    ...d,
+                    label: `${d.date.slice(6, 8)}/${d.date.slice(4, 6)}`,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="label" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip
+                      contentStyle={{ borderRadius: 12, fontSize: 12, border: "1px solid hsl(var(--border))" }}
+                      labelFormatter={(label) => `Date : ${label}`}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="users" name="Visiteurs" stroke="#1B1918" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="sessions" name="Sessions" stroke="#8B7355" strokeWidth={2} dot={false} />
+                    <Line type="monotone" dataKey="pageViews" name="Pages vues" stroke="#C4A882" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* Row: New vs Returning + Devices + Sources */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {/* New vs Returning */}
+            {gaMetrics.newVsReturning.length > 0 && (
+              <div className="rounded-[20px] bg-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-header text-sm uppercase tracking-wide">Nouveaux vs Récurrents</h3>
+                </div>
+                {(() => {
+                  const total = gaMetrics.newVsReturning.reduce((s, r) => s + r.users, 0)
+                  const nvr = gaMetrics.newVsReturning.map((r) => ({
+                    name: r.type === "new" ? "Nouveaux" : r.type === "returning" ? "Récurrents" : r.type,
+                    value: r.users,
+                    pct: total > 0 ? ((r.users / total) * 100).toFixed(1) : "0",
+                  }))
+                  const colors = ["#1B1918", "#C4A882"]
+                  return (
+                    <div className="flex items-center gap-4">
+                      <div className="h-[120px] w-[120px] shrink-0">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie data={nvr} dataKey="value" cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={2}>
+                              {nvr.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="space-y-2">
+                        {nvr.map((r, i) => (
+                          <div key={i} className="flex items-center gap-2">
+                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+                            <span className="text-sm">{r.name}</span>
+                            <span className="text-sm font-medium tabular-nums">{r.value.toLocaleString("fr-FR")}</span>
+                            <span className="text-xs text-muted-foreground">({r.pct}%)</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* Devices */}
+            {gaMetrics.devices.length > 0 && (
+              <div className="rounded-[20px] bg-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Smartphone className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-header text-sm uppercase tracking-wide">Appareils</h3>
+                </div>
+                {(() => {
+                  const total = gaMetrics.devices.reduce((s, d) => s + d.users, 0)
+                  const deviceColors: Record<string, string> = { desktop: "#1B1918", mobile: "#8B7355", tablet: "#C4A882" }
+                  const deviceIcons: Record<string, typeof Monitor> = { desktop: Monitor, mobile: Smartphone, tablet: Tablet }
+                  return (
+                    <div className="space-y-3">
+                      {gaMetrics.devices.map((d, i) => {
+                        const pct = total > 0 ? (d.users / total) * 100 : 0
+                        const Icon = deviceIcons[d.device] || Monitor
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-sm capitalize">{d.device}</span>
+                              </div>
+                              <span className="text-sm font-medium tabular-nums">{d.users.toLocaleString("fr-FR")} ({pct.toFixed(1)}%)</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-muted overflow-hidden">
+                              <div
+                                className="h-full rounded-full transition-all"
+                                style={{ width: `${pct}%`, backgroundColor: deviceColors[d.device] || "#999" }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+
+            {/* Traffic Sources */}
+            {gaMetrics.trafficSources.length > 0 && (
+              <div className="rounded-[20px] bg-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Globe className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-header text-sm uppercase tracking-wide">Sources de trafic</h3>
+                </div>
+                <div className="space-y-2">
+                  {gaMetrics.trafficSources.slice(0, 8).map((s, i) => {
+                    const maxSessions = gaMetrics.trafficSources[0]?.sessions || 1
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-sm truncate min-w-0 flex-1">{s.source}</span>
+                        <div className="w-20 h-2 rounded-full bg-muted overflow-hidden shrink-0">
+                          <div className="h-full rounded-full bg-[#1B1918]" style={{ width: `${(s.sessions / maxSessions) * 100}%` }} />
+                        </div>
+                        <span className="text-sm font-medium tabular-nums shrink-0 w-12 text-right">{s.sessions.toLocaleString("fr-FR")}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Row: Top Pages + Landing Pages + Geo */}
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+            {/* Top pages */}
+            {gaMetrics.topPages.length > 0 && (
+              <div className="rounded-[20px] bg-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-header text-sm uppercase tracking-wide">Pages les plus vues</h3>
+                </div>
+                <div className="space-y-2">
+                  {gaMetrics.topPages.slice(0, 10).map((page, i) => (
                     <div key={i} className="flex items-center justify-between text-sm">
-                      <span className="truncate text-muted-foreground">{page.path}</span>
-                      <span className="ml-2 shrink-0 font-medium tabular-nums">{page.views.toLocaleString("fr-FR")}</span>
+                      <span className="truncate text-muted-foreground mr-2">{page.path}</span>
+                      <span className="shrink-0 font-medium tabular-nums">{page.views.toLocaleString("fr-FR")}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
-          </>
-        ) : (
+
+            {/* Landing pages */}
+            {gaMetrics.landingPages.length > 0 && (
+              <div className="rounded-[20px] bg-card p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <LogIn className="h-4 w-4 text-muted-foreground" />
+                  <h3 className="font-header text-sm uppercase tracking-wide">Pages d{"'"}entrée</h3>
+                </div>
+                <div className="space-y-2">
+                  {gaMetrics.landingPages.slice(0, 10).map((page, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <span className="truncate text-muted-foreground mr-2">{page.path}</span>
+                      <span className="shrink-0 font-medium tabular-nums">{page.sessions.toLocaleString("fr-FR")}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Countries + Cities */}
+            <div className="rounded-[20px] bg-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-header text-sm uppercase tracking-wide">Géographie</h3>
+              </div>
+              {gaMetrics.countries.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Pays</p>
+                  <div className="space-y-1.5">
+                    {gaMetrics.countries.slice(0, 5).map((c, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{c.country}</span>
+                        <span className="font-medium tabular-nums">{c.users.toLocaleString("fr-FR")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {gaMetrics.cities.length > 0 && (
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground mb-2">Villes</p>
+                  <div className="space-y-1.5">
+                    {gaMetrics.cities.slice(0, 5).map((c, i) => (
+                      <div key={i} className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">{c.city}</span>
+                        <span className="font-medium tabular-nums">{c.users.toLocaleString("fr-FR")}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Events */}
+          {gaMetrics.events.length > 0 && (
+            <div className="rounded-[20px] bg-card p-5">
+              <div className="flex items-center gap-2 mb-4">
+                <Zap className="h-4 w-4 text-muted-foreground" />
+                <h3 className="font-header text-sm uppercase tracking-wide">Événements</h3>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+                {gaMetrics.events.slice(0, 15).map((e, i) => (
+                  <div key={i} className="rounded-xl bg-muted/50 p-3 text-center">
+                    <p className="text-xs text-muted-foreground truncate mb-1">{e.name}</p>
+                    <p className="font-header text-lg tabular-nums">{e.count.toLocaleString("fr-FR")}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="rounded-[20px] bg-card p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <h3 className="font-header text-lg uppercase tracking-wide">Comportement visiteurs</h3>
+            <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
+          </div>
           <div className="flex flex-col items-center justify-center py-8 text-center">
             <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-3" />
             <p className="text-sm font-medium text-muted-foreground mb-1">Intégration Google Analytics en attente</p>
@@ -591,8 +854,8 @@ export function MarketingTab({
               Configurez le compte de service Google Cloud pour afficher les données de trafic et comportement visiteurs.
             </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Charts */}
       <div className="grid gap-4 grid-cols-1 lg:grid-cols-2">
