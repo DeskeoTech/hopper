@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import Stripe from "stripe"
 import { BarChart3 } from "lucide-react"
-import { fetchGaMetrics } from "@/lib/google-analytics"
+import { fetchGaMetrics, getAvailableGaAccounts } from "@/lib/google-analytics"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, endOfDay, subMonths, format, isToday } from "date-fns"
 import { fr } from "date-fns/locale"
 import { DateNavigator } from "@/components/admin/accueil/date-navigator"
@@ -1078,10 +1078,18 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
     utmCampaign: c.utm_campaign || null,
   }))
 
-  // Fetch Google Analytics metrics
+  // Fetch Google Analytics metrics for all available accounts
   const gaStartDate = format(periodStart, "yyyy-MM-dd")
   const gaEndDate = format(periodEnd, "yyyy-MM-dd")
-  const gaMetrics = await fetchGaMetrics(gaStartDate, gaEndDate)
+  const gaAccounts = getAvailableGaAccounts()
+  const gaResults = await Promise.all(
+    gaAccounts.map(async (acc) => ({
+      key: acc.key,
+      label: acc.label,
+      metrics: await fetchGaMetrics(gaStartDate, gaEndDate, acc.key),
+    }))
+  )
+  const gaData = gaResults as { key: string; label: string; metrics: NonNullable<typeof gaResults[0]["metrics"]> | null }[]
 
   return (
     <MarketingTab
@@ -1101,7 +1109,7 @@ async function loadMarketingData(now: Date, period: string, periodMode: string =
       periodMode={periodMode}
       periodStartDate={format(periodStart, "d MMM yyyy", { locale: fr })}
       periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
-      gaMetrics={gaMetrics}
+      gaData={gaData}
     />
   )
 }
