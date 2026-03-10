@@ -1,20 +1,50 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data"
 
-const propertyId = process.env.GA_PROPERTY_ID
-const clientEmail = process.env.GA_CLIENT_EMAIL
-const rawKey = process.env.GA_PRIVATE_KEY || ""
-const privateKey = rawKey.includes("\\n") ? rawKey.replace(/\\n/g, "\n") : rawKey
+function parseKey(raw: string): string {
+  return raw.includes("\\n") ? raw.replace(/\\n/g, "\n") : raw
+}
 
-let client: BetaAnalyticsDataClient | null = null
+interface GaAccount {
+  propertyId: string
+  clientEmail: string
+  privateKey: string
+}
 
-function getClient() {
-  if (!propertyId || !clientEmail || !privateKey) return null
-  if (!client) {
-    client = new BetaAnalyticsDataClient({
-      credentials: { client_email: clientEmail, private_key: privateKey },
+const accounts: Record<string, GaAccount | null> = {
+  hopper: (() => {
+    const id = process.env.GA_HOPPER_PROPERTY_ID
+    const email = process.env.GA_HOPPER_CLIENT_EMAIL
+    const key = process.env.GA_HOPPER_PRIVATE_KEY
+    if (!id || !email || !key) return null
+    return { propertyId: id, clientEmail: email, privateKey: parseKey(key) }
+  })(),
+  legacy: (() => {
+    const id = process.env.GA_PROPERTY_ID
+    const email = process.env.GA_CLIENT_EMAIL
+    const key = process.env.GA_PRIVATE_KEY
+    if (!id || !email || !key) return null
+    return { propertyId: id, clientEmail: email, privateKey: parseKey(key) }
+  })(),
+}
+
+const clients: Record<string, BetaAnalyticsDataClient> = {}
+
+function getClientFor(accountKey: string): { client: BetaAnalyticsDataClient; propertyId: string } | null {
+  const account = accounts[accountKey]
+  if (!account) return null
+  if (!clients[accountKey]) {
+    clients[accountKey] = new BetaAnalyticsDataClient({
+      credentials: { client_email: account.clientEmail, private_key: account.privateKey },
     })
   }
-  return client
+  return { client: clients[accountKey], propertyId: account.propertyId }
+}
+
+export function getAvailableGaAccounts(): { key: string; label: string }[] {
+  const result: { key: string; label: string }[] = []
+  if (accounts.hopper) result.push({ key: "hopper", label: "Hopper Coworking" })
+  if (accounts.legacy) result.push({ key: "legacy", label: "Deskeo (legacy)" })
+  return result
 }
 
 export interface GaMetrics {
@@ -35,15 +65,15 @@ export interface GaMetrics {
   dailyTraffic: { date: string; users: number; sessions: number; pageViews: number }[]
 }
 
-export async function fetchGaMetrics(startDate: string, endDate: string): Promise<GaMetrics | null> {
-  const analyticsClient = getClient()
-  if (!analyticsClient || !propertyId) return null
+export async function fetchGaMetrics(startDate: string, endDate: string, accountKey?: string): Promise<GaMetrics | null> {
+  const ga = accountKey ? getClientFor(accountKey) : (getClientFor("hopper") || getClientFor("legacy"))
+  if (!ga) return null
 
-  const prop = `properties/${propertyId}`
+  const analyticsClient = ga.client
+  const prop = `properties/${ga.propertyId}`
   const dateRanges = [{ startDate, endDate }]
 
   try {
-    // Run all reports in parallel
     const [
       [metricsResponse],
       [pagesResponse],
@@ -57,7 +87,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
       [eventsResponse],
       [dailyResponse],
     ] = await Promise.all([
-      // 1. Overall metrics
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -69,7 +98,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
           { name: "bounceRate" },
         ],
       }),
-      // 2. Top pages
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -78,14 +106,12 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
         limit: 10,
       }),
-      // 3. New vs Returning
       analyticsClient.runReport({
         property: prop,
         dateRanges,
         dimensions: [{ name: "newVsReturning" }],
         metrics: [{ name: "activeUsers" }],
       }),
-      // 4. Traffic sources
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -94,7 +120,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 10,
       }),
-      // 5. Devices
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -102,7 +127,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         metrics: [{ name: "activeUsers" }],
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
       }),
-      // 6. Countries
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -111,7 +135,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
         limit: 10,
       }),
-      // 7. Cities
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -120,7 +143,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "activeUsers" }, desc: true }],
         limit: 10,
       }),
-      // 8. Landing pages
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -129,7 +151,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
         limit: 10,
       }),
-      // 9. Exit pages
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -144,7 +165,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
           },
         },
       }),
-      // 10. Events
       analyticsClient.runReport({
         property: prop,
         dateRanges,
@@ -153,7 +173,6 @@ export async function fetchGaMetrics(startDate: string, endDate: string): Promis
         orderBys: [{ metric: { metricName: "eventCount" }, desc: true }],
         limit: 15,
       }),
-      // 11. Daily traffic evolution
       analyticsClient.runReport({
         property: prop,
         dateRanges,
