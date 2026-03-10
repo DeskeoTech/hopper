@@ -128,7 +128,7 @@ export interface MarketingTabProps {
   periodMode: string
   periodStartDate: string
   periodEndDate: string
-  gaMetrics?: GaMetrics | null
+  gaData?: { key: string; label: string; metrics: GaMetrics | null }[]
 }
 
 // === Constants ===
@@ -239,11 +239,13 @@ export function MarketingTab({
   periodMode,
   periodStartDate,
   periodEndDate,
-  gaMetrics,
+  gaData,
 }: MarketingTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [selectedGaAccount, setSelectedGaAccount] = useState(gaData?.[0]?.key || "")
+  const gaMetrics = gaData?.find((d) => d.key === selectedGaAccount)?.metrics ?? null
 
   function handlePeriodChange(newPeriod: string) {
     const params = new URLSearchParams(searchParams.toString())
@@ -560,15 +562,43 @@ export function MarketingTab({
       </div>
 
       {/* Google Analytics */}
-      {gaMetrics ? (
+      {gaData && gaData.length > 0 ? (
         <>
           {/* GA4 Header + KPIs */}
           <div className="rounded-[20px] bg-card p-5">
             <div className="flex items-center gap-2 mb-4">
               <BarChart3 className="h-4 w-4 text-muted-foreground" />
               <h3 className="font-header text-lg uppercase tracking-wide">Comportement visiteurs</h3>
-              <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
+              {gaData.length > 1 ? (
+                <div className="ml-auto flex items-center gap-1">
+                  {gaData.map((acc) => (
+                    <button
+                      key={acc.key}
+                      onClick={() => setSelectedGaAccount(acc.key)}
+                      className={cn(
+                        "rounded-full px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wide transition-colors",
+                        selectedGaAccount === acc.key
+                          ? "bg-foreground text-background"
+                          : "bg-muted text-muted-foreground hover:bg-muted/80"
+                      )}
+                    >
+                      {acc.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <span className="ml-auto text-[10px] font-medium uppercase tracking-wide text-muted-foreground bg-muted px-2 py-0.5 rounded-full">GA4</span>
+              )}
             </div>
+            {!gaMetrics ? (
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <BarChart3 className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                <p className="text-sm font-medium text-muted-foreground mb-1">Données indisponibles</p>
+                <p className="text-xs text-muted-foreground/70 max-w-sm">
+                  Aucune donnée GA4 disponible pour ce compte sur cette période.
+                </p>
+              </div>
+            ) : (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
               <div>
                 <div className="flex items-center gap-1.5 mb-1">
@@ -608,8 +638,10 @@ export function MarketingTab({
                 <p className="font-header text-2xl tabular-nums">{(gaMetrics.bounceRate * 100).toFixed(1)}%</p>
               </div>
             </div>
+            )}
           </div>
 
+          {gaMetrics && <>
           {/* Traffic evolution chart */}
           {gaMetrics.dailyTraffic.length > 1 && (
             <div className="rounded-[20px] bg-card p-5">
@@ -839,6 +871,7 @@ export function MarketingTab({
               </div>
             </div>
           )}
+          </>}
         </>
       ) : (
         <div className="rounded-[20px] bg-card p-5">
