@@ -15,6 +15,7 @@ import { ReservationsSection } from "@/components/admin/reservations/reservation
 import { DetailsTabs } from "@/components/admin/details-tabs"
 import { CreditsSection } from "@/components/admin/company-credits/credits-section"
 import { PassesSection } from "@/components/admin/company-passes/passes-section"
+import { CafeSubscriptionsSection } from "@/components/admin/company-cafe/cafe-subscriptions-section"
 import { SpacebringSubscriptionCard } from "@/components/admin/company-edit/spacebring-subscription-card"
 import { PaymentHistorySection } from "@/components/admin/company-payments/payment-history-section"
 import { cn } from "@/lib/utils"
@@ -81,7 +82,7 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
         end_date,
         Number_of_seats,
         Subscription_ID,
-        plans (name, recurrence, price_per_seat_month)
+        plans (name, recurrence, price_per_seat_month, service_type)
       `)
       .eq("company_id", id)
       .order("start_date", { ascending: false }),
@@ -146,14 +147,19 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
 
   // Transform passes for admin display
   const contractUserCounts: Record<string, number> = {}
+  const cafeContractUserCounts: Record<string, number> = {}
   for (const user of users || []) {
     if (user.contract_id) {
       contractUserCounts[user.contract_id] = (contractUserCounts[user.contract_id] || 0) + 1
     }
+    if (user.cafe_contract_id) {
+      cafeContractUserCounts[user.cafe_contract_id] = (cafeContractUserCounts[user.cafe_contract_id] || 0) + 1
+    }
   }
 
-  const adminPasses: AdminPassForDisplay[] = (passesData || []).map((c) => {
-    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null; price_per_seat_month: number | null } | null
+  const allContracts: AdminPassForDisplay[] = (passesData || []).map((c) => {
+    const plan = c.plans as unknown as { name: string; recurrence: PlanRecurrence | null; price_per_seat_month: number | null; service_type: string | null } | null
+    const isCafe = plan?.service_type === "coffee_subscription"
     return {
       id: c.id,
       status: c.status as ContractStatus,
@@ -163,10 +169,19 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
       plan_recurrence: plan?.recurrence || null,
       price_per_seat_month: plan?.price_per_seat_month ?? null,
       number_of_seats: c.Number_of_seats ? Number(c.Number_of_seats) : null,
-      assigned_users_count: contractUserCounts[c.id] || 0,
+      assigned_users_count: isCafe
+        ? (cafeContractUserCounts[c.id] || 0)
+        : (contractUserCounts[c.id] || 0),
       subscription_id: (c.Subscription_ID as string | null) || null,
+      stripe_status: (c.Subscription_ID as string | null)
+        ? (subscriptionStatuses[c.Subscription_ID as string] || null)
+        : null,
+      _service_type: plan?.service_type || "plan",
     }
   })
+
+  const adminPasses = allContracts.filter((c) => (c as Record<string, unknown>)._service_type !== "coffee_subscription")
+  const adminCafeSubscriptions = allContracts.filter((c) => (c as Record<string, unknown>)._service_type === "coffee_subscription")
 
   // Get booking IDs that already have credit_transactions
   const bookingIdsWithTransactions = new Set(
@@ -501,6 +516,12 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     stripeCustomerEmail={company.contact_email}
                     companyName={company.name || undefined}
                     subscriptionStatuses={subscriptionStatuses}
+                  />
+
+                  {/* Café Subscriptions */}
+                  <CafeSubscriptionsSection
+                    subscriptions={adminCafeSubscriptions}
+                    companyId={company.id}
                   />
 
                   {/* Stripe */}

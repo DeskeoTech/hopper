@@ -554,6 +554,23 @@ export async function getAvailablePlans() {
   return { data: data || [] }
 }
 
+export async function getAvailableCafePlans() {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id, name, recurrence, price_per_seat_month, service_type")
+    .eq("archived", false)
+    .eq("service_type", "coffee_subscription")
+    .order("name")
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { data: data || [] }
+}
+
 export async function createCompanyContract(
   companyId: string,
   data: {
@@ -561,6 +578,7 @@ export async function createCompanyContract(
     numberOfSeats: number
     startDate: string
     endDate?: string | null
+    subscriptionId?: string | null
   }
 ) {
   const supabase = createAdminClient()
@@ -572,6 +590,7 @@ export async function createCompanyContract(
     start_date: data.startDate,
     end_date: data.endDate || null,
     status: "active",
+    ...(data.subscriptionId ? { Subscription_ID: data.subscriptionId } : {}),
   })
 
   if (error) {

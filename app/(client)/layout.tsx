@@ -10,6 +10,7 @@ import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
 import { FailedPaymentBanner } from "@/components/client/failed-payment-banner"
 import { PwaInstallPrompt } from "@/components/client/pwa-install-prompt"
+import { CafePassButton } from "@/components/client/cafe-pass-button"
 import { NoContractModal } from "@/components/client/no-contract-modal"
 import { CguAcceptanceModal } from "@/components/client/cgu-acceptance-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
@@ -451,6 +452,7 @@ export default async function ClientLayout({
       <FailedPaymentBanner />
       <ExpiredContractBanner />
       <PwaInstallPrompt />
+      <CafePassButton />
       <div className="client-layout min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
           <ClientHeader />
