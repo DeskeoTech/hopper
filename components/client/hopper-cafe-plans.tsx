@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { useTranslations } from "next-intl"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
+import { createCafeCheckoutSession } from "@/lib/actions/stripe"
 
 interface CafePlan {
   id: string
@@ -107,10 +108,23 @@ const cafePlans: CafePlan[] = [
 
 function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
   const t = useTranslations("cafe")
+  const [loading, setLoading] = useState(false)
 
-  const handleSubscribe = () => {
-    const stripeUrl = `https://buy.stripe.com/${plan.priceId}?prefilled_email=${encodeURIComponent(userEmail)}`
-    window.open(stripeUrl, "_blank")
+  const handleSubscribe = async () => {
+    setLoading(true)
+    try {
+      const result = await createCafeCheckoutSession({
+        priceId: plan.priceId,
+        customerEmail: userEmail,
+      })
+      if ("error" in result) {
+        console.error(result.error)
+        return
+      }
+      window.location.href = result.url
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -139,8 +153,9 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
         className="mt-4 w-full rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide"
         size="sm"
         onClick={handleSubscribe}
+        disabled={loading}
       >
-        {t("subscribe")}
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("subscribe")}
       </Button>
     </div>
   )

@@ -710,3 +710,77 @@ export async function getCustomerPayments(stripeCustomerId: string): Promise<{
     return { error: `Erreur Stripe: ${errMsg}` }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Café subscription checkout
+// ---------------------------------------------------------------------------
+
+export async function createCafeCheckoutSession(params: {
+  priceId: string
+  customerEmail: string
+}): Promise<{ url: string } | { error: string }> {
+  try {
+    const { priceId, customerEmail } = params
+    if (!priceId || !customerEmail) {
+      return { error: "Paramètres manquants" }
+    }
+
+    const stripe = getStripe("hopper-coworking")
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/"
+    const successUrl = `${baseUrl}/client/cafe?success=true`
+    const cancelUrl = `${baseUrl}/client/cafe?canceled=true`
+
+    // Try to find existing Stripe customer for this email
+    let stripeCustomerId: string | undefined
+    const adminClient = createAdminClient()
+    const { data: userData } = await adminClient
+      .from("users")
+      .select("company_id")
+      .eq("email", customerEmail)
+      .single()
+
+    if (userData?.company_id) {
+      const { data: companyData } = await adminClient
+        .from("companies")
+        .select("customer_id_stripe")
+        .eq("id", userData.company_id)
+        .single()
+
+      if (companyData?.customer_id_stripe) {
+        try {
+          await stripe.customers.retrieve(companyData.customer_id_stripe)
+          stripeCustomerId = companyData.customer_id_stripe
+        } catch {
+          // Customer not found in Stripe
+        }
+      }
+    }
+
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      allow_promotion_codes: true,
+      metadata: {
+        type: "cafe_subscription",
+        priceId,
+      },
+    }
+
+    if (stripeCustomerId) {
+      sessionParams.customer = stripeCustomerId
+    } else {
+      sessionParams.customer_email = customerEmail
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
+    return { url: session.url! }
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe cafe checkout error:", errMsg, error)
+    return { error: `Erreur lors de la création de la session: ${errMsg}` }
+  }
+}

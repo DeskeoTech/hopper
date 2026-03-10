@@ -21,6 +21,7 @@ import {
   Globe,
   Search,
   UserMinus,
+  Coffee,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,12 +40,12 @@ import {
   createUserByAdmin,
   removeUserFromCompany,
 } from "@/lib/actions/users"
-import { assignUserToContract, toggleOffPlatformLink } from "@/lib/actions/user-contracts"
+import { assignUserToContract, assignUserToCafeContract, toggleOffPlatformLink } from "@/lib/actions/user-contracts"
 import { ContractDetailModal } from "./contract-detail-modal"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { cn } from "@/lib/utils"
 import type { Company, ContractForDisplay } from "@/lib/types/database"
-import type { ContractWithSeats, UserWithContract, CompanyCreditTransaction } from "@/app/(client)/entreprise/page"
+import type { ContractWithSeats, CafeContractWithSeats, UserWithContract, CompanyCreditTransaction } from "@/app/(client)/entreprise/page"
 
 const txTypeColors: Record<string, string> = {
   allocation: "bg-teal-100 text-teal-700",
@@ -67,6 +68,7 @@ const txTypeLabels: Record<string, string> = {
 interface EntreprisePageProps {
   company: Company
   contracts: ContractWithSeats[]
+  cafeContracts?: CafeContractWithSeats[]
   users: UserWithContract[]
   currentUserId: string
   spacebringSeats?: number
@@ -79,6 +81,7 @@ interface EntreprisePageProps {
 export function EntreprisePage({
   company,
   contracts: initialContracts,
+  cafeContracts: initialCafeContracts = [],
   users: initialUsers,
   currentUserId,
   spacebringSeats = 0,
@@ -93,6 +96,7 @@ export function EntreprisePage({
 
   const [users, setUsers] = useState(initialUsers)
   const [contracts, setContracts] = useState(initialContracts)
+  const [cafeContracts, setCafeContracts] = useState(initialCafeContracts)
   const [error, setError] = useState<string | null>(null)
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null)
 
@@ -108,6 +112,9 @@ export function EntreprisePage({
 
   // Link contract modal state (opened from user detail)
   const [linkContractOpen, setLinkContractOpen] = useState(false)
+
+  // Link café contract modal state
+  const [linkCafeOpen, setLinkCafeOpen] = useState(false)
 
   // No seats dialog state
   const [noSeatsDialogOpen, setNoSeatsDialogOpen] = useState(false)
@@ -222,6 +229,50 @@ export function EntreprisePage({
     setLinkContractOpen(false)
   }
 
+  const handleCafeContractChange = async (userId: string, cafeContractId: string | null) => {
+    setUpdatingUserId(userId)
+    setError(null)
+
+    const result = await assignUserToCafeContract(userId, cafeContractId)
+    if (result.error) {
+      setError(result.error)
+    } else {
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId ? { ...u, cafe_contract_id: cafeContractId } : u
+        )
+      )
+
+      const oldUser = users.find((u) => u.id === userId)
+      const oldCafeContractId = oldUser?.cafe_contract_id
+
+      setCafeContracts((prev) =>
+        prev.map((c) => {
+          if (c.id === oldCafeContractId) {
+            return { ...c, assigned_seats: Math.max(0, c.assigned_seats - 1) }
+          }
+          if (c.id === cafeContractId) {
+            return { ...c, assigned_seats: c.assigned_seats + 1 }
+          }
+          return c
+        })
+      )
+
+      if (selectedUser?.id === userId) {
+        setSelectedUser((prev) =>
+          prev ? { ...prev, cafe_contract_id: cafeContractId } : prev
+        )
+      }
+    }
+    setUpdatingUserId(null)
+  }
+
+  const handleLinkCafeContract = async (cafeContractId: string) => {
+    if (!selectedUser) return
+    await handleCafeContractChange(selectedUser.id, cafeContractId)
+    setLinkCafeOpen(false)
+  }
+
   const handleAddUser = async () => {
     if (!company.id) return
     setAddingUser(true)
@@ -268,6 +319,17 @@ export function EntreprisePage({
         setContracts((prev) =>
           prev.map((c) =>
             c.id === selectedUser.contract_id
+              ? { ...c, assigned_seats: Math.max(0, c.assigned_seats - 1) }
+              : c
+          )
+        )
+      }
+
+      // Update café contract seat counts if user had a café contract
+      if (selectedUser.cafe_contract_id) {
+        setCafeContracts((prev) =>
+          prev.map((c) =>
+            c.id === selectedUser.cafe_contract_id
               ? { ...c, assigned_seats: Math.max(0, c.assigned_seats - 1) }
               : c
           )
@@ -649,8 +711,9 @@ export function EntreprisePage({
                 const isDisabled = user.status === "inactive"
                 const userName = getUserName(user)
                 const hasContract = !!user.contract_id
+                const hasCafeContract = !!user.cafe_contract_id
                 const hasOffPlatformLink = user.off_platform_linked
-                const hasAnyLink = hasContract || hasOffPlatformLink
+                const hasAnyLink = hasContract || hasCafeContract || hasOffPlatformLink
 
                 return (
                   <button
@@ -702,6 +765,12 @@ export function EntreprisePage({
                           {user.contract_name || t("pass")}
                         </span>
                       )}
+                      {hasCafeContract && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-[11px] font-medium text-foreground/60">
+                          <Coffee className="h-3 w-3" />
+                          Café
+                        </span>
+                      )}
                       {hasOffPlatformLink && (
                         <span className="inline-flex items-center gap-1 rounded-full bg-foreground/5 px-2.5 py-1 text-[11px] font-medium text-foreground/60">
                           <Globe className="h-3 w-3" />
@@ -729,6 +798,10 @@ export function EntreprisePage({
             const userName = getUserName(selectedUser)
             const isUpdating = updatingUserId === selectedUser.id
             const hasContract = !!selectedUser.contract_id
+            const hasCafe = !!selectedUser.cafe_contract_id
+            const cafeContractName = hasCafe
+              ? cafeContracts.find((c) => c.id === selectedUser.cafe_contract_id)?.plan_name || "Forfait café"
+              : null
             const hasOffPlatformLink = selectedUser.off_platform_linked
             const offPlatformFull = offPlatformCount >= spacebringSeats
 
@@ -782,6 +855,49 @@ export function EntreprisePage({
                       <p className="text-sm text-foreground/40">{t("noActivePass")}</p>
                     )}
                   </div>
+
+                  {/* Café subscription */}
+                  {cafeContracts.length > 0 && (
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-foreground/40 mb-2">
+                        Forfait café
+                      </p>
+
+                      {hasCafe ? (
+                        <div className="flex items-center justify-between rounded-[12px] bg-foreground/5 p-3">
+                          <div className="flex items-center gap-2">
+                            <Coffee className="h-4 w-4 text-foreground/40" />
+                            <span className="text-sm font-medium">
+                              {cafeContractName}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCafeContractChange(selectedUser.id, null)}
+                            disabled={isUpdating}
+                            className="flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-600 transition-colors hover:bg-red-100 disabled:opacity-50"
+                          >
+                            {isUpdating ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <X className="h-3 w-3" />
+                            )}
+                            Retirer
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setLinkCafeOpen(true)}
+                          disabled={isUpdating || cafeContracts.every((c) => c.assigned_seats >= c.total_seats)}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-[12px] border border-dashed border-foreground/15 p-3 text-xs font-medium text-foreground/50 transition-colors hover:bg-foreground/5 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          Attribuer un forfait café
+                        </button>
+                      )}
+                    </div>
+                  )}
 
                   {/* Off-platform subscription */}
                   {hasOffPlatform && (
@@ -973,6 +1089,76 @@ export function EntreprisePage({
             <button
               type="button"
               onClick={() => setLinkContractOpen(false)}
+              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+            >
+              {tc("cancel")}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Link Café Contract Dialog */}
+      <Dialog open={linkCafeOpen} onOpenChange={setLinkCafeOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attribuer un forfait café</DialogTitle>
+            <DialogDescription>
+              {selectedUser && (
+                <>
+                  Choisissez un forfait café pour{" "}
+                  <span className="font-medium">
+                    {getUserName(selectedUser)}
+                  </span>
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-2">
+            {cafeContracts.length === 0 ? (
+              <p className="text-sm text-foreground/50 text-center py-4">
+                Aucun forfait café actif
+              </p>
+            ) : (
+              cafeContracts.map((contract) => {
+                const isFull = contract.assigned_seats >= contract.total_seats
+                const availableSeats = contract.total_seats - contract.assigned_seats
+
+                return (
+                  <button
+                    key={contract.id}
+                    type="button"
+                    onClick={() => handleLinkCafeContract(contract.id)}
+                    disabled={isFull || updatingUserId === selectedUser?.id}
+                    className="flex w-full items-center justify-between rounded-[12px] bg-foreground/5 p-4 text-left transition-colors hover:bg-foreground/10 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Coffee className="h-4 w-4 text-foreground/40" />
+                      <div>
+                        <p className="font-medium text-sm">{contract.plan_name}</p>
+                        <p className="text-xs text-foreground/50">
+                          {contract.assigned_seats} / {contract.total_seats} {t("seatsUsed").toLowerCase()}
+                        </p>
+                      </div>
+                    </div>
+                    {isFull ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs text-amber-600">
+                        <Check className="h-3 w-3" />
+                        {t("full")}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs text-green-600">
+                        {t("available", { count: availableSeats })}
+                      </span>
+                    )}
+                  </button>
+                )
+              })
+            )}
+          </div>
+          <DialogFooter>
+            <button
+              type="button"
+              onClick={() => setLinkCafeOpen(false)}
               className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
               {tc("cancel")}

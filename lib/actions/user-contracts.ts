@@ -252,6 +252,91 @@ export async function unassignUserFromContract(
   return assignUserToContract(userId, null)
 }
 
+// ---------------------------------------------------------------------------
+// Café contract assignment (company admin)
+// ---------------------------------------------------------------------------
+
+export async function assignUserToCafeContract(
+  userId: string,
+  cafeContractId: string | null
+): Promise<{ success: boolean; error: string | null }> {
+  const auth = await verifyAdmin()
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase, currentUser } = auth
+
+  const { data: targetUser, error: targetUserError } = await supabase
+    .from("users")
+    .select("id, company_id, cafe_contract_id, status")
+    .eq("id", userId)
+    .single()
+
+  if (targetUserError || !targetUser) {
+    return { success: false, error: "Utilisateur non trouvé" }
+  }
+
+  if (targetUser.company_id !== currentUser.company_id) {
+    return { success: false, error: "Accès non autorisé" }
+  }
+
+  if (cafeContractId) {
+    const { data: contract, error: contractError } = await supabase
+      .from("contracts")
+      .select("id, company_id, Number_of_seats, status")
+      .eq("id", cafeContractId)
+      .single()
+
+    if (contractError || !contract) {
+      return { success: false, error: "Contrat café non trouvé" }
+    }
+
+    if (contract.company_id !== currentUser.company_id) {
+      return { success: false, error: "Accès non autorisé" }
+    }
+
+    if (contract.status !== "active") {
+      return { success: false, error: "Ce forfait café n'est pas actif" }
+    }
+
+    if (targetUser.cafe_contract_id !== cafeContractId) {
+      const { count: assignedUsers, error: countError } = await supabase
+        .from("users")
+        .select("*", { count: "exact", head: true })
+        .eq("cafe_contract_id", cafeContractId)
+        .eq("status", "active")
+
+      if (countError) {
+        return { success: false, error: countError.message }
+      }
+
+      const maxSeats = contract.Number_of_seats ? Number(contract.Number_of_seats) : 0
+      if ((assignedUsers || 0) >= maxSeats) {
+        return { success: false, error: "Ce forfait café n'a plus de places disponibles" }
+      }
+    }
+  }
+
+  const { error: updateError } = await supabase
+    .from("users")
+    .update({
+      cafe_contract_id: cafeContractId,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+
+  if (updateError) {
+    return { success: false, error: updateError.message }
+  }
+
+  revalidatePath("/compte")
+  revalidatePath("/entreprise")
+  revalidatePath(`/admin/clients/${currentUser.company_id}`)
+
+  return { success: true, error: null }
+}
+
 export async function toggleOffPlatformLink(
   userId: string,
   linked: boolean

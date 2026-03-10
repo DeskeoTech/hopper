@@ -77,6 +77,7 @@ export function CafeSubscriptionsSection({
 
       <CafeDetailModal
         subscription={selected}
+        companyId={companyId}
         open={!!selected}
         onOpenChange={(open) => !open && setSelected(null)}
       />
