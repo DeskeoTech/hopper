@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -22,6 +22,7 @@ export function ResetPasswordForm({ isApp, code }: ResetPasswordFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [isSuccess, setIsSuccess] = useState(false)
   const [sessionReady, setSessionReady] = useState(false)
+  const exchangeAttempted = useRef(false)
   const t = useTranslations("resetPassword")
 
   // Exchange the code for a session client-side (cookies are written properly here)
@@ -31,11 +32,16 @@ export function ResetPasswordForm({ isApp, code }: ResetPasswordFormProps) {
       return
     }
 
+    // Prevent double execution (React Strict Mode calls effects twice)
+    if (exchangeAttempted.current) return
+    exchangeAttempted.current = true
+
     const exchange = async () => {
       const supabase = createClient()
       const { error } = await supabase.auth.exchangeCodeForSession(code)
 
       if (error) {
+        console.error("Code exchange failed:", error.message)
         setError(t("error"))
         setIsExchanging(false)
         return
@@ -158,7 +164,7 @@ export function ResetPasswordForm({ isApp, code }: ResetPasswordFormProps) {
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <Button type="submit" className="w-full" disabled={isLoading || (!sessionReady && !code)}>
+      <Button type="submit" className="w-full" disabled={isLoading || !sessionReady}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
