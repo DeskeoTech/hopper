@@ -26,7 +26,8 @@
       "noNews": "No news for today",
       "feedTitle": "News Feed",
       "pageTitle": "News",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "imagePreview": "Image preview"
     },
     "pass": {
       "title": "Pass",
