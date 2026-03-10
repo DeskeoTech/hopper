@@ -53,3 +53,27 @@ export async function getAdminPassUsers(contractId: string): Promise<{
 
   return { data: users || [], error: null }
 }
+
+export async function getAdminCafeUsers(contractId: string): Promise<{
+  data: AdminPassUser[] | null
+  error: string | null
+}> {
+  const auth = await verifyHopperAdmin()
+  if (!auth.authorized) {
+    return { data: null, error: auth.error }
+  }
+
+  const supabase = await createClient()
+
+  const { data: users, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name, email, status")
+    .eq("cafe_contract_id", contractId)
+    .order("last_name")
+
+  if (error) {
+    return { data: null, error: error.message }
+  }
+
+  return { data: users || [], error: null }
+}

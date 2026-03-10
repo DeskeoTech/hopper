@@ -21,7 +21,7 @@ export function BoutiquePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 pt-4 md:px-0 md:pt-6">
+    <div className="mx-auto w-full max-w-5xl space-y-8 px-4 pt-4 pb-12 md:px-0 md:pt-6">
       {/* Page Header */}
       <h1 className="font-header text-xl sm:text-2xl font-bold uppercase tracking-tight">
         {t("title")}
@@ -29,7 +29,6 @@ export function BoutiquePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-        {/* Acheter des Crédits */}
         <button
           type="button"
           onClick={handleBuyCredits}
@@ -46,7 +45,6 @@ export function BoutiquePage() {
           </span>
         </button>
 
-        {/* Acheter un Pass */}
         <button
           type="button"
           onClick={handleBookCoworking}
@@ -64,16 +62,18 @@ export function BoutiquePage() {
         </button>
       </div>
 
-      {/* Hopper Café Section */}
-      <div>
-        <h2 className="font-header text-lg font-semibold text-foreground">
-          {t("cafeTitle")}
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1 mb-4">
-          {t("cafeDescription")}
-        </p>
-        <HopperCafePlans />
-      </div>
+      {/* Hopper Café Section — restricted to test account */}
+      {user.email === "tech@deskeo.fr" && (
+        <section className="space-y-2">
+          <h2 className="font-header text-lg sm:text-xl font-bold uppercase tracking-tight">
+            {t("cafeTitle")}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {t("cafeDescription")}
+          </p>
+          <HopperCafePlans />
+        </section>
+      )}
     </div>
   )
 }

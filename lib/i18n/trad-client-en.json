@@ -15,6 +15,11 @@
       "description": "By the day, week or month",
       "button": "Book"
     },
+    "cafe": {
+      "title": "Hopper Café",
+      "description": "Coffees, juices and lattes at a reduced price every day",
+      "button": "Discover"
+    },
     "tabs": {
       "reservations": "Reservations",
       "news": "News"

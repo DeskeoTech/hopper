@@ -295,6 +295,7 @@ export interface AdminPassForDisplay {
   number_of_seats: number | null
   assigned_users_count: number
   subscription_id: string | null
+  stripe_status: string | null
 }
 
 // Unified reservation item (booking or contract)
@@ -328,6 +329,7 @@ export interface User {
   status: UserStatus | null
   company_id: string | null
   contract_id: string | null
+  cafe_contract_id: string | null
   site_id: string | null
   photo_storage_path: string | null
   is_hopper_admin: boolean

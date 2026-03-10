@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useClientLayout } from "../client-layout-provider"
 import { BookMeetingRoomModal } from "../book-meeting-room-modal"
@@ -38,6 +38,7 @@ function ActionCard({ title, description, buttonText, onClick }: ActionCardProps
 
 export function QuickActionCards() {
   const { user, credits, meetingRoomSites, plan, mainSiteId, isAdmin, companyAdmin } = useClientLayout()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const isApp = searchParams.get("app") === "yes"
   const [bookingModalOpen, setBookingModalOpen] = useState(false)
@@ -68,7 +69,7 @@ export function QuickActionCards() {
   return (
     <>
       {/* Action cards grid */}
-      <div className={`grid grid-cols-1 gap-4 ${isApp ? "sm:grid-cols-1" : "sm:grid-cols-3"}`}>
+      <div className={`grid grid-cols-1 gap-4 ${isApp ? "sm:grid-cols-1" : "sm:grid-cols-2"}`}>
         {!isApp && (
           <ActionCard
             title={t("buyCredits.title")}
@@ -83,6 +84,14 @@ export function QuickActionCards() {
           buttonText={t("bookRoom.button")}
           onClick={() => setBookingModalOpen(true)}
         />
+        {user.email === "tech@deskeo.fr" && (
+          <ActionCard
+            title={t("cafe.title")}
+            description={t("cafe.description")}
+            buttonText={t("cafe.button")}
+            onClick={() => router.push("/boutique")}
+          />
+        )}
         {!isApp && (
           <ActionCard
             title={t("bookDesk.title")}

@@ -15,6 +15,11 @@
       "description": "À la journée, à la semaine ou au mois",
       "button": "Réserver"
     },
+    "cafe": {
+      "title": "Hopper Café",
+      "description": "Votre abonnement pour vos pauses café Hopper",
+      "button": "Découvrir"
+    },
     "tabs": {
       "reservations": "Réservations",
       "news": "Actualités"
