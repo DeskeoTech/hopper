@@ -465,6 +465,7 @@ interface CachedCharge {
   amountRefunded: number
   bookingType: string | null
   paymentIntent: string | null
+  receiptUrl: string | null
 }
 
 interface CachedSession {
@@ -546,6 +547,7 @@ const fetchStripeChargesCached = unstable_cache(
         amountRefunded: c.amount_refunded || 0,
         bookingType: c.metadata?.bookingType || null,
         paymentIntent: typeof c.payment_intent === "string" ? c.payment_intent : null,
+        receiptUrl: c.receipt_url || null,
       }))
     } catch (error) {
       console.error(`Stripe charges fetch error (${account}):`, error)
@@ -726,8 +728,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   // Normalize product variants into groups (e.g. all "Hopper Pass Day (1 Jour) - Site X" → "Hopper Pass Day")
   function normalizeToGroup(match: { productId: string; productName: string }): { productId: string; productName: string } {
     const n = match.productName.toLowerCase()
-    if (n.includes("pass day") || n.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
-    if (n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
+    if (n.includes("pass day") || n.includes("pass jour") || n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_day", productName: "Hopper Pass Day & Week" }
     if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_pass_month", productName: "Hopper Pass Month" }
     if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_credits", productName: "Crédits Hopper" }
     if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice")) return { productId: "__group_cafe", productName: "Café, Food & Beverage" }
@@ -754,8 +755,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     }
     // 3. Fallback: bookingType metadata
     if (charge.bookingType) {
-      if (charge.bookingType.includes("Day")) return { productId: "__pass_day", productName: "Hopper Pass Day" }
-      if (charge.bookingType.includes("Week")) return { productId: "__pass_week", productName: "Hopper Pass Week" }
+      if (charge.bookingType.includes("Day") || charge.bookingType.includes("Week")) return { productId: "__pass_day", productName: "Hopper Pass Day & Week" }
       if (charge.bookingType.includes("Month")) return { productId: "__pass_month", productName: "Hopper Pass Month" }
     }
     return { productId: "__other", productName: "Pass & Abonnements" }
@@ -775,8 +775,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   function findGroupUnitPrice(groupId: string): number | null {
     // For grouped products, find unit price from any constituent product
     const groupKeywords: Record<string, string[]> = {
-      "__group_pass_day": ["pass day"],
-      "__group_pass_week": ["pass week"],
+      "__group_pass_day": ["pass day", "pass week"],
       "__group_pass_month": ["pass month", "pass mois", "pass mensuel"],
       "__group_credits": ["crédit", "credit"],
       "__group_cafe": ["café", "coffee", "espresso", "latte", "juice"],
@@ -838,6 +837,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
         productName: matched.productName,
         originalProductName: raw.productName,
         companySiteId: company?.siteId || "",
+        receiptUrl: c.receiptUrl,
       }
     })
   }

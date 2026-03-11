@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { ArrowDown, ArrowUp, ArrowUpDown, Building2, ChevronLeft, ChevronRight, Download, Info, Search, TrendingUp } from "lucide-react"
+import { ArrowDown, ArrowUp, ArrowUpDown, Building2, ChevronLeft, ChevronRight, Download, ExternalLink, Info, Search, TrendingUp } from "lucide-react"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts"
@@ -44,6 +44,7 @@ export interface StripePayment {
   productName: string
   originalProductName: string
   companySiteId: string
+  receiptUrl: string | null
 }
 
 export interface AccountKpis {
@@ -605,7 +606,11 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                   const colorIdx = productColorMap.get(p.productId) ?? (PRODUCT_CARD_COLORS.length - 1)
                   const badgeStyle = PRODUCT_CARD_COLORS[colorIdx % PRODUCT_CARD_COLORS.length]
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow
+                      key={p.id}
+                      className={cn(p.receiptUrl && "cursor-pointer hover:bg-muted/50 transition-colors")}
+                      onClick={() => p.receiptUrl && window.open(p.receiptUrl, "_blank")}
+                    >
                       <TableCell className="whitespace-nowrap text-sm">
                         {new Date(p.date).toLocaleDateString("fr-FR")}
                       </TableCell>
@@ -632,9 +637,12 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                         ) : "—"}
                       </TableCell>
                       <TableCell>
-                        <span className={cn("inline-flex rounded-sm px-2 py-0.5 text-xs font-medium", statusColors[p.status] || "bg-gray-100 text-gray-600")}>
-                          {statusLabels[p.status] || p.status}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={cn("inline-flex rounded-sm px-2 py-0.5 text-xs font-medium", statusColors[p.status] || "bg-gray-100 text-gray-600")}>
+                            {statusLabels[p.status] || p.status}
+                          </span>
+                          {p.receiptUrl && <ExternalLink className="h-3 w-3 text-muted-foreground/50" />}
+                        </div>
                       </TableCell>
                     </TableRow>
                   )
