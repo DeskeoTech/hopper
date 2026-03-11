@@ -12,18 +12,14 @@ interface GaAccount {
 
 const accounts: Record<string, GaAccount | null> = {
   hopper: (() => {
-    const id = process.env.GA_HOPPER_PROPERTY_ID
-    const email = process.env.GA_HOPPER_CLIENT_EMAIL
     const key = process.env.GA_HOPPER_PRIVATE_KEY
-    if (!id || !email || !key) return null
-    return { propertyId: id, clientEmail: email, privateKey: parseKey(key) }
+    if (!key) return null
+    return { propertyId: "349286094", clientEmail: "hopper-coworking@hopper-coworking-489812.iam.gserviceaccount.com", privateKey: parseKey(key) }
   })(),
   legacy: (() => {
-    const id = process.env.GA_PROPERTY_ID
-    const email = process.env.GA_CLIENT_EMAIL
     const key = process.env.GA_PRIVATE_KEY
-    if (!id || !email || !key) return null
-    return { propertyId: id, clientEmail: email, privateKey: parseKey(key) }
+    if (!key) return null
+    return { propertyId: "349286094", clientEmail: "hopper-coworking@hopper-coworking-489812.iam.gserviceaccount.com", privateKey: parseKey(key) }
   })(),
 }
 
