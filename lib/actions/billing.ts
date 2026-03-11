@@ -2,7 +2,7 @@
 
 import { createClient, getUser } from "@/lib/supabase/server"
 
-const N8N_WEBHOOK_URL = "https://n8n.srv901924.hstgr.cloud/webhook/customerportal"
+const N8N_WEBHOOK_URL = process.env.N8N_BILLING_WEBHOOK_URL!
 const N8N_WEBHOOK_SECRET = process.env.N8N_BILLING_WEBHOOK_SECRET
 
 interface BillingPortalResult {
