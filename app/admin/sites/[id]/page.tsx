@@ -17,6 +17,7 @@ import { EditClosuresModal } from "@/components/admin/site-edit/edit-closures-mo
 import { Button } from "@/components/ui/button"
 import { MetroLineBadge } from "@/components/ui/metro-line-badge"
 import type { TransportationStop, Resource, Equipment } from "@/lib/types/database"
+import { getStorageUrl } from "@/lib/utils"
 import { groupTransportByStation } from "@/lib/utils/transportation"
 import { ReservationsSection } from "@/components/admin/reservations/reservations-section"
 import { DetailsTabs } from "@/components/admin/details-tabs"
@@ -51,7 +52,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   // Fetch resource photos for all resources of this site
   const resourceIds = resources?.map((r) => r.id) || []
   const { data: resourcePhotos } = resourceIds.length > 0
-    ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("display_order")
+    ? await supabase.from("resource_photos").select("*").in("resource_id", resourceIds).order("created_at")
     : { data: null }
 
   // Fetch companies for this site and user counts
@@ -83,10 +84,9 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   }))
 
   // Build public URLs for photos
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const photoUrls = photos?.map((photo) => ({
     ...photo,
-    url: `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`,
+    url: getStorageUrl("site-photos", photo.storage_path),
   })) || []
 
   // Build resource photos map with public URLs
@@ -97,7 +97,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
       if (!resourcePhotosMap[rid]) resourcePhotosMap[rid] = []
       resourcePhotosMap[rid].push({
         id: rp.id,
-        url: `${supabaseUrl}/storage/v1/object/public/resource-photos/${rp.storage_path}`,
+        url: getStorageUrl("resource-photos", rp.storage_path),
         storage_path: rp.storage_path,
         filename: rp.filename,
       })
@@ -137,11 +137,28 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <h1 className="type-h2 text-foreground">{site.name}</h1>
             <StatusBadge status={site.status} size="md" />
+            {site.status === "open" && site.is_coworking && !site.is_meeting_room && (
+              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-blue-700">
+                Coworking
+              </span>
+            )}
+            {site.status === "open" && !site.is_coworking && site.is_meeting_room && (
+              <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-xs font-medium text-purple-700">
+                Salles de réunion
+              </span>
+            )}
+            {site.status === "open" && site.is_coworking && site.is_meeting_room && (
+              <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+                Coworking + Salles
+              </span>
+            )}
             <EditHeaderModal
               siteId={site.id}
               initialName={site.name}
               initialStatus={site.status}
               initialAddress={site.address}
+              initialIsCoworking={site.is_coworking ?? true}
+              initialIsMeetingRoom={site.is_meeting_room ?? true}
             />
           </div>
           <div className="mt-1 flex items-start gap-2 text-muted-foreground">

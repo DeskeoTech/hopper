@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, ExternalLink } from "lucide-react"
+import { ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal, ExternalLink, Eye } from "lucide-react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
 import {
@@ -19,10 +19,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Pagination, PaginationInfo } from "@/components/ui/pagination"
 import { cn } from "@/lib/utils"
-import type { SupportTicketWithDetails, TicketStatus, TicketRequestType } from "@/lib/types/database"
-import { REQUEST_TYPE_LABELS, getSubtypeLabel } from "@/lib/constants/ticket-options"
+import type { SupportTicketWithDetails, TicketStatus } from "@/lib/types/database"
+import { getRequestTypeLabel, getSubtypeLabel } from "@/lib/constants/ticket-options"
 
 type SortField = "created_at" | "status" | "request_type" | "user_name" | "company_name" | "site_name"
 type SortOrder = "asc" | "desc"
@@ -37,6 +43,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
   const [sortField, setSortField] = useState<SortField>("created_at")
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
   const [currentPage, setCurrentPage] = useState(1)
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicketWithDetails | null>(null)
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -128,8 +135,8 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
     )
   }
 
-  const getRequestTypeLabel = (type: TicketRequestType | null) => {
-    return type ? (REQUEST_TYPE_LABELS[type] || type) : "-"
+  const getTypeLabel = (type: string | null) => {
+    return getRequestTypeLabel(type)
   }
 
   const getUserName = (ticket: SupportTicketWithDetails) => {
@@ -209,7 +216,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
           </TableHeader>
           <TableBody>
             {paginatedTickets.map((ticket) => (
-              <TableRow key={ticket.id} className="border-b border-border/30 hover:bg-muted/30">
+              <TableRow key={ticket.id} className="cursor-pointer border-b border-border/30 hover:bg-muted/30" onClick={() => setSelectedTicket(ticket)}>
                 <TableCell>
                   {format(new Date(ticket.created_at), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
@@ -229,7 +236,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <div>
-                    <span>{getRequestTypeLabel(ticket.request_type)}</span>
+                    <span>{getTypeLabel(ticket.request_type)}</span>
                     {ticket.request_subtype && (
                       <span className="block text-xs text-muted-foreground">
                         {getSubtypeLabel(ticket.request_type, ticket.request_subtype) || ticket.request_subtype}
@@ -245,7 +252,7 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                 <TableCell>
                   {getStatusBadge(ticket.status)}
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
@@ -255,7 +262,17 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedTicket(ticket)
+                        }}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        Voir les détails
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
                           if (ticket.freshdesk_ticket_id) {
                             window.open(
                               `https://mydeskeosupport.freshdesk.com/a/tickets/${ticket.freshdesk_ticket_id}`,
@@ -292,6 +309,87 @@ export function TicketsTable({ tickets }: TicketsTableProps) {
           />
         </div>
       )}
+
+      {/* Ticket detail dialog */}
+      <Dialog open={!!selectedTicket} onOpenChange={(open) => !open && setSelectedTicket(null)}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Détails du ticket</DialogTitle>
+          </DialogHeader>
+          {selectedTicket && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date</p>
+                  <p className="text-sm">{format(new Date(selectedTicket.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Statut</p>
+                  {getStatusBadge(selectedTicket.status)}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Utilisateur</p>
+                  <p className="text-sm font-semibold">{getUserName(selectedTicket)}</p>
+                  {selectedTicket.user_email && selectedTicket.user_first_name && (
+                    <p className="text-xs text-muted-foreground">{selectedTicket.user_email}</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Entreprise</p>
+                  <p className="text-sm">{selectedTicket.company_name || "-"}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Site</p>
+                  <p className="text-sm">{selectedTicket.site_name || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Type</p>
+                  <p className="text-sm">{getTypeLabel(selectedTicket.request_type)}</p>
+                  {selectedTicket.request_subtype && (
+                    <p className="text-xs text-muted-foreground">
+                      {getSubtypeLabel(selectedTicket.request_type, selectedTicket.request_subtype) || selectedTicket.request_subtype}
+                    </p>
+                  )}
+                </div>
+              </div>
+              {selectedTicket.subject && (
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sujet</p>
+                  <p className="text-sm">{selectedTicket.subject}</p>
+                </div>
+              )}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Description</p>
+                <div className="mt-1 rounded-lg bg-muted/50 p-3">
+                  <p className="whitespace-pre-wrap text-sm">{selectedTicket.comment || "Aucune description"}</p>
+                </div>
+              </div>
+              {selectedTicket.freshdesk_ticket_id && (
+                <div className="pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() =>
+                      window.open(
+                        `https://mydeskeosupport.freshdesk.com/a/tickets/${selectedTicket.freshdesk_ticket_id}`,
+                        "_blank"
+                      )
+                    }
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Voir dans Freshdesk
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

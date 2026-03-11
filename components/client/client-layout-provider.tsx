@@ -4,10 +4,13 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import type { User, UserCredits, UserPlan, Equipment, CompanyType, CreditMovement, TransportationStop } from "@/lib/types/database"
+import type { CompanyPaymentStatus } from "@/lib/actions/stripe"
 
 interface Site {
   id: string
   name: string
+  is_coworking?: boolean
+  is_meeting_room?: boolean
 }
 
 export interface CompanyAdmin {
@@ -32,6 +35,8 @@ export interface SiteWithDetails {
   instructions: string | null
   access: string | null
   transportationLines: TransportationStop[] | null
+  isCoworking: boolean
+  isMeetingRoom: boolean
 }
 
 interface ClientLayoutContextValue {
@@ -52,6 +57,10 @@ interface ClientLayoutContextValue {
   mainSiteId: string | null
   canManageCompany: boolean
   companyAdmin: CompanyAdmin | null
+  isMeetingRoomOnly: boolean
+  meetingRoomSites: Site[]
+  coworkingSitesWithDetails: SiteWithDetails[]
+  paymentStatus: CompanyPaymentStatus
 }
 
 const ClientLayoutContext = createContext<ClientLayoutContextValue | null>(null)
@@ -69,6 +78,8 @@ interface ClientLayoutProviderProps {
   isAdmin: boolean
   isDeskeoEmployee: boolean
   companyAdmin: CompanyAdmin | null
+  isMeetingRoomOnly: boolean
+  paymentStatus: CompanyPaymentStatus
 }
 
 export function ClientLayoutProvider({
@@ -84,6 +95,8 @@ export function ClientLayoutProvider({
   isAdmin,
   isDeskeoEmployee,
   companyAdmin,
+  isMeetingRoomOnly,
+  paymentStatus,
 }: ClientLayoutProviderProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -106,6 +119,8 @@ export function ClientLayoutProvider({
   const selectedSite = sites.find((s) => s.id === currentSelectedSiteId) || null
   const selectedSiteWithDetails = sitesWithDetails.find((s) => s.id === currentSelectedSiteId) || null
   const isNomad = plan?.name?.toUpperCase().includes("NOMAD") ?? false
+  const meetingRoomSites = allSites.filter((s) => s.is_meeting_room !== false)
+  const coworkingSitesWithDetails = sitesWithDetails.filter((s) => s.isCoworking !== false)
   const mainSiteId = user.companies?.main_site_id || null
   const canManageCompany = user.role === "admin" && user.companies !== null
 
@@ -138,6 +153,10 @@ export function ClientLayoutProvider({
         mainSiteId,
         canManageCompany,
         companyAdmin,
+        isMeetingRoomOnly,
+        meetingRoomSites,
+        coworkingSitesWithDetails,
+        paymentStatus,
       }}
     >
       {children}

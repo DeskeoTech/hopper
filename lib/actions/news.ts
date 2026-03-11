@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getStorageUrl } from "@/lib/utils"
 import type { NewsPostWithSite } from "@/lib/types/database"
 
 interface GetNewsPostsOptions {
@@ -36,6 +37,9 @@ export async function getNewsPosts(
   // Filter: global posts OR site-specific posts for user's site
   if (options?.mainSiteId) {
     query = query.or(`site_id.is.null,site_id.eq.${options.mainSiteId}`)
+    // Client view: only show pinned posts or posts from the last 72h
+    const cutoff = new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+    query = query.or(`is_pinned.eq.true,published_at.gte.${cutoff}`)
   } else if (options?.siteId) {
     query = query.or(`site_id.is.null,site_id.eq.${options.siteId}`)
   }
@@ -49,8 +53,6 @@ export async function getNewsPosts(
   }
 
   // Build image URLs
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-
   return (data || []).map((post) => {
     const author = post.author as { first_name: string | null; last_name: string | null } | null
     return {
@@ -67,7 +69,7 @@ export async function getNewsPosts(
       updated_at: post.updated_at,
       site_name: (post.sites as { name: string } | null)?.name || null,
       image_url: post.image_storage_path
-        ? `${supabaseUrl}/storage/v1/object/public/news-photos/${post.image_storage_path}`
+        ? getStorageUrl("news-photos", post.image_storage_path)
         : null,
       author_first_name: author?.first_name || null,
       author_last_name: author?.last_name || null,
@@ -131,7 +133,7 @@ export async function createNewsPost(formData: FormData) {
     site_id: siteId || null,
     image_storage_path: imageStoragePath,
     published_at: new Date().toISOString(),
-    is_pinned: false,
+    is_pinned: formData.get("is_pinned") === "true",
     created_by: createdBy,
   })
 
@@ -217,6 +219,46 @@ export async function updateNewsPost(postId: string, formData: FormData) {
   const { error } = await supabase
     .from("news_posts")
     .update(updateData)
+    .eq("id", postId)
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  revalidatePath("/admin")
+  revalidatePath("/actualites")
+  return { success: true }
+}
+
+export async function markNewsAsRead(notificationIds: string[]) {
+  if (notificationIds.length === 0) return { success: true }
+
+  const supabase = await createClient()
+
+  const { error } = await supabase
+    .from("client_notifications")
+    .delete()
+    .in("id", notificationIds)
+
+  if (error) {
+    console.error("Error marking news as read:", error)
+    return { error: error.message }
+  }
+
+  revalidatePath("/compte")
+  return { success: true }
+}
+
+export async function toggleNewsPin(postId: string, isPinned: boolean) {
+  if (!postId) {
+    return { error: "ID de l'actualité requis" }
+  }
+
+  const supabase = createAdminClient()
+
+  const { error } = await supabase
+    .from("news_posts")
+    .update({ is_pinned: isPinned })
     .eq("id", postId)
 
   if (error) {

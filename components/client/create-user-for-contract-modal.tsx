@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { X, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { createUserForContract } from "@/lib/actions/contracts"
+import { createUserForContract, createCompanyUser } from "@/lib/actions/contracts"
 import { useClientLayout } from "./client-layout-provider"
 
 interface CreateUserForContractModalProps {
@@ -12,6 +12,7 @@ interface CreateUserForContractModalProps {
   contractId: string
   companyId: string
   onUserCreated: () => void
+  isSpacebring?: boolean
 }
 
 export function CreateUserForContractModal({
@@ -20,6 +21,7 @@ export function CreateUserForContractModal({
   contractId,
   companyId,
   onUserCreated,
+  isSpacebring = false,
 }: CreateUserForContractModalProps) {
   const { isDeskeoEmployee, plan } = useClientLayout()
   const [firstName, setFirstName] = useState("")
@@ -48,11 +50,14 @@ export function CreateUserForContractModal({
     }
 
     setLoading(true)
-    const result = await createUserForContract(companyId, contractId, {
+    const userData = {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       email: email.trim().toLowerCase(),
-    })
+    }
+    const result = isSpacebring
+      ? await createCompanyUser(companyId, userData)
+      : await createUserForContract(companyId, contractId, userData)
     setLoading(false)
 
     if (result.success) {

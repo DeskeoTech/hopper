@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { uploadSitePhoto, deleteSitePhoto } from "@/lib/actions/sites"
+import { createSitePhotoUploadUrl, confirmSitePhoto, deleteSitePhoto } from "@/lib/actions/sites"
 
 interface Photo {
   id: string
@@ -61,16 +61,42 @@ export function SitePhotoGallery({ siteId, photos: initialPhotos, siteName }: Si
     if (!pendingFile) return
 
     setUploading(true)
-    const formData = new FormData()
-    formData.append("file", pendingFile)
+    try {
+      // 1. Get signed upload URL from server
+      const urlResult = await createSitePhotoUploadUrl(siteId, pendingFile.name)
+      if (urlResult.error || !urlResult.signedUrl) {
+        alert(`Erreur : ${urlResult.error}`)
+        return
+      }
 
-    const result = await uploadSitePhoto(siteId, formData)
+      // 2. Upload file directly to Supabase Storage (bypasses Next.js body limit)
+      const uploadRes = await fetch(urlResult.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": pendingFile.type },
+        body: pendingFile,
+      })
+      if (!uploadRes.ok) {
+        alert(`Erreur lors de l'upload du fichier`)
+        return
+      }
 
-    if (result.success) {
-      window.location.reload()
+      // 3. Create DB record
+      const confirmResult = await confirmSitePhoto(
+        siteId,
+        urlResult.path!,
+        pendingFile.name,
+        pendingFile.type || null,
+        pendingFile.size || null
+      )
+      if (confirmResult.success) {
+        window.location.reload()
+      } else if (confirmResult.error) {
+        alert(`Erreur : ${confirmResult.error}`)
+      }
+    } finally {
+      setUploading(false)
+      setPendingFile(null)
     }
-    setUploading(false)
-    setPendingFile(null)
   }
 
   const handleDeleteClick = () => {

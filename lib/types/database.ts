@@ -2,7 +2,7 @@ export type SiteStatus = "open" | "closed"
 
 export type ResourceType = "bench" | "meeting_room" | "flex_desk" | "fixed_desk"
 
-export type Equipment =
+export type KnownEquipment =
   | "barista"
   | "stationnement_velo"
   | "impression"
@@ -16,6 +16,9 @@ export type Equipment =
   | "micro_ondes"
   | "restauration"
   | "wifi"
+
+// Allows known equipment + custom equipment strings
+export type Equipment = KnownEquipment | (string & {})
 
 export type DayOfWeek = "lundi" | "mardi" | "mercredi" | "jeudi" | "vendredi" | "samedi" | "dimanche"
 
@@ -54,7 +57,11 @@ export interface Site {
   contact_last_name: string | null
   contact_email: string | null
   contact_phone: string | null
+  capacity: number | null
   is_nomad: boolean
+  is_coworking: boolean
+  is_meeting_room: boolean
+  stripe_account: string
   created_at: string
   updated_at: string
 }
@@ -90,9 +97,10 @@ export interface MeetingRoomResource {
 export interface SitePhoto {
   id: string
   site_id: string
-  url: string
-  alt: string | null
-  order: number
+  storage_path: string
+  filename: string | null
+  mime_type: string | null
+  size_bytes: number | null
   created_at: string
 }
 
@@ -101,7 +109,8 @@ export interface ResourcePhoto {
   resource_id: string
   storage_path: string
   filename: string | null
-  display_order: number
+  mime_type: string | null
+  size_bytes: number | null
   created_at: string
 }
 
@@ -126,13 +135,19 @@ export interface Company {
   main_site_id: string | null
   logo_storage_path: string | null
   kbis_storage_path: string | null
+  identity_document_storage_path: string | null
+  rib_storage_path: string | null
   onboarding_done: boolean | null
   from_spacebring: boolean | null
+  meeting_room_only: boolean | null
   spacebring_plan_name: string | null
   spacebring_monthly_price: number | null
   spacebring_monthly_credits: number | null
   spacebring_seats: number | null
   spacebring_start_date: string | null
+  utm_source: string | null
+  utm_medium: string | null
+  utm_campaign: string | null
   created_at: string
   updated_at: string
 }
@@ -152,6 +167,7 @@ export interface Plan {
   service_type: PlanServiceType | null
   notes: string | null
   archived: boolean
+  daily_drink_limit: number | null
   created_at: string
   updated_at: string
   stripe_product_id_test: string | null
@@ -182,7 +198,7 @@ export interface UserCredits {
 }
 
 // Credit movement types for history display
-export type CreditMovementType = "reservation" | "cancellation" | "adjustment" | "allocation" | "expiration"
+export type CreditMovementType = "reservation" | "cancellation" | "adjustment" | "allocation" | "expiration" | "purchase"
 
 export interface CreditMovement {
   id: string
@@ -218,6 +234,7 @@ export interface FlexDeskAvailability {
 
 // Booking types
 export type BookingStatus = "confirmed" | "cancelled" | "pending"
+export type PaymentStatus = "paid" | "unpaid" | "no_payment_required" | "expired"
 
 export interface Booking {
   id: string
@@ -232,7 +249,9 @@ export interface Booking {
   notes: string | null
   hubspot_deal_id: string | null
   netsuite_invoice_id: string | null
+  stripe_checkout_session_id: string | null
   referral: string | null
+  resource_type: string | null
   created_at: string
   updated_at: string
 }
@@ -261,6 +280,7 @@ export interface ContractForDisplay {
   end_date: string | null
   plan_name: string
   plan_recurrence: PlanRecurrence | null
+  service_type: PlanServiceType | null
   site_name: string | null
   number_of_seats: number | null
 }
@@ -276,6 +296,8 @@ export interface AdminPassForDisplay {
   price_per_seat_month: number | null
   number_of_seats: number | null
   assigned_users_count: number
+  subscription_id: string | null
+  stripe_status: string | null
 }
 
 // Unified reservation item (booking or contract)
@@ -309,11 +331,13 @@ export interface User {
   status: UserStatus | null
   company_id: string | null
   contract_id: string | null
+  cafe_contract_id: string | null
   site_id: string | null
   photo_storage_path: string | null
   is_hopper_admin: boolean
   badge_number: string | null
   badge_returned: boolean
+  off_platform_linked: boolean
   cgu_accepted_at: string | null
   created_at: string
   updated_at: string
@@ -338,6 +362,7 @@ export type TicketRequestType =
   | "audiovisuel"
   | "autre"
   | "badges"
+  | "cafe_the"
   | "catering"
   | "chauffage"
   | "climatisation"
@@ -355,11 +380,13 @@ export type TicketRequestType =
   | "isolation_phonique"
   | "juridique"
   | "menage"
+  | "mobilier"
   | "nuisances"
   | "nuisibles"
   | "plomberie"
   | "portes"
   | "ssi"
+  | "telephone_gsm"
   | "videosurveillance_alarme"
 
 export interface SupportTicket {
@@ -367,7 +394,7 @@ export interface SupportTicket {
   airtable_id: string | null
   user_id: string | null
   site_id: string | null
-  request_type: TicketRequestType | null
+  request_type: string | null
   request_subtype: string | null
   subject: string | null
   comment: string | null
@@ -375,6 +402,16 @@ export interface SupportTicket {
   freshdesk_ticket_id: string | null
   created_at: string
   updated_at: string
+}
+
+export interface TicketAttachment {
+  id: string
+  ticket_id: string | null
+  storage_path: string
+  filename: string | null
+  mime_type: string | null
+  size_bytes: number | null
+  created_at: string
 }
 
 export interface SupportTicketWithDetails extends SupportTicket {
@@ -408,12 +445,38 @@ export interface NewsPostWithSite extends NewsPost {
   author_last_name: string | null
 }
 
+export interface ClientNotificationDisplay {
+  id: string
+  source_id: string 
+  user_id: string
+}
 // Site closure types
 export interface SiteClosure {
   id: string
   site_id: string
   date: string // "YYYY-MM-DD"
   reason: string | null
+  created_at: string
+}
+
+// Café beverage types
+export interface CafeBeverage {
+  id: string
+  name: string
+  created_at: string
+}
+
+export interface CafeBeveragePlanEligibility {
+  id: string
+  beverage_id: string
+  plan_name: string
+}
+
+export interface CafeConsumption {
+  id: string
+  user_id: string
+  beverage_id: string
+  served_by_admin_id: string
   created_at: string
 }
 

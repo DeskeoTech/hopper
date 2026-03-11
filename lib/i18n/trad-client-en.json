@@ -15,6 +15,11 @@
       "description": "By the day, week or month",
       "button": "Book"
     },
+    "cafe": {
+      "title": "Hopper Café",
+      "description": "Coffees, juices and lattes at a reduced price every day",
+      "button": "Discover"
+    },
     "tabs": {
       "reservations": "Reservations",
       "news": "News"
@@ -26,7 +31,8 @@
       "noNews": "No news for today",
       "feedTitle": "News Feed",
       "pageTitle": "News",
-      "pinned": "Pinned"
+      "pinned": "Pinned",
+      "imagePreview": "Image preview"
     },
     "pass": {
       "title": "Pass",
@@ -196,6 +202,12 @@
       "purchase": "Purchase",
       "allocation": "Allocation",
       "expiration": "Expiration"
+    },
+    "info": {
+      "title": "You received credits!",
+      "credits": "credits",
+      "expiresOn": "Expires on",
+      "understood": "Got it"
     }
   },
   "billing": {
@@ -288,17 +300,28 @@
   },
   "company": {
     "myCompany": "My company",
-    "pass": "Pass",
-    "noActivePass": "No active pass",
+    "pass": "Coworking pass",
+    "noActivePass": "No active coworking pass",
+    "cafePass": "Café pass",
+    "noActiveCafePass": "No active café pass",
     "seatsUsed": "Seats used",
     "seatsOccupied": "Seats occupied",
     "users": "Users",
     "noUsers": "No users",
+    "searchUsers": "Search for a user...",
+    "noSearchResults": "No results for this search",
     "linkToPass": "Link to a pass",
     "removeFromPass": "Remove from pass",
     "full": "full",
     "available": "{count} available",
     "companyAdmin": "Company administrator",
+    "removeUser": {
+      "button": "Remove from company",
+      "title": "Remove this user?",
+      "description": "{name} will be removed from your company. They will no longer have access to services linked to your account.",
+      "confirm": "Remove",
+      "removing": "Removing..."
+    },
     "companyType": {
       "selfEmployed": "Self-employed",
       "company": "Company"
@@ -362,6 +385,7 @@
     "title": "Assign a user",
     "searchUser": "Search a user...",
     "allSeatsOccupied": "All seats are occupied. Increase the number of seats on Stripe to add a user.",
+    "allSeatsOccupiedOffPlatform": "All seats are occupied. Contact your manager to add more seats.",
     "noUserFound": "No user found",
     "allAssigned": "All users are already assigned"
   },
@@ -416,6 +440,10 @@
   "expiredBanner": {
     "message": "YOUR HOPPER PASS HAS EXPIRED, SUBSCRIBE TO A NEW ONE HERE"
   },
+  "failedPaymentBanner": {
+    "message": "⚠ YOUR LAST PAYMENT FAILED — CLICK HERE TO UPDATE YOUR PAYMENT METHOD",
+    "loading": "REDIRECTING TO STRIPE..."
+  },
   "adminContact": {
     "title": "Contact your administrator",
     "message": "To {action}, please contact your company administrator.",
@@ -450,7 +478,8 @@
     "whiteboard": "Whiteboard",
     "myBooking": "My booking",
     "reserved": "Reserved",
-    "unavailable": "Unavailable"
+    "unavailable": "Unavailable",
+    "colleagueBooking": "Colleague"
   },
   "allSites": {
     "title": "All Hopper Sites"
@@ -480,8 +509,32 @@
     },
     "unlog": "You must be logged in to access this page.",
     "noReservation": "No reservation?",
-  "discoverHopper": "Discover and book the Hopper experience here",
-  "buttonLink" : "LOG IN"
+    "discoverHopper": "Discover and book the Hopper experience here",
+    "buttonLink": "LOG IN",
+    "password": "Password",
+    "passwordPlaceholder": "Your password",
+    "forgotPassword": "Forgot password?",
+    "messageApp": "Log in to your Hopper space.",
+    "invalidCredentials": "Incorrect email or password.",
+    "forgotPasswordSuccess": "A reset email has been sent to",
+    "forgotPasswordMessage": "Enter your email address to receive a reset link.",
+    "sendResetLink": "SEND RESET LINK",
+    "backToLogin": "Back to login"
+  },
+  "resetPassword": {
+    "title": "New password",
+    "message": "Choose your new password.",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "newPasswordPlaceholder": "Your new password",
+    "confirmPasswordPlaceholder": "Confirm your password",
+    "submit": "UPDATE",
+    "updating": "Updating...",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "Password must be at least 6 characters.",
+    "success": "Password updated successfully.",
+    "error": "An error occurred. Please try again.",
+    "redirecting": "Redirecting..."
   },
   "sites": {
   "seeSite": "View site info",

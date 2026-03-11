@@ -14,7 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { uploadResourcePhoto, deleteResourcePhoto } from "@/lib/actions/resources"
+import { createResourcePhotoUploadUrl, confirmResourcePhoto, deleteResourcePhoto } from "@/lib/actions/resources"
 
 interface Photo {
   id: string
@@ -62,16 +62,40 @@ export function ResourcePhotoGallery({ resourceId, siteId, photos: initialPhotos
     if (!pendingFile) return
 
     setUploading(true)
-    const formData = new FormData()
-    formData.append("file", pendingFile)
+    try {
+      const urlResult = await createResourcePhotoUploadUrl(resourceId, pendingFile.name)
+      if (urlResult.error || !urlResult.signedUrl) {
+        alert(`Erreur : ${urlResult.error}`)
+        return
+      }
 
-    const result = await uploadResourcePhoto(resourceId, siteId, formData)
+      const uploadRes = await fetch(urlResult.signedUrl, {
+        method: "PUT",
+        headers: { "Content-Type": pendingFile.type },
+        body: pendingFile,
+      })
+      if (!uploadRes.ok) {
+        alert(`Erreur lors de l'upload du fichier`)
+        return
+      }
 
-    if (result.success) {
-      window.location.reload()
+      const confirmResult = await confirmResourcePhoto(
+        resourceId,
+        siteId,
+        urlResult.path!,
+        pendingFile.name,
+        pendingFile.type || null,
+        pendingFile.size || null
+      )
+      if (confirmResult.success) {
+        window.location.reload()
+      } else if (confirmResult.error) {
+        alert(`Erreur : ${confirmResult.error}`)
+      }
+    } finally {
+      setUploading(false)
+      setPendingFile(null)
     }
-    setUploading(false)
-    setPendingFile(null)
   }
 
   const handleDeleteClick = () => {

@@ -26,7 +26,7 @@ import {
   InputOTPSeparator,
 } from "@/components/ui/input-otp"
 import { REGEXP_ONLY_DIGITS } from "input-otp"
-import { Mail, Loader2, CheckCircle, ExternalLink } from "lucide-react"
+import { Mail, Loader2, CheckCircle, ExternalLink, Lock, ArrowLeft } from "lucide-react"
 import { useTranslations } from "next-intl"
 
 
@@ -55,9 +55,265 @@ function GoogleIcon({ className }: { className?: string }) {
 
 interface LoginFormProps {
   initialError?: string
+  isApp?: boolean
 }
 
-export function LoginForm({ initialError }: LoginFormProps) {
+export function LoginForm({ initialError, isApp }: LoginFormProps) {
+  if (isApp) {
+    return <PasswordLoginForm initialError={initialError} />
+  }
+  return <MagicLinkLoginForm initialError={initialError} />
+}
+
+function PasswordLoginForm({ initialError }: { initialError?: string }) {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showNoAccountModal, setShowNoAccountModal] = useState(false)
+  const [showForgotPassword, setShowForgotPassword] = useState(false)
+  const [resetSent, setResetSent] = useState(false)
+  const t = useTranslations("login")
+
+  useEffect(() => {
+    if (initialError === "no_account") {
+      setShowNoAccountModal(true)
+    }
+  }, [initialError])
+
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    const { exists } = await checkEmailExists(email)
+    if (!exists) {
+      setShowNoAccountModal(true)
+      setIsLoading(false)
+      return
+    }
+
+    await ensureSupabaseAuthUser(email)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    setIsLoading(false)
+
+    if (error) {
+      setError(t("invalidCredentials"))
+      return
+    }
+
+    try {
+      const { url } = await getPostLoginRedirectUrl()
+      window.location.href = url + "?app=yes"
+    } catch {
+      window.location.href = "/compte?app=yes"
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    const { exists } = await checkEmailExists(email)
+    if (!exists) {
+      setShowNoAccountModal(true)
+      setIsLoading(false)
+      return
+    }
+
+    await ensureSupabaseAuthUser(email)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password?app=yes`,
+    })
+
+    setIsLoading(false)
+
+    if (error) {
+      const match = error.message.match(/request this after (\d+) seconds/)
+      if (match) {
+        setError(`Pour des raisons de sécurité, veuillez patienter ${match[1]} secondes avant de réessayer.`)
+      } else {
+        setError(error.message)
+      }
+    } else {
+      setResetSent(true)
+    }
+  }
+
+  if (resetSent) {
+    return (
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <CheckCircle className="h-8 w-8 text-primary" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">{t("success.mailVerify")}</h2>
+          <p className="text-muted-foreground">
+            {t("forgotPasswordSuccess")}{" "}
+            <span className="font-medium text-foreground">{email}</span>
+          </p>
+        </div>
+        <Button
+          variant="ghost"
+          onClick={() => {
+            setShowForgotPassword(false)
+            setResetSent(false)
+            setPassword("")
+          }}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t("backToLogin")}
+        </Button>
+      </div>
+    )
+  }
+
+  if (showForgotPassword) {
+    return (
+      <>
+        <form onSubmit={handleForgotPassword} className="space-y-6">
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              {t("forgotPasswordMessage")}
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-medium text-foreground">
+              {t("email")}
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="vous@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
+
+          {error && <p className="text-sm text-destructive">{error}</p>}
+
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t("loadingSend")}
+              </>
+            ) : (
+              t("sendResetLink")
+            )}
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setShowForgotPassword(false)
+              setError(null)
+            }}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            {t("backToLogin")}
+          </Button>
+        </form>
+
+        <NoAccountModal open={showNoAccountModal} onOpenChange={setShowNoAccountModal} />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <form onSubmit={handlePasswordLogin} className="space-y-6">
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">
+            {t("messageApp")}
+          </p>
+        </div>
+
+        <div className="space-y-2">
+          <label htmlFor="email" className="text-sm font-medium text-foreground">
+            {t("email")}
+          </label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="vous@exemple.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label htmlFor="password" className="text-sm font-medium text-foreground">
+              {t("password")}
+            </label>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground underline-offset-4 hover:underline"
+              onClick={() => {
+                setShowForgotPassword(true)
+                setError(null)
+              }}
+            >
+              {t("forgotPassword")}
+            </button>
+          </div>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              id="password"
+              type="password"
+              placeholder={t("passwordPlaceholder")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t("loadingConnect")}
+            </>
+          ) : (
+            t("buttonLink")
+          )}
+        </Button>
+      </form>
+
+      <NoAccountModal open={showNoAccountModal} onOpenChange={setShowNoAccountModal} />
+    </>
+  )
+}
+
+function MagicLinkLoginForm({ initialError }: { initialError?: string }) {
   const router = useRouter()
   const [email, setEmail] = useState("")
   const [isLoading, setIsLoading] = useState(false)

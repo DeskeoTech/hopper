@@ -2,160 +2,160 @@
 
 import { useState } from "react"
 import { useTranslations } from "next-intl"
-import { Coffee, Sparkles } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
+import { createCafeCheckoutSession } from "@/lib/actions/stripe"
 
 interface CafePlan {
   id: string
   name: string
-  description: string
   price: number
   priceId: string
-  perDay: number
-  perWeek: number
   frequency: "3days" | "5days"
-  isPopular?: boolean
-  icon?: string
+  features: string[]
 }
 
 const cafePlans: CafePlan[] = [
   // 3 days/week
   {
+    id: "juice-boost-3",
+    name: "JUICE BOOST 3 DAYS",
+    price: 34.99,
+    priceId: "price_1S5RZiRt8NA57A6vvetHvjv8",
+    frequency: "3days",
+    features: [
+      "Detox, Jus pressés",
+      "2 boissons par jour",
+      "Valable sur les 3 jours de la semaine",
+    ],
+  },
+  {
     id: "color-latte-3",
-    name: "COLOR LATTE CLUB",
-    description: "Ube, Chaï, Matcha ou Golden Latte",
+    name: "COLOR LATTE CLUB 3 DAYS",
     price: 34.99,
     priceId: "price_1S5RZERt8NA57A6v49IUrlmh",
-    perDay: 2,
-    perWeek: 6,
     frequency: "3days",
-    icon: "latte",
+    features: [
+      "Ube, Chaï, Golden, Matcha",
+      "2 boissons par jour",
+      "Valable sur 3 jours de la semaine",
+    ],
   },
   {
     id: "infinity-coffee-3",
-    name: "INFINITY COFFEE CHOICE",
-    description: "Lait amande, avoine, coco ou soja",
-    price: 59.99,
+    name: "INFINITY COFFEE CHOICE 3 DAYS",
+    price: 39.99,
     priceId: "price_1S5RajRt8NA57A6vPZpvuuUb",
-    perDay: 2,
-    perWeek: 6,
     frequency: "3days",
-    icon: "coffee",
-  },
-  {
-    id: "juice-boost-3",
-    name: "JUICE BOOST",
-    description: "Jus detox, Détox Minute ou Jus de fruits",
-    price: 34.99,
-    priceId: "price_1S5RZiRt8NA57A6vvetHvjv8",
-    perDay: 1,
-    perWeek: 3,
-    frequency: "3days",
-    icon: "juice",
+    features: [
+      "Choix illimité sur la cafétéria (syrops inclus)",
+      "2 boissons par jour",
+      "Valable sur les 3 jours de la semaine",
+    ],
   },
   // 5 days/week
   {
-    id: "color-latte-5",
-    name: "COLOR LATTE CLUB",
-    description: "Ube, Chaï, Matcha ou Golden Latte",
+    id: "unlimited-espresso-5",
+    name: "UNLIMITED ESPRESSO 5 DAYS",
     price: 39.99,
-    priceId: "price_1S5RYsRt8NA57A6vs3NIO5Gy",
-    perDay: 2,
-    perWeek: 10,
+    priceId: "price_1S5RY5Rt8NA57A6v7TbQIKyj",
     frequency: "5days",
-    icon: "latte",
-  },
-  {
-    id: "infinity-coffee-5",
-    name: "INFINITY COFFEE CHOICE",
-    description: "Lait amande, avoine, coco ou soja",
-    price: 59.99,
-    priceId: "price_1S5RaLRt8NA57A6vxSsGww1b",
-    perDay: 2,
-    perWeek: 10,
-    frequency: "5days",
-    isPopular: true,
-    icon: "coffee",
+    features: [
+      "Espresso, Allongé, Americano",
+      "7 boissons par jour",
+      "Valable sur les 5 jours de la semaine",
+    ],
   },
   {
     id: "juice-boost-5",
-    name: "JUICE BOOST",
-    description: "Jus detox, Détox Minute ou Jus de fruits",
+    name: "JUICE BOOST 5 DAYS",
     price: 49.99,
     priceId: "price_1S5RYWRt8NA57A6vV0JHfS0x",
-    perDay: 1,
-    perWeek: 5,
     frequency: "5days",
-    icon: "juice",
+    features: [
+      "Detox, Jus pressés",
+      "1 boisson par jour",
+      "Valable sur les 5 jours de la semaine",
+    ],
   },
   {
-    id: "unlimited-espresso-5",
-    name: "UNLIMITED ESPRESSO",
-    description: "Allongé, Espresso ou Americano",
+    id: "color-latte-5",
+    name: "COLOR LATTE CLUB 5 DAYS",
     price: 49.99,
-    priceId: "price_1S5RY5Rt8NA57A6v7TbQIKyj",
-    perDay: 5,
-    perWeek: 25,
+    priceId: "price_1S5RYsRt8NA57A6vs3NIO5Gy",
     frequency: "5days",
-    icon: "espresso",
+    features: [
+      "Ube, Chaï, Golden, Matcha",
+      "2 boissons par jour",
+      "Valable sur les 5 jours de la semaine",
+    ],
+  },
+  {
+    id: "infinity-coffee-5",
+    name: "INFINITY COFFEE CHOICE 5 DAYS",
+    price: 54.99,
+    priceId: "price_1S5RaLRt8NA57A6vxSsGww1b",
+    frequency: "5days",
+    features: [
+      "Choix illimité sur la cafétéria (syrops inclus)",
+      "2 boissons par jour",
+      "Valable sur les 5 jours de la semaine",
+    ],
   },
 ]
 
 function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
   const t = useTranslations("cafe")
+  const [loading, setLoading] = useState(false)
 
-  const handleSubscribe = () => {
-    const stripeUrl = `https://buy.stripe.com/${plan.priceId}?prefilled_email=${encodeURIComponent(userEmail)}`
-    window.open(stripeUrl, "_blank")
+  const handleSubscribe = async () => {
+    setLoading(true)
+    try {
+      const result = await createCafeCheckoutSession({
+        priceId: plan.priceId,
+        customerEmail: userEmail,
+      })
+      if ("error" in result) {
+        console.error(result.error)
+        return
+      }
+      window.location.href = result.url
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
-    <div
-      className={cn(
-        "relative rounded-[16px] border bg-card p-4 sm:p-5 transition-all duration-200 hover:border-primary/50 hover:-translate-y-0.5 ",
-        plan.isPopular && "border-primary/30 ring-1 ring-primary/20"
-      )}
-    >
-      {plan.isPopular && (
-        <div className="absolute -top-3 left-4 inline-flex items-center gap-1 rounded-full bg-primary px-3 py-1 text-xs font-medium text-primary-foreground">
-          <Sparkles className="h-3 w-3" />
-          {t("popular")}
-        </div>
-      )}
-
-      <h4 className="font-header text-base sm:text-lg font-bold text-foreground mt-1">
+    <div className="flex flex-col rounded-[16px] bg-card p-5">
+      <h4 className="font-header text-sm sm:text-base font-bold text-foreground leading-tight">
         {plan.name}
       </h4>
 
-      <p className="mt-1 text-xs sm:text-sm text-muted-foreground">{plan.description}</p>
-
-      <div className="mt-3 sm:mt-4 flex items-baseline gap-1">
-        <span className="text-2xl sm:text-3xl font-bold text-foreground">
+      <div className="mt-3 flex items-baseline gap-1">
+        <span className="text-2xl font-bold text-foreground">
           {plan.price.toFixed(2).replace(".", ",")}
         </span>
-        <span className="text-xs sm:text-sm text-muted-foreground">{t("perMonth")}</span>
+        <span className="text-xs text-muted-foreground">{t("perMonth")}</span>
       </div>
 
-      <div className="mt-2 sm:mt-3 flex items-center gap-2">
-        <div className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
-          <Coffee className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
-        </div>
-        <div className="text-xs sm:text-sm">
-          <span className="font-semibold text-foreground">{plan.perDay}</span>{" "}
-          <span className="text-muted-foreground">
-            {plan.perDay > 1 ? t("drinksPerDay").split(" | ")[1] : t("drinksPerDay").split(" | ")[0]}{t("perDay")}
-          </span>
-          <span className="text-muted-foreground"> · </span>
-          <span className="font-semibold text-foreground">{plan.perWeek}</span>{" "}
-          <span className="text-muted-foreground">{t("perWeek")}</span>
-        </div>
-      </div>
+      <ul className="mt-4 space-y-2 flex-1">
+        {plan.features.map((feature) => (
+          <li key={feature} className="flex items-start gap-2 text-xs text-muted-foreground">
+            <Check className="h-3.5 w-3.5 shrink-0 text-foreground/40 mt-0.5" />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
 
-      <Button className="mt-3 sm:mt-4 w-full" size="sm" onClick={handleSubscribe}>
-        {t("subscribe")}
+      <Button
+        className="mt-4 w-full rounded-full bg-[#1B1918] text-white hover:bg-[#1B1918]/90 uppercase text-xs font-semibold tracking-wide"
+        size="sm"
+        onClick={handleSubscribe}
+        disabled={loading}
+      >
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : t("subscribe")}
       </Button>
     </div>
   )
@@ -164,45 +164,49 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
 export function HopperCafePlans() {
   const { user } = useClientLayout()
   const t = useTranslations("cafe")
-  const [frequency, setFrequency] = useState<"3days" | "5days">("5days")
+  const [frequency, setFrequency] = useState<"3days" | "5days">("3days")
 
   const filteredPlans = cafePlans.filter((plan) => plan.frequency === frequency)
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      <Tabs
-        value={frequency}
-        onValueChange={(v) => setFrequency(v as "3days" | "5days")}
-        className="w-full"
-      >
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-4 sm:mb-6">
-          <TabsTrigger value="3days" className="text-xs sm:text-sm">
-            {t("threeDays")}
-          </TabsTrigger>
-          <TabsTrigger value="5days" className="text-xs sm:text-sm">
-            {t("fiveDays")}
-            <span className="ml-1 sm:ml-2 hidden sm:inline rounded-full bg-primary/20 px-2 py-0.5 text-xs text-primary">
-              {t("moreChoices")}
-            </span>
-          </TabsTrigger>
-        </TabsList>
+    <div className="space-y-4">
+      {/* Frequency toggle */}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => setFrequency("3days")}
+          className={cn(
+            "rounded-full px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wide transition-colors",
+            frequency === "3days"
+              ? "bg-[#1B1918] text-white"
+              : "bg-foreground/5 text-foreground"
+          )}
+        >
+          {t("threeDays")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setFrequency("5days")}
+          className={cn(
+            "rounded-full px-4 py-2 text-xs sm:text-sm font-semibold uppercase tracking-wide transition-colors",
+            frequency === "5days"
+              ? "bg-[#1B1918] text-white"
+              : "bg-foreground/5 text-foreground"
+          )}
+        >
+          {t("fiveDays")}
+        </button>
+      </div>
 
-        <TabsContent value="3days" className="mt-0">
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="5days" className="mt-0">
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            {filteredPlans.map((plan) => (
-              <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
-            ))}
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Plans grid */}
+      <div className={cn(
+        "grid gap-3 grid-cols-1 sm:grid-cols-2",
+        frequency === "5days" ? "lg:grid-cols-4" : "lg:grid-cols-3"
+      )}>
+        {filteredPlans.map((plan) => (
+          <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
+        ))}
+      </div>
     </div>
   )
 }

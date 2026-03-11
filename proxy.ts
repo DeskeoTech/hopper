@@ -34,7 +34,9 @@ export async function proxy(request: NextRequest) {
   // If refresh failed and user is null, clear stale auth cookies
   // to prevent the browser from repeatedly trying to refresh with invalid tokens
   if (!user) {
-    const authCookies = request.cookies.getAll().filter((c) => c.name.startsWith("sb-"))
+    const authCookies = request.cookies
+      .getAll()
+      .filter((c) => c.name.startsWith("sb-") && !c.name.includes("code-verifier"))
     if (authCookies.length > 0) {
       authCookies.forEach(({ name }) => {
         supabaseResponse.cookies.delete(name)
@@ -43,7 +45,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // If user is not authenticated and trying to access admin, redirect to login
-  const adminRoutes = ["/admin"]
+  const adminRoutes = ["/admin", "/cafe"]
   const isAdminRoute = adminRoutes.some(
     (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
   )
@@ -55,7 +57,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // Public routes that don't require authentication
-  const publicRoutes = ["/", "/login", "/auth", "/reservation", "/conditions-generales", "/politique-de-confidentialite"]
+  const publicRoutes = ["/", "/login", "/auth", "/api", "/reservation", "/reset-password", "/conditions-generales", "/politique-de-confidentialite"]
   const isPublicRoute = publicRoutes.some(
     (route) =>
       request.nextUrl.pathname === route ||
@@ -100,6 +102,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public files (images, etc.)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest\\.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }

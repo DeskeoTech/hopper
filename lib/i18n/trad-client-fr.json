@@ -15,6 +15,11 @@
       "description": "À la journée, à la semaine ou au mois",
       "button": "Réserver"
     },
+    "cafe": {
+      "title": "Hopper Café",
+      "description": "Votre abonnement pour vos pauses café Hopper",
+      "button": "Découvrir"
+    },
     "tabs": {
       "reservations": "Réservations",
       "news": "Actualités"
@@ -26,7 +31,8 @@
       "noNews": "Aucune actualité pour le moment",
       "feedTitle": "Fil d'actualité",
       "pageTitle": "Actualités",
-      "pinned": "Épinglé"
+      "pinned": "Épinglé",
+      "imagePreview": "Aperçu de l'image"
     },
     "pass": {
       "title": "Pass",
@@ -196,6 +202,12 @@
       "purchase": "Achat",
       "allocation": "Attribution",
       "expiration": "Expiration"
+    },
+    "info": {
+      "title": "Vous avez reçu des crédits !",
+      "credits": "crédits",
+      "expiresOn": "Expire le",
+      "understood": "Compris"
     }
   },
   "billing": {
@@ -288,17 +300,28 @@
   },
   "company": {
     "myCompany": "Mon entreprise",
-    "pass": "Pass",
-    "noActivePass": "Aucun pass actif",
+    "pass": "Pass coworking",
+    "noActivePass": "Aucun pass coworking actif",
+    "cafePass": "Pass café",
+    "noActiveCafePass": "Aucun pass café actif",
     "seatsUsed": "Postes utilisés",
     "seatsOccupied": "Sièges utilisés",
     "users": "Utilisateurs",
     "noUsers": "Aucun utilisateur",
+    "searchUsers": "Rechercher un utilisateur...",
+    "noSearchResults": "Aucun résultat pour cette recherche",
     "linkToPass": "Lier à un pass",
     "removeFromPass": "Retirer du pass",
     "full": "complet",
     "available": "{count} dispo",
     "companyAdmin": "Administrateur de l'entreprise",
+    "removeUser": {
+      "button": "Retirer de l'entreprise",
+      "title": "Retirer cet utilisateur ?",
+      "description": "{name} sera retiré(e) de votre entreprise. Cette personne ne pourra plus accéder aux services liés à votre compte.",
+      "confirm": "Retirer",
+      "removing": "Retrait..."
+    },
     "companyType": {
       "selfEmployed": "Auto-entrepreneur",
       "company": "Entreprise"
@@ -362,6 +385,7 @@
     "title": "Assigner un utilisateur",
     "searchUser": "Rechercher un utilisateur...",
     "allSeatsOccupied": "Tous les postes sont occupés. Augmentez le nombre de postes sur Stripe pour ajouter un utilisateur.",
+    "allSeatsOccupiedOffPlatform": "Tous les postes sont occupés. Contactez votre gestionnaire pour ajouter des postes supplémentaires.",
     "noUserFound": "Aucun utilisateur trouvé",
     "allAssigned": "Tous les utilisateurs sont déjà assignés"
   },
@@ -416,6 +440,10 @@
   "expiredBanner": {
     "message": "VOTRE PASS HOPPER A EXPIRÉ, SOUSCRIVEZ-EN UN NOUVEAU ICI"
   },
+  "failedPaymentBanner": {
+    "message": "⚠ VOTRE DERNIER PAIEMENT A ÉCHOUÉ — CLIQUEZ ICI POUR RÉGULARISER",
+    "loading": "REDIRECTION VERS STRIPE..."
+  },
   "adminContact": {
     "title": "Contacter votre administrateur",
     "message": "Pour {action}, veuillez contacter l'administrateur de votre entreprise.",
@@ -450,7 +478,8 @@
     "whiteboard": "Tableau",
     "myBooking": "Ma réservation",
     "reserved": "Réservé",
-    "unavailable": "Indisponible"
+    "unavailable": "Indisponible",
+    "colleagueBooking": "Collègue"
   },
   "allSites": {
     "title": "Tous les sites Hopper"
@@ -487,7 +516,31 @@
     "unlog" : " Vous devez être connecté pour accéder à cette page.",
     "noReservation": "Pas de réservation ?",
     "discoverHopper": "Découvrez et réservez l'expérience Hopper ici",
-    "buttonLink" : "CONNEXION"
+    "buttonLink" : "CONNEXION",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Votre mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "messageApp": "Connectez-vous à votre espace Hopper.",
+    "invalidCredentials": "Email ou mot de passe incorrect.",
+    "forgotPasswordSuccess": "Un email de réinitialisation a été envoyé à",
+    "forgotPasswordMessage": "Entrez votre adresse email pour recevoir un lien de réinitialisation.",
+    "sendResetLink": "ENVOYER LE LIEN",
+    "backToLogin": "Retour à la connexion"
+  },
+  "resetPassword": {
+    "title": "Nouveau mot de passe",
+    "message": "Choisissez votre nouveau mot de passe.",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "newPasswordPlaceholder": "Votre nouveau mot de passe",
+    "confirmPasswordPlaceholder": "Confirmez votre mot de passe",
+    "submit": "METTRE À JOUR",
+    "updating": "Mise à jour...",
+    "passwordMismatch": "Les mots de passe ne correspondent pas.",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 6 caractères.",
+    "success": "Mot de passe mis à jour avec succès.",
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "redirecting": "Redirection..."
   },
   "sites" : {
     "seeSite" : "Voir les infos du site",

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { Pencil, CreditCard, Users, Coins, Calendar, Info, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,6 +43,12 @@ interface SpacebringSubscriptionCardProps {
   startDate: string | null
 }
 
+function derivePerPerson(total: number | null, seats: number | null): number | null {
+  if (total === null) return null
+  if (!seats || seats <= 0) return total
+  return Math.round((total / seats) * 100) / 100
+}
+
 export function SpacebringSubscriptionCard({
   companyId,
   isFromSpacebring,
@@ -57,13 +63,34 @@ export function SpacebringSubscriptionCard({
   const [loading, setLoading] = useState(false)
   const [enabled, setEnabled] = useState(isFromSpacebring)
 
+  // Form stores per-person values
   const [formPlanName, setFormPlanName] = useState(planName || "")
-  const [formPrice, setFormPrice] = useState(monthlyPrice?.toString() || "")
-  const [formCredits, setFormCredits] = useState(monthlyCredits?.toString() || "")
+  const [formPricePerSeat, setFormPricePerSeat] = useState(
+    derivePerPerson(monthlyPrice, seats)?.toString() || ""
+  )
+  const [formCreditsPerPerson, setFormCreditsPerPerson] = useState(
+    derivePerPerson(monthlyCredits, seats)?.toString() || ""
+  )
   const [formSeats, setFormSeats] = useState(seats?.toString() || "")
   const [formStartDate, setFormStartDate] = useState(startDate || "")
 
   const isConfigured = planName || monthlyPrice || monthlyCredits || seats || startDate
+
+  // Derived per-person values for display card
+  const pricePerSeat = derivePerPerson(monthlyPrice, seats)
+  const creditsPerPerson = derivePerPerson(monthlyCredits, seats)
+
+  // Computed totals for form summary
+  const formTotals = useMemo(() => {
+    const seatsNum = formSeats ? parseInt(formSeats, 10) : 0
+    const priceNum = formPricePerSeat ? parseFloat(formPricePerSeat) : 0
+    const creditsNum = formCreditsPerPerson ? parseFloat(formCreditsPerPerson) : 0
+    return {
+      totalPrice: Math.round(priceNum * seatsNum * 100) / 100,
+      totalCredits: creditsNum * seatsNum,
+      seats: seatsNum,
+    }
+  }, [formPricePerSeat, formCreditsPerPerson, formSeats])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -72,12 +99,24 @@ export function SpacebringSubscriptionCard({
 
   const handleConfirm = async () => {
     setLoading(true)
+    const seatsNum = formSeats ? parseInt(formSeats, 10) : null
+    const pricePerSeatNum = formPricePerSeat ? parseFloat(formPricePerSeat) : null
+    const creditsPerPersonNum = formCreditsPerPerson ? parseFloat(formCreditsPerPerson) : null
+
+    // Save totals to database (price_per_seat * seats, credits_per_person * seats)
+    const totalPrice = pricePerSeatNum !== null && seatsNum
+      ? Math.round(pricePerSeatNum * seatsNum * 100) / 100
+      : pricePerSeatNum
+    const totalCredits = creditsPerPersonNum !== null && seatsNum
+      ? creditsPerPersonNum * seatsNum
+      : creditsPerPersonNum
+
     const result = await updateSpacebringSubscription(companyId, {
       from_spacebring: enabled,
       spacebring_plan_name: enabled ? (formPlanName.trim() || null) : null,
-      spacebring_monthly_price: enabled && formPrice ? Number(formPrice) : null,
-      spacebring_monthly_credits: enabled && formCredits ? Number(formCredits) : null,
-      spacebring_seats: enabled && formSeats ? Number(formSeats) : null,
+      spacebring_monthly_price: enabled ? totalPrice : null,
+      spacebring_monthly_credits: enabled ? totalCredits : null,
+      spacebring_seats: enabled ? seatsNum : null,
       spacebring_start_date: enabled && formStartDate ? formStartDate : null,
     })
     setLoading(false)
@@ -93,7 +132,6 @@ export function SpacebringSubscriptionCard({
 
   const handleToggle = async (checked: boolean) => {
     if (!checked) {
-      // Disabling: confirm then save immediately
       setEnabled(false)
       setLoading(true)
       const result = await updateSpacebringSubscription(companyId, {
@@ -107,31 +145,30 @@ export function SpacebringSubscriptionCard({
       setLoading(false)
       if (result.error) {
         toast.error(result.error)
-        setEnabled(true) // Revert
+        setEnabled(true)
         return
       }
       toast.success("Abonnement hors plateforme désactivé")
       setFormPlanName("")
-      setFormPrice("")
-      setFormCredits("")
+      setFormPricePerSeat("")
+      setFormCreditsPerPerson("")
       setFormSeats("")
       setFormStartDate("")
     } else {
       setEnabled(true)
-      // Save from_spacebring = true immediately so badge appears
       setLoading(true)
       const result = await updateSpacebringSubscription(companyId, {
         from_spacebring: true,
         spacebring_plan_name: formPlanName.trim() || null,
-        spacebring_monthly_price: formPrice ? Number(formPrice) : null,
-        spacebring_monthly_credits: formCredits ? Number(formCredits) : null,
-        spacebring_seats: formSeats ? Number(formSeats) : null,
+        spacebring_monthly_price: null,
+        spacebring_monthly_credits: null,
+        spacebring_seats: null,
         spacebring_start_date: formStartDate || null,
       })
       setLoading(false)
       if (result.error) {
         toast.error(result.error)
-        setEnabled(false) // Revert
+        setEnabled(false)
         return
       }
       toast.success("Client marqué comme hors plateforme")
@@ -191,38 +228,47 @@ export function SpacebringSubscriptionCard({
                       placeholder="Ex: Hopper Résidence"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sb-price">Prix mensuel (€)</Label>
-                    <Input
-                      id="sb-price"
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={formPrice}
-                      onChange={(e) => setFormPrice(e.target.value)}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sb-credits">Crédits mensuels</Label>
-                    <Input
-                      id="sb-credits"
-                      type="number"
-                      min="0"
-                      value={formCredits}
-                      onChange={(e) => setFormCredits(e.target.value)}
-                      placeholder="0"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sb-price-per-seat">Prix / poste / mois</Label>
+                      <div className="relative">
+                        <Input
+                          id="sb-price-per-seat"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formPricePerSeat}
+                          onChange={(e) => setFormPricePerSeat(e.target.value)}
+                          placeholder="0.00"
+                          className="pr-12"
+                        />
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                          € HT
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sb-credits-per-person">Crédits / personne / mois</Label>
+                      <Input
+                        id="sb-credits-per-person"
+                        type="number"
+                        min="0"
+                        step="0.5"
+                        value={formCreditsPerPerson}
+                        onChange={(e) => setFormCreditsPerPerson(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="sb-seats">Nombre de postes</Label>
                     <Input
                       id="sb-seats"
                       type="number"
-                      min="0"
+                      min="1"
                       value={formSeats}
                       onChange={(e) => setFormSeats(e.target.value)}
-                      placeholder="0"
+                      placeholder="1"
                     />
                   </div>
                   <div className="space-y-2">
@@ -234,6 +280,38 @@ export function SpacebringSubscriptionCard({
                       onChange={(e) => setFormStartDate(e.target.value)}
                     />
                   </div>
+
+                  {/* Computed totals summary */}
+                  {formTotals.seats > 0 && (formPricePerSeat || formCreditsPerPerson) && (
+                    <div className="rounded-lg border border-border bg-muted/50 p-4">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Récapitulatif mensuel
+                      </p>
+                      <div className="space-y-1.5 text-sm">
+                        {formPricePerSeat && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">
+                              {formPricePerSeat} € HT x {formTotals.seats} poste{formTotals.seats > 1 ? "s" : ""}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {formTotals.totalPrice.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT/mois
+                            </span>
+                          </div>
+                        )}
+                        {formCreditsPerPerson && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">
+                              {formCreditsPerPerson} crédit{parseFloat(formCreditsPerPerson) > 1 ? "s" : ""} x {formTotals.seats} personne{formTotals.seats > 1 ? "s" : ""}
+                            </span>
+                            <span className="font-semibold text-foreground">
+                              {formTotals.totalCredits} crédits/mois
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setOpen(false)}>
                       Annuler
@@ -257,21 +335,31 @@ export function SpacebringSubscriptionCard({
                     </div>
                   </div>
                 )}
-                {monthlyPrice !== null && (
+                {pricePerSeat !== null && (
                   <div className="flex items-start gap-3">
                     <CreditCard className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <div>
-                      <span className="text-muted-foreground">Prix mensuel</span>
-                      <p className="text-foreground">{monthlyPrice} €/mois</p>
+                      <span className="text-muted-foreground">Prix / poste / mois</span>
+                      <p className="text-foreground">{pricePerSeat} € HT</p>
+                      {seats && seats > 1 && monthlyPrice !== null && (
+                        <p className="text-xs text-muted-foreground">
+                          Total : {monthlyPrice.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT/mois
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
-                {monthlyCredits !== null && (
+                {creditsPerPerson !== null && (
                   <div className="flex items-start gap-3">
                     <Coins className="mt-0.5 h-4 w-4 text-muted-foreground" />
                     <div>
-                      <span className="text-muted-foreground">Crédits mensuels</span>
-                      <p className="text-foreground">{monthlyCredits} crédits/mois</p>
+                      <span className="text-muted-foreground">Crédits / personne / mois</span>
+                      <p className="text-foreground">{creditsPerPerson} crédits</p>
+                      {seats && seats > 1 && monthlyCredits !== null && (
+                        <p className="text-xs text-muted-foreground">
+                          Total : {monthlyCredits} crédits/mois
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -317,8 +405,22 @@ export function SpacebringSubscriptionCard({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer les modifications</AlertDialogTitle>
-            <AlertDialogDescription>
-              Voulez-vous enregistrer ces informations d&apos;abonnement hors plateforme ?
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>Voulez-vous enregistrer ces informations d&apos;abonnement hors plateforme ?</p>
+                {formTotals.seats > 0 && (formPricePerSeat || formCreditsPerPerson) && (
+                  <div className="rounded-md bg-muted p-3 text-sm">
+                    {formPlanName && <p className="font-medium">{formPlanName}</p>}
+                    <p>{formTotals.seats} poste{formTotals.seats > 1 ? "s" : ""}</p>
+                    {formPricePerSeat && (
+                      <p>{formTotals.totalPrice.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT/mois</p>
+                    )}
+                    {formCreditsPerPerson && (
+                      <p>{formTotals.totalCredits} crédits/mois</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

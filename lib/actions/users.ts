@@ -1,33 +1,46 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient, getUser } from "@/lib/supabase/server"
+import { getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { ensureSupabaseAuthUser } from "@/lib/actions/auth"
 import type { UserRole, UserStatus, User } from "@/lib/types/database"
 
-export async function getCompanyUsers(companyId: string): Promise<{ data: User[] | null; error: string | null }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission to view company users
+/** Verify the current user is a company admin. Returns supabase admin client + current user on success. */
+async function verifyCompanyAdmin(companyId: string): Promise<
+  | { authorized: true; supabase: ReturnType<typeof createAdminClient>; currentUser: { id: string; role: string; company_id: string } }
+  | { authorized: false; error: string }
+> {
   const authUser = await getUser()
   if (!authUser?.email) {
-    return { data: null, error: "Non authentifié" }
+    return { authorized: false, error: "Non authentifié" }
   }
 
+  const supabase = createAdminClient()
   const { data: currentUser } = await supabase
     .from("users")
-    .select("role, company_id")
+    .select("id, role, company_id")
     .eq("email", authUser.email)
     .single()
 
   if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
-    return { data: null, error: "Accès non autorisé" }
+    return { authorized: false, error: "Accès non autorisé" }
   }
+
+  return { authorized: true, supabase, currentUser }
+}
+
+export async function getCompanyUsers(companyId: string): Promise<{ data: User[] | null; error: string | null }> {
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { data: null, error: auth.error }
+  }
+
+  const supabase = auth.supabase
 
   const { data, error } = await supabase
     .from("users")
-    .select("*")
+    .select("id, first_name, last_name, email, phone, role, status, company_id, badge_number, badge_returned, is_hopper_admin, created_at, updated_at")
     .eq("company_id", companyId)
     .order("last_name", { ascending: true })
 
@@ -43,23 +56,12 @@ export async function updateUserRoleByAdmin(
   companyId: string,
   newRole: "admin" | "user"
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { success: false, error: "Non authentifié" }
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("id, role, company_id")
-    .eq("email", authUser.email)
-    .single()
-
-  if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
-    return { success: false, error: "Accès non autorisé" }
-  }
+  const { supabase, currentUser } = auth
 
   // Prevent admin from changing their own role
   if (currentUser.id === userId) {
@@ -89,23 +91,12 @@ export async function deactivateUserByAdmin(
   userId: string,
   companyId: string
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { success: false, error: "Non authentifié" }
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("id, role, company_id")
-    .eq("email", authUser.email)
-    .single()
-
-  if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
-    return { success: false, error: "Accès non autorisé" }
-  }
+  const { supabase, currentUser } = auth
 
   // Prevent admin from deactivating themselves
   if (currentUser.id === userId) {
@@ -143,12 +134,13 @@ export async function createUser(
     badge_returned?: boolean
   }
 ) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase.from("users").insert({
     company_id: companyId,
@@ -193,12 +185,13 @@ export async function updateUser(
     badge_returned?: boolean
   }
 ) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("users")
@@ -223,12 +216,13 @@ export async function updateUser(
 }
 
 export async function toggleUserStatus(userId: string, companyId: string, newStatus: UserStatus) {
-  const supabase = await createClient()
-
   const authUser = await getUser()
   if (!authUser?.email) {
     return { error: "Non authentifié" }
   }
+
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
 
   const { error } = await supabase
     .from("users")
@@ -250,28 +244,17 @@ export async function getCompanySeatsInfo(companyId: string): Promise<{
   data: { activeUsers: number; maxSeats: number } | null
   error: string | null
 }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { data: null, error: "Non authentifié" }
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { data: null, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("role, company_id")
-    .eq("email", authUser.email)
-    .single()
-
-  if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
-    return { data: null, error: "Accès non autorisé" }
-  }
+  const supabase = auth.supabase
 
   // Count active users in the company
   const { count: activeUsers, error: usersError } = await supabase
     .from("users")
-    .select("*", { count: "exact", head: true })
+    .select("id", { count: "exact", head: true })
     .eq("company_id", companyId)
     .eq("status", "active")
 
@@ -291,7 +274,20 @@ export async function getCompanySeatsInfo(companyId: string): Promise<{
     return { data: null, error: contractError.message }
   }
 
-  const maxSeats = contract?.Number_of_seats ? Number(contract.Number_of_seats) : 0
+  let maxSeats = contract?.Number_of_seats ? Number(contract.Number_of_seats) : 0
+
+  // If no platform contract seats, check for off-platform (spacebring) seats
+  if (maxSeats === 0) {
+    const { data: company } = await supabase
+      .from("companies")
+      .select("from_spacebring, spacebring_seats")
+      .eq("id", companyId)
+      .single()
+
+    if (company?.from_spacebring && company.spacebring_seats) {
+      maxSeats = company.spacebring_seats
+    }
+  }
 
   return {
     data: {
@@ -359,11 +355,24 @@ export async function deleteUser(
     return { success: false, error: "Non authentifié" }
   }
 
-  if (authUser.email !== "tech@deskeo.fr") {
+  // Use admin client to bypass RLS recursive policy on users table
+  const supabase = createAdminClient()
+
+  // Allow tech admin or any Hopper admin
+  const { data: currentUser } = await supabase
+    .from("users")
+    .select("id, is_hopper_admin")
+    .eq("email", authUser.email)
+    .single()
+
+  if (!currentUser?.is_hopper_admin && authUser.email !== "tech@deskeo.fr") {
     return { success: false, error: "Accès non autorisé" }
   }
 
-  const supabase = createAdminClient()
+  // Prevent deleting yourself
+  if (currentUser?.id === userId) {
+    return { success: false, error: "Vous ne pouvez pas supprimer votre propre compte" }
+  }
 
   const { error } = await supabase
     .from("users")
@@ -379,6 +388,61 @@ export async function deleteUser(
   return { success: true, error: null }
 }
 
+export async function removeUserFromCompany(
+  userId: string,
+  companyId: string
+): Promise<{ success: boolean; error: string | null }> {
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
+  }
+
+  const { supabase, currentUser } = auth
+
+  // Prevent admin from removing themselves
+  if (currentUser.id === userId) {
+    return { success: false, error: "Vous ne pouvez pas vous retirer vous-même de l'entreprise" }
+  }
+
+  // Verify the user belongs to this company
+  const { data: targetUser } = await supabase
+    .from("users")
+    .select("id, company_id")
+    .eq("id", userId)
+    .eq("company_id", companyId)
+    .single()
+
+  if (!targetUser) {
+    return { success: false, error: "Utilisateur introuvable dans cette entreprise" }
+  }
+
+  // Remove contract assignment if any
+  await supabase
+    .from("user_contracts")
+    .delete()
+    .eq("user_id", userId)
+
+  // Remove company association (set company_id to null, role to user)
+  const { error } = await supabase
+    .from("users")
+    .update({
+      company_id: null,
+      role: "user",
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", userId)
+
+  if (error) {
+    return { success: false, error: error.message }
+  }
+
+  revalidatePath("/compte")
+  revalidatePath("/mon-compte")
+  revalidatePath("/entreprise")
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true, error: null }
+}
+
 export async function createUserByAdmin(
   companyId: string,
   data: {
@@ -391,23 +455,12 @@ export async function createUserByAdmin(
     badge_returned?: boolean
   }
 ): Promise<{ success: boolean; error: string | null }> {
-  const supabase = await createClient()
-
-  // Verify the current user has permission
-  const authUser = await getUser()
-  if (!authUser?.email) {
-    return { success: false, error: "Non authentifié" }
+  const auth = await verifyCompanyAdmin(companyId)
+  if (!auth.authorized) {
+    return { success: false, error: auth.error }
   }
 
-  const { data: currentUser } = await supabase
-    .from("users")
-    .select("role, company_id")
-    .eq("email", authUser.email)
-    .single()
-
-  if (!currentUser || currentUser.company_id !== companyId || currentUser.role !== "admin") {
-    return { success: false, error: "Accès non autorisé" }
-  }
+  const supabase = auth.supabase
 
   // Check if email already exists
   if (data.email) {

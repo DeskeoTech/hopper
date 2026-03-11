@@ -1,15 +1,16 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { Bell, CalendarCheck, Circle, FileText, Pin, TicketIcon } from "lucide-react"
+import { Bell, CalendarDays, Clock, FileText, CalendarCheck, TicketIcon, CheckCheck, MapPin, ChevronDown, ArrowLeft, Loader2, User, Building2, MapPinIcon, Tag } from "lucide-react"
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
+import { format } from "date-fns"
+import { fr } from "date-fns/locale"
+import { cn } from "@/lib/utils"
 
 interface NotificationsModalProps {
   open: boolean
@@ -24,8 +25,8 @@ interface SiteOption {
   label: string
 }
 
-// Type unifié pour tickets + contrats
 type NotificationType = "ticket" | "contract" | "booking"
+type FilterTab = "all" | "contract" | "booking" | "ticket"
 
 interface NotificationItem {
   id: string
@@ -41,11 +42,54 @@ interface NotificationItem {
   sourceId: string
 }
 
-const sourceTableMap: Record<NotificationType, string> = {
-  ticket: "support_tickets",
-  contract: "contracts",
-  booking: "bookings",
+// Detail interfaces
+interface TicketDetail {
+  type: "ticket"
+  subject: string | null
+  comment: string | null
+  status: string | null
+  request_type: string | null
+  request_subtype: string | null
+  created_at: string
+  updated_at: string
+  userName: string | null
+  userEmail: string | null
+  companyName: string | null
+  siteName: string | null
+  freshdesk_ticket_id: string | null
 }
+
+interface BookingDetail {
+  type: "booking"
+  start_date: string
+  end_date: string
+  status: string | null
+  seats_count: number | null
+  credits_used: number | null
+  notes: string | null
+  created_at: string
+  userName: string | null
+  userEmail: string | null
+  companyName: string | null
+  resourceName: string | null
+  resourceType: string | null
+  siteName: string | null
+}
+
+interface ContractDetail {
+  type: "contract"
+  status: string | null
+  start_date: string | null
+  end_date: string | null
+  number_of_seats: number | null
+  created_at: string
+  planName: string | null
+  pricePerSeatMonth: number | null
+  companyName: string | null
+  siteName: string | null
+}
+
+type DetailData = TicketDetail | BookingDetail | ContractDetail
 
 // Clé localStorage par utilisateur
 function storageKey(email: string | null): string {
@@ -64,21 +108,59 @@ function setLastReadAt(email: string | null, date: string) {
 }
 
 const ticketStatusConfig: Record<string, { label: string; className: string }> = {
-  todo: { label: "À traiter", className: "bg-yellow-100 text-yellow-700" },
-  in_progress: { label: "En cours", className: "bg-blue-100 text-blue-700" },
-  done: { label: "Résolu", className: "bg-green-100 text-green-700" },
+  todo: { label: "À traiter", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  in_progress: { label: "En cours", className: "border border-[#221D1A]/20 text-[#221D1A] bg-[#221D1A]/5" },
+  done: { label: "Résolu", className: "border border-green-200 text-green-600 bg-green-50" },
 }
 
 const bookingStatusConfig: Record<string, { label: string; className: string }> = {
-  confirmed: { label: "Confirmée", className: "bg-indigo-100 text-indigo-700" },
-  pending: { label: "En attente", className: "bg-yellow-100 text-yellow-700" },
-  cancelled: { label: "Annulée", className: "bg-gray-100 text-gray-500" },
+  confirmed: { label: "Confirmée", className: "border border-[#221D1A]/20 text-[#221D1A] bg-[#221D1A]/5" },
+  pending: { label: "En attente", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  cancelled: { label: "Annulée", className: "border border-gray-200 text-gray-400 bg-gray-50" },
 }
 
 const contractStatusConfig: Record<string, { label: string; className: string }> = {
-  active: { label: "Actif", className: "bg-green-100 text-green-700" },
-  suspended: { label: "Suspendu", className: "bg-yellow-100 text-yellow-700" },
-  terminated: { label: "Résilié", className: "bg-gray-100 text-gray-500" },
+  active: { label: "Actif", className: "border border-green-200 text-green-600 bg-green-50" },
+  suspended: { label: "Suspendu", className: "border border-yellow-200 text-yellow-600 bg-yellow-50" },
+  terminated: { label: "Terminé", className: "border border-gray-200 text-gray-400 bg-gray-50" },
+}
+
+const resourceTypeLabels: Record<string, string> = {
+  meeting_room: "Salle de réunion",
+  flex_desk: "Poste flexible",
+  bench: "Espace ouvert",
+  fixed_desk: "Poste fixe",
+}
+
+const requestTypeLabels: Record<string, string> = {
+  administratif: "Administratif",
+  ascenseurs: "Ascenseurs",
+  audiovisuel: "Audiovisuel",
+  autre: "Autre",
+  badges: "Badges",
+  catering: "Catering",
+  chauffage: "Chauffage",
+  climatisation: "Climatisation",
+  code_acces: "Code d'accès",
+  electricite: "Électricité",
+  electromenager: "Électroménager",
+  espaces_verts: "Espaces verts",
+  fenetres: "Fenêtres",
+  finance: "Finance",
+  fontaine_eau: "Fontaine à eau",
+  immeuble: "Immeuble",
+  imprimantes: "Imprimantes",
+  internet_reseau: "Internet / Réseau",
+  interphone: "Interphone",
+  isolation_phonique: "Isolation phonique",
+  juridique: "Juridique",
+  menage: "Ménage",
+  nuisances: "Nuisances",
+  nuisibles: "Nuisibles",
+  plomberie: "Plomberie",
+  portes: "Portes",
+  ssi: "SSI",
+  videosurveillance_alarme: "Vidéosurveillance / Alarme",
 }
 
 async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
@@ -106,7 +188,7 @@ async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSit
   return (data ?? []).map((t: Record<string, unknown>) => {
     const user = t.user as { first_name: string | null; last_name: string | null } | null
     const site = t.site as { name: string } | null
-    const status = ticketStatusConfig[t.status as string] ?? { label: t.status as string, className: "bg-muted text-muted-foreground" }
+    const status = ticketStatusConfig[t.status as string] ?? { label: t.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
     const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
 
     return {
@@ -126,7 +208,7 @@ async function fetchTickets(supabase: ReturnType<typeof createClient>, filterSit
 }
 
 async function fetchContracts(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
-  let query = supabase
+  const query = supabase
     .from("contracts")
     .select(`
       id, status, start_date, created_at, Number_of_seats,
@@ -152,14 +234,14 @@ async function fetchContracts(supabase: ReturnType<typeof createClient>, filterS
     .map((c: Record<string, unknown>) => {
       const plan = c.plans as { name: string } | null
       const company = c.companies as { name: string; main_site_id: string | null; sites: { name: string } | null } | null
-      const status = contractStatusConfig[c.status as string] ?? { label: c.status as string, className: "bg-muted text-muted-foreground" }
+      const status = contractStatusConfig[c.status as string] ?? { label: c.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
       const seats = c.Number_of_seats as number | null
 
       return {
         id: `contract-${c.id}`,
         type: "contract" as NotificationType,
         title: `Nouveau contrat : ${plan?.name ?? "Plan inconnu"}`,
-        subtitle: company?.name ? `${company.name}${seats ? ` · ${seats} place${seats > 1 ? "s" : ""}` : ""}` : null,
+        subtitle: company?.name ? `${company.name}${seats ? ` \u00B7 ${seats} poste${seats > 1 ? "s" : ""} de travail` : ""}` : null,
         siteName: company?.sites?.name ?? null,
         siteId: company?.main_site_id ?? null,
         statusLabel: status.label,
@@ -172,7 +254,7 @@ async function fetchContracts(supabase: ReturnType<typeof createClient>, filterS
 }
 
 async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSiteId?: string | null): Promise<NotificationItem[]> {
-  let query = supabase
+  const query = supabase
     .from("bookings")
     .select(`
       id, status, start_date, end_date, seats_count, created_at, updated_at,
@@ -198,15 +280,16 @@ async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSi
     .map((b: Record<string, unknown>) => {
       const user = b.user as { first_name: string | null; last_name: string | null } | null
       const resource = b.resource as { name: string | null; type: string | null; site_id: string | null; sites: { name: string } | null } | null
-      const status = bookingStatusConfig[b.status as string] ?? { label: b.status as string, className: "bg-muted text-muted-foreground" }
+      const status = bookingStatusConfig[b.status as string] ?? { label: b.status as string, className: "border border-gray-200 text-gray-400 bg-gray-50" }
       const userName = [user?.first_name, user?.last_name].filter(Boolean).join(" ")
-      const startDate = b.start_date as string | null
+      const seats = b.seats_count as number | null
+      const resourceType = resource?.type ? (resourceTypeLabels[resource.type] || resource.type) : null
 
       return {
         id: `booking-${b.id}`,
         type: "booking" as NotificationType,
-        title: `Réservation : ${resource?.name ?? "Ressource"}`,
-        subtitle: userName ? `${userName}${startDate ? ` · ${new Date(startDate).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" })}` : ""}` : null,
+        title: `Réservation : ${userName || resource?.name || "Réservation"}`,
+        subtitle: resourceType ? `${resourceType}${seats ? ` \u00B7 ${seats} personne${seats > 1 ? "s" : ""}` : ""}` : null,
         siteName: resource?.sites?.name ?? null,
         siteId: resource?.site_id ?? null,
         statusLabel: status.label,
@@ -217,6 +300,111 @@ async function fetchBookings(supabase: ReturnType<typeof createClient>, filterSi
       }
     })
 }
+
+// Detail fetch functions
+async function fetchTicketDetail(supabase: ReturnType<typeof createClient>, ticketId: string): Promise<TicketDetail | null> {
+  const { data, error } = await supabase
+    .from("support_tickets")
+    .select(`
+      id, subject, comment, status, request_type, request_subtype, created_at, updated_at, freshdesk_ticket_id,
+      user:users!user_id(first_name, last_name, email, company_id, companies:companies!company_id(name)),
+      site:sites!site_id(name)
+    `)
+    .eq("id", ticketId)
+    .single()
+
+  if (error || !data) return null
+
+  const user = data.user as { first_name: string | null; last_name: string | null; email: string | null; companies: { name: string } | null } | null
+  const site = data.site as { name: string } | null
+
+  return {
+    type: "ticket",
+    subject: data.subject as string | null,
+    comment: data.comment as string | null,
+    status: data.status as string | null,
+    request_type: data.request_type as string | null,
+    request_subtype: data.request_subtype as string | null,
+    created_at: data.created_at as string,
+    updated_at: data.updated_at as string,
+    userName: [user?.first_name, user?.last_name].filter(Boolean).join(" ") || null,
+    userEmail: user?.email ?? null,
+    companyName: user?.companies?.name ?? null,
+    siteName: site?.name ?? null,
+    freshdesk_ticket_id: data.freshdesk_ticket_id as string | null,
+  }
+}
+
+async function fetchBookingDetail(supabase: ReturnType<typeof createClient>, bookingId: string): Promise<BookingDetail | null> {
+  const { data, error } = await supabase
+    .from("bookings")
+    .select(`
+      id, start_date, end_date, status, seats_count, credits_used, notes, created_at,
+      user:users!user_id(first_name, last_name, email, company_id, companies:companies!company_id(name)),
+      resource:resources!resource_id(name, type, site_id, sites:sites!site_id(name))
+    `)
+    .eq("id", bookingId)
+    .single()
+
+  if (error || !data) return null
+
+  const user = data.user as { first_name: string | null; last_name: string | null; email: string | null; companies: { name: string } | null } | null
+  const resource = data.resource as { name: string | null; type: string | null; sites: { name: string } | null } | null
+
+  return {
+    type: "booking",
+    start_date: data.start_date as string,
+    end_date: data.end_date as string,
+    status: data.status as string | null,
+    seats_count: data.seats_count as number | null,
+    credits_used: data.credits_used as number | null,
+    notes: data.notes as string | null,
+    created_at: data.created_at as string,
+    userName: [user?.first_name, user?.last_name].filter(Boolean).join(" ") || null,
+    userEmail: user?.email ?? null,
+    companyName: user?.companies?.name ?? null,
+    resourceName: resource?.name ?? null,
+    resourceType: resource?.type ? (resourceTypeLabels[resource.type] || resource.type) : null,
+    siteName: resource?.sites?.name ?? null,
+  }
+}
+
+async function fetchContractDetail(supabase: ReturnType<typeof createClient>, contractId: string): Promise<ContractDetail | null> {
+  const { data, error } = await supabase
+    .from("contracts")
+    .select(`
+      id, status, start_date, end_date, Number_of_seats, created_at,
+      plans(name, price_per_seat_month),
+      companies!company_id(name, main_site_id, sites:sites!main_site_id(name))
+    `)
+    .eq("id", contractId)
+    .single()
+
+  if (error || !data) return null
+
+  const plan = data.plans as { name: string; price_per_seat_month: number | null } | null
+  const company = data.companies as { name: string; sites: { name: string } | null } | null
+
+  return {
+    type: "contract",
+    status: data.status as string | null,
+    start_date: data.start_date as string | null,
+    end_date: data.end_date as string | null,
+    number_of_seats: data.Number_of_seats ? Number(data.Number_of_seats) : null,
+    created_at: data.created_at as string,
+    planName: plan?.name ?? null,
+    pricePerSeatMonth: plan?.price_per_seat_month ?? null,
+    companyName: company?.name ?? null,
+    siteName: company?.sites?.name ?? null,
+  }
+}
+
+const TABS: { value: FilterTab; label: string }[] = [
+  { value: "all", label: "Tous" },
+  { value: "contract", label: "Contrats" },
+  { value: "booking", label: "Réservations" },
+  { value: "ticket", label: "Tickets" },
+]
 
 export function NotificationsModal({
   open,
@@ -229,22 +417,21 @@ export function NotificationsModal({
   const [selectedSite, setSelectedSite] = useState<string>(siteId ?? "all")
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [lastReadAt, setLastReadAtState] = useState<string | null>(null)
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set())
+  const [filterTab, setFilterTab] = useState<FilterTab>("all")
+  const [siteDropdownOpen, setSiteDropdownOpen] = useState(false)
   const hasBeenOpened = useRef(false)
-  const [authId, setAuthId] = useState<string | null>(null)
 
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data }) => {
-      setAuthId(data.user?.id ?? null)
-    })
-  }, [])
-  // Load lastReadAt from localStorage on mount (per-user)
+  // Detail panel state
+  const [selectedNotif, setSelectedNotif] = useState<NotificationItem | null>(null)
+  const [detailData, setDetailData] = useState<DetailData | null>(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  // Load lastReadAt from localStorage on mount
   useEffect(() => {
     setLastReadAtState(getLastReadAt(userEmail))
   }, [userEmail])
 
-  // Fetch sites pour le filtre
+  // Fetch sites
   useEffect(() => {
     if (!open) return
 
@@ -264,88 +451,19 @@ export function NotificationsModal({
     fetchSites()
   }, [open])
 
-  // Fetch pinned notification IDs for this admin
-  const fetchPinnedIds = useCallback(async () => {
-    if (!authId) return new Set<string>()
-    const supabase = createClient()
-    const { data } = await supabase
-      .from("admin_notifications")
-      .select("source_table, source_id")
-      .eq("admin_user", authId)
-      .eq("pinned", true)
-
-    const ids = new Set<string>()
-    if (data) {
-      for (const row of data) {
-        // Reverse map: source_table → type prefix
-        const typePrefix = row.source_table === "support_tickets" ? "ticket"
-          : row.source_table === "contracts" ? "contract"
-          : row.source_table === "bookings" ? "booking"
-          : null
-        if (typePrefix) {
-          ids.add(`${typePrefix}-${row.source_id}`)
-        }
-      }
-    }
-    return ids
-  }, [authId])
-
   const fetchAllNotifications = useCallback(async (filterSiteId?: string | null) => {
     const supabase = createClient()
-    const [tickets, contracts, bookings, pinned] = await Promise.all([
+    const [tickets, contracts, bookings] = await Promise.all([
       fetchTickets(supabase, filterSiteId),
       fetchContracts(supabase, filterSiteId),
       fetchBookings(supabase, filterSiteId),
-      fetchPinnedIds(),
     ])
 
-    setPinnedIds(pinned)
-
     const merged = [...tickets, ...contracts, ...bookings]
-      .map((n) => ({ ...n, pinned: pinned.has(n.id) }))
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
 
     setNotifications(merged)
-  }, [fetchPinnedIds])
-
-  // Toggle pin for a notification
-  const togglePin = useCallback(async (notif: NotificationItem) => {
-    if (!authId) return
-    const supabase = createClient()
-    const sourceTable = sourceTableMap[notif.type]
-    const newPinned = !notif.pinned
-
-    // Upsert: check if row exists
-    const { data: existing } = await supabase
-      .from("admin_notifications")
-      .select("id")
-      .eq("admin_user", authId)
-      .eq("source_table", sourceTable)
-      .eq("source_id", notif.sourceId)
-      .maybeSingle()
-
-    if (existing) {
-      await supabase
-        .from("admin_notifications")
-        .update({ pinned: newPinned })
-        .eq("id", existing.id)
-    } else {
-      await supabase
-        .from("admin_notifications")
-        .insert({ admin_user: authId, source_table: sourceTable, source_id: notif.sourceId, pinned: newPinned })
-    }
-
-    // Update local state
-    setNotifications((prev) =>
-      prev.map((n) => n.id === notif.id ? { ...n, pinned: newPinned } : n)
-    )
-    setPinnedIds((prev) => {
-      const next = new Set(prev)
-      if (newPinned) next.add(notif.id)
-      else next.delete(notif.id)
-      return next
-    })
-  }, [authId])
+  }, [])
 
   // Fetch when modal opens or filter changes
   useEffect(() => {
@@ -369,25 +487,28 @@ export function NotificationsModal({
     onUnreadCountChange?.(computeUnreadCount(notifications, lastReadAt))
   }, [notifications, lastReadAt, onUnreadCountChange, computeUnreadCount])
 
-  // Fetch pour le badge au mount (scope = site de l'admin)
+  // Fetch for badge on mount
   useEffect(() => {
     fetchAllNotifications(siteId)
   }, [siteId, fetchAllNotifications])
 
-  // Track ouverture
+  // Track opening
   useEffect(() => {
     if (open) {
       hasBeenOpened.current = true
     }
   }, [open])
 
-  // Mark as read quand la modale se FERME
+  // Mark as read when modal closes
   useEffect(() => {
     if (!open && hasBeenOpened.current) {
       hasBeenOpened.current = false
       const now = new Date().toISOString()
       setLastReadAt(userEmail, now)
       setLastReadAtState(now)
+      // Reset detail view when modal closes
+      setSelectedNotif(null)
+      setDetailData(null)
     }
   }, [open, userEmail])
 
@@ -396,145 +517,534 @@ export function NotificationsModal({
     return new Date(updatedAt) > new Date(lastReadAt)
   }
 
-  const unreadCount = computeUnreadCount(notifications, lastReadAt)
+  const handleMarkAllRead = () => {
+    const now = new Date().toISOString()
+    setLastReadAt(userEmail, now)
+    setLastReadAtState(now)
+  }
+
+  // Reset detail view when tab or site filter changes
+  const handleTabChange = (tab: FilterTab) => {
+    setFilterTab(tab)
+    setSelectedNotif(null)
+    setDetailData(null)
+  }
+
+  const handleSiteChange = (site: string) => {
+    setSelectedSite(site)
+    setSiteDropdownOpen(false)
+    setSelectedNotif(null)
+    setDetailData(null)
+  }
+
+  // Handle notification click
+  const handleNotifClick = async (notif: NotificationItem) => {
+    setSelectedNotif(notif)
+    setDetailData(null)
+    setDetailLoading(true)
+
+    const supabase = createClient()
+    let data: DetailData | null = null
+
+    if (notif.type === "ticket") {
+      data = await fetchTicketDetail(supabase, notif.sourceId)
+    } else if (notif.type === "booking") {
+      data = await fetchBookingDetail(supabase, notif.sourceId)
+    } else if (notif.type === "contract") {
+      data = await fetchContractDetail(supabase, notif.sourceId)
+    }
+
+    setDetailData(data)
+    setDetailLoading(false)
+  }
+
+  // Filter by tab
+  const filteredNotifications = filterTab === "all"
+    ? notifications
+    : notifications.filter(n => n.type === filterTab)
+
+  const allSiteOptions: SiteOption[] = [{ value: "all", label: "Tous les sites" }, ...sites]
+  const selectedSiteLabel = allSiteOptions.find(s => s.value === selectedSite)?.label || "Tous les sites"
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Bell className="size-5" />
-            Notifications
-          </DialogTitle>
-        </DialogHeader>
-
-        {unreadCount > 0 && (
-          <div className="flex items-center gap-2.5 rounded-lg border border-red-200/60 bg-red-500/[0.06] px-3 py-2.5">
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500/80 px-1.5 text-[11px] font-semibold text-white">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
-            <span className="text-sm text-red-900/70">
-              nouvelle{unreadCount > 1 ? "s" : ""} notification{unreadCount > 1 ? "s" : ""}
-            </span>
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <SearchableSelect
-            options={[{ value: "all", label: "Tous les sites" }, ...sites]}
-            value={selectedSite}
-            onValueChange={setSelectedSite}
-            placeholder="Filtrer par site"
-          />
-
-          {notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                <Bell className="h-7 w-7 text-muted-foreground/40" />
+      <DialogContent className="sm:max-w-[560px] gap-0 overflow-hidden p-0" aria-describedby={undefined}>
+        {selectedNotif ? (
+          // Detail view
+          <>
+            {/* Detail header */}
+            <div className="px-6 pb-4 pt-6">
+              <button
+                type="button"
+                onClick={() => { setSelectedNotif(null); setDetailData(null) }}
+                className="mb-3 flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Retour aux notifications
+              </button>
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  "flex h-11 w-11 shrink-0 items-center justify-center rounded-full",
+                  selectedNotif.type === "contract" ? "bg-[#221D1A]/5" :
+                  selectedNotif.type === "booking" ? "bg-amber-50" : "bg-purple-50"
+                )}>
+                  {selectedNotif.type === "contract" ? <FileText className="h-5 w-5 text-[#221D1A]" /> :
+                   selectedNotif.type === "booking" ? <CalendarCheck className="h-5 w-5 text-amber-500" /> :
+                   <TicketIcon className="h-5 w-5 text-purple-500" />}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="text-lg font-semibold text-foreground">{selectedNotif.title}</DialogTitle>
+                  {selectedNotif.subtitle && (
+                    <p className="text-sm text-muted-foreground">{selectedNotif.subtitle}</p>
+                  )}
+                </div>
+                <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", selectedNotif.statusClassName)}>
+                  {selectedNotif.statusLabel}
+                </span>
               </div>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Aucune notification pour le moment.
-              </p>
             </div>
-          ) : (
-            <div className="flex flex-col gap-2 max-h-80 overflow-y-auto">
-              {(() => {
-                const pinnedNotifs = notifications.filter((n) => n.pinned)
-                const unpinnedNotifs = notifications.filter((n) => !n.pinned)
-                const unreadNotifs = unpinnedNotifs.filter((n) => isUnread(n.updatedAt))
-                const readNotifs = unpinnedNotifs.filter((n) => !isUnread(n.updatedAt))
-                const sections: React.ReactNode[] = []
 
-                if (pinnedNotifs.length > 0) {
-                  sections.push(
-                    <p key="pinned-label" className="flex items-center gap-1 text-xs font-medium text-muted-foreground px-1">
-                      <Pin className="size-3" />
-                      Épinglées
-                    </p>
-                  )
-                  sections.push(...pinnedNotifs.map((n) => renderNotif(n, isUnread(n.updatedAt))))
-                }
-
-                if (unreadNotifs.length > 0) {
-                  sections.push(
-                    <p key="new-label" className="text-xs font-medium text-muted-foreground px-1">
-                      Nouvelles
-                    </p>
-                  )
-                  sections.push(...unreadNotifs.map((n) => renderNotif(n, true)))
-                }
-
-                if (readNotifs.length > 0) {
-                  sections.push(
-                    <p key="old-label" className="text-xs font-medium text-muted-foreground px-1 pt-2">
-                      Plus anciennes
-                    </p>
-                  )
-                  sections.push(...readNotifs.map((n) => renderNotif(n, false)))
-                }
-
-                return sections
-              })()}
+            {/* Detail content */}
+            <div className="max-h-[400px] overflow-y-auto border-t border-gray-100 px-6 py-5">
+              {detailLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : detailData ? (
+                renderDetailContent(detailData)
+              ) : (
+                <p className="py-8 text-center text-sm text-muted-foreground">Impossible de charger les détails.</p>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        ) : (
+          // List view
+          <>
+            {/* Header */}
+            <div className="px-6 pb-4 pt-6">
+              <div className="flex items-center gap-3 pr-14">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#221D1A]/5">
+                  <Bell className="h-5 w-5 text-[#221D1A]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-lg font-semibold text-foreground">Notifications</DialogTitle>
+                  <p className="text-sm text-muted-foreground">Gérez vos activités récentes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter bar */}
+            <div className="flex items-center justify-between px-6 pb-4">
+              {/* Site dropdown */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setSiteDropdownOpen(!siteDropdownOpen)}
+                  className="flex items-center gap-2 rounded-full border border-gray-200 bg-card px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-card/80"
+                >
+                  <MapPin className="h-3.5 w-3.5 text-[#221D1A]" />
+                  {selectedSiteLabel}
+                  <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", siteDropdownOpen && "rotate-180")} />
+                </button>
+                {siteDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setSiteDropdownOpen(false)} />
+                    <div className="absolute left-0 top-full z-20 mt-1 max-h-48 w-48 overflow-y-auto rounded-xl border border-gray-100 bg-card py-1 shadow-lg">
+                      {allSiteOptions.map(site => (
+                        <button
+                          key={site.value}
+                          type="button"
+                          className={cn(
+                            "w-full px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50",
+                            selectedSite === site.value && "bg-[#221D1A]/5 font-medium text-[#221D1A]"
+                          )}
+                          onClick={() => handleSiteChange(site.value)}
+                        >
+                          {site.label}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Mark all as read */}
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="flex items-center gap-1.5 text-sm font-medium text-[#221D1A] transition-colors hover:text-[#221D1A]/80"
+              >
+                <CheckCheck className="h-4 w-4" />
+                Tout marquer comme lu
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-100 px-6">
+              {TABS.map(tab => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  className={cn(
+                    "relative px-4 py-2.5 text-sm font-medium transition-colors",
+                    filterTab === tab.value
+                      ? "text-[#221D1A]"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  onClick={() => handleTabChange(tab.value)}
+                >
+                  {tab.label}
+                  {filterTab === tab.value && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#221D1A]" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Notification list */}
+            {filteredNotifications.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gray-50">
+                  <Bell className="h-7 w-7 text-gray-300" />
+                </div>
+                <p className="mt-4 text-sm text-muted-foreground">
+                  Aucune notification pour le moment.
+                </p>
+              </div>
+            ) : (
+              <div className="max-h-[380px] overflow-y-auto">
+                {filteredNotifications.map((notif) => {
+                  const unread = isUnread(notif.updatedAt)
+                  return renderNotifItem(notif, unread)
+                })}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="p-4">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="w-full rounded-[12px] bg-[#221D1A] py-3 text-sm font-semibold text-white transition-colors hover:bg-[#221D1A]/90"
+              >
+                Voir toutes les notifications
+              </button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   )
 
-  function renderNotif(notif: NotificationItem, unread: boolean) {
-    const TypeIcon = notif.type === "contract" ? FileText : notif.type === "booking" ? CalendarCheck : TicketIcon
+  function renderNotifItem(notif: NotificationItem, unread: boolean) {
+    const TypeIcon = notif.type === "contract"
+      ? FileText
+      : notif.type === "booking"
+        ? CalendarCheck
+        : TicketIcon
+
+    const iconBgClass = notif.type === "contract"
+      ? "bg-[#221D1A]/5"
+      : notif.type === "booking"
+        ? "bg-amber-50"
+        : "bg-purple-50"
+
+    const iconTextClass = notif.type === "contract"
+      ? "text-[#221D1A]"
+      : notif.type === "booking"
+        ? "text-amber-500"
+        : "text-purple-500"
+
+    const date = new Date(notif.updatedAt)
 
     return (
-      <div
+      <button
+        type="button"
         key={notif.id}
-        className={`group flex items-start justify-between rounded-lg border p-3 text-sm transition-colors cursor-pointer hover:bg-muted/50 ${
-          unread ? "border-primary/30 bg-primary/5" : ""
-        }`}
-        onClick={() => togglePin(notif)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") togglePin(notif) }}
+        onClick={() => handleNotifClick(notif)}
+        className={cn(
+          "flex w-full items-start gap-3 border-b border-gray-50 px-6 py-4 text-left transition-colors hover:bg-gray-50/50",
+          unread && "border-l-[3px] border-l-[#221D1A] bg-[#221D1A]/5"
+        )}
       >
-        <div className="flex items-start gap-2 min-w-0 flex-1">
-          {notif.pinned ? (
-            <Pin className="mt-0.5 size-4 shrink-0 fill-amber-500 text-amber-500" />
-          ) : unread ? (
-            <Circle className="mt-1 size-2 shrink-0 fill-red-500 text-red-500" />
-          ) : (
-            <TypeIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+        {/* Icon */}
+        <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", iconBgClass)}>
+          <TypeIcon className={cn("h-4.5 w-4.5", iconTextClass)} />
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1">
+          <p className={cn("text-sm text-foreground", unread ? "font-semibold" : "font-medium")}>
+            {notif.title}
+          </p>
+          {notif.subtitle && (
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {notif.subtitle}
+            </p>
           )}
-          <div className="flex flex-col gap-1 min-w-0">
-            <span className={`truncate ${unread ? "font-semibold" : "font-medium"}`}>
-              {notif.title}
+          <div className="mt-1.5 flex items-center gap-3 text-[11px] text-muted-foreground/60">
+            <span className="flex items-center gap-1">
+              <CalendarDays className="h-3 w-3" />
+              {format(date, "d MMM yyyy", { locale: fr })}
             </span>
-            {notif.subtitle && (
-              <span className="text-muted-foreground text-xs truncate">
-                {notif.subtitle}
-              </span>
-            )}
-            <div className="flex items-center gap-2 text-muted-foreground text-xs">
-              {notif.siteName && (
-                <span className="truncate">{notif.siteName}</span>
-              )}
-              <span>
-                {new Date(notif.updatedAt).toLocaleDateString("fr-FR", {
-                  day: "2-digit",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" />
+              {format(date, "HH:mm")}
+            </span>
+          </div>
+        </div>
+
+        {/* Status badge + unread dot */}
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={cn("rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase", notif.statusClassName)}>
+            {notif.statusLabel}
+          </span>
+          {unread && (
+            <span className="h-2 w-2 shrink-0 rounded-full bg-[#221D1A]" />
+          )}
+        </div>
+      </button>
+    )
+  }
+
+  function renderDetailContent(data: DetailData) {
+    if (data.type === "ticket") return renderTicketDetail(data)
+    if (data.type === "booking") return renderBookingDetail(data)
+    if (data.type === "contract") return renderContractDetail(data)
+    return null
+  }
+
+  function renderDetailField(label: string, value: string | null | undefined, icon?: React.ReactNode) {
+    return (
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">{label}</p>
+        <div className="mt-1 flex items-center gap-1.5">
+          {icon}
+          <p className="text-sm">{value || "-"}</p>
+        </div>
+      </div>
+    )
+  }
+
+  function renderTicketDetail(data: TicketDetail) {
+    const statusConfig = ticketStatusConfig[data.status ?? ""] ?? { label: data.status, className: "border border-gray-200 text-gray-400 bg-gray-50" }
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date de création</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{format(new Date(data.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Statut</p>
+            <div className="mt-1">
+              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusConfig.className)}>
+                {statusConfig.label}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Pin className={`size-3.5 transition-opacity ${notif.pinned ? "text-amber-500 opacity-100" : "text-muted-foreground/40 opacity-0 group-hover:opacity-100"}`} />
-          <span
-            className={`rounded-full px-2 py-0.5 text-xs font-medium ${notif.statusClassName}`}
-          >
-            {notif.statusLabel}
-          </span>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Utilisateur</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-semibold">{data.userName || "-"}</p>
+                {data.userEmail && <p className="text-xs text-muted-foreground">{data.userEmail}</p>}
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Entreprise</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{data.companyName || "-"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {renderDetailField("Site", data.siteName, <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />)}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Type</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+              <div>
+                <p className="text-sm">{data.request_type ? (requestTypeLabels[data.request_type] || data.request_type) : "-"}</p>
+                {data.request_subtype && <p className="text-xs text-muted-foreground">{data.request_subtype}</p>}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {data.subject && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Sujet</p>
+            <p className="mt-1 text-sm">{data.subject}</p>
+          </div>
+        )}
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Description</p>
+          <div className="mt-1 rounded-lg bg-muted/50 p-3">
+            <p className="whitespace-pre-wrap text-sm">{data.comment || "Aucune description"}</p>
+          </div>
+        </div>
+
+        {data.freshdesk_ticket_id && (
+          <div className="pt-1">
+            <a
+              href={`https://mydeskeosupport.freshdesk.com/a/tickets/${data.freshdesk_ticket_id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#221D1A] underline underline-offset-2 hover:text-[#221D1A]/80"
+            >
+              Voir dans Freshdesk
+            </a>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderBookingDetail(data: BookingDetail) {
+    const statusConfig = bookingStatusConfig[data.status ?? ""] ?? { label: data.status, className: "border border-gray-200 text-gray-400 bg-gray-50" }
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Début</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{format(new Date(data.start_date), "dd/MM/yyyy à HH:mm", { locale: fr })}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Fin</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{format(new Date(data.end_date), "dd/MM/yyyy à HH:mm", { locale: fr })}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Statut</p>
+            <div className="mt-1">
+              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusConfig.className)}>
+                {statusConfig.label}
+              </span>
+            </div>
+          </div>
+          {renderDetailField("Ressource", data.resourceName)}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Utilisateur</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <User className="h-3.5 w-3.5 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-semibold">{data.userName || "-"}</p>
+                {data.userEmail && <p className="text-xs text-muted-foreground">{data.userEmail}</p>}
+              </div>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Entreprise</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{data.companyName || "-"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {renderDetailField("Type de ressource", data.resourceType)}
+          {renderDetailField("Site", data.siteName, <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />)}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {renderDetailField("Places", data.seats_count?.toString())}
+          {renderDetailField("Crédits utilisés", data.credits_used?.toString())}
+        </div>
+
+        {data.notes && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Notes</p>
+            <div className="mt-1 rounded-lg bg-muted/50 p-3">
+              <p className="whitespace-pre-wrap text-sm">{data.notes}</p>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  function renderContractDetail(data: ContractDetail) {
+    const statusConfig = contractStatusConfig[data.status ?? ""] ?? { label: data.status, className: "border border-gray-200 text-gray-400 bg-gray-50" }
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Statut</p>
+            <div className="mt-1">
+              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusConfig.className)}>
+                {statusConfig.label}
+              </span>
+            </div>
+          </div>
+          {renderDetailField("Plan", data.planName)}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Entreprise</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{data.companyName || "-"}</p>
+            </div>
+          </div>
+          {renderDetailField("Site", data.siteName, <MapPinIcon className="h-3.5 w-3.5 text-muted-foreground" />)}
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date de début</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{data.start_date ? format(new Date(data.start_date), "dd/MM/yyyy", { locale: fr }) : "-"}</p>
+            </div>
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date de fin</p>
+            <div className="mt-1 flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-sm">{data.end_date ? format(new Date(data.end_date), "dd/MM/yyyy", { locale: fr }) : "-"}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          {renderDetailField("Postes de travail", data.number_of_seats?.toString())}
+          {renderDetailField("Prix / poste / mois", data.pricePerSeatMonth ? `${data.pricePerSeatMonth} €` : null)}
+        </div>
+
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Date de création</p>
+          <div className="mt-1 flex items-center gap-1.5">
+            <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+            <p className="text-sm">{format(new Date(data.created_at), "dd/MM/yyyy à HH:mm", { locale: fr })}</p>
+          </div>
         </div>
       </div>
     )

@@ -1,131 +1,92 @@
-"use client"
-
 import Link from "next/link"
 import Image from "next/image"
-import { Building2 } from "lucide-react"
+import { Building2, MapPin, ChevronRight, Star, User } from "lucide-react"
 import type { Site } from "@/lib/types/database"
-import { SiteInstructionsEditor } from "@/components/admin/sites/site-instructions-editor"
-import { SiteContactEditor, type DeskeoUser } from "@/components/admin/sites/site-contact-editor"
-
-function DeskIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      {/* Desk surface */}
-      <rect x="2" y="7" width="20" height="2" rx="0.5" />
-      {/* Desk legs */}
-      <line x1="5" y1="9" x2="5" y2="17" />
-      <line x1="19" y1="9" x2="19" y2="17" />
-      {/* Chair back */}
-      <path d="M9 4 L15 4 L15 7 L9 7 Z" />
-      {/* Chair seat */}
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="9" y1="13" x2="15" y2="13" />
-    </svg>
-  )
-}
+import { cn } from "@/lib/utils"
 
 interface SiteCardProps {
   site: Site
   imageUrl?: string | null
   flexAvailability?: { available: number; total: number } | null
-  deskeoUsers?: DeskeoUser[]
 }
 
-export function SiteCard({ site, imageUrl, flexAvailability, deskeoUsers = [] }: SiteCardProps) {
-  const availabilityDisplay = flexAvailability ? `${flexAvailability.available}/${flexAvailability.total}` : null
+export function SiteCard({ site, imageUrl, flexAvailability }: SiteCardProps) {
+  const isClosed = site.status !== "open"
+  const availabilityDisplay = flexAvailability
+    ? `${flexAvailability.available}/${flexAvailability.total} Postes`
+    : null
+
+  const contactName = [site.contact_first_name, site.contact_last_name]
+    .filter(Boolean)
+    .join(" ")
 
   return (
     <Link href={`/admin/sites/${site.id}`} className="group block">
-      <article className="overflow-hidden rounded-2xl bg-background border border-foreground/10">
-        {/* Header with image and capacity badge */}
-        <div className="relative">
-          {/* Status badge */}
-          <div className={`absolute left-3 top-3 z-10 flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold ${
-            site.status === "open"
-              ? "bg-emerald-100 text-emerald-700"
-              : "bg-red-100 text-red-700"
-          }`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${
-              site.status === "open" ? "bg-emerald-500" : "bg-red-500"
-            }`} />
-            {site.status === "open" ? "Ouvert" : "Fermé"}
-          </div>
-          {/* Flex desk availability badge */}
-          {availabilityDisplay && (
-            <div className="absolute right-3 top-3 z-10 flex items-center gap-2 rounded-full border border-foreground/80 bg-background px-3 py-1.5">
-              <DeskIcon className="h-5 w-5" />
-              <span className="font-semibold text-sm tracking-wide">{availabilityDisplay}</span>
+      <article className="overflow-hidden rounded-[20px] bg-card transition-shadow hover:shadow-lg">
+        {/* Image hero */}
+        <div className="relative h-52 w-full overflow-hidden">
+          {imageUrl ? (
+            <Image
+              src={imageUrl}
+              alt={site.name}
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 25vw"
+              className={cn(
+                "object-cover transition-transform duration-500 group-hover:scale-105",
+                isClosed && "grayscale"
+              )}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <Building2 className="h-12 w-12 text-muted-foreground/30" />
             </div>
           )}
 
-          {/* Full-width image */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-muted">
-            {imageUrl ? (
-              <Image
-                src={imageUrl || "/placeholder.svg"}
-                alt={site.name}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-muted">
-                <Building2 className="h-12 w-12 text-foreground/20" />
-              </div>
+          {/* Overlaid badges */}
+          <div className="absolute left-3 top-3 flex items-center gap-2">
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest shadow-sm",
+                isClosed
+                  ? "bg-red-500 text-white"
+                  : "bg-emerald-500 text-white"
+              )}
+            >
+              {isClosed ? "Fermé" : "Ouvert"}
+            </span>
+            {availabilityDisplay && (
+              <span className="rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-foreground shadow-sm backdrop-blur">
+                {availabilityDisplay}
+              </span>
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-4 pt-3">
-          <div className="mb-3">
-            <span className="inline-block rounded-sm bg-muted px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.15em] text-foreground/70">
-              Bureaux privatifs
-            </span>
-          </div>
+        <div className="p-5">
+          <h3 className="font-bold text-foreground leading-tight">{site.name}</h3>
 
-          <h3 className="font-bold text-xl text-foreground leading-tight tracking-tight">{site.name}</h3>
-
-          <p className="mt-2 text-sm text-foreground/60">{site.address}</p>
-
-          {/* Instructions edit */}
-          <div className="mt-3 flex items-center justify-between border-t border-foreground/5 pt-3">
-            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-              {site.instructions ? site.instructions : "Aucune instruction"}
-            </span>
-            <div onClick={(e) => e.stopPropagation()}>
-              <SiteInstructionsEditor
-                siteId={site.id}
-                siteName={site.name}
-                initialInstructions={site.instructions}
-                initialAccess={site.access}
-              />
+          {site.address && (
+            <div className="mt-2 flex items-start gap-1.5 text-sm text-muted-foreground">
+              <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span className="line-clamp-2">{site.address}</span>
             </div>
-          </div>
+          )}
 
-          {/* Contact edit */}
-          <div className="flex items-center justify-between border-t border-foreground/5 pt-3">
-            <span className="text-xs text-muted-foreground truncate max-w-[200px]">
-              {site.contact_first_name || site.contact_last_name
-                ? `${site.contact_first_name || ""} ${site.contact_last_name || ""}`.trim()
-                : "Aucun contact"}
-            </span>
-            <div onClick={(e) => e.stopPropagation()}>
-              <SiteContactEditor
-                siteId={site.id}
-                siteName={site.name}
-                currentContactEmail={site.contact_email}
-                deskeoUsers={deskeoUsers}
-              />
-            </div>
+          {/* Contact + arrow */}
+          <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-3">
+            {contactName ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-0.5">
+                  <User className="h-3.5 w-3.5" />
+                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                </div>
+                <span className="truncate">{contactName}</span>
+              </div>
+            ) : (
+              <span className="text-xs text-muted-foreground/50">Aucun responsable</span>
+            )}
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
           </div>
         </div>
       </article>

@@ -50,14 +50,18 @@ export function EditBookingDialog({
   const dateLocale = getDateLocale(locale)
 
   const initialDate = toParisDate(booking.start_date)
-  const initialStartHour = toParisDate(booking.start_date).getHours()
-  const initialEndHour = toParisDate(booking.end_date).getHours()
+  const startParis = toParisDate(booking.start_date)
+  const endParis = toParisDate(booking.end_date)
+  const initialStartHour = startParis.getHours() + startParis.getMinutes() / 60
+  const initialEndHour = endParis.getHours() + endParis.getMinutes() / 60
 
-  // Build initial slots from booking
+  // Build initial slots from booking (30-min granularity)
   const buildInitialSlots = () => {
     const slots: string[] = []
-    for (let h = initialStartHour; h < initialEndHour; h++) {
-      slots.push(`${h.toString().padStart(2, "0")}:00`)
+    for (let h = initialStartHour; h < initialEndHour; h += 0.5) {
+      const hours = Math.floor(h)
+      const minutes = Math.round((h % 1) * 60)
+      slots.push(`${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`)
     }
     return slots
   }
@@ -90,12 +94,15 @@ export function EditBookingDialog({
           // Exclude current booking's slots from unavailable
           const unavailable: string[] = []
           result.bookings.forEach((b) => {
-            const startHour = toParisDate(b.start_date).getHours()
-            const endHour = toParisDate(b.end_date).getHours()
-            for (let h = startHour; h < endHour; h++) {
-              const slot = `${h.toString().padStart(2, "0")}:00`
+            const bStart = toParisDate(b.start_date)
+            const bEnd = toParisDate(b.end_date)
+            const startH = bStart.getHours() + bStart.getMinutes() / 60
+            const endH = bEnd.getHours() + bEnd.getMinutes() / 60
+            for (let h = startH; h < endH; h += 0.5) {
+              const hours = Math.floor(h)
+              const minutes = Math.round((h % 1) * 60)
+              const slot = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
               // Only mark as unavailable if it's not from the current booking being edited
-              // Check if this booking overlaps with the current booking being edited
               const isCurrentBookingSlot =
                 format(selectedDate, "yyyy-MM-dd") === format(initialDate, "yyyy-MM-dd") &&
                 h >= initialStartHour && h < initialEndHour
@@ -132,11 +139,16 @@ export function EditBookingDialog({
     const sortedSlots = [...selectedSlots].sort()
     const firstSlot = sortedSlots[0]
     const lastSlot = sortedSlots[sortedSlots.length - 1]
-    const lastHour = parseInt(lastSlot.split(":")[0]) + 1
+    // Add 30 minutes to the last slot start to get the end time
+    const [lastH, lastM] = lastSlot.split(":").map(Number)
+    const endMinutes = lastM + 30
+    const endH = lastH + Math.floor(endMinutes / 60)
+    const endMin = endMinutes % 60
+    const endTimeStr = `${endH.toString().padStart(2, "0")}:${endMin.toString().padStart(2, "0")}`
 
     const dateStr = format(selectedDate, "yyyy-MM-dd")
     const startDate = createParisDate(dateStr, firstSlot).toISOString()
-    const endDate = createParisDate(dateStr, `${lastHour.toString().padStart(2, "0")}:00`).toISOString()
+    const endDate = createParisDate(dateStr, endTimeStr).toISOString()
 
     const result = await updateBooking({
       bookingId: booking.id,

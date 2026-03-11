@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { ImagePlus, X, Send } from "lucide-react"
+import { ImagePlus, Pin, X, Send } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { SearchableSelect } from "@/components/ui/searchable-select"
@@ -18,6 +18,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
   const [siteId, setSiteId] = useState(defaultSiteId || "all")
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isPinned, setIsPinned] = useState(false)
   const [loading, setLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -42,6 +43,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
     formData.set("content", content)
     formData.set("site_id", siteId === "all" ? "" : siteId)
     if (imageFile) formData.set("image", imageFile)
+    if (isPinned) formData.set("is_pinned", "true")
 
     const result = await createNewsPost(formData)
     setLoading(false)
@@ -51,6 +53,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
     } else {
       toast.success("Actualité publiée")
       setContent("")
+      setIsPinned(false)
       removeImage()
     }
   }
@@ -66,7 +69,7 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
         placeholder="Quoi de neuf ?"
         value={content}
         onChange={(e) => setContent(e.target.value)}
-        className="min-h-[80px] resize-none border-0 bg-transparent p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/60"
+        className="min-h-[120px] resize-y border-0 bg-transparent p-0 text-sm focus-visible:ring-0 placeholder:text-muted-foreground/60"
       />
 
       {imagePreview && (
@@ -104,6 +107,16 @@ export function CreateNewsPostForm({ sites, defaultSiteId }: CreateNewsPostFormP
           >
             <ImagePlus className="h-4 w-4" />
             <span className="hidden sm:inline">Photo</span>
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsPinned(!isPinned)}
+            className={`shrink-0 gap-1.5 ${isPinned ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}
+          >
+            <Pin className="h-4 w-4" fill={isPinned ? "currentColor" : "none"} />
+            <span className="hidden sm:inline">Épingler</span>
           </Button>
           <SearchableSelect
             options={siteOptions}

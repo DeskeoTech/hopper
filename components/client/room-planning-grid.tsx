@@ -1,9 +1,10 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 import { useTranslations } from "next-intl"
 import { Users, Coins, DoorOpen, ChevronLeft, ChevronRight, X, Tv, Video, PenTool, Layers } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatTime } from "@/lib/utils"
 import type { MeetingRoomResource, ResourceEquipment } from "@/lib/types/database"
 import type { RoomBooking } from "@/lib/actions/bookings"
 
@@ -30,6 +31,7 @@ interface RoomPlanningGridProps {
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
   currentUserId?: string
+  currentUserCompanyId?: string
 }
 
 // Fullscreen photo viewer
@@ -129,10 +131,12 @@ function RoomCard({ room, onClick, onPhotoClick }: RoomCardProps) {
       {/* Photo */}
       <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-[18px]">
         {room.photoUrls && room.photoUrls.length > 0 ? (
-          <img
+          <Image
             src={room.photoUrls[0]}
             alt={room.name}
-            className="w-full h-full object-cover transition-transform hover:scale-105"
+            fill
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover transition-transform hover:scale-105"
             onClick={handlePhotoClick}
           />
         ) : (
@@ -350,7 +354,7 @@ export function SingleRoomTimeline({ room, bookings, onSlotClick, selectedDate }
                 )}
                 {height > 70 && (
                   <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-                    {booking.startHour}h - {booking.endHour}h
+                    {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                   </p>
                 )}
               </div>
@@ -384,23 +388,25 @@ export function RoomHeaders({ rooms, onPhotoClick }: RoomHeadersProps) {
           <div className="w-10 shrink-0" />
 
           {/* Room headers */}
-          <div className="flex flex-1 gap-1 overflow-x-auto">
+          <div className="flex flex-1 overflow-x-auto">
             {rooms.map((room) => (
               <div
                 key={room.id}
-                className="flex-1 min-w-[60px] text-center"
+                className="shrink-0 w-[calc(100%/3)] text-center"
               >
                 {/* Room photo */}
                 {room.photoUrls && room.photoUrls.length > 0 ? (
                   <button
                     type="button"
                     onClick={() => handlePhotoClick(room.photoUrls || [], 0)}
-                    className="mx-auto w-10 h-8 rounded overflow-hidden mb-1"
+                    className="relative mx-auto w-10 h-8 rounded overflow-hidden mb-1"
                   >
-                    <img
+                    <Image
                       src={room.photoUrls[0]}
                       alt={room.name}
-                      className="w-full h-full object-cover"
+                      fill
+                      sizes="40px"
+                      className="object-cover"
                     />
                   </button>
                 ) : (
@@ -458,12 +464,14 @@ export function RoomHeaders({ rooms, onPhotoClick }: RoomHeadersProps) {
                 <button
                   type="button"
                   onClick={() => handlePhotoClick(room.photoUrls || [], 0)}
-                  className="mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg overflow-hidden mb-2 group"
+                  className="relative mx-auto w-full max-w-[80px] aspect-[4/3] rounded-lg overflow-hidden mb-2 group"
                 >
-                  <img
+                  <Image
                     src={room.photoUrls[0]}
                     alt={room.name}
-                    className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                    fill
+                    sizes="80px"
+                    className="object-cover transition-transform group-hover:scale-105"
                   />
                 </button>
               ) : (
@@ -509,10 +517,18 @@ interface RoomTimelineProps {
   onSlotClick: (room: MeetingRoomResource, hour: number) => void
   selectedDate: Date
   currentUserId?: string
+  currentUserCompanyId?: string
 }
 
-export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId }: RoomTimelineProps) {
+export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, currentUserId, currentUserCompanyId }: RoomTimelineProps) {
   const t = useTranslations("planningGrid")
+
+  type BookingCategory = "own" | "colleague" | "other"
+  const getBookingCategory = (booking: RoomBooking): BookingCategory => {
+    if (currentUserId && booking.userId === currentUserId) return "own"
+    if (currentUserCompanyId && booking.companyId === currentUserCompanyId) return "colleague"
+    return "other"
+  }
 
   // Group bookings by room
   const bookingsByRoom = useMemo(() => {
@@ -603,7 +619,7 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                   <div
                     key={room.id}
                     className={cn(
-                      "flex-1 min-w-[60px] relative",
+                      "shrink-0 w-[calc(100%/3)] relative",
                       roomIndex > 0 && "border-l border-foreground/10"
                     )}
                   >
@@ -637,23 +653,29 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                     {roomBookings.map((booking) => {
                       const top = (booking.startHour - 8) * MOBILE_SLOT_HEIGHT
                       const height = (booking.endHour - booking.startHour) * MOBILE_SLOT_HEIGHT
-                      const isOwnBooking = currentUserId && booking.userId === currentUserId
+                      const category = getBookingCategory(booking)
 
                       return (
                         <div
                           key={booking.id}
                           className={cn(
                             "absolute left-0.5 right-0.5 rounded p-1 overflow-hidden pointer-events-none z-10",
-                            isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                            category === "own" && "bg-primary/20",
+                            category === "colleague" && "bg-[#D4C4B0]/50",
+                            category === "other" && "bg-foreground/10"
                           )}
                           style={{ top: top + 1, height: height - 2 }}
                         >
                           <p className="text-[9px] font-medium text-foreground truncate leading-tight">
-                            {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
+                            {category === "own"
+                              ? (booking.title || t("myBooking"))
+                              : category === "colleague"
+                                ? (booking.userName || t("colleagueBooking"))
+                                : t("unavailable")}
                           </p>
                           {height > 35 && (
                             <p className="text-[8px] text-muted-foreground/70 mt-0.5">
-                              {booking.startHour}h-{booking.endHour}h
+                              {formatTime(booking.startHour)}-{formatTime(booking.endHour)}
                             </p>
                           )}
                         </div>
@@ -764,23 +786,29 @@ export function RoomTimeline({ rooms, bookings, onSlotClick, selectedDate, curre
                   {roomBookings.map((booking) => {
                     const top = (booking.startHour - 8) * SLOT_HEIGHT
                     const height = (booking.endHour - booking.startHour) * SLOT_HEIGHT
-                    const isOwnBooking = currentUserId && booking.userId === currentUserId
+                    const category = getBookingCategory(booking)
 
                     return (
                       <div
                         key={booking.id}
                         className={cn(
                           "absolute left-1 right-1 rounded-md p-1.5 overflow-hidden pointer-events-none z-10",
-                          isOwnBooking ? "bg-primary/20" : "bg-foreground/10"
+                          category === "own" && "bg-primary/20",
+                          category === "colleague" && "bg-[#D4C4B0]/50",
+                          category === "other" && "bg-foreground/10"
                         )}
                         style={{ top: top + 1, height: height - 2 }}
                       >
                         <p className="text-xs font-medium text-foreground truncate">
-                          {isOwnBooking ? (booking.title || t("myBooking")) : t("unavailable")}
+                          {category === "own"
+                            ? (booking.title || t("myBooking"))
+                            : category === "colleague"
+                              ? (booking.userName || t("colleagueBooking"))
+                              : t("unavailable")}
                         </p>
-                        {isOwnBooking && height > 50 && (
+                        {category !== "other" && height > 50 && (
                           <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                            {booking.startHour}h - {booking.endHour}h
+                            {formatTime(booking.startHour)} - {formatTime(booking.endHour)}
                           </p>
                         )}
                       </div>
@@ -805,6 +833,7 @@ export function RoomPlanningGrid({
   onSlotClick,
   selectedDate,
   currentUserId,
+  currentUserCompanyId,
 }: RoomPlanningGridProps) {
   const [viewerPhotos, setViewerPhotos] = useState<string[] | null>(null)
   const [viewerIndex, setViewerIndex] = useState(0)
@@ -836,6 +865,7 @@ export function RoomPlanningGrid({
         onSlotClick={onSlotClick}
         selectedDate={selectedDate}
         currentUserId={currentUserId}
+        currentUserCompanyId={currentUserCompanyId}
       />
     </>
   )

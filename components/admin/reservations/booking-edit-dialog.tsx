@@ -4,7 +4,9 @@ import { useState, useTransition, useEffect, useMemo } from "react"
 import { format, isPast } from "date-fns"
 import { fr } from "date-fns/locale"
 import { toParisDate, createParisDate } from "@/lib/timezone"
-import { Calendar, Clock, MapPin, User, Building2, Loader2, MessageSquare } from "lucide-react"
+import { Calendar, Clock, MapPin, User, Building2, Loader2, MessageSquare, CreditCard } from "lucide-react"
+import { getPaymentStatus } from "@/lib/actions/stripe"
+import { PaymentStatusBadge } from "./payment-status-badge"
 import {
   Dialog,
   DialogContent,
@@ -44,6 +46,10 @@ export function BookingEditDialog({
   const [isPending, startTransition] = useTransition()
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paymentInfo, setPaymentInfo] = useState<{
+    paymentStatus: string | null
+    sessionStatus: string | null
+  } | null>(null)
 
   // Form state for date modification
   const [date, setDate] = useState("")
@@ -59,6 +65,19 @@ export function BookingEditDialog({
       setStartTime(format(startDate, "HH:mm"))
       setEndTime(format(endDate, "HH:mm"))
       setError(null)
+      setPaymentInfo(null)
+
+      // Fetch payment status from Stripe
+      if (booking.stripe_checkout_session_id) {
+        getPaymentStatus(booking.stripe_checkout_session_id).then((result) => {
+          if ("paymentStatus" in result) {
+            setPaymentInfo({
+              paymentStatus: result.paymentStatus,
+              sessionStatus: result.sessionStatus,
+            })
+          }
+        })
+      }
     }
   }, [open, booking])
 
@@ -202,6 +221,26 @@ export function BookingEditDialog({
                     <p className="text-xs font-medium text-muted-foreground mb-1">Commentaire client</p>
                     <p className="text-sm">{booking.notes}</p>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Payment status */}
+            {booking.stripe_checkout_session_id && (
+              <div className="rounded-[16px] border border-border/10 bg-muted/30 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-medium text-muted-foreground">Paiement</span>
+                  </div>
+                  {paymentInfo ? (
+                    <PaymentStatusBadge
+                      paymentStatus={paymentInfo.paymentStatus}
+                      sessionStatus={paymentInfo.sessionStatus}
+                    />
+                  ) : (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                  )}
                 </div>
               </div>
             )}

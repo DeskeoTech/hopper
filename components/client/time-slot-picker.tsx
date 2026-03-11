@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useCallback, useMemo, useEffect } from "react"
-import { cn } from "@/lib/utils"
+import { cn, formatTime, formatDuration } from "@/lib/utils"
 import { useTranslations } from "next-intl"
 
 interface TimeSlotPickerProps {
@@ -14,14 +14,20 @@ interface TimeSlotPickerProps {
 const MIN_HOUR = 8
 const MAX_HOUR = 20
 const TOTAL_HOURS = MAX_HOUR - MIN_HOUR
-const ALL_HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => MIN_HOUR + i)
+const SLOT_STEP = 0.5 // 30 minutes
+const TOTAL_SLOTS = TOTAL_HOURS / SLOT_STEP // 24 slots
+const ALL_SLOTS = Array.from({ length: TOTAL_SLOTS }, (_, i) => MIN_HOUR + i * SLOT_STEP)
+const ALL_FULL_HOURS = Array.from({ length: TOTAL_HOURS }, (_, i) => MIN_HOUR + i)
 
 function hourToSlot(h: number): string {
-  return `${h.toString().padStart(2, "0")}:00`
+  const hours = Math.floor(h)
+  const minutes = Math.round((h % 1) * 60)
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
 }
 
 function slotToHour(slot: string): number {
-  return parseInt(slot.split(":")[0])
+  const [h, m] = slot.split(":").map(Number)
+  return h + m / 60
 }
 
 export function TimeSlotPicker({
@@ -40,22 +46,24 @@ export function TimeSlotPicker({
     const sorted = [...selectedSlots].sort()
     return {
       startHour: slotToHour(sorted[0]),
-      endHour: slotToHour(sorted[sorted.length - 1]) + 1,
+      endHour: slotToHour(sorted[sorted.length - 1]) + SLOT_STEP,
     }
   }, [selectedSlots])
 
-  // Convert pixel position to nearest hour
+  // Convert pixel position to nearest half-hour
   const posToHour = useCallback((clientX: number): number => {
     if (!trackRef.current) return MIN_HOUR
     const rect = trackRef.current.getBoundingClientRect()
     const ratio = (clientX - rect.left) / rect.width
-    return Math.max(MIN_HOUR, Math.min(MAX_HOUR, Math.round(ratio * TOTAL_HOURS) + MIN_HOUR))
+    const rawHour = ratio * TOTAL_HOURS + MIN_HOUR
+    // Snap to nearest 0.5
+    return Math.max(MIN_HOUR, Math.min(MAX_HOUR, Math.round(rawHour * 2) / 2))
   }, [])
 
   // Max valid end for a given start (stops at first unavailable slot)
   const maxEndForStart = useCallback(
     (start: number): number => {
-      for (let h = start; h < MAX_HOUR; h++) {
+      for (let h = start; h < MAX_HOUR; h += SLOT_STEP) {
         if (unavailableSlots.includes(hourToSlot(h))) return h
       }
       return MAX_HOUR
@@ -66,8 +74,8 @@ export function TimeSlotPicker({
   // Min valid start for a given end (stops at last unavailable slot before end)
   const minStartForEnd = useCallback(
     (end: number): number => {
-      for (let h = end - 1; h >= MIN_HOUR; h--) {
-        if (unavailableSlots.includes(hourToSlot(h))) return h + 1
+      for (let h = end - SLOT_STEP; h >= MIN_HOUR; h -= SLOT_STEP) {
+        if (unavailableSlots.includes(hourToSlot(h))) return h + SLOT_STEP
       }
       return MIN_HOUR
     },
@@ -77,7 +85,7 @@ export function TimeSlotPicker({
   const setSlotsFromRange = useCallback(
     (start: number, end: number) => {
       const slots: string[] = []
-      for (let h = start; h < end; h++) {
+      for (let h = start; h < end; h += SLOT_STEP) {
         slots.push(hourToSlot(h))
       }
       onSlotsChange(slots)
@@ -85,11 +93,11 @@ export function TimeSlotPicker({
     [onSlotsChange]
   )
 
-  // Click on a track segment → start new 1-hour selection
+  // Click on a track segment → start new 30-min selection
   const handleSegmentClick = useCallback(
-    (hour: number) => {
-      if (disabled || unavailableSlots.includes(hourToSlot(hour))) return
-      setSlotsFromRange(hour, Math.min(hour + 1, maxEndForStart(hour)))
+    (slotHour: number) => {
+      if (disabled || unavailableSlots.includes(hourToSlot(slotHour))) return
+      setSlotsFromRange(slotHour, Math.min(slotHour + SLOT_STEP, maxEndForStart(slotHour)))
     },
     [disabled, unavailableSlots, setSlotsFromRange, maxEndForStart]
   )
@@ -117,13 +125,13 @@ export function TimeSlotPicker({
 
       if (dragging === "start" && endHour !== null) {
         const minStart = minStartForEnd(endHour)
-        const clampedStart = Math.max(minStart, Math.min(hour, endHour - 1))
+        const clampedStart = Math.max(minStart, Math.min(hour, endHour - SLOT_STEP))
         if (clampedStart !== startHour) {
           setSlotsFromRange(clampedStart, endHour)
         }
       } else if (dragging === "end" && startHour !== null) {
         const maxEnd = maxEndForStart(startHour)
-        const clampedEnd = Math.max(startHour + 1, Math.min(hour, maxEnd))
+        const clampedEnd = Math.max(startHour + SLOT_STEP, Math.min(hour, maxEnd))
         if (clampedEnd !== endHour) {
           setSlotsFromRange(startHour, clampedEnd)
         }
@@ -146,7 +154,7 @@ export function TimeSlotPicker({
 
   // Available durations for quick selection
   const maxDuration = startHour !== null ? maxEndForStart(startHour) - startHour : 0
-  const quickDurations = [1, 2, 3, 4].filter((d) => d <= maxDuration)
+  const quickDurations = [0.5, 1, 1.5, 2, 3, 4].filter((d) => d <= maxDuration)
 
   return (
     <div className="space-y-4">
@@ -163,7 +171,7 @@ export function TimeSlotPicker({
               }}
             >
               <span className="text-[11px] font-semibold bg-[#1B1918] text-white px-2.5 py-1 rounded-full whitespace-nowrap">
-                {startHour}h00 — {endHour}h00
+                {formatTime(startHour)} — {formatTime(endHour)}
               </span>
             </div>
           )}
@@ -175,10 +183,10 @@ export function TimeSlotPicker({
           className="relative h-12 rounded-[14px] bg-foreground/[0.04] overflow-hidden"
         >
           {/* Unavailable segments */}
-          {ALL_HOURS.map((h) => {
+          {ALL_SLOTS.map((h) => {
             if (!unavailableSlots.includes(hourToSlot(h))) return null
             const left = ((h - MIN_HOUR) / TOTAL_HOURS) * 100
-            const width = (1 / TOTAL_HOURS) * 100
+            const width = (SLOT_STEP / TOTAL_HOURS) * 100
             return (
               <div
                 key={`unavail-${h}`}
@@ -209,18 +217,18 @@ export function TimeSlotPicker({
               }}
             >
               {/* Duration text inside bar */}
-              {duration >= 2 && (
+              {duration >= 1.5 && (
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                   <span className="text-xs font-medium text-white/50">
-                    {duration}h
+                    {formatDuration(duration)}
                   </span>
                 </div>
               )}
             </div>
           )}
 
-          {/* Vertical grid lines */}
-          {ALL_HOURS.slice(1).map((h) => {
+          {/* Vertical grid lines — full hours */}
+          {ALL_FULL_HOURS.slice(1).map((h) => {
             const left = ((h - MIN_HOUR) / TOTAL_HOURS) * 100
             const isInSelection =
               startHour !== null && endHour !== null && h > startHour && h < endHour
@@ -236,11 +244,29 @@ export function TimeSlotPicker({
             )
           })}
 
-          {/* Clickable segments */}
-          {ALL_HOURS.map((h) => {
+          {/* Vertical grid lines — half hours (lighter) */}
+          {ALL_FULL_HOURS.map((h) => {
+            const halfH = h + 0.5
+            const left = ((halfH - MIN_HOUR) / TOTAL_HOURS) * 100
+            const isInSelection =
+              startHour !== null && endHour !== null && halfH > startHour && halfH < endHour
+            return (
+              <div
+                key={`grid-half-${h}`}
+                className={cn(
+                  "absolute inset-y-0 w-px pointer-events-none",
+                  isInSelection ? "bg-white/8" : "bg-foreground/[0.03]"
+                )}
+                style={{ left: `${left}%` }}
+              />
+            )
+          })}
+
+          {/* Clickable segments (30-min each) */}
+          {ALL_SLOTS.map((h) => {
             const isUnavailable = unavailableSlots.includes(hourToSlot(h))
             const left = ((h - MIN_HOUR) / TOTAL_HOURS) * 100
-            const width = (1 / TOTAL_HOURS) * 100
+            const width = (SLOT_STEP / TOTAL_HOURS) * 100
             return (
               <button
                 key={`seg-${h}`}
@@ -249,7 +275,7 @@ export function TimeSlotPicker({
                 disabled={disabled || isUnavailable}
                 className="absolute inset-y-0 z-10 cursor-pointer disabled:cursor-not-allowed"
                 style={{ left: `${left}%`, width: `${width}%` }}
-                aria-label={`${h}h00`}
+                aria-label={formatTime(h)}
               />
             )
           })}
@@ -293,7 +319,7 @@ export function TimeSlotPicker({
 
         {/* Hour labels below track */}
         <div className="relative h-5 mt-2">
-          {ALL_HOURS.filter((_, i) => i % 2 === 0).map((h) => (
+          {ALL_FULL_HOURS.filter((_, i) => i % 2 === 0).map((h) => (
             <span
               key={`label-${h}`}
               className="absolute -translate-x-1/2 text-[10px] text-muted-foreground"
@@ -330,7 +356,7 @@ export function TimeSlotPicker({
                   : "bg-foreground/5 text-foreground hover:bg-foreground/10"
               )}
             >
-              {d}h
+              {formatDuration(d)}
             </button>
           ))}
         </div>
@@ -340,9 +366,9 @@ export function TimeSlotPicker({
       {duration > 0 && (
         <div className="rounded-[12px] bg-foreground/5 px-3 py-2">
           <p className="text-sm font-medium text-foreground">
-            {startHour}h00 — {endHour}h00
+            {formatTime(startHour!)} — {formatTime(endHour!)}
             <span className="ml-2 font-normal text-muted-foreground">
-              · {duration} {t("hour")}{duration > 1 ? "s" : ""}
+              · {formatDuration(duration)}
             </span>
           </p>
         </div>

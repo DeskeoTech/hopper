@@ -28,8 +28,8 @@ import { SearchableSelect } from "@/components/ui/searchable-select"
 import { useTranslations, useLocale } from "next-intl"
 import { useClientLayout } from "./client-layout-provider"
 import { createTicket, getUserTickets } from "@/lib/actions/tickets"
-import type { TicketRequestType, TicketStatus, SupportTicket } from "@/lib/types/database"
-import { REQUEST_TYPE_LABELS, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
+import type { TicketStatus, SupportTicket } from "@/lib/types/database"
+import { getRequestTypeLabel, REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 import { cn } from "@/lib/utils"
 
 const STATUS_CONFIG: Record<TicketStatus, { icon: typeof Circle; className: string }> = {
@@ -72,7 +72,7 @@ export function SupportTab() {
   const [tickets, setTickets] = useState<SupportTicket[]>([])
   const [loadingTickets, setLoadingTickets] = useState(true)
 
-  const [requestType, setRequestType] = useState<TicketRequestType | "">("")
+  const [requestType, setRequestType] = useState("")
   const [requestSubtype, setRequestSubtype] = useState("")
   const [siteId, setSiteId] = useState(selectedSiteId || "")
   const [subject, setSubject] = useState("")
@@ -104,6 +104,7 @@ export function SupportTab() {
     if (fileInputRef.current) fileInputRef.current.value = ""
     setError(null)
     setSuccess(false)
+    setLoading(false)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,7 +114,7 @@ export function SupportTab() {
       setError(t("validation.selectType"))
       return
     }
-    const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType]
+    const subtypeOptions = REQUEST_SUBTYPE_OPTIONS[requestType]
     if (subtypeOptions && subtypeOptions.length > 0 && !requestSubtype) {
       setError(t("validation.selectSubtype"))
       return
@@ -127,40 +128,61 @@ export function SupportTab() {
       return
     }
 
+    // Client-side file size check (avoid hitting Next.js body size limit)
+    if (attachedFile && attachedFile.size > 10 * 1024 * 1024) {
+      setError("Le fichier est trop volumineux (max 10 Mo)")
+      return
+    }
+
     setLoading(true)
     setError(null)
     setSuccess(false)
 
-    const result = await createTicket({
-      user_id: user?.id || null,
-      site_id: siteId || null,
-      request_type: requestType as TicketRequestType,
-      request_subtype: requestSubtype || null,
-      subject: subject.trim(),
-      comment: comment.trim(),
-    })
+    try {
+      // Build a single FormData with all fields + file
+      const formData = new FormData()
+      if (siteId) formData.append("site_id", siteId)
+      formData.append("request_type", requestType)
+      if (requestSubtype) formData.append("request_subtype", requestSubtype)
+      formData.append("subject", subject.trim())
+      formData.append("comment", comment.trim())
+      if (attachedFile) formData.append("file", attachedFile)
 
-    if (result.error) {
-      setError(result.error)
-    } else {
-      setSuccess(true)
-      setRequestType("")
-      setRequestSubtype("")
-      setSiteId(selectedSiteId || "")
-      setSubject("")
-      setComment("")
-      setAttachedFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ""
-      // Refresh tickets list
-      if (user?.id) {
-        const ticketsResult = await getUserTickets(user.id)
-        if (ticketsResult.data) {
-          setTickets(ticketsResult.data)
+      const result = await createTicket(formData)
+
+      if (result.error) {
+        setError(result.error)
+      } else {
+        if (result.attachmentError) {
+          setError(result.attachmentError)
         }
+
+        setSuccess(true)
+        setRequestType("")
+        setRequestSubtype("")
+        setSiteId(selectedSiteId || "")
+        setSubject("")
+        setComment("")
+        setAttachedFile(null)
+        if (fileInputRef.current) fileInputRef.current.value = ""
+        // Refresh tickets list
+        if (user?.id) {
+          const ticketsResult = await getUserTickets(user.id)
+          if (ticketsResult.data) {
+            setTickets(ticketsResult.data)
+          }
+        }
+        setTimeout(() => setSuccess(false), 3000)
       }
-      setTimeout(() => setSuccess(false), 3000)
+    } catch {
+      setError(
+        attachedFile
+          ? "La pièce jointe est trop volumineuse ou dans un format non supporté. Veuillez réduire sa taille (max 10 Mo) ou la retirer."
+          : "Une erreur est survenue. Veuillez réessayer."
+      )
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const formatDate = (dateString: string) => {
@@ -174,14 +196,14 @@ export function SupportTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-6">
       {/* Ticket Form */}
-      <div className="rounded-[16px] bg-card p-6">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
+        <div className="mb-5 sm:mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <MessageCircle className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("sendTicket")}</h2>
+          <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("sendTicket")}</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -227,7 +249,7 @@ export function SupportTab() {
               options={REQUEST_TYPE_OPTIONS}
               value={requestType}
               onValueChange={(value) => {
-                setRequestType(value as TicketRequestType)
+                setRequestType(value)
                 setRequestSubtype("")
               }}
               placeholder={t("choose")}
@@ -237,13 +259,13 @@ export function SupportTab() {
           </div>
 
           {/* Type de demande (sous-catégorie) */}
-          {requestType && REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] && (
+          {requestType && REQUEST_SUBTYPE_OPTIONS[requestType] && (
             <div className="space-y-2 overflow-hidden transition-all duration-200">
               <Label htmlFor="requestSubtype">
                 {t("requestType")} <span className="text-destructive">*</span>
               </Label>
               <SearchableSelect
-                options={REQUEST_SUBTYPE_OPTIONS[requestType as TicketRequestType] || []}
+                options={REQUEST_SUBTYPE_OPTIONS[requestType] || []}
                 value={requestSubtype}
                 onValueChange={setRequestSubtype}
                 placeholder={t("specify")}
@@ -338,18 +360,18 @@ export function SupportTab() {
           )}
 
           {/* Boutons */}
-          <div className="flex items-center justify-end gap-3">
+          <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
             <button
               type="button"
               onClick={handleReset}
-              className="rounded-full bg-foreground/5 px-5 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
+              className="rounded-full bg-foreground/5 px-5 py-3 sm:py-2.5 text-base sm:text-sm font-medium text-foreground transition-colors hover:bg-foreground/10"
             >
               {tc("cancel")}
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 rounded-full bg-[#1B1918] px-6 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-full bg-[#1B1918] px-6 py-3 sm:py-2.5 text-base sm:text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#1B1918]/90 disabled:opacity-50"
             >
               {loading ? (
                 <>
@@ -365,12 +387,12 @@ export function SupportTab() {
       </div>
 
       {/* Tickets List */}
-      <div className="rounded-[16px] bg-card p-6">
-        <div className="mb-6 flex items-center gap-3">
+      <div className="rounded-[16px] bg-card p-4 sm:p-6">
+        <div className="mb-5 sm:mb-6 flex items-center gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-foreground/5">
             <Clock className="h-5 w-5 text-foreground/70" />
           </div>
-          <h2 className="font-header text-lg font-bold uppercase tracking-tight">{t("myRequests")}</h2>
+          <h2 className="font-header text-xl sm:text-lg font-bold uppercase tracking-tight">{t("myRequests")}</h2>
         </div>
 
         {loadingTickets ? (
@@ -387,7 +409,7 @@ export function SupportTab() {
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="max-h-[360px] space-y-3 overflow-y-auto">
             {tickets.map((ticket) => {
               const statusConfig = STATUS_CONFIG[ticket.status || "todo"]
               const StatusIcon = statusConfig.icon
@@ -401,7 +423,7 @@ export function SupportTab() {
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span className="text-xs font-medium text-muted-foreground">
-                          {REQUEST_TYPE_LABELS[ticket.request_type || "autre"]}
+                          {getRequestTypeLabel(ticket.request_type)}
                         </span>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(ticket.created_at)}

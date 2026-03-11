@@ -1,5 +1,6 @@
 import { Suspense } from "react"
 import { createClient } from "@/lib/supabase/server"
+import { getStorageUrl } from "@/lib/utils"
 import { ReservationsSectionClient } from "./reservations-section-client"
 import {
   startOfWeek,
@@ -14,7 +15,7 @@ import {
 import type { BookingWithDetails, ResourceType, MeetingRoomResource } from "@/lib/types/database"
 import type { HiddenFilter } from "./reservations-filters"
 import type { ViewMode } from "./view-toggle"
-import { Calendar } from "lucide-react"
+import { Calendar, Download } from "lucide-react"
 
 export type ReservationContext =
   | { type: "site"; siteId: string; siteName: string }
@@ -146,10 +147,9 @@ export async function ReservationsSection({
         .order("created_at", { ascending: true })
 
       // Build photo URLs map
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
       const photosByRoom: Record<string, string[]> = {}
       photos?.forEach((photo) => {
-        const url = `${supabaseUrl}/storage/v1/object/public/resource-photos/${photo.storage_path}`
+        const url = getStorageUrl("resource-photos", photo.storage_path)
         if (!photosByRoom[photo.resource_id]) {
           photosByRoom[photo.resource_id] = [url]
         } else {
@@ -197,6 +197,8 @@ export async function ReservationsSection({
         notes: b.notes,
         hubspot_deal_id: b.hubspot_deal_id,
         netsuite_invoice_id: b.netsuite_invoice_id,
+        stripe_checkout_session_id: b.stripe_checkout_session_id,
+        referral: b.referral,
         created_at: b.created_at,
         updated_at: b.updated_at,
         resource_name: resource?.name || null,
@@ -293,15 +295,27 @@ export async function ReservationsSection({
   return (
     <div className="rounded-lg bg-card p-6">
       {showHeader && (
-        <div className="mb-6">
-          <h2 className="flex items-center gap-2 type-h3 text-foreground">
-            <Calendar className="h-5 w-5" />
-            Reservations
-          </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {transformedBookings.length} reservation
-            {transformedBookings.length !== 1 ? "s" : ""}
-          </p>
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h2 className="flex items-center gap-2 type-h3 text-foreground">
+              <Calendar className="h-5 w-5" />
+              Reservations
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {transformedBookings.length} reservation
+              {transformedBookings.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+          {context.type === "site" && (
+            <a
+              href={`/api/sites/${context.siteId}/ical`}
+              download
+              className="inline-flex items-center gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Exporter iCal</span>
+            </a>
+          )}
         </div>
       )}
 

@@ -1,11 +1,13 @@
 import type { TicketRequestType } from "@/lib/types/database"
 
+/** Maps legacy slug keys to display labels (used for backward compat with old data) */
 export const REQUEST_TYPE_LABELS: Record<TicketRequestType, string> = {
   administratif: "Administratif",
   ascenseurs: "Ascenseurs",
   audiovisuel: "Audiovisuel",
   autre: "Autre",
   badges: "Badges",
+  cafe_the: "Café & Thé",
   catering: "Catering",
   chauffage: "Chauffage",
   climatisation: "Climatisation",
@@ -18,141 +20,170 @@ export const REQUEST_TYPE_LABELS: Record<TicketRequestType, string> = {
   fontaine_eau: "Fontaine à eau",
   immeuble: "Immeuble",
   imprimantes: "Imprimantes",
-  internet_reseau: "Internet / Réseau",
+  internet_reseau: "Internet & Réseau",
   interphone: "Interphone",
   isolation_phonique: "Isolation phonique",
   juridique: "Juridique",
   menage: "Ménage",
+  mobilier: "Mobilier",
   nuisances: "Nuisances",
   nuisibles: "Nuisibles",
   plomberie: "Plomberie",
   portes: "Portes",
   ssi: "SSI",
-  videosurveillance_alarme: "Vidéosurveillance / Alarme",
+  telephone_gsm: "Téléphone & GSM",
+  videosurveillance_alarme: "Vidéosurveillance & Alarme",
 }
 
-export const REQUEST_TYPE_OPTIONS = Object.entries(REQUEST_TYPE_LABELS).map(([value, label]) => ({
-  value,
-  label,
-}))
+/** Labels excluded from new ticket creation (kept in REQUEST_TYPE_LABELS for backward compat) */
+const DEPRECATED_REQUEST_TYPES = new Set(["Administratif"])
 
-export const REQUEST_SUBTYPE_OPTIONS: Partial<Record<TicketRequestType, { value: string; label: string }[]>> = {
-  ascenseurs: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+export const REQUEST_TYPE_OPTIONS = Object.values(REQUEST_TYPE_LABELS)
+  .filter((label) => !DEPRECATED_REQUEST_TYPES.has(label))
+  .map((label) => ({
+    value: label,
+    label,
+  }))
+
+export const REQUEST_SUBTYPE_OPTIONS: Record<string, { value: string; label: string }[]> = {
+  "Ascenseurs": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  audiovisuel: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Audiovisuel": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  administratif: [
-    { value: "demande_credits", label: "Demande relative aux crédits" },
-    { value: "question_abonnement_cafe", label: "Question sur l'abonnement café" },
-    { value: "envoi_question_preavis", label: "Envoi/Question sur préavis" },
-    { value: "demande_info_contractuelle", label: "Demande d'information contractuelle" },
+  "Badges": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
   ],
-  badges: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
+  "Café & Thé": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
+    { value: "Augmentation, Suspension ou Réduction des quantités", label: "Augmentation, Suspension ou Réduction des quantités" },
+    { value: "Insatisfaction", label: "Insatisfaction" },
   ],
-  catering: [
-    { value: "petit_dejeuner", label: "Petit-déjeuner" },
-    { value: "livraison_snacks", label: "Livraison snacks, fruits, etc." },
+  "Catering": [
+    { value: "Livraison snacks, fruits, etc.", label: "Livraison snacks, fruits, etc." },
+    { value: "Petit-déjeuner", label: "Petit-déjeuner" },
   ],
-  chauffage: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Chauffage": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  climatisation: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Climatisation": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  code_acces: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Code d'accès": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  electricite: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Électroménager": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  electromenager: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Électricité": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  espaces_verts: [
-    { value: "insatisfaction", label: "Insatisfaction" },
+  "Espaces verts": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Demande de plantes supplémentaires", label: "Demande de plantes supplémentaires" },
+    { value: "Insatisfaction", label: "Insatisfaction" },
   ],
-  fenetres: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Finance": [
+    { value: "Problème ou demande facture", label: "Problème ou demande facture" },
+    { value: "Problème prélèvement ou Recouvrement client", label: "Problème prélèvement ou Recouvrement client" },
   ],
-  finance: [
-    { value: "probleme_prelevement_recouvrement", label: "Problème prélèvement ou Recouvrement client" },
-    { value: "probleme_demande_facture", label: "Problème ou demande facture" },
+  "Fontaine à eau": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Insatisfaction (goût, pétillant, etc.)", label: "Insatisfaction (goût, pétillant, etc.)" },
+    { value: "Demande de livraison CO₂", label: "Demande de livraison CO₂" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  fontaine_eau: [
-    { value: "demande_livraison_co2", label: "Demande de livraison CO₂" },
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
-    { value: "insatisfaction_gout", label: "Insatisfaction (goût, pétillant, etc.)" },
+  "Fenêtres": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  immeuble: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
+  "Isolation phonique": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
   ],
-  imprimantes: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Immeuble": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
   ],
-  internet_reseau: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Juridique": [
+    { value: "État des lieux", label: "État des lieux" },
+    { value: "Préavis", label: "Préavis" },
   ],
-  interphone: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Mobilier": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  isolation_phonique: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
+  "Ménage": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Ménage supplémentaire ponctuel", label: "Ménage supplémentaire ponctuel" },
+    { value: "Ménage supplémentaire récurrent", label: "Ménage supplémentaire récurrent" },
+    { value: "Insatisfaction", label: "Insatisfaction" },
   ],
-  juridique: [
-    { value: "preavis", label: "Préavis" },
+  "Nuisances": [
+    { value: "Mauvaises odeurs", label: "Mauvaises odeurs" },
+    { value: "Nuisances lumineuses", label: "Nuisances lumineuses" },
+    { value: "Nuisances sonores", label: "Nuisances sonores" },
   ],
-  menage: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "insatisfaction", label: "Insatisfaction" },
+  "Nuisibles": [
+    { value: "Vermines", label: "Vermines" },
+    { value: "Mouches & Moucherons", label: "Mouches & Moucherons" },
   ],
-  nuisances: [
-    { value: "mauvaises_odeurs", label: "Mauvaises odeurs" },
-    { value: "nuisances_lumineuses", label: "Nuisances lumineuses" },
-    { value: "nuisances_sonores", label: "Nuisances sonores" },
+  "Plomberie": [
+    { value: "Fuite ou infiltration", label: "Fuite ou infiltration" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  nuisibles: [
-    { value: "mouches_moucherons", label: "Mouches / Moucherons" },
-    { value: "vermines", label: "Vermines" },
+  "Portes": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
+    { value: "Porte parking bloquée/cassée", label: "Porte parking bloquée/cassée" },
   ],
-  plomberie: [
-    { value: "fuite_infiltration", label: "Fuite ou infiltration" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "SSI": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  portes: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
-    { value: "porte_parking_bloquee", label: "Porte parking bloquée/cassée" },
+  "Imprimantes": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  ssi: [
-    { value: "demande_renseignements", label: "Demande de renseignements" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  "Internet & Réseau": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
   ],
-  videosurveillance_alarme: [
-    { value: "cambriolage_rapport", label: "Cambriolage - demande rapport client" },
-    { value: "panne_dysfonctionnement", label: "Panne ou dysfonctionnement" },
-    { value: "cambriolage_informations", label: "Cambriolage - demande d'informations" },
+  "Interphone": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  ],
+  "Téléphone & GSM": [
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
+  ],
+  "Vidéosurveillance & Alarme": [
+    { value: "Panne ou dysfonctionnement", label: "Panne ou dysfonctionnement" },
+    { value: "Demande de renseignements", label: "Demande de renseignements" },
+    { value: "Cambriolage - demande rapport client", label: "Cambriolage - demande rapport client" },
   ],
 }
 
-/** Get the display label for a subtype value */
-export function getSubtypeLabel(requestType: TicketRequestType | null, subtypeValue: string | null): string | null {
+/** Get the display label for a request type (handles both legacy slugs and new labels) */
+export function getRequestTypeLabel(type: string | null): string {
+  if (!type) return "-"
+  // Try legacy slug lookup first, then return as-is (new label format)
+  return REQUEST_TYPE_LABELS[type as TicketRequestType] || type
+}
+
+/** Get the display label for a subtype value (handles both legacy slugs and new labels) */
+export function getSubtypeLabel(requestType: string | null, subtypeValue: string | null): string | null {
   if (!requestType || !subtypeValue) return null
-  const options = REQUEST_SUBTYPE_OPTIONS[requestType]
+  // Resolve request type: try legacy slug → label, or use as-is
+  const labelKey = REQUEST_TYPE_LABELS[requestType as TicketRequestType] || requestType
+  const options = REQUEST_SUBTYPE_OPTIONS[labelKey]
   if (!options) return subtypeValue
   const found = options.find((o) => o.value === subtypeValue)
   return found?.label || subtypeValue

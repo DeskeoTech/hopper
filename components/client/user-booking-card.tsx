@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { format } from "date-fns"
 import { useTranslations, useLocale } from "next-intl"
 import { getDateLocale } from "@/lib/i18n/date-locale"
 import { toParisDate } from "@/lib/timezone"
 import { MapPin } from "lucide-react"
+import { getPaymentStatus } from "@/lib/actions/stripe"
 import { CancelBookingDialog } from "./cancel-booking-dialog"
 import { cn } from "@/lib/utils"
 import type { BookingWithDetails } from "@/lib/types/database"
@@ -21,6 +22,17 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
   const locale = useLocale()
   const dateLocale = getDateLocale(locale)
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
+  const [paymentStatus, setPaymentStatus] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (booking.stripe_checkout_session_id) {
+      getPaymentStatus(booking.stripe_checkout_session_id).then((result) => {
+        if ("paymentStatus" in result) {
+          setPaymentStatus(result.paymentStatus)
+        }
+      })
+    }
+  }, [booking.stripe_checkout_session_id])
 
   const parsedDate = toParisDate(booking.start_date)
   const formattedDate = format(parsedDate, "dd/MM/yyyy", { locale: dateLocale })
@@ -69,6 +81,18 @@ export function UserBookingCard({ booking, userId, isPast = false }: UserBooking
               <MapPin className="h-3 w-3" />
               <span className="truncate max-w-[130px]">{booking.site_name}</span>
             </div>
+          )}
+
+          {/* Payment status */}
+          {paymentStatus && (
+            <span className={cn(
+              "mt-2 rounded-full px-2.5 py-0.5 text-[10px] font-medium",
+              paymentStatus === "paid" && "bg-green-500/20 text-green-700",
+              paymentStatus === "unpaid" && "bg-orange-400/20 text-orange-600",
+              paymentStatus === "no_payment_required" && "bg-foreground/5 text-foreground/50"
+            )}>
+              {paymentStatus === "paid" ? "Payé" : paymentStatus === "unpaid" ? "En attente" : "Crédits"}
+            </span>
           )}
 
           {/* Action button */}

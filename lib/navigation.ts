@@ -2,11 +2,11 @@ import {
   Building2,
   Calendar,
   Briefcase,
-  LayoutDashboard,
+  BarChart3,
   Home,
   User,
   Newspaper,
-  Headphones,
+  Ticket,
   ShoppingCart,
   type LucideIcon,
 } from "lucide-react"
@@ -19,11 +19,11 @@ export interface NavItem {
 
 export const adminNavigation: NavItem[] = [
   { name: "Accueil", href: "/admin", icon: Home },
-  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Dashboard", href: "/admin/dashboard", icon: BarChart3 },
   { name: "Sites", href: "/admin/sites", icon: Building2 },
   { name: "Réservations", href: "/admin/reservations", icon: Calendar },
   { name: "Clients", href: "/admin/clients", icon: Briefcase },
-  { name: "Tickets", href: "/admin/tickets", icon: Headphones },
+  { name: "Tickets", href: "/admin/tickets", icon: Ticket },
   { name: "Mon Compte", href: "/admin/compte", icon: User },
 ]
 

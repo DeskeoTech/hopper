@@ -3,7 +3,8 @@ import { createClient } from "@/lib/supabase/server"
 import { TicketsTable } from "@/components/admin/tickets/tickets-table"
 import { TicketsSearch } from "@/components/admin/tickets/tickets-search"
 import { Headphones } from "lucide-react"
-import type { SupportTicketWithDetails } from "@/lib/types/database"
+import type { SupportTicketWithDetails, TicketRequestType } from "@/lib/types/database"
+import { REQUEST_TYPE_LABELS } from "@/lib/constants/ticket-options"
 
 interface TicketsPageProps {
   searchParams: Promise<{ search?: string; status?: string; request_type?: string }>
@@ -43,9 +44,14 @@ export default async function TicketsPage({ searchParams }: TicketsPageProps) {
     query = query.eq("status", status)
   }
 
-  // Apply request type filter
+  // Apply request type filter (handle both new label values and legacy slugs)
   if (request_type && request_type !== "all") {
-    query = query.eq("request_type", request_type)
+    const legacySlug = Object.entries(REQUEST_TYPE_LABELS).find(([, label]) => label === request_type)?.[0]
+    if (legacySlug) {
+      query = query.or(`request_type.eq.${request_type},request_type.eq.${legacySlug}`)
+    } else {
+      query = query.eq("request_type", request_type)
+    }
   }
 
   const { data: tickets, error } = await query

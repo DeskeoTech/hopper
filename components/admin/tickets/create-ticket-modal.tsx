@@ -27,7 +27,6 @@ import { Input } from "@/components/ui/input"
 import { SearchableSelect } from "@/components/ui/searchable-select"
 import { createClient } from "@/lib/supabase/client"
 import { createTicket } from "@/lib/actions/tickets"
-import type { TicketRequestType } from "@/lib/types/database"
 import { REQUEST_TYPE_OPTIONS, REQUEST_SUBTYPE_OPTIONS } from "@/lib/constants/ticket-options"
 
 interface SelectOption {
@@ -45,7 +44,7 @@ export function CreateTicketModal() {
   const [sitesOptions, setSitesOptions] = useState<SelectOption[]>([])
   const [selectedUserId, setSelectedUserId] = useState<string>("")
   const [selectedSiteId, setSelectedSiteId] = useState<string>("")
-  const [requestType, setRequestType] = useState<TicketRequestType>("autre")
+  const [requestType, setRequestType] = useState("Autre")
   const [requestSubtype, setRequestSubtype] = useState("")
   const [subject, setSubject] = useState("")
   const [comment, setComment] = useState("")
@@ -99,19 +98,19 @@ export function CreateTicketModal() {
 
   const handleConfirm = async () => {
     setLoading(true)
-    const result = await createTicket({
-      user_id: selectedUserId || null,
-      site_id: selectedSiteId || null,
-      request_type: requestType,
-      request_subtype: requestSubtype || null,
-      subject: subject.trim() || null,
-      comment: comment.trim(),
-    })
+    const formData = new FormData()
+    if (selectedUserId) formData.append("user_id", selectedUserId)
+    if (selectedSiteId) formData.append("site_id", selectedSiteId)
+    formData.append("request_type", requestType)
+    if (requestSubtype) formData.append("request_subtype", requestSubtype)
+    if (subject.trim()) formData.append("subject", subject.trim())
+    formData.append("comment", comment.trim())
+    const result = await createTicket(formData)
     setLoading(false)
     if (result.success) {
       setSelectedUserId("")
       setSelectedSiteId("")
-      setRequestType("autre")
+      setRequestType("Autre")
       setRequestSubtype("")
       setSubject("")
       setComment("")
@@ -167,7 +166,7 @@ export function CreateTicketModal() {
                 options={REQUEST_TYPE_OPTIONS}
                 value={requestType}
                 onValueChange={(v) => {
-                  setRequestType(v as TicketRequestType)
+                  setRequestType(v)
                   setRequestSubtype("")
                 }}
                 placeholder="Selectionner un type"

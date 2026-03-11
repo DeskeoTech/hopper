@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { createSite, uploadSitePhoto } from "@/lib/actions/sites"
+import { createSite, createSitePhotoUploadUrl, confirmSitePhoto } from "@/lib/actions/sites"
 import type { SiteStatus, Equipment, DayOfWeek } from "@/lib/types/database"
 
 const DAYS_OF_WEEK: { id: DayOfWeek; label: string }[] = [
@@ -220,9 +220,21 @@ export function CreateSiteModal() {
     // Upload photos if any
     if (result.siteId && formData.photos.length > 0) {
       for (const photo of formData.photos) {
-        const photoFormData = new FormData()
-        photoFormData.append("file", photo)
-        await uploadSitePhoto(result.siteId, photoFormData)
+        const urlResult = await createSitePhotoUploadUrl(result.siteId, photo.name)
+        if (urlResult.error || !urlResult.signedUrl) continue
+        const uploadRes = await fetch(urlResult.signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": photo.type },
+          body: photo,
+        })
+        if (!uploadRes.ok) continue
+        await confirmSitePhoto(
+          result.siteId,
+          urlResult.path!,
+          photo.name,
+          photo.type || null,
+          photo.size || null
+        )
       }
     }
 

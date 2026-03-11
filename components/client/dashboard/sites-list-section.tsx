@@ -40,7 +40,7 @@ function SiteCard({ site, onClick }: SiteCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="w-full h-full overflow-hidden rounded-[20px] bg-background text-left border border-foreground/10 hover:border-foreground/30 transition-colors flex flex-col cursor-pointer"
+      className="w-full h-full overflow-hidden rounded-[20px] bg-card text-left border border-foreground/10 hover:border-foreground/30 transition-colors flex flex-col cursor-pointer"
     >
       {/* Image with location badge */}
       <div className="relative aspect-[4/3] bg-muted overflow-hidden rounded-t-[18px]">

@@ -9,7 +9,7 @@ const HOPPER_RESIDENCE_PLAN_ID = "62ccff00-36a8-45b2-85bc-82c32d26dc62"
 
 export async function updateCompanyHeader(
   companyId: string,
-  data: { name: string | null; company_type: CompanyType | null }
+  data: { name: string | null; company_type: CompanyType | null; meeting_room_only?: boolean }
 ) {
   const supabase = createAdminClient()
 
@@ -18,6 +18,7 @@ export async function updateCompanyHeader(
     .update({
       name: data.name,
       company_type: data.company_type,
+      meeting_room_only: data.meeting_room_only ?? false,
       updated_at: new Date().toISOString(),
     })
     .eq("id", companyId)
@@ -145,6 +146,13 @@ export async function createCompany(data: {
   main_site_id?: string | null
   numberOfSeats?: number | null
   initialCredits?: number | null
+  from_spacebring?: boolean
+  meeting_room_only?: boolean
+  spacebring_plan_name?: string | null
+  spacebring_monthly_price?: number | null
+  spacebring_monthly_credits?: number | null
+  spacebring_seats?: number | null
+  spacebring_start_date?: string | null
 }) {
   const authUser = await getUser()
   if (!authUser?.email) {
@@ -152,6 +160,9 @@ export async function createCompany(data: {
   }
 
   const supabase = await createClient()
+  const isOffPlatform = data.from_spacebring === true
+  const isMeetingRoomOnly = data.meeting_room_only === true
+  const today = new Date().toISOString().split("T")[0]
 
   const { data: company, error } = await supabase
     .from("companies")
@@ -162,6 +173,15 @@ export async function createCompany(data: {
       phone: data.phone || null,
       address: data.address || null,
       main_site_id: data.main_site_id || null,
+      from_spacebring: isOffPlatform,
+      meeting_room_only: isMeetingRoomOnly,
+      spacebring_plan_name: isOffPlatform ? (data.spacebring_plan_name || null) : null,
+      spacebring_monthly_price: isOffPlatform ? (data.spacebring_monthly_price ?? null) : null,
+      spacebring_monthly_credits: isOffPlatform ? (data.spacebring_monthly_credits ?? null) : null,
+      spacebring_seats: isOffPlatform ? (data.spacebring_seats ?? null) : null,
+      spacebring_start_date: isOffPlatform ? (data.spacebring_start_date || null) : null,
+      onboarding_done: isOffPlatform || isMeetingRoomOnly ? true : null,
+      subscription_start_date: (isOffPlatform && data.spacebring_start_date) ? data.spacebring_start_date : (isMeetingRoomOnly ? today : null),
     })
     .select("id")
     .single()
@@ -377,6 +397,91 @@ export async function deleteCompanyKbis(companyId: string, storagePath: string) 
   return { success: true }
 }
 
+export async function uploadCompanyDocument(
+  companyId: string,
+  documentType: "identity_document" | "rib",
+  formData: FormData
+) {
+  const supabase = createAdminClient()
+
+  const file = formData.get("file") as File
+  if (!file) {
+    return { error: "Aucun fichier fourni" }
+  }
+
+  const allowedTypes = ["application/pdf", "image/jpeg", "image/png"]
+  if (!allowedTypes.includes(file.type)) {
+    return { error: "Format non accepté. Utilisez PDF, JPG ou PNG." }
+  }
+
+  const maxSize = 10 * 1024 * 1024
+  if (file.size > maxSize) {
+    return { error: "Le fichier est trop volumineux (max 10 Mo)" }
+  }
+
+  const fileExt = file.name.split(".").pop()?.toLowerCase() || "pdf"
+  const fileName = `${companyId}/${documentType}/${Date.now()}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from("company-documents")
+    .upload(fileName, file, { cacheControl: "3600", upsert: false })
+
+  if (uploadError) {
+    return { error: "Erreur lors de l'upload du fichier" }
+  }
+
+  const columnName = documentType === "identity_document"
+    ? "identity_document_storage_path"
+    : "rib_storage_path"
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ [columnName]: fileName })
+    .eq("id", companyId)
+
+  if (updateError) {
+    console.error("uploadCompanyDocument updateError:", updateError)
+    await supabase.storage.from("company-documents").remove([fileName])
+    return { error: `Erreur lors de la mise à jour: ${updateError.message}` }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
+export async function deleteCompanyDocument(
+  companyId: string,
+  documentType: "identity_document" | "rib",
+  storagePath: string
+) {
+  const supabase = createAdminClient()
+
+  const { error: removeError } = await supabase.storage
+    .from("company-documents")
+    .remove([storagePath])
+
+  if (removeError) {
+    return { error: "Erreur lors de la suppression du fichier" }
+  }
+
+  const columnName = documentType === "identity_document"
+    ? "identity_document_storage_path"
+    : "rib_storage_path"
+
+  const { error: updateError } = await supabase
+    .from("companies")
+    .update({ [columnName]: null })
+    .eq("id", companyId)
+
+  if (updateError) {
+    console.error("deleteCompanyDocument updateError:", updateError)
+    return { error: `Erreur lors de la mise à jour: ${updateError.message}` }
+  }
+
+  revalidatePath(`/admin/clients/${companyId}`)
+  return { success: true }
+}
+
 export async function updateSpacebringSubscription(
   companyId: string,
   data: {
@@ -449,6 +554,23 @@ export async function getAvailablePlans() {
   return { data: data || [] }
 }
 
+export async function getAvailableCafePlans() {
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from("plans")
+    .select("id, name, recurrence, price_per_seat_month, service_type")
+    .eq("archived", false)
+    .eq("service_type", "coffee_subscription")
+    .order("name")
+
+  if (error) {
+    return { error: error.message }
+  }
+
+  return { data: data || [] }
+}
+
 export async function createCompanyContract(
   companyId: string,
   data: {
@@ -456,6 +578,7 @@ export async function createCompanyContract(
     numberOfSeats: number
     startDate: string
     endDate?: string | null
+    subscriptionId?: string | null
   }
 ) {
   const supabase = createAdminClient()
@@ -467,6 +590,7 @@ export async function createCompanyContract(
     start_date: data.startDate,
     end_date: data.endDate || null,
     status: "active",
+    ...(data.subscriptionId ? { Subscription_ID: data.subscriptionId } : {}),
   })
 
   if (error) {

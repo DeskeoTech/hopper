@@ -1,17 +1,21 @@
 import { redirect } from "next/navigation"
 import { createClient, getUser } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getStorageUrl } from "@/lib/utils"
 import { ClientLayoutProvider } from "@/components/client/client-layout-provider"
 import { ClientHeader } from "@/components/client/client-header"
 import { ClientFooter } from "@/components/client/client-footer"
 import { CompleteProfileModal } from "@/components/client/complete-profile-modal"
 import { OnboardingModal } from "@/components/client/onboarding-modal"
 import { ExpiredContractBanner } from "@/components/client/expired-contract-banner"
+import { FailedPaymentBanner } from "@/components/client/failed-payment-banner"
 import { PwaInstallPrompt } from "@/components/client/pwa-install-prompt"
+import { CafePassButton } from "@/components/client/cafe-pass-button"
 import { NoContractModal } from "@/components/client/no-contract-modal"
 import { CguAcceptanceModal } from "@/components/client/cgu-acceptance-modal"
 import { isUserCompanyInfoComplete } from "@/lib/validations/user-company-info"
 import type { UserCredits, UserPlan, Company, CreditMovement, CreditMovementType } from "@/lib/types/database"
+import { getCompanyPaymentStatus, type CompanyPaymentStatus } from "@/lib/actions/stripe"
 
 interface ClientLayoutProps {
   children: React.ReactNode
@@ -51,8 +55,20 @@ export default async function ClientLayout({
 
   const today = new Date().toISOString().split("T")[0]
   const hasCompany = !!userProfile.company_id
+  const companyData = userProfile.companies as Company | null
+  const isMeetingRoomOnly = companyData?.meeting_room_only === true
+  const companyMainSiteId = companyData?.main_site_id || null
 
   // Phase 2: Run ALL independent queries in parallel
+  const adminSupabase = createAdminClient()
+  const siteColumns = `
+    id, name, address, is_nomad, is_coworking, is_meeting_room,
+    opening_hours, opening_days,
+    wifi_ssid, wifi_password,
+    equipments, description, description_en,
+    instructions, instructions_en, access, access_en, transportation_lines
+  `
+
   const [
     sitesResult,
     photosResult,
@@ -61,19 +77,20 @@ export default async function ClientLayout({
     planResult,
     creditBookingsResult,
     adminResult,
+    creditTransactionsResult,
+    creditRecordsResult,
   ] = await Promise.all([
-    // 1. All open sites
-    supabase
-      .from("sites")
-      .select(`
-        id, name, address, is_nomad,
-        opening_hours, opening_days,
-        wifi_ssid, wifi_password,
-        equipments, description, description_en,
-        instructions, instructions_en, access, access_en, transportation_lines
-      `)
-      .eq("status", "open")
-      .order("name"),
+    // 1. Sites: meeting_room_only companies only see their main site (even if closed)
+    isMeetingRoomOnly && companyMainSiteId
+      ? supabase
+          .from("sites")
+          .select(siteColumns)
+          .eq("id", companyMainSiteId)
+      : supabase
+          .from("sites")
+          .select(siteColumns)
+          .eq("status", "open")
+          .order("name"),
 
     // 2. Site photos
     supabase
@@ -124,7 +141,37 @@ export default async function ClientLayout({
           .limit(1)
           .single()
       : Promise.resolve({ data: null } as { data: null }),
+
+    // 8. Credit transactions (admin client to bypass RLS)
+    hasCompany
+      ? adminSupabase
+          .from("credit_transactions")
+          .select("id, transaction_type, amount, balance_before, balance_after, reason, created_at, booking_id")
+          .eq("company_id", userProfile.company_id!)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null } as { data: null }),
+
+    // 9. Credit records (admin client to bypass RLS)
+    hasCompany
+      ? adminSupabase
+          .from("credits")
+          .select("id, allocated_credits, remaining_balance, reason, expiration, created_at")
+          .eq("company_id", userProfile.company_id!)
+          .order("created_at", { ascending: false })
+          .limit(50)
+      : Promise.resolve({ data: null } as { data: null }),
   ])
+
+  // Fetch payment status from Stripe
+  let paymentStatus: CompanyPaymentStatus = "ok"
+  const customerIdStripe = companyData?.customer_id_stripe
+  if (customerIdStripe) {
+    const result = await getCompanyPaymentStatus(customerIdStripe)
+    if ("status" in result) {
+      paymentStatus = result.status
+    }
+  }
 
   // Process credits
   let userCredits: UserCredits | null = null
@@ -162,41 +209,100 @@ export default async function ClientLayout({
     }
   }
 
-  // Process credit movements
-  let creditMovements: CreditMovement[] = []
+  // Process credit movements from bookings
+  const bookingMovements: CreditMovement[] = []
   if (creditBookingsResult.data) {
-    const totalCredits = userCredits?.remaining ?? 0
-    let runningBalance = totalCredits
-    creditMovements = (creditBookingsResult.data as Array<Record<string, unknown>>).map((booking) => {
+    for (const booking of creditBookingsResult.data as Array<Record<string, unknown>>) {
       const isCancelled = booking.status === "cancelled"
       const creditsUsed = (booking.credits_used as number) || 0
 
-      let type: CreditMovementType = "reservation"
-      let amount = -creditsUsed
-
-      if (isCancelled) {
-        type = "cancellation"
-        amount = creditsUsed
-      }
+      const type: CreditMovementType = isCancelled ? "cancellation" : "reservation"
+      const amount = isCancelled ? creditsUsed : -creditsUsed
 
       const resourceName = (booking.resource as { name: string } | null)?.name || "Ressource"
       const description = isCancelled
         ? `Annulation - ${resourceName}`
         : `Réservation - ${resourceName}`
 
-      const movement: CreditMovement = {
+      bookingMovements.push({
         id: booking.id as string,
         date: booking.start_date as string,
         type,
         amount,
         description,
-        balance_after: runningBalance,
+        balance_after: 0,
+      })
+    }
+  }
+
+  // Process credit transactions (allocation, adjustment, expiration, etc.)
+  const txMovements: CreditMovement[] = []
+  if (creditTransactionsResult.data) {
+    const txTypeMap: Record<string, CreditMovementType> = {
+      allocation: "allocation",
+      adjustment: "adjustment",
+      expiration: "expiration",
+      cancellation: "cancellation",
+      purchase: "purchase",
+      refund: "cancellation",
+      consumption: "reservation",
+    }
+    // Collect booking IDs from booking movements to avoid duplicates
+    const bookingMovementIds = new Set(bookingMovements.map((m) => m.id))
+
+    for (const tx of creditTransactionsResult.data as Array<Record<string, unknown>>) {
+      const txType = tx.transaction_type as string
+      const mappedType = txTypeMap[txType]
+      if (!mappedType) continue
+
+      // Skip consumption/refund if we already have the booking movement for it
+      if ((txType === "consumption" || txType === "refund") && tx.booking_id && bookingMovementIds.has(tx.booking_id as string)) {
+        continue
       }
 
-      runningBalance = runningBalance - amount
-      return movement
-    })
+      // Use balance_after - balance_before for correct sign (DB amounts are inconsistent)
+      const realAmount = (tx.balance_after as number) - (tx.balance_before as number)
+
+      txMovements.push({
+        id: tx.id as string,
+        date: tx.created_at as string,
+        type: mappedType,
+        amount: realAmount,
+        description: (tx.reason as string) || "",
+        balance_after: tx.balance_after as number,
+      })
+    }
   }
+
+  // Add credit records (allocation blocks) from credits table
+  if (creditRecordsResult.data) {
+    for (const cr of creditRecordsResult.data as Array<Record<string, unknown>>) {
+      const allocated = cr.allocated_credits as number
+      if (!allocated) continue
+      const remaining = (cr.remaining_balance as number) ?? 0
+      txMovements.push({
+        id: `cr-${cr.id as string}`,
+        date: cr.created_at as string,
+        type: "allocation",
+        amount: allocated,
+        description: (cr.reason as string) || `Attribution de ${allocated} crédits (solde : ${remaining}/${allocated})`,
+        balance_after: 0,
+      })
+    }
+  }
+
+  // Merge and sort by date descending, then recalculate balance_after for booking movements
+  const allMovements = [...bookingMovements, ...txMovements]
+  allMovements.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  // Recalculate balance_after for booking movements (tx movements already have it from DB)
+  const totalCredits = userCredits?.remaining ?? 0
+  let runningBalance = totalCredits
+  const creditMovements = allMovements.map((m) => {
+    const movement = { ...m, balance_after: runningBalance }
+    runningBalance = runningBalance - m.amount
+    return movement
+  })
 
   // Process sites
   const allSites = sitesResult.data || []
@@ -205,10 +311,9 @@ export default async function ClientLayout({
   const mainSiteId = userProfile.companies?.main_site_id || null
 
   // Build site photos map
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const sitePhotosMap: Record<string, string[]> = {}
   sitePhotos?.forEach((photo) => {
-    const url = `${supabaseUrl}/storage/v1/object/public/site-photos/${photo.storage_path}`
+    const url = getStorageUrl("site-photos", photo.storage_path)
     if (!sitePhotosMap[photo.site_id]) {
       sitePhotosMap[photo.site_id] = [url]
     } else {
@@ -258,6 +363,8 @@ export default async function ClientLayout({
     instructions: site.instructions,
     access: site.access,
     transportationLines: site.transportation_lines,
+    isCoworking: site.is_coworking ?? true,
+    isMeetingRoom: site.is_meeting_room ?? true,
   }))
 
   const isAdmin = userProfile.role === "admin"
@@ -275,7 +382,8 @@ export default async function ClientLayout({
     (userProfile.role === "user" || userProfile.role === "admin") &&
     (!userProfile.company_id ||
       !(userProfile.companies as Company | null)?.onboarding_done) &&
-    !isFromSpacebring
+    !isFromSpacebring &&
+    !isMeetingRoomOnly
   const needsProfileCompletion =
     !needsOnboarding &&
     (userProfile.role === "user" || userProfile.role === "admin") &&
@@ -288,7 +396,8 @@ export default async function ClientLayout({
     userProfile.role === "user" &&
     userProfile.company_id &&
     !userProfile.contract_id &&
-    !isFromSpacebring
+    !isFromSpacebring &&
+    !isMeetingRoomOnly
 
   // Auto-update Onboarding flag for users whose company already completed onboarding
   if (
@@ -297,7 +406,6 @@ export default async function ClientLayout({
     (userProfile.companies as Company | null)?.onboarding_done &&
     !(userProfile as Record<string, unknown>).Onboarding
   ) {
-    const adminSupabase = createAdminClient()
     adminSupabase
       .from("users")
       .update({ Onboarding: true, updated_at: new Date().toISOString() })
@@ -314,12 +422,14 @@ export default async function ClientLayout({
       creditMovements={creditMovements}
       plan={userPlan}
       sites={allSites}
-      allSites={allSites.map((s) => ({ id: s.id, name: s.name }))}
+      allSites={allSites.map((s) => ({ id: s.id, name: s.name, is_coworking: s.is_coworking, is_meeting_room: s.is_meeting_room }))}
       sitesWithDetails={sitesWithDetails}
       selectedSiteId={selectedSiteId}
       isAdmin={isAdmin}
       isDeskeoEmployee={isHopperAdmin}
       companyAdmin={companyAdmin}
+      isMeetingRoomOnly={isMeetingRoomOnly}
+      paymentStatus={paymentStatus}
     >
       {needsOnboarding && (
         <OnboardingModal
@@ -339,9 +449,11 @@ export default async function ClientLayout({
       {!needsOnboarding && !needsProfileCompletion && !needsCguAcceptance && needsContractAssignment && (
         <NoContractModal open />
       )}
+      <FailedPaymentBanner />
       <ExpiredContractBanner />
       <PwaInstallPrompt />
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <CafePassButton />
+      <div className="client-layout min-h-screen bg-background overflow-x-hidden">
         <div className="flex min-h-screen flex-col overflow-x-hidden">
           <ClientHeader />
           <main className="flex-1 overflow-x-hidden">{children}</main>

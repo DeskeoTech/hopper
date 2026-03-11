@@ -5,7 +5,7 @@ import type { User, Company } from "@/lib/types/database"
 export const userInfoSchema = z.object({
   first_name: z.string().min(1, "Le prénom est requis"),
   last_name: z.string().min(1, "Le nom est requis"),
-  phone: z.string().nullable(),
+  phone: z.string().nullable().optional(),
 })
 
 // Schema for company info validation
@@ -41,6 +41,11 @@ export function isCompanyInfoComplete(company: Company | null): boolean {
     company.address &&
     company.company_type
   )
+
+  // Off-platform and meeting-room-only clients don't need KBIS
+  if (company.from_spacebring || company.meeting_room_only) {
+    return hasBasicInfo
+  }
 
   // If SAS (multi_employee), KBIS is required
   if (company.company_type === "multi_employee") {

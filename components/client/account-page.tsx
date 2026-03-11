@@ -8,22 +8,35 @@ import { SitesListSection } from "./dashboard/sites-list-section"
 import { UserBookingsSection } from "./user-bookings-section"
 import { ContractsListSection } from "./contracts-list-section"
 import { NewsCard } from "./news-card"
+import { CreditsInfoModal } from "./credits-info-modal"
 import { useClientLayout } from "./client-layout-provider"
 import type { BookingWithDetails, ContractForDisplay, NewsPostWithSite } from "@/lib/types/database"
 import { useTranslations } from "next-intl"
+import { markNewsAsRead } from "@/lib/actions/news"
 
 const HERO_IMAGE_URL = "https://res.cloudinary.com/dhzxgl5eb/image/upload/v1769636196/DESKEO_VICTOIRE_-_LA_CASA_DESKEO_-_RDC_front_-_8_hg0jrt.jpg"
+
+export interface UnnotifiedCredit {
+  id: string
+  reason: string | null
+  allocated_credits: number
+  expiration: string | null
+}
 
 interface AccountPageProps {
   bookings: BookingWithDetails[]
   contracts: ContractForDisplay[]
   posts: NewsPostWithSite[]
   isAdmin: boolean
+  unreadNotifications?: { id: string; source_id: string; user_id: string }[]
+  unnotifiedCredit?: UnnotifiedCredit | null
 }
 
-export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPageProps) {
+export function AccountPage({ bookings, contracts, posts, isAdmin, unreadNotifications = [], unnotifiedCredit }: AccountPageProps) {
+  const [unreadCount, setUnreadCount] = useState(unreadNotifications.length)
   const t = useTranslations("")
   const { user } = useClientLayout()
+  const [creditsInfoOpen, setCreditsInfoOpen] = useState(!!unnotifiedCredit)
   const [activeTab, setActiveTab] = useState<"reservations" | "actualites">("reservations")
   const [newsPage, setNewsPage] = useState(0)
   const NEWS_PER_PAGE = 4
@@ -31,7 +44,7 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
   const visiblePosts = posts.slice(newsPage * NEWS_PER_PAGE, (newsPage + 1) * NEWS_PER_PAGE)
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-[#efe8dc] min-h-screen">
       {/* Hero Image - Full bleed on mobile, contained on desktop */}
       <div className="-mx-4 -mt-4 md:mx-0 md:mt-0">
         {/* Mobile: full bleed hero */}
@@ -43,11 +56,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
               className="h-full w-full object-cover"
             />
             {/* Top gradient + blur effect (header transition) */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#efe8dc] via-[#efe8dc]/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-[#efe8dc]/60 to-transparent" />
             {/* Bottom gradient overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent sm:via-background/40" />
-            <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-background to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#efe8dc] via-[#efe8dc]/20 to-transparent sm:via-[#efe8dc]/40" />
+            <div className="absolute inset-x-0 bottom-0 h-12 backdrop-blur-[1px] bg-gradient-to-t from-[#efe8dc] to-transparent sm:h-16 sm:backdrop-blur-[2px]" />
           </div>
         </div>
 
@@ -60,11 +73,11 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
               className="h-full w-full object-cover"
             />
             {/* Top gradient + blur effect (header transition) */}
-            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-background via-background/40 to-transparent" />
-            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-background/60 to-transparent rounded-t-[20px]" />
+            <div className="absolute inset-x-0 top-0 h-16 bg-gradient-to-b from-[#efe8dc] via-[#efe8dc]/40 to-transparent" />
+            <div className="absolute inset-x-0 top-0 h-12 backdrop-blur-[2px] bg-gradient-to-b from-[#efe8dc]/60 to-transparent rounded-t-[20px]" />
             {/* Bottom gradient + blur effect (selector transition) */}
-            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-background via-background/50 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-background to-transparent rounded-b-[20px]" />
+            <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-[#efe8dc] via-[#efe8dc]/50 to-transparent" />
+            <div className="absolute inset-x-0 bottom-0 h-16 backdrop-blur-[2px] bg-gradient-to-t from-[#efe8dc] to-transparent rounded-b-[20px]" />
           </div>
         </div>
       </div>
@@ -79,7 +92,13 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setActiveTab("reservations")}
+              onClick={() => {
+                if (activeTab === "actualites" && unreadCount > 0) {
+                  setUnreadCount(0)
+                  markNewsAsRead(unreadNotifications.map((n) => n.id))
+                }
+                setActiveTab("reservations")
+              }}
               className={cn(
                 "rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
                 activeTab === "reservations"
@@ -93,13 +112,18 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
               type="button"
               onClick={() => setActiveTab("actualites")}
               className={cn(
-                "rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
+                "relative rounded-full px-4 py-2 text-sm font-semibold uppercase tracking-wide transition-colors",
                 activeTab === "actualites"
                   ? "bg-[#1B1918] text-white"
                   : "bg-foreground/5 text-foreground"
               )}
             >
               {t("dashboard.tabs.news")}
+              {unreadCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-[#DC2626] px-1 text-[10px] font-bold text-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
             </button>
           </div>
 
@@ -111,7 +135,12 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
             posts.length > 0 ? (
               <div className="space-y-3">
                 {visiblePosts.map((post) => (
-                  <NewsCard key={post.id} post={post} variant="full" />
+                  <NewsCard
+                    key={post.id}
+                    post={post}
+                    variant="full"
+                    isUnread={unreadNotifications.some((n) => n.source_id === post.id)}
+                  />
                 ))}
 
                 {totalNewsPages > 1 && (
@@ -157,6 +186,13 @@ export function AccountPage({ bookings, contracts, posts, isAdmin }: AccountPage
         {/* Sites List */}
         <SitesListSection />
       </div>
+
+      {/* Credits Info Modal */}
+      <CreditsInfoModal
+        open={creditsInfoOpen}
+        onOpenChange={setCreditsInfoOpen}
+        credit={unnotifiedCredit}
+      />
     </div>
   )
 }
