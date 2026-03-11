@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ArrowDown, ArrowUp, ArrowUpDown, Building2, ChevronLeft, ChevronRight, Download, Info, Search, TrendingUp } from "lucide-react"
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, CartesianGrid,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from "recharts"
 import {
   Table,
@@ -715,47 +715,6 @@ const PIE_COLORS: Record<string, string> = {
   failed: "#ef4444",
 }
 
-function getDateGrouping(period: string): "hour" | "day" | "week" | "month" {
-  switch (period) {
-    case "today": return "hour"
-    case "week": return "day"
-    case "month": return "day"
-    case "3months": return "week"
-    case "year": return "month"
-    case "3years": return "month"
-    case "all": return "month"
-    default: return "day"
-  }
-}
-
-function groupPaymentsByDate(payments: StripePayment[], grouping: "hour" | "day" | "week" | "month") {
-  const buckets: Record<string, number> = {}
-  for (const p of payments) {
-    if (p.status !== "succeeded") continue
-    const d = new Date(p.date)
-    let key: string
-    switch (grouping) {
-      case "hour":
-        key = `${d.getHours()}h`
-        break
-      case "day":
-        key = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })
-        break
-      case "week": {
-        const day = d.getDay()
-        const monday = new Date(d)
-        monday.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
-        key = `S${monday.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" })}`
-        break
-      }
-      case "month":
-        key = d.toLocaleDateString("fr-FR", { month: "short", year: "2-digit" })
-        break
-    }
-    buckets[key] = (buckets[key] || 0) + p.amount / 100
-  }
-  return Object.entries(buckets).map(([name, montant]) => ({ name, montant: Math.round(montant * 100) / 100 }))
-}
 
 function getTopClients(payments: StripePayment[], limit = 8) {
   const byClient: Record<string, number> = {}
@@ -814,7 +773,7 @@ function getPriceBreakdown(payments: StripePayment[]) {
     }
   }
   return Object.entries(byPrice)
-    .sort((a, b) => b[1].revenue - a[1].revenue)
+    .sort((a, b) => a[1].revenue / a[1].count - b[1].revenue / b[1].count)
     .map(([name, data]) => ({
       name,
       value: Math.round(data.revenue * 100) / 100,
@@ -848,9 +807,6 @@ function ProductDetailModal({
   period: string
 }) {
   const style = PRODUCT_CARD_COLORS[colorIndex % PRODUCT_CARD_COLORS.length]
-  const grouping = getDateGrouping(period)
-
-  const revenueOverTime = useMemo(() => groupPaymentsByDate(payments, grouping), [payments, grouping])
   const siteBreakdown = useMemo(() => getSiteBreakdown(payments), [payments])
   const priceBreakdown = useMemo(() => getPriceBreakdown(payments), [payments])
   const topClients = useMemo(() => getTopClients(payments), [payments])
@@ -875,81 +831,27 @@ function ProductDetailModal({
         </DialogHeader>
 
         <div className="space-y-6 mt-2">
-          {/* Revenue over time */}
-          {revenueOverTime.length > 0 && (
+          {/* Price breakdown pie chart */}
+          {hasPriceData && (
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                Chiffre d&apos;affaires par {grouping === "hour" ? "heure" : grouping === "day" ? "jour" : grouping === "week" ? "semaine" : "mois"}
+                Répartition par montant payé
               </h4>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={revenueOverTime} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} interval="preserveStartEnd" />
-                    <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `${v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v}`} width={45} />
+                  <BarChart data={priceBreakdown} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
-                      formatter={(value: number) => [formatEuro(value), "CA"]}
-                      labelStyle={{ fontSize: 12 }}
+                      formatter={(value: number, name: string) => [
+                        `${value} transaction${value > 1 ? "s" : ""}`,
+                        "Nombre",
+                      ]}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                    <Bar dataKey="montant" fill={style.chart} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" fill={style.chart} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-
-          {/* Price breakdown pie chart (only for café group) */}
-          {isCafeGroup && hasPriceData && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                Répartition par prix (nombre de transactions)
-              </h4>
-              <div className="flex items-center gap-4">
-                <div className="relative shrink-0 h-[280px] w-[280px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={priceBreakdown}
-                        dataKey="count"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={110}
-                        paddingAngle={2}
-                      >
-                        {priceBreakdown.map((_, i) => (
-                          <Cell key={i} fill={SITE_PIE_COLORS[i % SITE_PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number, name: string) => {
-                          const entry = priceBreakdown.find((d) => d.name === name)
-                          return [`${value} transaction${value > 1 ? "s" : ""} — ${formatEuro(entry?.value ?? 0)}`, name]
-                        }}
-                        contentStyle={{ borderRadius: 12, fontSize: 13 }}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-center">
-                      <span className="font-header text-5xl">{priceBreakdown.length}</span>
-                      <p className="text-sm text-muted-foreground">prix</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5 min-w-0 flex-1">
-                  {priceBreakdown.map((d, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs">
-                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: SITE_PIE_COLORS[i % SITE_PIE_COLORS.length] }} />
-                      <span className="truncate text-muted-foreground">{d.name}</span>
-                      <span className="flex-1 border-b border-dotted border-border/40 min-w-[12px] mx-1" />
-                      <span className="font-bold tabular-nums shrink-0">{d.count}x</span>
-                      <span className="text-muted-foreground shrink-0">{formatEuro(d.value)}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
             </div>
           )}
