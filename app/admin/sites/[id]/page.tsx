@@ -60,7 +60,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
   const isTechAdmin = authUser?.email === "tech@deskeo.fr"
 
   const [companiesResult, userCountsResult, closuresResult] = await Promise.all([
-    supabase.from("companies").select("*").eq("main_site_id", id).order("name"),
+    supabase.from("companies").select("*, contracts(status, end_date)").eq("main_site_id", id).order("name"),
     supabase.from("users").select("company_id").not("company_id", "is", null),
     supabase.from("site_closures").select("*").eq("site_id", id).order("date", { ascending: true }),
   ])
@@ -80,7 +80,7 @@ export default async function SiteDetailsPage({ params, searchParams }: SiteDeta
     ...company,
     userCount: userCountMap[company.id] || 0,
     mainSiteName: site.name,
-    subscriptionStatus: getSubscriptionStatus(company.subscription_end_date),
+    subscriptionStatus: getSubscriptionStatus(company.subscription_end_date, company.contracts),
   }))
 
   // Build public URLs for photos

@@ -24,7 +24,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
   const isTechAdmin = authUser?.email === "tech@deskeo.fr"
 
   // Build query for companies with main site
-  let query = supabase.from("companies").select("*, main_site:sites!main_site_id(id, name)").order("name")
+  let query = supabase.from("companies").select("*, contracts(status, end_date), main_site:sites!main_site_id(id, name)").order("name")
 
   // Search: also match users by first_name, last_name or email
   let matchingCompanyIds: string[] = []
@@ -93,7 +93,7 @@ export default async function ClientsPage({ searchParams }: ClientsPageProps) {
     ...company,
     userCount: userCountMap[company.id] || 0,
     mainSiteName: company.main_site?.name || null,
-    subscriptionStatus: getSubscriptionStatus(company.subscription_end_date),
+    subscriptionStatus: getSubscriptionStatus(company.subscription_end_date, company.contracts),
   }))
 
   // Apply status filter
