@@ -19,6 +19,7 @@ import { CafeSubscriptionsSection } from "@/components/admin/company-cafe/cafe-s
 import { SpacebringSubscriptionCard } from "@/components/admin/company-edit/spacebring-subscription-card"
 import { PaymentHistorySection } from "@/components/admin/company-payments/payment-history-section"
 import { cn } from "@/lib/utils"
+import { getSubscriptionStatus } from "@/components/admin/abonnements/subscription-status-badge"
 import type { CreditMovement, AdminPassForDisplay, ContractStatus, PlanRecurrence } from "@/lib/types/database"
 
 interface CompanyDetailsPageProps {
@@ -302,10 +303,13 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
     }
   })
 
-  // Determine subscription status
-  const now = new Date()
-  const endDate = company.subscription_end_date ? new Date(company.subscription_end_date) : null
-  const isActive = !endDate || endDate > now
+  // Determine subscription status based on contracts
+  const contractsForStatus = (passesData || []).map((c) => ({
+    status: c.status as string,
+    end_date: c.end_date as string | null,
+  }))
+  const companyStatus = getSubscriptionStatus(company.subscription_end_date, contractsForStatus)
+  const isActive = companyStatus !== "inactif"
   const companyTypeLabel = company.company_type === "self_employed" ? "Indépendant" : "Multi-employés"
 
   // Computed stats for header
