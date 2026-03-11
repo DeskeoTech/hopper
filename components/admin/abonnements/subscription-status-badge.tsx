@@ -61,7 +61,7 @@ export function getSubscriptionStatus(
     const thirtyDaysFromNow = new Date(today)
     thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30)
     const contractsWithEndDate = activeContracts.filter((c) => c.end_date)
-    if (contractsWithEndDate.length > 0 && contractsWithEndDate.every((c) => {
+    if (contractsWithEndDate.length > 0 && contractsWithEndDate.length === activeContracts.length && contractsWithEndDate.every((c) => {
       const end = new Date(c.end_date!)
       end.setHours(0, 0, 0, 0)
       return end <= thirtyDaysFromNow
