@@ -109,6 +109,61 @@ export async function POST(request: Request) {
         }
         break
       }
+
+      // SEPA hors plateforme: checkout completed → create contract + save customer ID
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session
+        if (session.metadata?.type !== "sepa_hors_plateforme") break
+        if (session.mode !== "subscription") break
+
+        const companyId = session.metadata.company_id
+        const sessionSubscriptionId = typeof session.subscription === "string"
+          ? session.subscription
+          : (session.subscription as Stripe.Subscription)?.id
+
+        const customerId = typeof session.customer === "string"
+          ? session.customer
+          : (session.customer as Stripe.Customer)?.id
+
+        // Save customer_id_stripe on the company
+        if (customerId && companyId) {
+          await supabase
+            .from("companies")
+            .update({ customer_id_stripe: customerId })
+            .eq("id", companyId)
+        }
+
+        // Create contract with the off-platform plan
+        const PLAN_HORS_PLATEFORME_ID = "62ccff00-36a8-45b2-85bc-82c32d26dc62"
+        if (sessionSubscriptionId && companyId) {
+          // Idempotency: don't create duplicate contracts
+          const { data: existing } = await supabase
+            .from("contracts")
+            .select("id")
+            .eq("Subscription_ID", sessionSubscriptionId)
+            .maybeSingle()
+
+          if (!existing) {
+            await supabase.from("contracts").insert({
+              company_id: companyId,
+              plan_id: PLAN_HORS_PLATEFORME_ID,
+              Number_of_seats: 1,
+              start_date: new Date().toISOString().split("T")[0],
+              status: "active",
+              Subscription_ID: sessionSubscriptionId,
+            })
+          }
+
+          // Switch company to platform (from_spacebring → false)
+          await supabase
+            .from("companies")
+            .update({ from_spacebring: false })
+            .eq("id", companyId)
+
+          console.log(`Webhook: SEPA checkout completed for company ${companyId}, subscription ${sessionSubscriptionId}`)
+        }
+        break
+      }
     }
   } catch (err) {
     console.error("Webhook processing error:", err)

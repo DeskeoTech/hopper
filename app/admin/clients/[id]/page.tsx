@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { createClient, getUser } from "@/lib/supabase/server"
-import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2, FileText, Users, Coins, ChevronRight, Clock } from "lucide-react"
+import { ArrowLeft, Briefcase, Mail, Phone, MapPin, CreditCard, Building2, FileText, Users, Coins, ChevronRight, Clock, Banknote } from "lucide-react"
 import { EditHeaderModal } from "@/components/admin/company-edit/edit-header-modal"
 import { EditMainSiteModal } from "@/components/admin/company-edit/edit-main-site-modal"
 import { EditContactModal } from "@/components/admin/company-edit/edit-contact-modal"
 import { StripeDashboardButton } from "@/components/admin/company-edit/stripe-actions"
+import { SepaPaymentLinkDialog } from "@/components/admin/company-edit/sepa-payment-link-dialog"
 import { getCompanyPaymentStatus, getSubscriptionStatuses, getCustomerPayments } from "@/lib/actions/stripe"
 import type { StripeSubscriptionStatus } from "@/lib/actions/stripe"
 import { CompanyPaymentStatusBadge } from "@/components/admin/companies/company-payment-status-badge"
@@ -523,6 +524,24 @@ export default async function CompanyDetailsPage({ params, searchParams }: Compa
                     subscriptions={adminCafeSubscriptions}
                     companyId={company.id}
                   />
+
+                  {/* SEPA Payment Link (off-platform clients) */}
+                  {company.from_spacebring && (
+                    <div className="rounded-[20px] bg-emerald-50 p-5">
+                      <div className="mb-3 flex items-center gap-2">
+                        <Banknote className="h-5 w-5 text-emerald-600" />
+                        <span className="text-sm font-bold text-foreground">Paiement récurrent</span>
+                      </div>
+                      <p className="mb-3 text-xs text-muted-foreground">
+                        Générer un lien de paiement par prélèvement SEPA ou carte bancaire.
+                      </p>
+                      <SepaPaymentLinkDialog
+                        companyId={company.id}
+                        companyEmail={company.contact_email}
+                        companyName={company.name}
+                      />
+                    </div>
+                  )}
 
                   {/* Stripe */}
                   {company.customer_id_stripe && !company.from_spacebring && (

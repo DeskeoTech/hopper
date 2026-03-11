@@ -347,7 +347,7 @@ export function CreateCompanyModal({ sites }: CreateCompanyModalProps) {
             {step === 3 && (
               <div className="space-y-4">
                 <div className="space-y-2.5">
-                  {/* Client plateforme */}
+                  {/* Paiement en ligne */}
                   <button
                     type="button"
                     onClick={() => setClientType("platform")}
@@ -360,14 +360,14 @@ export function CreateCompanyModal({ sites }: CreateCompanyModalProps) {
                   >
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-foreground" />
-                      <span className="text-sm font-medium">Client plateforme</span>
+                      <span className="text-sm font-medium">Paiement en ligne</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Le client souscrit et paie via la plateforme Hopper (Stripe). Il a accès à tous les sites ouverts.
+                      Le client paie par carte ou prélèvement SEPA via Stripe. Il a accès à tous les sites ouverts.
                     </p>
                   </button>
 
-                  {/* Client hors plateforme */}
+                  {/* Facturation manuelle */}
                   <button
                     type="button"
                     onClick={() => setClientType("off_platform")}
@@ -380,10 +380,10 @@ export function CreateCompanyModal({ sites }: CreateCompanyModalProps) {
                   >
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-foreground" />
-                      <span className="text-sm font-medium">Client hors plateforme</span>
+                      <span className="text-sm font-medium">Facturation manuelle</span>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Le client est facturé en dehors de la plateforme (ex : virement bancaire). Il a accès à tous les sites ouverts mais n&#39;a pas d&#39;onglet facturation.
+                      Le client est facturé manuellement (virement, chèque...). Il a accès à tous les sites ouverts mais n&#39;a pas d&#39;onglet facturation.
                     </p>
                   </button>
 

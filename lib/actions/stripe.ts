@@ -712,6 +712,98 @@ export async function getCustomerPayments(stripeCustomerId: string): Promise<{
 }
 
 // ---------------------------------------------------------------------------
+// SEPA recurring payment link (off-platform clients)
+// ---------------------------------------------------------------------------
+
+async function getOrCreateSepaProduct(stripe: Stripe): Promise<string> {
+  const products = await stripe.products.list({ active: true, limit: 100 })
+  const existing = products.data.find(
+    (p) => p.metadata?.type === "sepa_hors_plateforme"
+  )
+  if (existing) return existing.id
+
+  const product = await stripe.products.create({
+    name: "Abonnement Hors Plateforme",
+    metadata: { type: "sepa_hors_plateforme" },
+  })
+  return product.id
+}
+
+export async function createSepaCheckoutSession(params: {
+  companyId: string
+  email: string
+  amountEuros: number
+}): Promise<{ url: string } | { error: string }> {
+  try {
+    const { companyId, email, amountEuros } = params
+
+    if (!email || !email.includes("@")) {
+      return { error: "Email invalide" }
+    }
+    if (!amountEuros || amountEuros <= 0) {
+      return { error: "Le montant doit être supérieur à 0" }
+    }
+
+    const supabase = createAdminClient()
+    const { data: company } = await supabase
+      .from("companies")
+      .select("main_site_id, customer_id_stripe, name")
+      .eq("id", companyId)
+      .single()
+
+    if (!company) {
+      return { error: "Entreprise introuvable" }
+    }
+
+    const stripeAccount = company.main_site_id
+      ? await getStripeAccountForSite(company.main_site_id)
+      : "hopper-coworking"
+    const stripe = getStripe(stripeAccount)
+
+    const productId = await getOrCreateSepaProduct(stripe)
+    const amountCents = Math.round(amountEuros * 100)
+    const priceId = await getOrCreateMonthlyPrice(stripe, productId, amountCents)
+
+    // Check existing Stripe customer
+    let stripeCustomerId: string | undefined
+    if (company.customer_id_stripe) {
+      try {
+        await stripe.customers.retrieve(company.customer_id_stripe)
+        stripeCustomerId = company.customer_id_stripe
+      } catch {
+        // Customer not found in Stripe
+      }
+    }
+
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/"
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
+      mode: "subscription",
+      payment_method_types: ["sepa_debit", "card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${baseUrl}/admin/clients/${companyId}?sepa_success=true`,
+      cancel_url: `${baseUrl}/admin/clients/${companyId}?sepa_canceled=true`,
+      metadata: {
+        type: "sepa_hors_plateforme",
+        company_id: companyId,
+      },
+    }
+
+    if (stripeCustomerId) {
+      sessionParams.customer = stripeCustomerId
+    } else {
+      sessionParams.customer_email = email
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams)
+    return { url: session.url! }
+  } catch (error) {
+    const errMsg = error instanceof Error ? error.message : String(error)
+    console.error("Stripe SEPA checkout error:", errMsg, error)
+    return { error: `Erreur lors de la création du lien de paiement: ${errMsg}` }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Café subscription checkout
 // ---------------------------------------------------------------------------
 
