@@ -753,14 +753,14 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     if (desc.includes("subscription") || desc.includes("souscription") || desc.includes("inscription") || desc.includes("abonnement")) {
       return { productId: "__group_abonnements", productName: "Abonnements" }
     }
-    return { productId: "__other", productName: "Factures" }
+    return { productId: "__group_factures", productName: "Factures" }
   }
 
   // Match + normalize into groups, with amount-based fallback
   function matchChargeToProduct(charge: CachedCharge): { productId: string; productName: string } {
     const result = normalizeToGroup(matchChargeToRawProduct(charge))
-    // Amount-based fallback: < 71€ and not a multiple of 36€ → Food & Beverage
-    if (result.productId === "__other" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
+    // Amount-based fallback: < 71€ and not a multiple of 36€ → Café & Beverage
+    if (result.productId === "__group_factures" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
     return result
