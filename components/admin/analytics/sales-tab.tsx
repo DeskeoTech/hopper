@@ -664,7 +664,7 @@ function ProductCard({ product, colorIndex, onClick }: { product: ProductKpisEnt
       </div>
       <p className={cn("font-header text-xl sm:text-2xl tabular-nums", style.accent)}>{formatEuro(kpis.totalRevenue)}</p>
       <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-        {product.unitPrice && <span>{formatEuro(product.unitPrice)}/unité</span>}
+        {kpis.transactionCount > 0 && <span>Moy. {formatEuro(Math.round(kpis.totalRevenue / kpis.transactionCount))}/transaction</span>}
         {kpis.totalRefunded > 0 && <span className="text-orange-500">-{formatEuro(kpis.totalRefunded)} remb.</span>}
       </div>
     </div>
@@ -797,7 +797,7 @@ function ProductDetailModal({
           </DialogTitle>
           <DialogDescription>
             {product.kpis.transactionCount} paiement{product.kpis.transactionCount > 1 ? "s" : ""} — CA net : {formatEuro(product.kpis.netRevenue)}
-            {product.unitPrice && <> — Prix unitaire : {formatEuro(product.unitPrice)}</>}
+            {product.kpis.transactionCount > 0 && <> — Moy. {formatEuro(Math.round(product.kpis.totalRevenue / product.kpis.transactionCount))}/transaction</>}
           </DialogDescription>
         </DialogHeader>
 
