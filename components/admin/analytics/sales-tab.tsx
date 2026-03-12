@@ -384,78 +384,51 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       ))}
 
       {/* CA par site */}
-      {bookings.bySite.length > 0 && (
-        <div className="rounded-[20px] bg-card p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <Building2 className="h-5 w-5 text-muted-foreground" />
-            <h3 className="font-header text-lg uppercase tracking-wide">CA par site</h3>
-            <span className="font-header text-2xl tabular-nums ml-auto text-emerald-600">
-              {formatEuro(Array.from(revenueByProductBySiteId.values()).reduce((s, v) => s + v.total, 0))}
-            </span>
-          </div>
-
-            <div className="space-y-4">
-              {(() => {
-                const siteRevenues = bookings.bySite
-                  .map((site) => {
-                    const data = revenueByProductBySiteId.get(site.siteId)
-                    return { ...site, revenue: data?.total || 0, products: data?.products || new Map<string, number>() }
-                  })
-                  .sort((a, b) => b.revenue - a.revenue)
-                const maxRevenue = siteRevenues[0]?.revenue || 1
-                return siteRevenues.map((site) => {
-                  const barWidth = Math.max(2, (site.revenue / maxRevenue) * 100)
-                  // Build product segments sorted by amount desc
-                  const segments = Array.from(site.products.entries())
-                    .map(([productId, amount]) => ({
-                      productId,
-                      amount,
-                      pct: site.revenue > 0 ? (amount / site.revenue) * 100 : 0,
-                      colorIdx: productColorMap.get(productId) ?? (PRODUCT_CARD_COLORS.length - 1),
-                    }))
-                    .sort((a, b) => b.amount - a.amount)
-                  return (
-                    <div key={site.siteId} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium truncate">{site.siteName}</p>
-                        <span className="text-sm font-bold tabular-nums text-emerald-600 shrink-0 ml-2">
-                          {formatEuro(site.revenue)}
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-muted rounded-full overflow-hidden" style={{ position: "relative" }}>
-                        <div className="h-full flex transition-all duration-500" style={{ width: `${barWidth}%` }}>
-                          {segments.map((seg, i) => (
-                            <div
-                              key={seg.productId}
-                              className="h-full transition-all duration-500"
-                              style={{
-                                width: `${seg.pct}%`,
-                                backgroundColor: PRODUCT_CARD_COLORS[seg.colorIdx % PRODUCT_CARD_COLORS.length].chart,
-                                borderRadius: i === 0 ? "9999px 0 0 9999px" : i === segments.length - 1 ? "0 9999px 9999px 0" : "0",
-                              }}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })
-              })()}
-              {/* Legend */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 pt-1">
-                {productKpis.map((p, i) => (
-                  <div key={p.productId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: PRODUCT_CARD_COLORS[i % PRODUCT_CARD_COLORS.length].chart }}
-                    />
-                    <span className="truncate">{p.productName}</span>
-                  </div>
-                ))}
-              </div>
+      {bookings.bySite.length > 0 && (() => {
+        const siteChartData = bookings.bySite
+          .map((site) => {
+            const data = revenueByProductBySiteId.get(site.siteId)
+            return { name: site.siteName, revenue: data?.total || 0 }
+          })
+          .sort((a, b) => a.revenue - b.revenue)
+        const totalSiteRevenue = siteChartData.reduce((s, d) => s + d.revenue, 0)
+        const chartHeight = Math.max(200, siteChartData.length * 40)
+        return (
+          <div className="rounded-[20px] bg-card p-4 sm:p-5">
+            <div className="flex items-center gap-3 mb-4">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+              <h3 className="font-header text-lg uppercase tracking-wide">CA par site</h3>
+              <span className="font-header text-2xl tabular-nums ml-auto text-emerald-600">
+                {formatEuro(totalSiteRevenue)}
+              </span>
             </div>
-        </div>
-      )}
+            <ResponsiveContainer width="100%" height={chartHeight}>
+              <BarChart data={siteChartData} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+                <XAxis
+                  type="number"
+                  tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`}
+                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={120}
+                  tick={{ fontSize: 12, fill: "var(--color-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  formatter={(value: number) => [formatEuro(value), "CA"]}
+                  contentStyle={{ borderRadius: 12, fontSize: 13 }}
+                />
+                <Bar dataKey="revenue" fill="#10b981" radius={[0, 6, 6, 0]} barSize={20} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )
+      })()}
 
       {/* Filters + Table */}
       <div className="rounded-[20px] bg-card p-4 sm:p-5">

@@ -697,14 +697,21 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   // Total KPIs
   const totalKpis = computeAccountKpis(allCharges)
 
-  // Normalize product variants into groups (e.g. all "Hopper Pass Day (1 Jour) - Site X" → "Hopper Pass Day")
+  // Normalize product variants into groups
   function normalizeToGroup(match: { productId: string; productName: string }): { productId: string; productName: string } {
     const n = match.productName.toLowerCase()
+    // Pass Day (all sites)
     if (n.includes("pass day") || n.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
+    // Pass Week (all sites)
     if (n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
-    if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_pass_month", productName: "Hopper Pass Month" }
-    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_credits", productName: "Crédits Hopper" }
-    if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice")) return { productId: "__group_cafe", productName: "Café, Food & Beverage" }
+    // Abonnements: pass month + résident + formules
+    if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    if (n.includes("résident") || n.includes("resident")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    if (n.startsWith("formule ")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    // Food & Beverage: café, coffee, espresso, latte, juice, color latte, infinity coffee
+    if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice") || n.includes("café à la carte")) return { productId: "__group_cafe", productName: "Food & Beverage" }
+    // Crédits → Factures
+    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_factures", productName: "Factures" }
     return match
   }
 
@@ -732,19 +739,19 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       if (charge.bookingType.includes("Week")) return { productId: "__pass_week", productName: "Hopper Pass Week" }
       if (charge.bookingType.includes("Month")) return { productId: "__pass_month", productName: "Hopper Pass Month" }
     }
-    // 4. Fallback: subscription-related charges → Pass Month
+    // 4. Fallback: subscription-related charges → Abonnements
     if (desc.includes("subscription") || desc.includes("abonnement")) {
-      return { productId: "__pass_month", productName: "Hopper Pass Month" }
+      return { productId: "__group_abonnements", productName: "Abonnements" }
     }
-    return { productId: "__other", productName: "Pass & Abonnements" }
+    return { productId: "__other", productName: "Factures" }
   }
 
   // Match + normalize into groups, with amount-based fallback
   function matchChargeToProduct(charge: CachedCharge): { productId: string; productName: string } {
     const result = normalizeToGroup(matchChargeToRawProduct(charge))
-    // Amount-based fallback: < 71€ and not a multiple of 36€ → Café, Food & Beverage
+    // Amount-based fallback: < 71€ and not a multiple of 36€ → Food & Beverage
     if (result.productId === "__other" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
-      return { productId: "__group_cafe", productName: "Café, Food & Beverage" }
+      return { productId: "__group_cafe", productName: "Food & Beverage" }
     }
     return result
   }
@@ -755,8 +762,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     const groupKeywords: Record<string, string[]> = {
       "__group_pass_day": ["pass day"],
       "__group_pass_week": ["pass week"],
-      "__group_pass_month": ["pass month", "pass mois", "pass mensuel"],
-      "__group_credits": ["crédit", "credit"],
+      "__group_abonnements": ["pass month", "pass mois", "résident", "formule"],
+      "__group_factures": ["crédit", "credit"],
       "__group_cafe": ["café", "coffee", "espresso", "latte", "juice"],
     }
     const keywords = groupKeywords[groupId]
