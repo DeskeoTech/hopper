@@ -709,7 +709,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     if (n.includes("résident") || n.includes("resident")) return { productId: "__group_abonnements", productName: "Abonnements" }
     if (n.startsWith("formule ")) return { productId: "__group_abonnements", productName: "Abonnements" }
     // Food & Beverage: café, coffee, espresso, latte, juice, color latte, infinity coffee
-    if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice") || n.includes("café à la carte")) return { productId: "__group_cafe", productName: "Food & Beverage" }
+    if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice") || n.includes("café à la carte")) return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     // Crédits → Factures
     if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_factures", productName: "Factures" }
     return match
@@ -739,7 +739,15 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       if (charge.bookingType.includes("Week")) return { productId: "__pass_week", productName: "Hopper Pass Week" }
       if (charge.bookingType.includes("Month")) return { productId: "__pass_month", productName: "Hopper Pass Month" }
     }
-    // 4. Fallback: subscription-related charges → Abonnements
+    // 4. Fallback: detect pass day/week/month in description (priority over subscription)
+    if (desc.includes("pass day") || desc.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
+    if (desc.includes("pass week") || desc.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
+    if (desc.includes("pass month") || desc.includes("pass mois") || desc.includes("pass mensuel")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    // 5. Fallback: café/food/beverage in description (priority over generic subscription)
+    if (desc.includes("café") || desc.includes("cafe") || desc.includes("coffee") || desc.includes("espresso") || desc.includes("latte") || desc.includes("juice")) {
+      return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
+    }
+    // 6. Fallback: generic subscription/abonnement → fourre-tout Abonnements
     if (desc.includes("subscription") || desc.includes("abonnement")) {
       return { productId: "__group_abonnements", productName: "Abonnements" }
     }
@@ -751,7 +759,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     const result = normalizeToGroup(matchChargeToRawProduct(charge))
     // Amount-based fallback: < 71€ and not a multiple of 36€ → Food & Beverage
     if (result.productId === "__other" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
-      return { productId: "__group_cafe", productName: "Food & Beverage" }
+      return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
     return result
   }

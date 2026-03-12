@@ -391,7 +391,12 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
           const data = revenueByProductBySiteId.get(site.siteId)
           if (data) data.products.forEach((_, pid) => allProductIds.add(pid))
         })
-        const productIds = Array.from(allProductIds)
+        // Sort products by total revenue descending (largest at bottom of stack)
+        const productIds = Array.from(allProductIds).sort((a, b) => {
+          const totalA = bookings.bySite.reduce((s, site) => s + (revenueByProductBySiteId.get(site.siteId)?.products.get(a) || 0), 0)
+          const totalB = bookings.bySite.reduce((s, site) => s + (revenueByProductBySiteId.get(site.siteId)?.products.get(b) || 0), 0)
+          return totalB - totalA
+        })
 
         // Build chart data: each site has a key per product
         const siteChartData = bookings.bySite
