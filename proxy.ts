@@ -67,12 +67,10 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // All non-public routes require authentication
+  // All non-public routes require authentication (deny by default)
   if (!user) {
-    const url = request.nextUrl.clone()
-    url.pathname = "/login"
-    url.searchParams.set("error", "not_connected")
-    return NextResponse.redirect(url)
+    // Rewrite vers 404 au lieu de redirect /login pour éviter le phishing
+    return NextResponse.rewrite(new URL("/not-found", request.url))
   }
 
   // If user is authenticated, check is_hopper_admin flag for admin routes
