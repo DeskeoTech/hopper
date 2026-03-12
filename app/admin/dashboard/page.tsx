@@ -758,6 +758,10 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       if (charge.bookingType.includes("Day") || charge.bookingType.includes("Week")) return { productId: "__pass_day", productName: "Hopper Pass Day & Week" }
       if (charge.bookingType.includes("Month")) return { productId: "__pass_month", productName: "Hopper Pass Month" }
     }
+    // 4. Fallback: subscription-related charges → Pass Month
+    if (desc.includes("subscription") || desc.includes("abonnement")) {
+      return { productId: "__pass_month", productName: "Hopper Pass Month" }
+    }
     return { productId: "__other", productName: "Pass & Abonnements" }
   }
 
@@ -827,7 +831,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
         date: new Date(c.created * 1000).toISOString(),
         amount: c.amount,
         status: c.status as "succeeded" | "pending" | "failed",
-        description: c.description || "Paiement Stripe",
+        description: c.description || raw.productName || matched.productName,
         companyId: company?.id || "",
         companyName: company?.name || c.billingName || "—",
         customerEmail: c.billingEmail || c.receiptEmail || null,

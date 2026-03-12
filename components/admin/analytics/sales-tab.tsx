@@ -823,6 +823,13 @@ function ProductDetailModal({
   const isCafeGroup = product.productId === "__group_cafe"
   const hasSiteData = siteBreakdown.length > 1
   const hasPriceData = priceBreakdown.length > 1
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null)
+  const selectedPricePayments = useMemo(() => {
+    if (!selectedPrice) return []
+    return payments
+      .filter((p) => p.status === "succeeded" && formatEuro(p.amount / 100) === selectedPrice)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [payments, selectedPrice])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -844,23 +851,84 @@ function ProductDetailModal({
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
                 Répartition par montant payé
+                {selectedPrice && (
+                  <button onClick={() => setSelectedPrice(null)} className="ml-2 text-[10px] text-muted-foreground/60 hover:text-muted-foreground normal-case tracking-normal font-normal">
+                    ✕ Effacer la sélection
+                  </button>
+                )}
               </h4>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={priceBreakdown} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                  <BarChart
+                    data={priceBreakdown}
+                    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                    onClick={(state) => {
+                      if (state?.activePayload?.[0]) {
+                        const clickedPrice = state.activePayload[0].payload.name as string
+                        setSelectedPrice(clickedPrice === selectedPrice ? null : clickedPrice)
+                      }
+                    }}
+                    className="cursor-pointer"
+                  >
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip
-                      formatter={(value: number, name: string) => [
+                      formatter={(value: number) => [
                         `${value} transaction${value > 1 ? "s" : ""}`,
                         "Nombre",
                       ]}
                       contentStyle={{ fontSize: 12, borderRadius: 8 }}
                     />
-                    <Bar dataKey="count" fill={style.chart} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {priceBreakdown.map((entry, i) => (
+                        <Cell
+                          key={i}
+                          fill={style.chart}
+                          opacity={selectedPrice && entry.name !== selectedPrice ? 0.25 : 1}
+                        />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              {selectedPrice && selectedPricePayments.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
+                    {selectedPricePayments.length} paiement{selectedPricePayments.length > 1 ? "s" : ""} à {selectedPrice}
+                  </h4>
+                  <div className="overflow-x-auto max-h-[200px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">Date</TableHead>
+                          <TableHead className="text-xs">Client</TableHead>
+                          <TableHead className="text-xs hidden sm:table-cell">Description</TableHead>
+                          <TableHead className="text-xs text-right">Montant</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {selectedPricePayments.map((p) => (
+                          <TableRow
+                            key={p.id}
+                            className={cn(p.receiptUrl && "cursor-pointer hover:bg-muted/50 transition-colors")}
+                            onClick={() => p.receiptUrl && window.open(p.receiptUrl, "_blank")}
+                          >
+                            <TableCell className="text-sm whitespace-nowrap">{new Date(p.date).toLocaleDateString("fr-FR")}</TableCell>
+                            <TableCell className="text-sm font-medium truncate max-w-[150px]">{p.companyName}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground truncate max-w-[200px] hidden sm:table-cell">{p.description}</TableCell>
+                            <TableCell className="text-sm font-medium tabular-nums text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                {formatEuro(p.amount / 100)}
+                                {p.receiptUrl && <ExternalLink className="h-3 w-3 text-muted-foreground/50" />}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
