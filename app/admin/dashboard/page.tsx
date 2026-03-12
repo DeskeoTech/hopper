@@ -647,11 +647,14 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   const salesBusinessDays = countBusinessDays(periodStart, periodEnd)
 
   // Fetch companies lookup + all Stripe accounts + products + sessions + bookings data in parallel
-  const [companiesStripeResult, coworkingCharges, icadeCharges, collectionCharges, coworkingProducts, icadeProducts, collectionProducts, coworkingSessions, icadeSessions, collectionSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
+  const [companiesStripeResult, contractsResult, coworkingCharges, icadeCharges, collectionCharges, coworkingProducts, icadeProducts, collectionProducts, coworkingSessions, icadeSessions, collectionSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
     supabase
       .from("companies")
       .select("id, name, customer_id_stripe, main_site_id")
       .not("customer_id_stripe", "is", null),
+    supabase
+      .from("contracts")
+      .select("id, company_id, Number_of_seats"),
     fetchStripeChargesCached("hopper-coworking", createdGte, createdLte),
     fetchStripeChargesCached("icade", createdGte, createdLte),
     fetchStripeChargesCached("collection", createdGte, createdLte),
@@ -678,6 +681,14 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   ;(companiesStripeResult.data || []).forEach((c) => {
     if (c.customer_id_stripe) {
       stripeCustomerToCompany.set(c.customer_id_stripe, { id: c.id, name: c.name, siteId: c.main_site_id })
+    }
+  })
+
+  // Build company → total seats lookup from contracts
+  const companySeats = new Map<string, number>()
+  ;(contractsResult.data || []).forEach((c) => {
+    if (c.company_id && c.Number_of_seats) {
+      companySeats.set(c.company_id, (companySeats.get(c.company_id) || 0) + Number(c.Number_of_seats))
     }
   })
 
@@ -803,12 +814,30 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     }
   }
 
+  // Compute total seats for companies that paid invoices (Factures)
+  const facturesData = chargesByProduct.get("__group_factures")
+  let facturesTotalSeats = 0
+  if (facturesData) {
+    const uniqueCompanyIds = new Set<string>()
+    for (const charge of facturesData.charges) {
+      if (charge.status !== "succeeded") continue
+      const company = charge.customer ? stripeCustomerToCompany.get(charge.customer) : null
+      if (company?.id) uniqueCompanyIds.add(company.id)
+    }
+    for (const companyId of uniqueCompanyIds) {
+      facturesTotalSeats += companySeats.get(companyId) || 0
+    }
+  }
+
   const productKpis = Array.from(chargesByProduct.entries())
     .map(([productId, data]) => ({
       productId,
       productName: data.productName,
       unitPrice: data.unitPrice,
       kpis: computeAccountKpis(data.charges),
+      ...(productId === "__group_factures" && facturesTotalSeats > 0
+        ? { totalSeats: facturesTotalSeats }
+        : {}),
     }))
     .filter((p) => p.kpis.transactionCount > 0)
     .sort((a, b) => b.kpis.totalRevenue - a.kpis.totalRevenue)

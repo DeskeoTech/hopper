@@ -61,6 +61,7 @@ export interface ProductKpisEntry {
   productName: string
   unitPrice: number | null
   kpis: AccountKpis
+  totalSeats?: number
 }
 
 export interface BookingBySite {
@@ -663,9 +664,16 @@ function ProductCard({ product, colorIndex, onClick }: { product: ProductKpisEnt
         </span>
       </div>
       <p className={cn("font-header text-xl sm:text-2xl tabular-nums", style.accent)}>{formatEuro(kpis.totalRevenue)}</p>
-      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-        {kpis.transactionCount > 0 && <span>Moy. {formatEuro(Math.round(kpis.totalRevenue / kpis.transactionCount))}/transaction</span>}
-        {kpis.totalRefunded > 0 && <span className="text-orange-500">-{formatEuro(kpis.totalRefunded)} remb.</span>}
+      <div className="flex flex-col gap-1 mt-2 text-xs text-muted-foreground">
+        <div className="flex items-center gap-3">
+          {kpis.transactionCount > 0 && <span>Moy. {formatEuro(Math.round(kpis.totalRevenue / kpis.transactionCount))}/transaction</span>}
+          {kpis.totalRefunded > 0 && <span className="text-orange-500">-{formatEuro(kpis.totalRefunded)} remb.</span>}
+        </div>
+        {product.totalSeats != null && product.totalSeats > 0 && (
+          <div className="flex items-center gap-3">
+            <span>{product.totalSeats} seats — Moy. {formatEuro(Math.round(kpis.totalRevenue / product.totalSeats))}/seat</span>
+          </div>
+        )}
       </div>
     </div>
   )
