@@ -157,6 +157,9 @@
   html {
     scrollbar-gutter: stable;
   }
+  html:has(.client-layout) {
+    scrollbar-gutter: auto;
+  }
   html:has(.reservation-layout),
   html:has(.reservation-layout) body {
     overflow: hidden;
