@@ -1,13 +1,12 @@
 "use client"
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
-import { DoorOpen, Armchair, Building2, Info } from "lucide-react"
-import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 import { TopMeetingRoomsCard } from "./top-meeting-rooms-card"
 import { TopSitesCard } from "./top-sites-card"
-import { KpiGrid, MonthlyBookingsSummaryCard, type CompanyBreakdown, type WeeklyBookingsByType, type BookingDetail } from "./kpi-grid"
+import { KpiGrid, type CompanyBreakdown, type WeeklyBookingsByType, type BookingDetail } from "./kpi-grid"
 
 interface BookingBySite {
   siteId: string
@@ -68,11 +67,8 @@ export interface OverviewTabProps {
   // Bookings per site
   bookingsBySite: BookingBySite[]
   totalBookingCount: number
-  // Availability today
-  totalBenchAvailable: number
-  totalBenchCapacity: number
-  totalMeetingRoomAvailable: number
-  totalMeetingRoomCapacity: number
+  // Site capacities
+  siteCapacities: { siteId: string; siteName: string; capacity: number; occupied: number }[]
   // Cancellation
   cancellationRate: number
   cancelledCount: number
@@ -90,6 +86,8 @@ export interface OverviewTabProps {
   // Period
   period: string
   periodMode: string
+  periodStartDate: string
+  periodEndDate: string
 }
 
 export function OverviewTab({
@@ -97,10 +95,7 @@ export function OverviewTab({
   bookingsCount,
   bookingsBySite,
   totalBookingCount,
-  totalBenchAvailable,
-  totalBenchCapacity,
-  totalMeetingRoomAvailable,
-  totalMeetingRoomCapacity,
+  siteCapacities,
   cancellationRate,
   cancelledCount,
   totalBookings,
@@ -114,6 +109,8 @@ export function OverviewTab({
   meetingRoomBookings,
   period,
   periodMode,
+  periodStartDate,
+  periodEndDate,
 }: OverviewTabProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -170,6 +167,9 @@ export function OverviewTab({
             >
               {periodMode === "calendar" ? "Calendaire" : "Glissant"}
             </button>
+            <span className="text-xs text-muted-foreground tabular-nums ml-1">
+              {periodStartDate === periodEndDate ? periodStartDate : `${periodStartDate} — ${periodEndDate}`}
+            </span>
           </>
         )}
       </div>
@@ -190,41 +190,28 @@ export function OverviewTab({
         meetingRoomBookings={meetingRoomBookings}
       />
 
-      {/* Row 2: Occupation des espaces + Disponibilité temps réel */}
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-5">
-        <div className="lg:col-span-3 rounded-[20px] bg-card p-5">
+      {/* Row 2: Occupation des espaces par site */}
+      <div>
+        <div className="rounded-[20px] bg-card p-5">
           <div className="flex items-center gap-3 mb-1">
             <Building2 className="h-5 w-5 text-muted-foreground" />
-            <h2 className="font-header text-lg uppercase tracking-wide">Occupation des espaces</h2>
-            <TooltipProvider>
-              <UITooltip>
-                <TooltipTrigger asChild>
-                  <Info className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[240px] text-center">
-                  Nombre de réservations pondéré par la capacité des salles (ex : 1 réservation d&apos;une salle de 4 places = 4)
-                </TooltipContent>
-              </UITooltip>
-            </TooltipProvider>
+            <h2 className="font-header text-lg uppercase tracking-wide">Occupation par site</h2>
             <span className="font-header text-2xl tabular-nums ml-auto">
-              {totalBookingCount}
+              {siteCapacities.reduce((s, site) => s + site.occupied, 0)} / {siteCapacities.reduce((s, site) => s + site.capacity, 0)}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground mb-4">{pLabel}</p>
-          {bookingsBySite.length > 0 ? (
+          <p className="text-sm text-muted-foreground mb-4">Capacité des sites — {pLabel}</p>
+          {siteCapacities.length > 0 ? (
             <div className="space-y-2.5">
-              {bookingsBySite.map((site) => {
-                const maxCount = bookingsBySite[0]?.bookingCount || 1
-                const barWidth = Math.max(2, (site.bookingCount / maxCount) * 100)
-                const occupancy = site.dailyCapacity > 0 ? Math.min(100, Math.round((site.dailyAvg / site.dailyCapacity) * 100)) : 0
+              {siteCapacities.map((site) => {
+                const occupancy = site.capacity > 0 ? Math.min(100, Math.round((site.occupied / site.capacity) * 100)) : 0
                 return (
                   <div key={site.siteId} className="space-y-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium truncate">{site.siteName}</p>
                       <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-bold tabular-nums">{site.bookingCount}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {site.dailyAvg}/{site.dailyCapacity} places/j
+                        <span className="text-sm tabular-nums text-muted-foreground">
+                          {site.occupied}/{site.capacity} places
                         </span>
                         <span className={cn(
                           "text-xs font-bold tabular-nums",
@@ -239,7 +226,7 @@ export function OverviewTab({
                     <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500 bg-muted-foreground/40"
-                        style={{ width: `${barWidth}%` }}
+                        style={{ width: `${occupancy}%` }}
                       />
                     </div>
                   </div>
@@ -248,73 +235,11 @@ export function OverviewTab({
             </div>
           ) : (
             <p className="text-center text-muted-foreground py-8">
-              Aucune réservation
+              Aucun site
             </p>
           )}
         </div>
 
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="rounded-[20px] bg-card p-5 flex-1">
-            <h2 className="font-header text-lg uppercase tracking-wide mb-4">Disponibilité — {pLabel}</h2>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                    <Armchair className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Places de travail</p>
-                    <p className="text-xs text-muted-foreground">
-                      {totalBenchAvailable} / {totalBenchCapacity} disponibles/j
-                    </p>
-                  </div>
-                </div>
-                <span className="font-header text-2xl">
-                  {totalBenchCapacity > 0 ? Math.round((totalBenchAvailable / totalBenchCapacity) * 100) : 0}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-muted-foreground/40 transition-all duration-500"
-                  style={{ width: `${totalBenchCapacity > 0 ? (totalBenchAvailable / totalBenchCapacity) * 100 : 0}%` }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                    <DoorOpen className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Salles de réunion</p>
-                    <p className="text-xs text-muted-foreground">
-                      {totalMeetingRoomAvailable} / {totalMeetingRoomCapacity} disponibles/j
-                    </p>
-                  </div>
-                </div>
-                <span className="font-header text-2xl">
-                  {totalMeetingRoomCapacity > 0 ? Math.round((totalMeetingRoomAvailable / totalMeetingRoomCapacity) * 100) : 0}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-muted-foreground/40 transition-all duration-500"
-                  style={{ width: `${totalMeetingRoomCapacity > 0 ? (totalMeetingRoomAvailable / totalMeetingRoomCapacity) * 100 : 0}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <MonthlyBookingsSummaryCard
-            monthlyBookingsCount={bookingsCount}
-            cancelledCount={cancelledCount}
-            cancellationRate={cancellationRate}
-            totalBookingsThisMonth={totalBookings}
-            cancelledBookings={cancelledBookings}
-            confirmedBookings={confirmedBookings}
-            periodLabel={pLabel}
-          />
-        </div>
       </div>
 
       {/* Row 3: Top rankings */}

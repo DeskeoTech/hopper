@@ -285,71 +285,162 @@ function BookingsKpiCard({
   bookingsByType,
   flexDeskBookings,
   meetingRoomBookings,
+  cancelledCount,
+  totalBookings,
+  cancellationRate,
+  cancelledBookings,
+  confirmedBookings,
   periodLabel,
 }: {
   bookingsCount: number
   bookingsByType: WeeklyBookingsByType
   flexDeskBookings: BookingDetail[]
   meetingRoomBookings: BookingDetail[]
+  cancelledCount: number
+  totalBookings: number
+  cancellationRate: number
+  cancelledBookings: BookingDetail[]
+  confirmedBookings: BookingDetail[]
   periodLabel: string
 }) {
+  const [open, setOpen] = useState(false)
   const [flexExpanded, setFlexExpanded] = useState(false)
   const [meetingExpanded, setMeetingExpanded] = useState(false)
+  const [confirmedExpanded, setConfirmedExpanded] = useState(false)
+  const [cancelledExpanded, setCancelledExpanded] = useState(false)
 
   return (
-    <KpiCard
-      title="Réservations"
-      value={bookingsCount}
-      icon={Calendar}
-      dialogTitle={`Réservations — ${periodLabel}`}
-    >
-      <div className="space-y-0">
-        {/* Flex desk expandable row */}
-        <button
-          type="button"
-          onClick={() => setFlexExpanded(!flexExpanded)}
-          className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
-        >
-          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-            Places de travail (flex desk)
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", flexExpanded && "rotate-180")} />
-          </span>
-          <span className="text-sm font-bold tabular-nums">{bookingsByType.flexDesk}</span>
-        </button>
-        <div className={cn(
-          "overflow-hidden transition-all duration-200",
-          flexExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-        )}>
-          <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
-            <BookingsList bookings={flexDeskBookings} />
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button className="rounded-[20px] bg-card p-4 sm:p-5 text-left transition-all hover:shadow-md group w-full">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Réservations
+                </p>
+                <ChevronRight className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div className="flex items-baseline gap-3 mt-2">
+                <span className="font-header text-2xl sm:text-3xl text-foreground">
+                  {bookingsCount}
+                </span>
+                {cancelledCount > 0 && (
+                  <span className="text-sm font-medium text-red-500 tabular-nums">
+                    {cancelledCount} annulée{cancelledCount > 1 ? "s" : ""}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-muted">
+              <Calendar className="h-5 w-5 text-muted-foreground" />
+            </div>
           </div>
-        </div>
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="font-header text-xl">Réservations — {periodLabel}</DialogTitle>
+        </DialogHeader>
+        <div className="mt-2 max-h-[60vh] overflow-y-auto">
+          {/* Two columns: Par type | Par statut */}
+          <div className="grid grid-cols-2 gap-0">
+            {/* Par type */}
+            <div className="pr-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Par type</p>
+              <button
+                type="button"
+                onClick={() => setFlexExpanded(!flexExpanded)}
+                className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors rounded"
+              >
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  Flex desk
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", flexExpanded && "rotate-180")} />
+                </span>
+                <span className="text-sm font-bold tabular-nums">{bookingsByType.flexDesk}</span>
+              </button>
+              <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                flexExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+              )}>
+                <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+                  <BookingsList bookings={flexDeskBookings} />
+                </div>
+              </div>
 
-        {/* Meeting room expandable row */}
-        <button
-          type="button"
-          onClick={() => setMeetingExpanded(!meetingExpanded)}
-          className="flex items-center justify-between py-2.5 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
-        >
-          <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-            Salles de réunion
-            <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", meetingExpanded && "rotate-180")} />
-          </span>
-          <span className="text-sm font-bold tabular-nums">{bookingsByType.meetingRoom}</span>
-        </button>
-        <div className={cn(
-          "overflow-hidden transition-all duration-200",
-          meetingExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-        )}>
-          <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
-            <BookingsList bookings={meetingRoomBookings} />
+              <button
+                type="button"
+                onClick={() => setMeetingExpanded(!meetingExpanded)}
+                className="flex items-center justify-between py-2.5 w-full text-left hover:bg-muted/30 transition-colors rounded"
+              >
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  Salles de réunion
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", meetingExpanded && "rotate-180")} />
+                </span>
+                <span className="text-sm font-bold tabular-nums">{bookingsByType.meetingRoom}</span>
+              </button>
+              <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                meetingExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+              )}>
+                <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+                  <BookingsList bookings={meetingRoomBookings} />
+                </div>
+              </div>
+            </div>
+
+            {/* Vertical separator + Par statut */}
+            <div className="pl-4 border-l border-border">
+              <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-1">Par statut</p>
+              <button
+                type="button"
+                onClick={() => setConfirmedExpanded(!confirmedExpanded)}
+                className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors rounded"
+              >
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  Confirmées
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", confirmedExpanded && "rotate-180")} />
+                </span>
+                <span className="text-sm font-bold tabular-nums">{bookingsCount}</span>
+              </button>
+              <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                confirmedExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+              )}>
+                <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
+                  <BookingsList bookings={confirmedBookings} />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCancelledExpanded(!cancelledExpanded)}
+                className="flex items-center justify-between py-2.5 w-full text-left hover:bg-muted/30 transition-colors rounded"
+              >
+                <span className="text-sm text-muted-foreground flex items-center gap-1">
+                  Annulées
+                  <ChevronDown className={cn("h-3 w-3 transition-transform", cancelledExpanded && "rotate-180")} />
+                </span>
+                <span className="text-sm font-bold tabular-nums text-red-500">{cancelledCount}</span>
+              </button>
+              <div className={cn(
+                "overflow-hidden transition-all duration-200",
+                cancelledExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
+              )}>
+                <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-red-300 ml-1 my-1.5">
+                  <BookingsList bookings={cancelledBookings} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-border">
+            <DetailRow label="Total (confirmées + annulées)" value={totalBookings} />
+            <DetailRow label="Taux d'annulation" value={`${cancellationRate}%`} color={cancellationRate > 20 ? "text-red-500" : cancellationRate > 10 ? "text-orange-500" : "text-green-600"} />
           </div>
         </div>
-      </div>
-      <div className="mt-4 pt-3 border-t border-border">
-        <DetailRow label="Total" value={bookingsCount} />
-      </div>
-    </KpiCard>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -468,6 +559,11 @@ export function KpiGrid({
         bookingsByType={bookingsByType}
         flexDeskBookings={flexDeskBookings}
         meetingRoomBookings={meetingRoomBookings}
+        cancelledCount={cancelledCount}
+        totalBookings={totalBookings}
+        cancellationRate={cancellationRate}
+        cancelledBookings={cancelledBookings}
+        confirmedBookings={confirmedBookings}
         periodLabel={periodLabel}
       />
 
@@ -483,98 +579,3 @@ export function KpiGrid({
   )
 }
 
-// === Monthly bookings summary card (used outside KPI grid) ===
-
-export function MonthlyBookingsSummaryCard({
-  monthlyBookingsCount,
-  cancelledCount,
-  cancellationRate,
-  totalBookingsThisMonth,
-  cancelledBookings,
-  confirmedBookings,
-  periodLabel,
-}: {
-  monthlyBookingsCount: number
-  cancelledCount: number
-  cancellationRate: number
-  totalBookingsThisMonth: number
-  cancelledBookings: BookingDetail[]
-  confirmedBookings: BookingDetail[]
-  periodLabel: string
-}) {
-  const [open, setOpen] = useState(false)
-  const [cancelledExpanded, setCancelledExpanded] = useState(false)
-  const [confirmedExpanded, setConfirmedExpanded] = useState(false)
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <button className="rounded-[20px] bg-card p-5 text-left transition-all hover:shadow-md group w-full">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Réservations — {periodLabel}</p>
-              <p className="font-header text-3xl mt-1">{monthlyBookingsCount}</p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Annulées</p>
-              <p className="font-header text-3xl mt-1 text-red-500">{cancelledCount}</p>
-            </div>
-          </div>
-        </button>
-      </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="font-header text-xl">Réservations — {periodLabel}</DialogTitle>
-        </DialogHeader>
-        <div className="mt-2 max-h-[60vh] overflow-y-auto">
-          <div className="space-y-0">
-            {/* Confirmed bookings */}
-            <button
-              type="button"
-              onClick={() => setConfirmedExpanded(!confirmedExpanded)}
-              className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
-            >
-              <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                Réservations confirmées
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", confirmedExpanded && "rotate-180")} />
-              </span>
-              <span className="text-sm font-bold tabular-nums">{monthlyBookingsCount}</span>
-            </button>
-            <div className={cn(
-              "overflow-hidden transition-all duration-200",
-              confirmedExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-            )}>
-              <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-border ml-1 my-1.5">
-                <BookingsList bookings={confirmedBookings} />
-              </div>
-            </div>
-
-            {/* Cancelled bookings */}
-            <button
-              type="button"
-              onClick={() => setCancelledExpanded(!cancelledExpanded)}
-              className="flex items-center justify-between py-2.5 border-b border-border/50 w-full text-left hover:bg-muted/30 transition-colors -mx-1 px-1 rounded"
-            >
-              <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                Réservations annulées
-                <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", cancelledExpanded && "rotate-180")} />
-              </span>
-              <span className="text-sm font-bold tabular-nums text-red-500">{cancelledCount}</span>
-            </button>
-            <div className={cn(
-              "overflow-hidden transition-all duration-200",
-              cancelledExpanded ? "max-h-[300px] opacity-100" : "max-h-0 opacity-0"
-            )}>
-              <div className="overflow-y-auto max-h-[280px] rounded-sm bg-muted/40 border-l-2 border-red-300 ml-1 my-1.5">
-                <BookingsList bookings={cancelledBookings} />
-              </div>
-            </div>
-
-            <DetailRow label="Total" value={totalBookingsThisMonth} />
-            <DetailRow label="Taux d'annulation" value={`${cancellationRate}%`} color={cancellationRate > 20 ? "text-red-500" : cancellationRate > 10 ? "text-orange-500" : "text-green-600"} />
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  )
-}

@@ -27,7 +27,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const params = await searchParams
   const today = new Date().toISOString().split("T")[0]
   const selectedDate = params.date || today
-  const activeTab = params.tab || "overview"
+  const activeTab = params.tab || "sales"
   const now = new Date(selectedDate + "T12:00:00")
   const isViewingToday = isToday(now)
 
@@ -50,14 +50,14 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   const tabs = [
     {
-      value: "overview",
-      label: "Vue d'ensemble",
-      content: overviewContent ?? <div />,
+      value: "sales",
+      label: "Chiffre d'affaires",
+      content: salesContent ?? <div />,
     },
     {
-      value: "sales",
-      label: "Ventes",
-      content: salesContent ?? <div />,
+      value: "overview",
+      label: "Occupation",
+      content: overviewContent ?? <div />,
     },
     {
       value: "marketing",
@@ -120,6 +120,7 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
   const [
     companiesResult,
     resourcesResult,
+    sitesCapacityResult,
     bookingsPeriodResult,
     bookingsCountResult,
     meetingRoomBookingsResult,
@@ -141,6 +142,11 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
       .from("resources")
       .select("id, site_id, type, capacity, site:sites!inner(id, name, status)")
       .eq("sites.status", "open"),
+    // Sites with capacity
+    supabase
+      .from("sites")
+      .select("id, name, capacity, status")
+      .eq("status", "open"),
     // Bookings in period (for occupation calc)
     supabase
       .from("bookings")
@@ -273,52 +279,17 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
 
   const overviewTotalBookingCount = bookingsBySite.reduce((sum, s) => sum + s.bookingCount, 0)
 
-  // Today's availability
-  const siteResourcesByType = new Map<string, { benchCap: number; meetingCap: number }>()
-  resources.forEach((r) => {
-    if (r.site_id) {
-      const capacity = r.capacity || 1
-      const type = r.type as ResourceType
-      const existing = siteResourcesByType.get(r.site_id)
-      if (existing) {
-        if (type === "flex_desk") existing.benchCap += capacity
-        else if (type === "meeting_room") existing.meetingCap += capacity
-      } else {
-        siteResourcesByType.set(r.site_id, {
-          benchCap: type === "flex_desk" ? capacity : 0,
-          meetingCap: type === "meeting_room" ? capacity : 0,
-        })
-      }
-    }
-  })
-
-  let totalBenchCapacity = 0
-  let totalBenchBooked = 0
-  let totalMeetingRoomCapacity = 0
-  let totalMeetingRoomBooked = 0
-
-  siteResourcesByType.forEach((site) => {
-    totalBenchCapacity += site.benchCap
-    totalMeetingRoomCapacity += site.meetingCap
-  })
-
-  const resourceTypeMap = new Map<string, ResourceType>()
-  resources.forEach((r) => {
-    resourceTypeMap.set(r.id, r.type as ResourceType)
-  })
-
-  bookingsPeriod.forEach((b) => {
-    if (b.resource_id) {
-      const type = resourceTypeMap.get(b.resource_id)
-      const seats = b.seats_count || 1
-      if (type === "flex_desk") totalBenchBooked += seats
-      else if (type === "meeting_room") totalMeetingRoomBooked += seats
-    }
-  })
-
-  // Daily average for the period
-  totalBenchBooked = Math.round(totalBenchBooked / overviewBusinessDays)
-  totalMeetingRoomBooked = Math.round(totalMeetingRoomBooked / overviewBusinessDays)
+  // Site capacities (from sites table)
+  const sitesWithCapacity = (sitesCapacityResult.data || []) as { id: string; name: string; capacity: number | null; status: string }[]
+  const siteCapacitiesList = sitesWithCapacity
+    .map((s) => ({
+      siteId: s.id,
+      siteName: s.name,
+      capacity: s.capacity || 0,
+      occupied: 0, // TODO: à remplir avec les données réelles d'occupation
+    }))
+    .filter((s) => s.capacity > 0)
+    .sort((a, b) => b.capacity - a.capacity)
 
   // Top meeting rooms
   const meetingRoomBookings = meetingRoomBookingsResult.data || []
@@ -429,10 +400,7 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
       bookingsCount={bookingsCount}
       bookingsBySite={bookingsBySite}
       totalBookingCount={overviewTotalBookingCount}
-      totalBenchAvailable={Math.max(0, totalBenchCapacity - totalBenchBooked)}
-      totalBenchCapacity={totalBenchCapacity}
-      totalMeetingRoomAvailable={Math.max(0, totalMeetingRoomCapacity - totalMeetingRoomBooked)}
-      totalMeetingRoomCapacity={totalMeetingRoomCapacity}
+      siteCapacities={siteCapacitiesList}
       cancellationRate={cancellationRate}
       cancelledCount={cancelledThisPeriod}
       totalBookings={totalThisPeriod}
@@ -446,6 +414,8 @@ async function loadOverviewData(now: Date, period: string, periodMode: string = 
       meetingRoomBookings={meetingRoomBookingsDetail}
       period={period}
       periodMode={periodMode}
+      periodStartDate={format(periodStart, "d MMM yyyy", { locale: fr })}
+      periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
     />
   )
 }
@@ -472,6 +442,7 @@ interface CachedSession {
   paymentIntentId: string
   productId: string
   productName: string
+  quantity: number
 }
 
 interface CachedProduct {
@@ -586,6 +557,7 @@ const fetchStripeSessionsCached = unstable_cache(
             paymentIntentId: piId,
             productId,
             productName: firstItem.description || "Unknown",
+            quantity: firstItem.quantity || 1,
           })
         }
       }
@@ -717,9 +689,9 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   )
 
   // Build payment_intent → product mapping from checkout sessions
-  const piToProduct = new Map<string, { productId: string; productName: string }>()
+  const piToProduct = new Map<string, { productId: string; productName: string; quantity: number }>()
   for (const s of [...coworkingSessions, ...icadeSessions, ...collectionSessions]) {
-    piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName })
+    piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName, quantity: s.quantity })
   }
 
   // Total KPIs
@@ -728,7 +700,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   // Normalize product variants into groups (e.g. all "Hopper Pass Day (1 Jour) - Site X" → "Hopper Pass Day")
   function normalizeToGroup(match: { productId: string; productName: string }): { productId: string; productName: string } {
     const n = match.productName.toLowerCase()
-    if (n.includes("pass day") || n.includes("pass jour") || n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_day", productName: "Hopper Pass Day & Week" }
+    if (n.includes("pass day") || n.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
+    if (n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
     if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_pass_month", productName: "Hopper Pass Month" }
     if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_credits", productName: "Crédits Hopper" }
     if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice")) return { productId: "__group_cafe", productName: "Café, Food & Beverage" }
@@ -755,7 +728,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     }
     // 3. Fallback: bookingType metadata
     if (charge.bookingType) {
-      if (charge.bookingType.includes("Day") || charge.bookingType.includes("Week")) return { productId: "__pass_day", productName: "Hopper Pass Day & Week" }
+      if (charge.bookingType.includes("Day")) return { productId: "__pass_day", productName: "Hopper Pass Day" }
+      if (charge.bookingType.includes("Week")) return { productId: "__pass_week", productName: "Hopper Pass Week" }
       if (charge.bookingType.includes("Month")) return { productId: "__pass_month", productName: "Hopper Pass Month" }
     }
     // 4. Fallback: subscription-related charges → Pass Month
@@ -779,7 +753,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   function findGroupUnitPrice(groupId: string): number | null {
     // For grouped products, find unit price from any constituent product
     const groupKeywords: Record<string, string[]> = {
-      "__group_pass_day": ["pass day", "pass week"],
+      "__group_pass_day": ["pass day"],
+      "__group_pass_week": ["pass week"],
       "__group_pass_month": ["pass month", "pass mois", "pass mensuel"],
       "__group_credits": ["crédit", "credit"],
       "__group_cafe": ["café", "coffee", "espresso", "latte", "juice"],
@@ -842,6 +817,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
         originalProductName: raw.productName,
         companySiteId: company?.siteId || "",
         receiptUrl: c.receiptUrl,
+        quantity: c.paymentIntent ? (piToProduct.get(c.paymentIntent)?.quantity || 1) : 1,
       }
     })
   }
