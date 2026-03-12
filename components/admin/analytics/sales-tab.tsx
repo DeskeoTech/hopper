@@ -385,14 +385,33 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
 
       {/* CA par site */}
       {bookings.bySite.length > 0 && (() => {
+        // Collect all product IDs that appear across sites
+        const allProductIds = new Set<string>()
+        bookings.bySite.forEach((site) => {
+          const data = revenueByProductBySiteId.get(site.siteId)
+          if (data) data.products.forEach((_, pid) => allProductIds.add(pid))
+        })
+        const productIds = Array.from(allProductIds)
+
+        // Build chart data: each site has a key per product
         const siteChartData = bookings.bySite
           .map((site) => {
             const data = revenueByProductBySiteId.get(site.siteId)
-            return { name: site.siteName, revenue: data?.total || 0 }
+            const row: Record<string, string | number> = { name: site.siteName }
+            for (const pid of productIds) {
+              row[pid] = data?.products.get(pid) || 0
+            }
+            row._total = data?.total || 0
+            return row
           })
-          .sort((a, b) => a.revenue - b.revenue)
-        const totalSiteRevenue = siteChartData.reduce((s, d) => s + d.revenue, 0)
-        const chartHeight = Math.max(200, siteChartData.length * 40)
+          .sort((a, b) => (b._total as number) - (a._total as number))
+
+        const totalSiteRevenue = siteChartData.reduce((s, d) => s + (d._total as number), 0)
+
+        // Product name lookup for tooltip
+        const productNameMap = new Map<string, string>()
+        productKpis.forEach((p) => productNameMap.set(p.productId, p.productName))
+
         return (
           <div className="rounded-[20px] bg-card p-4 sm:p-5">
             <div className="flex items-center gap-3 mb-4">
@@ -402,30 +421,51 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                 {formatEuro(totalSiteRevenue)}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={chartHeight}>
-              <BarChart data={siteChartData} layout="vertical" margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={siteChartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
                 <XAxis
-                  type="number"
-                  tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k` : `${v}`}
+                  dataKey="name"
+                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval={0}
+                />
+                <YAxis
+                  tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`}
                   tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  width={120}
-                  tick={{ fontSize: 12, fill: "var(--color-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
                 <Tooltip
-                  formatter={(value: number) => [formatEuro(value), "CA"]}
+                  formatter={(value: number, name: string) => [formatEuro(value), productNameMap.get(name) || name]}
                   contentStyle={{ borderRadius: 12, fontSize: 13 }}
                 />
-                <Bar dataKey="revenue" fill="#10b981" radius={[0, 6, 6, 0]} barSize={20} />
+                {productIds.map((pid) => {
+                  const colorIdx = productColorMap.get(pid) ?? (PRODUCT_CARD_COLORS.length - 1)
+                  return (
+                    <Bar
+                      key={pid}
+                      dataKey={pid}
+                      stackId="revenue"
+                      fill={PRODUCT_CARD_COLORS[colorIdx % PRODUCT_CARD_COLORS.length].chart}
+                      barSize={32}
+                    />
+                  )
+                })}
               </BarChart>
             </ResponsiveContainer>
+            {/* Legend */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
+              {productKpis.map((p, i) => (
+                <div key={p.productId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                    style={{ backgroundColor: PRODUCT_CARD_COLORS[i % PRODUCT_CARD_COLORS.length].chart }}
+                  />
+                  <span className="truncate">{p.productName}</span>
+                </div>
+              ))}
+            </div>
           </div>
         )
       })()}
