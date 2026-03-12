@@ -704,8 +704,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     if (n.includes("pass day") || n.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
     // Pass Week (all sites)
     if (n.includes("pass week") || n.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
-    // Abonnements: pass month + résident + formules
-    if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    // Pass Month (all sites)
+    if (n.includes("pass month") || n.includes("pass mois") || n.includes("pass mensuel")) return { productId: "__group_pass_month", productName: "Hopper Pass Month" }
     if (n.includes("résident") || n.includes("resident")) return { productId: "__group_abonnements", productName: "Abonnements" }
     if (n.startsWith("formule ")) return { productId: "__group_abonnements", productName: "Abonnements" }
     // Food & Beverage: café, coffee, espresso, latte, juice, color latte, infinity coffee
@@ -742,7 +742,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     // 4. Fallback: detect pass day/week/month in description (priority over subscription)
     if (desc.includes("pass day") || desc.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
     if (desc.includes("pass week") || desc.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
-    if (desc.includes("pass month") || desc.includes("pass mois") || desc.includes("pass mensuel")) return { productId: "__group_abonnements", productName: "Abonnements" }
+    if (desc.includes("pass month") || desc.includes("pass mois") || desc.includes("pass mensuel")) return { productId: "__group_pass_month", productName: "Hopper Pass Month" }
     // 5. Fallback: café/food/beverage → toujours dans Café & Beverage
     if (desc.includes("café") || desc.includes("cafe") || desc.includes("coffee") || desc.includes("espresso") || desc.includes("latte") || desc.includes("juice")) {
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
@@ -772,7 +772,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     const groupKeywords: Record<string, string[]> = {
       "__group_pass_day": ["pass day"],
       "__group_pass_week": ["pass week"],
-      "__group_abonnements": ["pass month", "pass mois", "résident", "formule"],
+      "__group_pass_month": ["pass month", "pass mois"],
+      "__group_abonnements": ["résident", "formule"],
       "__group_factures": ["crédit", "credit"],
       "__group_cafe": ["café", "coffee", "espresso", "latte", "juice"],
     }
