@@ -45,6 +45,7 @@ export interface StripePayment {
   originalProductName: string
   companySiteId: string
   receiptUrl: string | null
+  quantity: number
 }
 
 export interface AccountKpis {
@@ -168,7 +169,6 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
   const [page, setPage] = useState(1)
   const [detailModal, setDetailModal] = useState<string | null>(null)
-  const [siteView, setSiteView] = useState<"occupation" | "ca">("occupation")
 
   const productFilterOptions = useMemo(() => [
     { value: "all", label: "Tous les produits" },
@@ -341,11 +341,19 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
           <TrendingUp className="h-5 w-5 text-emerald-600" />
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chiffre d&apos;affaires Hopper</p>
         </div>
-        <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{formatEuro(totalKpis.totalRevenue)}</p>
+        <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{Math.round(totalKpis.totalRevenue).toLocaleString("fr-FR")} €</p>
         {totalKpis.netRevenue !== totalKpis.totalRevenue && (
           <p className="text-sm text-muted-foreground mt-1">Net (après remboursements) : {formatEuro(totalKpis.netRevenue)}</p>
         )}
-        <p className="text-xs text-muted-foreground mt-1">{totalKpis.transactionCount} paiement{totalKpis.transactionCount > 1 ? "s" : ""} — Moy. {formatEuro(totalKpis.avgTransaction)}</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {totalKpis.transactionCount} paiement{totalKpis.transactionCount > 1 ? "s" : ""} — Moy./paiement {formatEuro(totalKpis.avgTransaction)}
+          {(() => {
+            const succeeded = payments.filter((p) => p.status === "succeeded")
+            const totalPersons = succeeded.reduce((s, p) => s + p.quantity, 0)
+            const avgPerPerson = totalPersons > 0 ? totalKpis.totalRevenue / totalPersons : 0
+            return <> — {totalPersons} pers. — Moy./pers. {formatEuro(avgPerPerson)}</>
+          })()}
+        </p>
       </div>
 
       {/* Product cards */}
@@ -375,86 +383,17 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         />
       ))}
 
-      {/* Site view: Occupation OR CA */}
+      {/* CA par site */}
       {bookings.bySite.length > 0 && (
         <div className="rounded-[20px] bg-card p-4 sm:p-5">
           <div className="flex items-center gap-3 mb-4">
             <Building2 className="h-5 w-5 text-muted-foreground" />
-            <div className="flex items-center gap-1 rounded-full bg-muted p-0.5">
-              <button
-                onClick={() => setSiteView("occupation")}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                  siteView === "occupation" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Occupation
-              </button>
-              <button
-                onClick={() => setSiteView("ca")}
-                className={cn(
-                  "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-                  siteView === "ca" ? "bg-foreground text-background" : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                CA
-              </button>
-            </div>
-            {siteView === "occupation" && (
-              <TooltipProvider>
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground/60 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent side="top" className="max-w-[240px] text-center">
-                    Nombre de réservations pondéré par la capacité des salles (ex : 1 réservation d&apos;une salle de 4 places = 4)
-                  </TooltipContent>
-                </UITooltip>
-              </TooltipProvider>
-            )}
-            <span className={cn("font-header text-2xl tabular-nums ml-auto", siteView === "ca" && "text-emerald-600")}>
-              {siteView === "occupation"
-                ? bookings.total
-                : formatEuro(Array.from(revenueByProductBySiteId.values()).reduce((s, v) => s + v.total, 0))}
+            <h3 className="font-header text-lg uppercase tracking-wide">CA par site</h3>
+            <span className="font-header text-2xl tabular-nums ml-auto text-emerald-600">
+              {formatEuro(Array.from(revenueByProductBySiteId.values()).reduce((s, v) => s + v.total, 0))}
             </span>
           </div>
 
-          {siteView === "occupation" ? (
-            <div className="space-y-3">
-              {bookings.bySite.map((site) => {
-                const maxCount = bookings.bySite[0]?.bookingCount || 1
-                const barWidth = Math.max(2, (site.bookingCount / maxCount) * 100)
-                const occupancy = site.dailyCapacity > 0 ? Math.min(100, Math.round((site.dailyAvg / site.dailyCapacity) * 100)) : 0
-                return (
-                  <div key={site.siteId} className="space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium truncate">{site.siteName}</p>
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
-                        <span className="text-sm font-bold tabular-nums">{site.bookingCount}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {site.dailyAvg}/{site.dailyCapacity} places/j
-                        </span>
-                        <span className={cn(
-                          "text-xs font-bold tabular-nums",
-                          occupancy >= 80 && "text-green-600",
-                          occupancy >= 50 && occupancy < 80 && "text-orange-500",
-                          occupancy < 50 && "text-red-500"
-                        )}>
-                          {occupancy}%
-                        </span>
-                      </div>
-                    </div>
-                    <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full rounded-full transition-all duration-500 bg-muted-foreground/40"
-                        style={{ width: `${barWidth}%` }}
-                      />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          ) : (
             <div className="space-y-4">
               {(() => {
                 const siteRevenues = bookings.bySite
@@ -515,7 +454,6 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                 ))}
               </div>
             </div>
-          )}
         </div>
       )}
 

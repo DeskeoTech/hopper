@@ -25,6 +25,7 @@ export function TopMeetingRoomsCard({ rooms, maxBookings, periodLabel }: TopMeet
 
   const pieData = rooms.map((room) => ({
     name: room.resourceName,
+    site: room.siteName,
     value: room.bookingsCount,
   }))
   const pieTotal = pieData.reduce((sum, d) => sum + d.value, 0)
@@ -125,7 +126,10 @@ export function TopMeetingRoomsCard({ rooms, maxBookings, periodLabel }: TopMeet
               {pieData.map((d, i) => (
                 <div key={i} className="flex items-center gap-2 text-xs">
                   <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
-                  <span className="truncate text-muted-foreground">{d.name}</span>
+                  <div className="min-w-0 truncate">
+                    <span className="text-muted-foreground">{d.name}</span>
+                    <span className="text-muted-foreground/50 ml-1">({d.site})</span>
+                  </div>
                   <span className="flex-1 border-b border-dotted border-border/40 min-w-[12px] mx-1" />
                   <span className="font-bold tabular-nums shrink-0">{d.value}</span>
                 </div>
