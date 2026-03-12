@@ -429,8 +429,6 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                   axisLine={false}
                   tickLine={false}
                   interval={0}
-                  angle={-25}
-                  textAnchor="end"
                 />
                 <YAxis
                   tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`}
