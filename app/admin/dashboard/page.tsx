@@ -743,12 +743,14 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     if (desc.includes("pass day") || desc.includes("pass jour")) return { productId: "__group_pass_day", productName: "Hopper Pass Day" }
     if (desc.includes("pass week") || desc.includes("pass semaine")) return { productId: "__group_pass_week", productName: "Hopper Pass Week" }
     if (desc.includes("pass month") || desc.includes("pass mois") || desc.includes("pass mensuel")) return { productId: "__group_abonnements", productName: "Abonnements" }
-    // 5. Fallback: café/food/beverage in description (priority over generic subscription)
+    // 5. Fallback: café/food/beverage → toujours dans Café & Beverage
     if (desc.includes("café") || desc.includes("cafe") || desc.includes("coffee") || desc.includes("espresso") || desc.includes("latte") || desc.includes("juice")) {
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
-    // 6. Fallback: generic subscription/abonnement → fourre-tout Abonnements
-    if (desc.includes("subscription") || desc.includes("abonnement")) {
+    // 6. Fallback: facture → Factures
+    if (desc.includes("facture")) return { productId: "__group_factures", productName: "Factures" }
+    // 7. Fallback: subscription/souscription → Abonnements
+    if (desc.includes("subscription") || desc.includes("souscription") || desc.includes("inscription") || desc.includes("abonnement")) {
       return { productId: "__group_abonnements", productName: "Abonnements" }
     }
     return { productId: "__other", productName: "Factures" }
