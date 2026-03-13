@@ -83,7 +83,7 @@ export interface SalesTabProps {
   periodEndDate: string
   bookings: { total: number; bySite: BookingBySite[] }
   revenueEvolution: number | null
-  revenueOverTime: { date: string; ca: number }[]
+  revenueOverTime: { date: string; ca: number; caHorsAbo: number }[]
   businessDays: number
 }
 
@@ -176,6 +176,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   const [detailModal, setDetailModal] = useState<string | null>(null)
   const [showCaDetail, setShowCaDetail] = useState(false)
   const [excludeAbonnements, setExcludeAbonnements] = useState(true)
+  const [excludeAboDailyChart, setExcludeAboDailyChart] = useState(true)
 
   const productFilterOptions = useMemo(() => [
     { value: "all", label: "Tous les produits" },
@@ -385,11 +386,38 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       {/* Revenue curve */}
       {revenueOverTime.length > 1 && (
         <div className="rounded-[20px] bg-card p-4 sm:p-5">
-          <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground mb-3">CA quotidien</h3>
+          <div className="flex items-center gap-3 mb-3">
+            <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground">CA quotidien</h3>
+            <div className="flex items-center rounded-full bg-muted p-0.5 text-[10px] font-medium">
+              <button
+                onClick={() => setExcludeAboDailyChart(true)}
+                className={cn(
+                  "rounded-full px-2.5 py-1 transition-colors",
+                  excludeAboDailyChart
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Hors abo.
+              </button>
+              <button
+                onClick={() => setExcludeAboDailyChart(false)}
+                className={cn(
+                  "rounded-full px-2.5 py-1 transition-colors",
+                  !excludeAboDailyChart
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                Avec abo.
+              </button>
+            </div>
+          </div>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               {(() => {
                 const spacebringEnd = "02 mars"
+                const caKey = excludeAboDailyChart ? "caHorsAbo" : "ca"
                 const chartData = revenueOverTime.map((d) => ({ ...d, label: new Date(d.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) }))
                 const hasSpacebringDate = chartData.some((d) => d.label === spacebringEnd)
                 return (
@@ -403,13 +431,13 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} />
                     <Tooltip
-                      formatter={(value: number) => [formatEuro(value), "CA du jour"]}
+                      formatter={(value: number) => [formatEuro(value), excludeAboDailyChart ? "CA hors abo." : "CA du jour"]}
                       contentStyle={{ borderRadius: 12, fontSize: 12 }}
                     />
                     {hasSpacebringDate && (
                       <ReferenceLine x={spacebringEnd} stroke="#C4A882" strokeDasharray="4 4" label={{ value: "Fin de Spacebring", position: "top", fontSize: 10, fill: "#A08060" }} />
                     )}
-                    <Area type="monotone" dataKey="ca" stroke="#4A3F35" strokeWidth={2} fill="url(#caGradient)" />
+                    <Area type="monotone" dataKey={caKey} stroke="#4A3F35" strokeWidth={2} fill="url(#caGradient)" />
                   </AreaChart>
                 )
               })()}

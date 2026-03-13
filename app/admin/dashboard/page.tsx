@@ -716,16 +716,21 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName, quantity: s.quantity })
   }
 
-  // Revenue over time (daily)
-  const revenueByDay = new Map<string, number>()
+  // Revenue over time (daily) — with abonnement split
+  const revenueByDay = new Map<string, { total: number; abo: number }>()
   for (const c of allCharges) {
     if (c.status !== "succeeded") continue
     const day = new Date(c.created * 1000).toISOString().split("T")[0]
-    revenueByDay.set(day, (revenueByDay.get(day) || 0) + c.amount / 100)
+    const entry = revenueByDay.get(day) || { total: 0, abo: 0 }
+    const amount = c.amount / 100
+    entry.total += amount
+    const product = matchChargeToProduct(c)
+    if (product.productId === "__group_abonnements") entry.abo += amount
+    revenueByDay.set(day, entry)
   }
   const revenueOverTime = Array.from(revenueByDay.entries())
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .map(([date, amount]) => ({ date, ca: Math.round(amount) }))
+    .map(([date, d]) => ({ date, ca: Math.round(d.total), caHorsAbo: Math.round(d.total - d.abo) }))
 
   // Previous period revenue
   const allPrevCharges = [...prevCoworkingCharges, ...prevIcadeCharges, ...prevCollectionCharges]
