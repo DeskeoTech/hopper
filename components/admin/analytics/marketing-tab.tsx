@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import {
   ArrowDown,
@@ -291,18 +291,20 @@ export function MarketingTab({
     },
   }
 
+  const [isPending, startTransition] = useTransition()
+
   function handlePeriodChange(newPeriod: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "marketing")
     params.set("period", newPeriod)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   function handleModeChange(newMode: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "marketing")
     params.set("mode", newMode)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
@@ -557,6 +559,7 @@ export function MarketingTab({
         )}
       </div>
 
+      <div className={cn("space-y-4 transition-opacity duration-200", isPending && "opacity-40 pointer-events-none")}>
       {/* KPIs */}
       <div>
         {/* New companies */}
@@ -1634,6 +1637,7 @@ export function MarketingTab({
             )}
           </>
         )}
+      </div>
       </div>
     </div>
   )
