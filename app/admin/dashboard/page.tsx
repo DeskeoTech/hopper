@@ -716,6 +716,20 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName, quantity: s.quantity })
   }
 
+  // Revenue over time (daily cumulative)
+  const revenueByDay = new Map<string, number>()
+  for (const c of allCharges) {
+    if (c.status !== "succeeded") continue
+    const day = new Date(c.created * 1000).toISOString().split("T")[0]
+    revenueByDay.set(day, (revenueByDay.get(day) || 0) + c.amount / 100)
+  }
+  const sortedDays = Array.from(revenueByDay.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+  let cumul = 0
+  const revenueOverTime = sortedDays.map(([date, amount]) => {
+    cumul += amount
+    return { date, ca: Math.round(cumul) }
+  })
+
   // Previous period revenue
   const allPrevCharges = [...prevCoworkingCharges, ...prevIcadeCharges, ...prevCollectionCharges]
   const prevKpis = computeAccountKpis(allPrevCharges)
@@ -950,6 +964,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
       bookings={{ total: totalBookingCount, bySite: bookingsBySite }}
       revenueEvolution={revenueEvolution}
+      revenueOverTime={revenueOverTime}
     />
   )
 }
