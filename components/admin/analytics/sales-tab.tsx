@@ -737,7 +737,7 @@ function getTopClients(payments: StripePayment[], limit = 8) {
     .map(([name, montant]) => ({ name: name.length > 20 ? name.slice(0, 18) + "…" : name, montant: Math.round(montant * 100) / 100 }))
 }
 
-const SITE_PIE_COLORS = ["#10b981", "#f59e0b", "#3b82f6", "#ef4444", "#8b5cf6", "#ec4899", "#f97316", "#06b6d4", "#84cc16", "#6366f1"]
+const SITE_PIE_COLORS = ["#1B1918", "#3D3330", "#4A3F35", "#6B5B4A", "#8B7355", "#A08060", "#C4A882", "#D4B896", "#E8D5C0", "#F2E7DC"]
 
 function extractSiteName(originalProductName: string): string {
   // "Hopper Pass Day (1 Jour) - La Défense" → "La Défense"
