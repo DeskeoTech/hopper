@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ArrowDown, ArrowUp, ArrowUpDown, Building2, ChevronLeft, ChevronRight, Download, ExternalLink, Info, Search, TrendingUp } from "lucide-react"
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area, ReferenceLine,
 } from "recharts"
 import {
   Table,
@@ -83,6 +83,7 @@ export interface SalesTabProps {
   periodEndDate: string
   bookings: { total: number; bySite: BookingBySite[] }
   revenueEvolution: number | null
+  revenueOverTime: { date: string; ca: number }[]
 }
 
 // === Constants ===
@@ -101,17 +102,17 @@ const statusColors: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 }
 
-// Gradient from dark (highest CA) to light (lowest CA) — assigned by revenue rank
+// Gradient from dark brown (highest CA) to light beige (lowest CA) — no black
 const PRODUCT_CARD_COLORS = [
-  { bg: "bg-[#1B1918]/10", accent: "text-stone-900", badge: "bg-[#1B1918] text-white", border: "border-[#1B1918]", chart: "#1B1918", chartLight: "#2E2825" },
-  { bg: "bg-[#3D3330]/10", accent: "text-stone-900", badge: "bg-[#3D3330] text-white", border: "border-[#1B1918]", chart: "#3D3330", chartLight: "#4F4440" },
-  { bg: "bg-[#4A3F35]/15", accent: "text-stone-900", badge: "bg-[#4A3F35] text-white", border: "border-[#3D3330]", chart: "#4A3F35", chartLight: "#5C5145" },
-  { bg: "bg-[#6B5B4A]/15", accent: "text-stone-800", badge: "bg-[#6B5B4A] text-white", border: "border-[#4A3F35]", chart: "#6B5B4A", chartLight: "#7D6D5C" },
-  { bg: "bg-[#8B7355]/20", accent: "text-stone-800", badge: "bg-[#8B7355] text-white", border: "border-[#6B5B4A]", chart: "#8B7355", chartLight: "#A08868" },
-  { bg: "bg-[#A08060]/20", accent: "text-stone-800", badge: "bg-[#A08060] text-white", border: "border-[#8B7355]", chart: "#A08060", chartLight: "#B89878" },
-  { bg: "bg-[#C4A882]/30", accent: "text-stone-800", badge: "bg-[#C4A882] text-stone-700", border: "border-[#A08060]", chart: "#C4A882", chartLight: "#D0B894" },
-  { bg: "bg-[#D4B896]/30", accent: "text-stone-800", badge: "bg-[#D4B896] text-stone-700", border: "border-[#C4A882]", chart: "#D4B896", chartLight: "#DFCAAA" },
-  { bg: "bg-[#E8D5C0]/40", accent: "text-stone-800", badge: "bg-[#E8D5C0] text-stone-700", border: "border-[#D4B896]", chart: "#E8D5C0", chartLight: "#F0E2D2" },
+  { bg: "bg-[#4A3F35]/20", accent: "text-stone-900", badge: "bg-[#4A3F35] text-white", border: "border-[#4A3F35]", chart: "#4A3F35", chartLight: "#5C5145" },
+  { bg: "bg-[#6B5B4A]/18", accent: "text-stone-800", badge: "bg-[#6B5B4A] text-white", border: "border-[#4A3F35]", chart: "#6B5B4A", chartLight: "#7D6D5C" },
+  { bg: "bg-[#8B7355]/15", accent: "text-stone-800", badge: "bg-[#8B7355] text-white", border: "border-[#6B5B4A]", chart: "#8B7355", chartLight: "#9E866A" },
+  { bg: "bg-[#A08060]/15", accent: "text-stone-800", badge: "bg-[#A08060] text-white", border: "border-[#8B7355]", chart: "#A08060", chartLight: "#B09575" },
+  { bg: "bg-[#B39470]/20", accent: "text-stone-800", badge: "bg-[#B39470] text-white", border: "border-[#A08060]", chart: "#B39470", chartLight: "#C4A882" },
+  { bg: "bg-[#C4A882]/25", accent: "text-stone-800", badge: "bg-[#C4A882] text-stone-700", border: "border-[#B39470]", chart: "#C4A882", chartLight: "#D0B894" },
+  { bg: "bg-[#D4B896]/25", accent: "text-stone-800", badge: "bg-[#D4B896] text-stone-700", border: "border-[#C4A882]", chart: "#D4B896", chartLight: "#DFCAAA" },
+  { bg: "bg-[#E0C8A8]/30", accent: "text-stone-800", badge: "bg-[#E0C8A8] text-stone-700", border: "border-[#D4B896]", chart: "#E0C8A8", chartLight: "#EADBC2" },
+  { bg: "bg-[#E8D5C0]/35", accent: "text-stone-800", badge: "bg-[#E8D5C0] text-stone-700", border: "border-[#E0C8A8]", chart: "#E8D5C0", chartLight: "#F0E2D2" },
   { bg: "bg-[#F2E7DC]/40", accent: "text-stone-800", badge: "bg-[#F2E7DC] text-stone-700", border: "border-[#E8D5C0]", chart: "#F2E7DC", chartLight: "#F7F0E8" },
 ]
 
@@ -142,7 +143,7 @@ function formatEuro(value: number): string {
 
 // === Component ===
 
-export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings, revenueEvolution }: SalesTabProps) {
+export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings, revenueEvolution, revenueOverTime }: SalesTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -377,6 +378,42 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         </p>
       </div>
 
+      {/* Revenue curve */}
+      {revenueOverTime.length > 1 && (
+        <div className="rounded-[20px] bg-card p-4 sm:p-5">
+          <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground mb-3">CA cumulé</h3>
+          <div className="h-[220px]">
+            <ResponsiveContainer width="100%" height="100%">
+              {(() => {
+                const spacebringEnd = "02 mars"
+                const chartData = revenueOverTime.map((d) => ({ ...d, label: new Date(d.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) }))
+                const hasSpacebringDate = chartData.some((d) => d.label === spacebringEnd)
+                return (
+                  <AreaChart data={chartData} margin={{ top: 15, right: 10, left: 0, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="caGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4A3F35" stopOpacity={0.15} />
+                        <stop offset="100%" stopColor="#4A3F35" stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} domain={[(min: number) => Math.floor(min * 0.85), 'auto']} />
+                    <Tooltip
+                      formatter={(value: number) => [formatEuro(value), "CA cumulé"]}
+                      contentStyle={{ borderRadius: 12, fontSize: 12 }}
+                    />
+                    {hasSpacebringDate && (
+                      <ReferenceLine x={spacebringEnd} stroke="#C4A882" strokeDasharray="4 4" label={{ value: "Fin de Spacebring", position: "top", fontSize: 10, fill: "#A08060" }} />
+                    )}
+                    <Area type="monotone" dataKey="ca" stroke="#4A3F35" strokeWidth={2} fill="url(#caGradient)" />
+                  </AreaChart>
+                )
+              })()}
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
       {/* Product cards */}
       {productKpis.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -438,8 +475,9 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         const productNameMap = new Map<string, string>()
         productKpis.forEach((p) => productNameMap.set(p.productId, p.productName))
 
-        // Build per-site pie data
-        const sitePies = siteChartData.map((site) => {
+        // Build per-site pie data (exclude sites with 0€)
+        const zeroSites = siteChartData.filter((site) => (site._total as number) === 0).map((site) => site.name as string)
+        const sitePies = siteChartData.filter((site) => (site._total as number) > 0).map((site) => {
           const slices = productIds
             .map((pid) => ({
               name: productNameMap.get(pid) || pid,
@@ -718,13 +756,6 @@ function ProductCard({ product, colorIndex, onClick }: { product: ProductKpisEnt
 
 // === Product Detail Modal ===
 
-const PIE_COLORS: Record<string, string> = {
-  succeeded: "#22c55e",
-  pending: "#f59e0b",
-  failed: "#ef4444",
-}
-
-
 function getTopClients(payments: StripePayment[], limit = 8) {
   const byClient: Record<string, number> = {}
   for (const p of payments) {
@@ -737,7 +768,7 @@ function getTopClients(payments: StripePayment[], limit = 8) {
     .map(([name, montant]) => ({ name: name.length > 20 ? name.slice(0, 18) + "…" : name, montant: Math.round(montant * 100) / 100 }))
 }
 
-const SITE_PIE_COLORS = ["#1B1918", "#3D3330", "#4A3F35", "#6B5B4A", "#8B7355", "#A08060", "#C4A882", "#D4B896", "#E8D5C0", "#F2E7DC"]
+const SITE_PIE_COLORS = ["#4A3F35", "#6B5B4A", "#8B7355", "#A08060", "#B39470", "#C4A882", "#D4B896", "#E0C8A8", "#E8D5C0", "#F2E7DC"]
 
 function extractSiteName(originalProductName: string): string {
   // "Hopper Pass Day (1 Jour) - La Défense" → "La Défense"
@@ -768,16 +799,6 @@ function getSiteBreakdown(payments: StripePayment[]) {
     }))
 }
 
-function getStatusBreakdown(payments: StripePayment[]) {
-  const counts: Record<string, number> = { succeeded: 0, pending: 0, failed: 0 }
-  for (const p of payments) {
-    counts[p.status] = (counts[p.status] || 0) + 1
-  }
-  return Object.entries(counts)
-    .filter(([, v]) => v > 0)
-    .map(([status, value]) => ({ name: statusLabels[status] || status, value, status }))
-}
-
 function ProductDetailModal({
   open,
   onOpenChange,
@@ -796,7 +817,23 @@ function ProductDetailModal({
   const style = PRODUCT_CARD_COLORS[colorIndex % PRODUCT_CARD_COLORS.length]
   const siteBreakdown = useMemo(() => getSiteBreakdown(payments), [payments])
   const topClients = useMemo(() => getTopClients(payments), [payments])
-  const statusBreakdown = useMemo(() => getStatusBreakdown(payments), [payments])
+  const revenueOverTime = useMemo(() => {
+    const succeeded = payments.filter((p) => p.status === "succeeded")
+    if (succeeded.length === 0) return []
+    // Group by day
+    const byDay = new Map<string, number>()
+    for (const p of succeeded) {
+      const day = new Date(p.date).toISOString().split("T")[0]
+      byDay.set(day, (byDay.get(day) || 0) + p.amount / 100)
+    }
+    // Sort by date and compute cumulative
+    const sorted = Array.from(byDay.entries()).sort((a, b) => a[0].localeCompare(b[0]))
+    let cumul = 0
+    return sorted.map(([date, amount]) => {
+      cumul += amount
+      return { date: new Date(date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }), ca: Math.round(cumul) }
+    })
+  }, [payments])
   const isGroupedProduct = product.productId.startsWith("__group_")
   const isCafeGroup = product.productId === "__group_cafe"
   const hasSiteData = siteBreakdown.length > 1
@@ -891,35 +928,29 @@ function ProductDetailModal({
               </div>
             )}
 
-            {/* Status breakdown */}
-            {statusBreakdown.length > 0 && (
+            {/* CA over time */}
+            {revenueOverTime.length > 1 && (
               <div>
                 <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                  Statut des paiements
+                  CA cumulé dans le temps
                 </h4>
-                <div className="h-[220px] flex items-center justify-center">
+                <div className="h-[220px]">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={statusBreakdown}
-                        dataKey="value"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={80}
-                        innerRadius={45}
-                        paddingAngle={2}
-                        label={({ name, value }) => `${name} (${value})`}
-                      >
-                        {statusBreakdown.map((entry) => (
-                          <Cell key={entry.status} fill={PIE_COLORS[entry.status] || "#9ca3af"} />
-                        ))}
-                      </Pie>
+                    <AreaChart data={revenueOverTime} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id={`gradient-${product.productId}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={style.chart} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={style.chart} stopOpacity={0.05} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} />
                       <Tooltip
-                        formatter={(value: number, name: string) => [value, name]}
-                        contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                        formatter={(value: number) => [formatEuro(value), "CA cumulé"]}
+                        contentStyle={{ borderRadius: 12, fontSize: 12 }}
                       />
-                    </PieChart>
+                      <Area type="monotone" dataKey="ca" stroke={style.chart} strokeWidth={2} fill={`url(#gradient-${product.productId})`} />
+                    </AreaChart>
                   </ResponsiveContainer>
                 </div>
               </div>
