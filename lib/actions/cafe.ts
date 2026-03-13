@@ -454,6 +454,48 @@ export async function getCafePlanNames(): Promise<string[]> {
   return SOLD_CAFE_PLANS
 }
 
+// --- Get café plans with Stripe price IDs for a given site ---
+
+export interface CafePlanWithPrice {
+  name: string
+  price_per_seat_month: number
+  stripe_price_id: string
+}
+
+export async function getCafePlansForSite(siteId: string): Promise<CafePlanWithPrice[]> {
+  const supabase = createAdminClient()
+
+  // Determine the stripe account for this site
+  const { data: site } = await supabase
+    .from("sites")
+    .select("stripe_account")
+    .eq("id", siteId)
+    .single()
+
+  const stripeAccount = site?.stripe_account || "hopper-coworking"
+  const priceColumn = stripeAccount !== "hopper-coworking"
+    ? `stripe_price_id_${stripeAccount}`
+    : "stripe_price_id"
+
+  const { data: plans } = await supabase
+    .from("plans")
+    .select(`name, price_per_seat_month, ${priceColumn}`)
+    .eq("service_type", "coffee_subscription")
+    .eq("archived", false)
+    .in("name", SOLD_CAFE_PLANS)
+    .order("price_per_seat_month")
+
+  if (!plans) return []
+
+  return plans
+    .filter((p) => p[priceColumn])
+    .map((p) => ({
+      name: p.name,
+      price_per_seat_month: p.price_per_seat_month,
+      stripe_price_id: p[priceColumn] as string,
+    }))
+}
+
 // --- Dashboard stats ---
 
 export interface CafeDashboardDay {

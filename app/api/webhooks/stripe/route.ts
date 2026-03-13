@@ -1,17 +1,32 @@
 import Stripe from "stripe"
 import { createAdminClient } from "@/lib/supabase/admin"
 
-const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
+// Webhook secrets for each Stripe account
+const WEBHOOK_SECRETS: Record<string, string | undefined> = {
+  "hopper-coworking": process.env.STRIPE_WEBHOOK_SECRET,
+  "icade": process.env.STRIPE_WEBHOOK_SECRET_ICADE,
+}
 
-function getStripe() {
-  const key = process.env.STRIPE_SECRET_KEY_HOPPER_COWORKING
-  if (!key) throw new Error("STRIPE_SECRET_KEY_HOPPER_COWORKING manquante")
-  return new Stripe(key, { apiVersion: "2024-12-18.acacia" })
+function verifyWebhookEvent(body: string, signature: string): Stripe.Event {
+  // Try each webhook secret until one succeeds
+  const errors: string[] = []
+  for (const [account, secret] of Object.entries(WEBHOOK_SECRETS)) {
+    if (!secret) continue
+    try {
+      // constructEvent only needs the webhook secret, not an API key
+      const stripe = new Stripe("sk_not_used", { apiVersion: "2024-12-18.acacia" })
+      return stripe.webhooks.constructEvent(body, signature, secret)
+    } catch (err) {
+      errors.push(`${account}: ${err instanceof Error ? err.message : String(err)}`)
+    }
+  }
+  throw new Error(`Webhook signature verification failed for all accounts: ${errors.join("; ")}`)
 }
 
 export async function POST(request: Request) {
-  if (!STRIPE_WEBHOOK_SECRET) {
-    console.error("STRIPE_WEBHOOK_SECRET not configured")
+  const configuredSecrets = Object.values(WEBHOOK_SECRETS).filter(Boolean)
+  if (configuredSecrets.length === 0) {
+    console.error("No STRIPE_WEBHOOK_SECRET configured")
     return new Response("Webhook secret not configured", { status: 500 })
   }
 
@@ -24,8 +39,7 @@ export async function POST(request: Request) {
 
   let event: Stripe.Event
   try {
-    const stripe = getStripe()
-    event = stripe.webhooks.constructEvent(body, signature, STRIPE_WEBHOOK_SECRET)
+    event = verifyWebhookEvent(body, signature)
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error"
     console.error("Webhook signature verification failed:", message)

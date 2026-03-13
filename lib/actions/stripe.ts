@@ -235,10 +235,12 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
 
     if (isSubscription) {
       // Récupérer le stripe_product_id depuis la table plans (test vs live)
-      // Utiliser le client admin car cette requête est faite côté serveur
-      // et l'utilisateur public n'a pas accès à la table plans via RLS
-      const isTestMode = process.env.STRIPE_SECRET_KEY_HOPPER_COWORKING?.startsWith("sk_test_")
-      const stripeProductIdColumn = isTestMode ? "stripe_product_id_test" : "stripe_product_id_live"
+      // Chaque compte Stripe a ses propres product IDs
+      const isTestMode = process.env.NODE_ENV !== "production"
+      const suffix = stripeAccount !== "hopper-coworking" ? `_${stripeAccount}` : ""
+      const stripeProductIdColumn = isTestMode
+        ? `stripe_product_id_test${suffix}`
+        : `stripe_product_id_live${suffix}`
 
       const adminClient = createAdminClient()
       const { data: plan } = await adminClient
@@ -249,7 +251,7 @@ export async function createCheckoutSession(params: CheckoutParams): Promise<{ u
 
       const stripeProductId = plan?.[stripeProductIdColumn]
       if (!stripeProductId) {
-        throw new Error("Produit Stripe non configuré pour le plan Hopper Pass Month")
+        throw new Error(`Produit Stripe non configuré pour le plan Hopper Pass Month (compte: ${stripeAccount})`)
       }
 
       // unitAmount = prix par poste (en cents), seats = nombre de postes
@@ -718,14 +720,17 @@ export async function getCustomerPayments(stripeCustomerId: string): Promise<{
 export async function createCafeCheckoutSession(params: {
   priceId: string
   customerEmail: string
+  siteId?: string
 }): Promise<{ url: string } | { error: string }> {
   try {
-    const { priceId, customerEmail } = params
+    const { priceId, customerEmail, siteId } = params
     if (!priceId || !customerEmail) {
       return { error: "Paramètres manquants" }
     }
 
-    const stripe = getStripe("hopper-coworking")
+    // Resolve the correct Stripe account for the site
+    const stripeAccount = siteId ? await getStripeAccountForSite(siteId) : "hopper-coworking"
+    const stripe = getStripe(stripeAccount)
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000/"
     const successUrl = `${baseUrl}/client/cafe?success=true`

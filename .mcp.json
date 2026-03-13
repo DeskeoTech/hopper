@@ -12,7 +12,19 @@
       "type": "http",
       "url": "https://mcp.linear.app/mcp"
     },
-    "stripe": {
+    "stripe-hopper-coworking": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
+    },
+    "stripe-icade": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
+    },
+    "stripe-hopper-coworking-sandbox": {
+      "type": "http",
+      "url": "https://mcp.stripe.com"
+    },
+    "stripe-icade-sandbox": {
       "type": "http",
       "url": "https://mcp.stripe.com"
     },

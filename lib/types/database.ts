@@ -172,6 +172,10 @@ export interface Plan {
   updated_at: string
   stripe_product_id_test: string | null
   stripe_product_id_live: string | null
+  stripe_product_id_test_icade: string | null
+  stripe_product_id_live_icade: string | null
+  stripe_price_id: string | null
+  stripe_price_id_icade: string | null
 }
 
 export interface PlanSite {

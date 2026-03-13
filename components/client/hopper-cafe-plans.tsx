@@ -1,29 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { useClientLayout } from "./client-layout-provider"
 import { createCafeCheckoutSession } from "@/lib/actions/stripe"
+import { getCafePlansForSite, type CafePlanWithPrice } from "@/lib/actions/cafe"
 
-interface CafePlan {
-  id: string
-  name: string
-  price: number
-  priceId: string
-  frequency: "3days" | "5days"
-  features: string[]
-}
-
-const cafePlans: CafePlan[] = [
-  // 3 days/week
-  {
-    id: "juice-boost-3",
-    name: "JUICE BOOST 3 DAYS",
-    price: 34.99,
-    priceId: "price_1S5RZiRt8NA57A6vvetHvjv8",
+// Plan features and frequency metadata (static, not Stripe-dependent)
+const PLAN_META: Record<string, { frequency: "3days" | "5days"; features: string[] }> = {
+  "JUICE BOOST 3 DAYS": {
     frequency: "3days",
     features: [
       "Detox, Jus pressés",
@@ -31,11 +19,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 3 jours de la semaine",
     ],
   },
-  {
-    id: "color-latte-3",
-    name: "COLOR LATTE CLUB 3 DAYS",
-    price: 34.99,
-    priceId: "price_1S5RZERt8NA57A6v49IUrlmh",
+  "COLOR LATTE CLUB 3 DAYS": {
     frequency: "3days",
     features: [
       "Ube, Chaï, Golden, Matcha",
@@ -43,11 +27,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur 3 jours de la semaine",
     ],
   },
-  {
-    id: "infinity-coffee-3",
-    name: "INFINITY COFFEE CHOICE 3 DAYS",
-    price: 39.99,
-    priceId: "price_1S5RajRt8NA57A6vPZpvuuUb",
+  "INFINITY COFFEE CHOICE 3 DAYS": {
     frequency: "3days",
     features: [
       "Choix illimité sur la cafétéria (syrops inclus)",
@@ -55,12 +35,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 3 jours de la semaine",
     ],
   },
-  // 5 days/week
-  {
-    id: "unlimited-espresso-5",
-    name: "UNLIMITED ESPRESSO 5 DAYS",
-    price: 39.99,
-    priceId: "price_1S5RY5Rt8NA57A6v7TbQIKyj",
+  "UNLIMITED ESPRESSO 5 DAYS": {
     frequency: "5days",
     features: [
       "Espresso, Allongé, Americano",
@@ -68,11 +43,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 5 jours de la semaine",
     ],
   },
-  {
-    id: "juice-boost-5",
-    name: "JUICE BOOST 5 DAYS",
-    price: 49.99,
-    priceId: "price_1S5RYWRt8NA57A6vV0JHfS0x",
+  "JUICE BOOST 5 DAYS": {
     frequency: "5days",
     features: [
       "Detox, Jus pressés",
@@ -80,11 +51,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 5 jours de la semaine",
     ],
   },
-  {
-    id: "color-latte-5",
-    name: "COLOR LATTE CLUB 5 DAYS",
-    price: 49.99,
-    priceId: "price_1S5RYsRt8NA57A6vs3NIO5Gy",
+  "COLOR LATTE CLUB 5 DAYS": {
     frequency: "5days",
     features: [
       "Ube, Chaï, Golden, Matcha",
@@ -92,11 +59,7 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 5 jours de la semaine",
     ],
   },
-  {
-    id: "infinity-coffee-5",
-    name: "INFINITY COFFEE CHOICE 5 DAYS",
-    price: 54.99,
-    priceId: "price_1S5RaLRt8NA57A6vxSsGww1b",
+  "INFINITY COFFEE CHOICE 5 DAYS": {
     frequency: "5days",
     features: [
       "Choix illimité sur la cafétéria (syrops inclus)",
@@ -104,9 +67,17 @@ const cafePlans: CafePlan[] = [
       "Valable sur les 5 jours de la semaine",
     ],
   },
-]
+}
 
-function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
+interface CafePlan {
+  name: string
+  price: number
+  priceId: string
+  frequency: "3days" | "5days"
+  features: string[]
+}
+
+function PlanCard({ plan, userEmail, siteId }: { plan: CafePlan; userEmail: string; siteId: string | null }) {
   const t = useTranslations("cafe")
   const [loading, setLoading] = useState(false)
 
@@ -116,6 +87,7 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
       const result = await createCafeCheckoutSession({
         priceId: plan.priceId,
         customerEmail: userEmail,
+        siteId: siteId || undefined,
       })
       if ("error" in result) {
         console.error(result.error)
@@ -162,11 +134,48 @@ function PlanCard({ plan, userEmail }: { plan: CafePlan; userEmail: string }) {
 }
 
 export function HopperCafePlans() {
-  const { user } = useClientLayout()
+  const { user, selectedSiteId } = useClientLayout()
   const t = useTranslations("cafe")
   const [frequency, setFrequency] = useState<"3days" | "5days">("3days")
+  const [plans, setPlans] = useState<CafePlan[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const filteredPlans = cafePlans.filter((plan) => plan.frequency === frequency)
+  useEffect(() => {
+    async function fetchPlans() {
+      setLoading(true)
+      try {
+        if (!selectedSiteId) return
+        const dbPlans = await getCafePlansForSite(selectedSiteId)
+        const mapped = dbPlans
+          .map((p) => {
+            const meta = PLAN_META[p.name]
+            if (!meta) return null
+            return {
+              name: p.name,
+              price: p.price_per_seat_month,
+              priceId: p.stripe_price_id,
+              frequency: meta.frequency,
+              features: meta.features,
+            }
+          })
+          .filter((p): p is CafePlan => p !== null)
+        setPlans(mapped)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchPlans()
+  }, [selectedSiteId])
+
+  const filteredPlans = plans.filter((plan) => plan.frequency === frequency)
+
+  if (loading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -204,7 +213,7 @@ export function HopperCafePlans() {
         frequency === "5days" ? "lg:grid-cols-4" : "lg:grid-cols-3"
       )}>
         {filteredPlans.map((plan) => (
-          <PlanCard key={plan.id} plan={plan} userEmail={user.email || ""} />
+          <PlanCard key={plan.name} plan={plan} userEmail={user.email || ""} siteId={selectedSiteId} />
         ))}
       </div>
     </div>
