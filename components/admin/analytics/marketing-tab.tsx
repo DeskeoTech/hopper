@@ -141,9 +141,8 @@ const periodOptions = [
   { value: "week", label: "Semaine" },
   { value: "month", label: "Mois" },
   { value: "3months", label: "3 mois" },
+  { value: "6months", label: "6 mois" },
   { value: "year", label: "1 an" },
-  { value: "3years", label: "3 ans" },
-  { value: "all", label: "Tout" },
 ]
 
 const sourceFilterOptions = [
@@ -214,7 +213,7 @@ type SortOrder = "asc" | "desc"
 // === Helpers ===
 
 function formatEuro(value: number): string {
-  return value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+  return Math.round(value).toLocaleString("fr-FR") + " €"
 }
 
 function SourceBadge({ source }: { source: string }) {
@@ -306,7 +305,7 @@ export function MarketingTab({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const showModeToggle = period === "week" || period === "month"
+  const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
 
 
   // New companies card expand

@@ -606,10 +606,8 @@ function getSalesPeriodRange(now: Date, period: string, mode: string = "calendar
         return { start: startOfDay(subMonths(now, 3)), end: endOfDay(now) }
       case "year":
         return { start: startOfDay(subMonths(now, 12)), end: endOfDay(now) }
-      case "3years":
-        return { start: startOfDay(subMonths(now, 36)), end: endOfDay(now) }
-      case "all":
-        return { start: new Date(2020, 0, 1), end: endOfDay(now) }
+      case "6months":
+        return { start: startOfDay(subMonths(now, 6)), end: endOfDay(now) }
       default:
         return { start: startOfDay(subMonths(now, 1)), end: endOfDay(now) }
     }
@@ -625,15 +623,20 @@ function getSalesPeriodRange(now: Date, period: string, mode: string = "calendar
       return { start: startOfMonth(now), end: endOfMonth(now) }
     case "3months":
       return { start: startOfMonth(subMonths(now, 2)), end: endOfMonth(now) }
+    case "6months":
+      return { start: startOfMonth(subMonths(now, 5)), end: endOfMonth(now) }
     case "year":
       return { start: startOfMonth(subMonths(now, 11)), end: endOfMonth(now) }
-    case "3years":
-      return { start: startOfMonth(subMonths(now, 35)), end: endOfMonth(now) }
-    case "all":
-      return { start: new Date(2020, 0, 1), end: endOfDay(now) }
     default:
       return { start: startOfMonth(now), end: endOfMonth(now) }
   }
+}
+
+function getPreviousPeriodRange(currentStart: Date, currentEnd: Date): { start: Date; end: Date } {
+  const durationMs = currentEnd.getTime() - currentStart.getTime()
+  const prevEnd = new Date(currentStart.getTime() - 1)
+  const prevStart = new Date(prevEnd.getTime() - durationMs)
+  return { start: startOfDay(prevStart), end: endOfDay(prevEnd) }
 }
 
 async function loadSalesData(now: Date, period: string, periodMode: string = "calendar") {
@@ -643,11 +646,16 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   const createdGte = Math.floor(periodStart.getTime() / 1000)
   const createdLte = Math.floor(periodEnd.getTime() / 1000)
 
+  // Previous period for evolution %
+  const { start: prevStart, end: prevEnd } = getPreviousPeriodRange(periodStart, periodEnd)
+  const prevGte = Math.floor(prevStart.getTime() / 1000)
+  const prevLte = Math.floor(prevEnd.getTime() / 1000)
+
   // Business days in period (excluding weekends)
   const salesBusinessDays = countBusinessDays(periodStart, periodEnd)
 
   // Fetch companies lookup + all Stripe accounts + products + sessions + bookings data in parallel
-  const [companiesStripeResult, contractsResult, coworkingCharges, icadeCharges, collectionCharges, coworkingProducts, icadeProducts, collectionProducts, coworkingSessions, icadeSessions, collectionSessions, resourcesResult, bookingsPeriodResult] = await Promise.all([
+  const [companiesStripeResult, contractsResult, coworkingCharges, icadeCharges, collectionCharges, coworkingProducts, icadeProducts, collectionProducts, coworkingSessions, icadeSessions, collectionSessions, resourcesResult, bookingsPeriodResult, prevCoworkingCharges, prevIcadeCharges, prevCollectionCharges] = await Promise.all([
     supabase
       .from("companies")
       .select("id, name, customer_id_stripe, main_site_id")
@@ -674,6 +682,9 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       .eq("status", "confirmed")
       .gte("start_date", periodStart.toISOString())
       .lte("start_date", periodEnd.toISOString()),
+    fetchStripeChargesCached("hopper-coworking", prevGte, prevLte),
+    fetchStripeChargesCached("icade", prevGte, prevLte),
+    fetchStripeChargesCached("collection", prevGte, prevLte),
   ])
 
   // Build Stripe customer → company lookup
@@ -704,6 +715,13 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
   for (const s of [...coworkingSessions, ...icadeSessions, ...collectionSessions]) {
     piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName, quantity: s.quantity })
   }
+
+  // Previous period revenue
+  const allPrevCharges = [...prevCoworkingCharges, ...prevIcadeCharges, ...prevCollectionCharges]
+  const prevKpis = computeAccountKpis(allPrevCharges)
+  const revenueEvolution = prevKpis.totalRevenue > 0
+    ? ((computeAccountKpis(allCharges).totalRevenue - prevKpis.totalRevenue) / prevKpis.totalRevenue) * 100
+    : null
 
   // Total KPIs
   const totalKpis = computeAccountKpis(allCharges)
@@ -931,6 +949,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       periodStartDate={format(periodStart, "d MMM yyyy", { locale: fr })}
       periodEndDate={format(periodEnd, "d MMM yyyy", { locale: fr })}
       bookings={{ total: totalBookingCount, bySite: bookingsBySite }}
+      revenueEvolution={revenueEvolution}
     />
   )
 }
@@ -942,8 +961,7 @@ function getDateGrouping(period: string): "hour" | "day" | "week" | "month" {
     case "month": return "day"
     case "3months": return "week"
     case "year": return "month"
-    case "3years": return "month"
-    case "all": return "month"
+    case "6months": return "month"
     default: return "day"
   }
 }
