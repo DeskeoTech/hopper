@@ -67,9 +67,20 @@ export async function proxy(request: NextRequest) {
     return supabaseResponse
   }
 
-  // All non-public routes require authentication (deny by default)
+  // Client routes: redirect to login if not authenticated
+  const clientRoutes = ["/compte", "/mon-compte", "/boutique", "/salles", "/entreprise"]
+  const isClientRoute = clientRoutes.some(
+    (route) => request.nextUrl.pathname === route || request.nextUrl.pathname.startsWith(route + "/")
+  )
+  if (!user && isClientRoute) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/login"
+    url.searchParams.set("error", "not_connected")
+    return NextResponse.redirect(url)
+  }
+
+  // All other non-public routes: 404 if not authenticated (anti-phishing)
   if (!user) {
-    // Rewrite vers 404 au lieu de redirect /login pour éviter le phishing
     return NextResponse.rewrite(new URL("/not-found", request.url))
   }
 

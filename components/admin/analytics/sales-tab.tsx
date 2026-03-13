@@ -82,6 +82,7 @@ export interface SalesTabProps {
   periodStartDate: string
   periodEndDate: string
   bookings: { total: number; bySite: BookingBySite[] }
+  revenueEvolution: number | null
 }
 
 // === Constants ===
@@ -125,9 +126,8 @@ const periodOptions = [
   { value: "week", label: "Semaine" },
   { value: "month", label: "Mois" },
   { value: "3months", label: "3 mois" },
+  { value: "6months", label: "6 mois" },
   { value: "year", label: "1 an" },
-  { value: "3years", label: "3 ans" },
-  { value: "all", label: "Tout" },
 ]
 
 type SortField = "date" | "companyName" | "amount" | "status"
@@ -136,12 +136,12 @@ type SortOrder = "asc" | "desc"
 // === Helpers ===
 
 function formatEuro(value: number): string {
-  return value.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+  return Math.round(value).toLocaleString("fr-FR") + " €"
 }
 
 // === Component ===
 
-export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings }: SalesTabProps) {
+export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings, revenueEvolution }: SalesTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -160,7 +160,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const showModeToggle = period === "week" || period === "month"
+  const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
 
   const [search, setSearch] = useState("")
   const [companyFilter, setCompanyFilter] = useState("all")
@@ -342,7 +342,17 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
           <TrendingUp className="h-5 w-5 text-emerald-600" />
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chiffre d&apos;affaires Hopper</p>
         </div>
-        <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{Math.round(totalKpis.totalRevenue).toLocaleString("fr-FR")} €</p>
+        <div className="flex items-baseline gap-3">
+          <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{Math.round(totalKpis.totalRevenue).toLocaleString("fr-FR")} €</p>
+          {revenueEvolution !== null && (
+            <span className={cn(
+              "text-sm font-medium tabular-nums",
+              revenueEvolution >= 0 ? "text-emerald-600" : "text-red-500"
+            )}>
+              {revenueEvolution >= 0 ? "+" : ""}{Math.round(revenueEvolution)} %
+            </span>
+          )}
+        </div>
         {totalKpis.netRevenue !== totalKpis.totalRevenue && (
           <p className="text-sm text-muted-foreground mt-1">Net (après remboursements) : {formatEuro(totalKpis.netRevenue)}</p>
         )}
@@ -352,7 +362,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             const succeeded = payments.filter((p) => p.status === "succeeded")
             const totalPersons = succeeded.reduce((s, p) => s + p.quantity, 0)
             const avgPerPerson = totalPersons > 0 ? totalKpis.totalRevenue / totalPersons : 0
-            return <> — {totalPersons} pers. — Moy./pers. {formatEuro(avgPerPerson)}</>
+            return <> — {totalPersons} desks — Moy./desk {formatEuro(avgPerPerson)}</>
           })()}
         </p>
       </div>
@@ -418,6 +428,18 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         const productNameMap = new Map<string, string>()
         productKpis.forEach((p) => productNameMap.set(p.productId, p.productName))
 
+        // Build per-site pie data
+        const sitePies = siteChartData.map((site) => {
+          const slices = productIds
+            .map((pid) => ({
+              name: productNameMap.get(pid) || pid,
+              value: (site[pid] as number) || 0,
+              colorIdx: productColorMap.get(pid) ?? (PRODUCT_CARD_COLORS.length - 1),
+            }))
+            .filter((s) => s.value > 0)
+          return { name: site.name as string, total: site._total as number, slices }
+        })
+
         return (
           <div className="rounded-[20px] bg-card p-4 sm:p-5">
             <div className="flex items-center gap-3 mb-4">
@@ -427,41 +449,45 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                 {formatEuro(totalSiteRevenue)}
               </span>
             </div>
-            <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={siteChartData} margin={{ top: 5, right: 10, bottom: 20, left: 10 }}>
-                <XAxis
-                  dataKey="name"
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                  interval={0}
-                />
-                <YAxis
-                  tickFormatter={(v: number) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`}
-                  tick={{ fontSize: 11, fill: "var(--color-muted-foreground)" }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  formatter={(value: number, name: string) => [formatEuro(value), productNameMap.get(name) || name]}
-                  contentStyle={{ borderRadius: 12, fontSize: 13 }}
-                />
-                {productIds.map((pid) => {
-                  const colorIdx = productColorMap.get(pid) ?? (PRODUCT_CARD_COLORS.length - 1)
-                  return (
-                    <Bar
-                      key={pid}
-                      dataKey={pid}
-                      stackId="revenue"
-                      fill={PRODUCT_CARD_COLORS[colorIdx % PRODUCT_CARD_COLORS.length].chart}
-                      barSize={32}
-                    />
-                  )
-                })}
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="grid gap-6 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+              {sitePies.map((site) => (
+                <div key={site.name} className="flex flex-col items-center gap-1">
+                  <div className="relative h-[120px] w-[120px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={site.slices}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={32}
+                          outerRadius={55}
+                          paddingAngle={2}
+                          strokeWidth={0}
+                        >
+                          {site.slices.map((s, i) => (
+                            <Cell key={i} fill={PRODUCT_CARD_COLORS[s.colorIdx % PRODUCT_CARD_COLORS.length].chart} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          formatter={(value: number, name: string) => [formatEuro(value), name]}
+                          contentStyle={{ borderRadius: 12, fontSize: 12 }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <span className="text-xs font-bold tabular-nums leading-tight text-center">
+                        {site.total >= 1000 ? `${Math.round(site.total / 1000)}k€` : `${Math.round(site.total)}€`}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-medium text-center leading-tight">{site.name}</span>
+                </div>
+              ))}
+            </div>
             {/* Legend */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-2">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 pt-4">
               {productKpis.map((p, i) => (
                 <div key={p.productId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
@@ -731,28 +757,6 @@ function getSiteBreakdown(payments: StripePayment[]) {
     }))
 }
 
-function getPriceBreakdown(payments: StripePayment[]) {
-  const byPrice: Record<string, { revenue: number; count: number }> = {}
-  for (const p of payments) {
-    if (p.status !== "succeeded") continue
-    const priceKey = formatEuro(p.amount / 100)
-    const existing = byPrice[priceKey]
-    if (existing) {
-      existing.revenue += p.amount / 100
-      existing.count++
-    } else {
-      byPrice[priceKey] = { revenue: p.amount / 100, count: 1 }
-    }
-  }
-  return Object.entries(byPrice)
-    .sort((a, b) => a[1].revenue / a[1].count - b[1].revenue / b[1].count)
-    .map(([name, data]) => ({
-      name,
-      value: Math.round(data.revenue * 100) / 100,
-      count: data.count,
-    }))
-}
-
 function getStatusBreakdown(payments: StripePayment[]) {
   const counts: Record<string, number> = { succeeded: 0, pending: 0, failed: 0 }
   for (const p of payments) {
@@ -780,20 +784,11 @@ function ProductDetailModal({
 }) {
   const style = PRODUCT_CARD_COLORS[colorIndex % PRODUCT_CARD_COLORS.length]
   const siteBreakdown = useMemo(() => getSiteBreakdown(payments), [payments])
-  const priceBreakdown = useMemo(() => getPriceBreakdown(payments), [payments])
   const topClients = useMemo(() => getTopClients(payments), [payments])
   const statusBreakdown = useMemo(() => getStatusBreakdown(payments), [payments])
   const isGroupedProduct = product.productId.startsWith("__group_")
   const isCafeGroup = product.productId === "__group_cafe"
   const hasSiteData = siteBreakdown.length > 1
-  const hasPriceData = priceBreakdown.length > 1
-  const [selectedPrice, setSelectedPrice] = useState<string | null>(null)
-  const selectedPricePayments = useMemo(() => {
-    if (!selectedPrice) return []
-    return payments
-      .filter((p) => p.status === "succeeded" && formatEuro(p.amount / 100) === selectedPrice)
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-  }, [payments, selectedPrice])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -810,92 +805,6 @@ function ProductDetailModal({
         </DialogHeader>
 
         <div className="space-y-6 mt-2">
-          {/* Price breakdown pie chart */}
-          {hasPriceData && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">
-                Répartition par montant payé
-                {selectedPrice && (
-                  <button onClick={() => setSelectedPrice(null)} className="ml-2 text-[10px] text-muted-foreground/60 hover:text-muted-foreground normal-case tracking-normal font-normal">
-                    ✕ Effacer la sélection
-                  </button>
-                )}
-              </h4>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={priceBreakdown}
-                    margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                    onClick={(state) => {
-                      if (state?.activePayload?.[0]) {
-                        const clickedPrice = state.activePayload[0].payload.name as string
-                        setSelectedPrice(clickedPrice === selectedPrice ? null : clickedPrice)
-                      }
-                    }}
-                    className="cursor-pointer"
-                  >
-                    <XAxis dataKey="name" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} allowDecimals={false} />
-                    <Tooltip
-                      formatter={(value: number) => [
-                        `${value} transaction${value > 1 ? "s" : ""}`,
-                        "Nombre",
-                      ]}
-                      contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                    />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {priceBreakdown.map((entry, i) => (
-                        <Cell
-                          key={i}
-                          fill={style.chart}
-                          opacity={selectedPrice && entry.name !== selectedPrice ? 0.25 : 1}
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              {selectedPrice && selectedPricePayments.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    {selectedPricePayments.length} paiement{selectedPricePayments.length > 1 ? "s" : ""} à {selectedPrice}
-                  </h4>
-                  <div className="overflow-x-auto max-h-[200px] overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">Date</TableHead>
-                          <TableHead className="text-xs">Client</TableHead>
-                          <TableHead className="text-xs hidden sm:table-cell">Description</TableHead>
-                          <TableHead className="text-xs text-right">Montant</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {selectedPricePayments.map((p) => (
-                          <TableRow
-                            key={p.id}
-                            className={cn(p.receiptUrl && "cursor-pointer hover:bg-muted/50 transition-colors")}
-                            onClick={() => p.receiptUrl && window.open(p.receiptUrl, "_blank")}
-                          >
-                            <TableCell className="text-sm whitespace-nowrap">{new Date(p.date).toLocaleDateString("fr-FR")}</TableCell>
-                            <TableCell className="text-sm font-medium truncate max-w-[150px]">{p.companyName}</TableCell>
-                            <TableCell className="text-sm text-muted-foreground truncate max-w-[200px] hidden sm:table-cell">{p.description}</TableCell>
-                            <TableCell className="text-sm font-medium tabular-nums text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {formatEuro(p.amount / 100)}
-                                {p.receiptUrl && <ExternalLink className="h-3 w-3 text-muted-foreground/50" />}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
           {/* Site breakdown pie chart (only for grouped products with multiple sites, except café) */}
           {isGroupedProduct && !isCafeGroup && hasSiteData && (
             <div>

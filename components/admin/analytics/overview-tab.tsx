@@ -34,9 +34,8 @@ const periodOptions = [
   { value: "week", label: "Semaine" },
   { value: "month", label: "Mois" },
   { value: "3months", label: "3 mois" },
+  { value: "6months", label: "6 mois" },
   { value: "year", label: "1 an" },
-  { value: "3years", label: "3 ans" },
-  { value: "all", label: "Tout" },
 ]
 
 const periodLabels: Record<string, Record<string, string>> = {
@@ -45,18 +44,16 @@ const periodLabels: Record<string, Record<string, string>> = {
     week: "cette semaine (lun-dim)",
     month: "ce mois (1-31)",
     "3months": "3 derniers mois",
+    "6months": "6 derniers mois",
     year: "cette année",
-    "3years": "3 dernières années",
-    all: "tout le temps",
   },
   rolling: {
     today: "aujourd'hui",
     week: "7 derniers jours",
     month: "30 derniers jours",
     "3months": "3 derniers mois",
+    "6months": "6 derniers mois",
     year: "cette année",
-    "3years": "3 dernières années",
-    all: "tout le temps",
   },
 }
 
@@ -130,7 +127,7 @@ export function OverviewTab({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  const showModeToggle = period === "week" || period === "month"
+  const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
 
   const modeLabels = periodLabels[periodMode] || periodLabels.calendar
   const pLabel = modeLabels[period] || modeLabels.month
