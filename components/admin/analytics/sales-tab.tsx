@@ -84,6 +84,7 @@ export interface SalesTabProps {
   bookings: { total: number; bySite: BookingBySite[] }
   revenueEvolution: number | null
   revenueOverTime: { date: string; ca: number }[]
+  businessDays: number
 }
 
 // === Constants ===
@@ -143,7 +144,7 @@ function formatEuro(value: number): string {
 
 // === Component ===
 
-export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings, revenueEvolution, revenueOverTime }: SalesTabProps) {
+export function SalesTab({ totalKpis, productKpis, payments, companies, period, periodMode, periodStartDate, periodEndDate, bookings, revenueEvolution, revenueOverTime, businessDays }: SalesTabProps) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -173,6 +174,8 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc")
   const [page, setPage] = useState(1)
   const [detailModal, setDetailModal] = useState<string | null>(null)
+  const [showCaDetail, setShowCaDetail] = useState(false)
+  const [excludeAbonnements, setExcludeAbonnements] = useState(true)
 
   const productFilterOptions = useMemo(() => [
     { value: "all", label: "Tous les produits" },
@@ -348,7 +351,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       <div className={cn("space-y-4 transition-opacity duration-200", isPending && "opacity-40 pointer-events-none")}>
 
       {/* Combined total */}
-      <div className="rounded-[20px] bg-card p-5 sm:p-6">
+      <div className="rounded-[20px] bg-card p-5 sm:p-6 cursor-pointer transition-all hover:shadow-md hover:scale-[1.005]" onClick={() => setShowCaDetail(true)}>
         <div className="flex items-center gap-3 mb-1">
           <TrendingUp className="h-5 w-5 text-emerald-600" />
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chiffre d&apos;affaires Hopper</p>
@@ -373,7 +376,8 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             const succeeded = payments.filter((p) => p.status === "succeeded")
             const totalPersons = succeeded.reduce((s, p) => s + p.quantity, 0)
             const avgPerPerson = totalPersons > 0 ? totalKpis.totalRevenue / totalPersons : 0
-            return <> — {totalPersons} desks — Moy./desk {formatEuro(avgPerPerson)}</>
+            const avgPerPersonPerDay = totalPersons > 0 && businessDays > 0 ? totalKpis.totalRevenue / totalPersons / businessDays : 0
+            return <> — {totalPersons} desks — Moy./desk/jour {formatEuro(avgPerPersonPerDay)}</>
           })()}
         </p>
       </div>
@@ -381,7 +385,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       {/* Revenue curve */}
       {revenueOverTime.length > 1 && (
         <div className="rounded-[20px] bg-card p-4 sm:p-5">
-          <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground mb-3">CA cumulé</h3>
+          <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground mb-3">CA quotidien</h3>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               {(() => {
@@ -397,9 +401,9 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} domain={[(min: number) => Math.floor(min * 0.85), 'auto']} />
+                    <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} />
                     <Tooltip
-                      formatter={(value: number) => [formatEuro(value), "CA cumulé"]}
+                      formatter={(value: number) => [formatEuro(value), "CA du jour"]}
                       contentStyle={{ borderRadius: 12, fontSize: 12 }}
                     />
                     {hasSpacebringDate && (
@@ -441,13 +445,147 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         />
       ))}
 
+      {/* CA detail modal */}
+      <Dialog open={showCaDetail} onOpenChange={setShowCaDetail}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5 text-emerald-600" />
+              Détail du calcul CA
+            </DialogTitle>
+            <DialogDescription>
+              Période : {periodStartDate} — {periodEndDate} ({businessDays} jour{businessDays > 1 ? "s" : ""} ouvré{businessDays > 1 ? "s" : ""})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5 mt-2">
+            {/* Revenue breakdown */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Revenus</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>CA brut (paiements réussis)</span>
+                  <span className="font-medium tabular-nums">{formatEuro(totalKpis.totalRevenue)}</span>
+                </div>
+                {totalKpis.totalRefunded > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span>Remboursements</span>
+                    <span className="font-medium tabular-nums text-orange-500">-{formatEuro(totalKpis.totalRefunded)}</span>
+                  </div>
+                )}
+                {totalKpis.totalRefunded > 0 && (
+                  <div className="flex justify-between text-sm border-t pt-2">
+                    <span className="font-medium">CA net</span>
+                    <span className="font-bold tabular-nums">{formatEuro(totalKpis.netRevenue)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Transactions */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Transactions</h4>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Nombre de paiements réussis</span>
+                  <span className="font-medium tabular-nums">{payments.filter((p) => p.status === "succeeded").length}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Nombre total de paiements</span>
+                  <span className="font-medium tabular-nums">{totalKpis.transactionCount}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span>Moyenne par paiement</span>
+                  <span className="font-medium tabular-nums">{formatEuro(totalKpis.avgTransaction)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span className="italic">= CA brut / nb paiements = {formatEuro(totalKpis.totalRevenue)} / {totalKpis.transactionCount}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Desks */}
+            {(() => {
+              const succeeded = payments.filter((p) => p.status === "succeeded")
+              const totalDesks = succeeded.reduce((s, p) => s + p.quantity, 0)
+              const avgPerDesk = totalDesks > 0 ? totalKpis.totalRevenue / totalDesks : 0
+              const avgPerDeskPerDay = totalDesks > 0 && businessDays > 0 ? totalKpis.totalRevenue / totalDesks / businessDays : 0
+              return (
+                <div>
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Desks</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Total desks (somme des quantités)</span>
+                      <span className="font-medium tabular-nums">{totalDesks}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Moyenne par desk</span>
+                      <span className="font-medium tabular-nums">{formatEuro(avgPerDesk)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span className="italic">= CA brut / nb desks = {formatEuro(totalKpis.totalRevenue)} / {totalDesks}</span>
+                    </div>
+                    <div className="flex justify-between text-sm border-t pt-2">
+                      <span className="font-medium">Moyenne par desk par jour</span>
+                      <span className="font-bold tabular-nums">{formatEuro(avgPerDeskPerDay)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span className="italic">= CA brut / nb desks / jours ouvrés = {formatEuro(totalKpis.totalRevenue)} / {totalDesks} / {businessDays}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+
+            {/* Evolution */}
+            {revenueEvolution !== null && (
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Évolution</h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>vs période précédente</span>
+                    <span className={cn("font-bold tabular-nums", revenueEvolution >= 0 ? "text-emerald-600" : "text-red-500")}>
+                      {revenueEvolution >= 0 ? "+" : ""}{Math.round(revenueEvolution)} %
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span className="italic">= (CA période - CA période précédente) / CA période précédente × 100</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* By product */}
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-3">Répartition par produit</h4>
+              <div className="space-y-2">
+                {productKpis.map((p) => {
+                  const pct = totalKpis.totalRevenue > 0 ? (p.kpis.totalRevenue / totalKpis.totalRevenue) * 100 : 0
+                  const colorIdx = productColorMap.get(p.productId) ?? 0
+                  return (
+                    <div key={p.productId} className="flex items-center gap-2 text-sm">
+                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: PRODUCT_CARD_COLORS[colorIdx].chart }} />
+                      <span className="truncate flex-1">{p.productName}</span>
+                      <span className="font-medium tabular-nums shrink-0">{formatEuro(p.kpis.totalRevenue)}</span>
+                      <span className="text-muted-foreground tabular-nums shrink-0 w-12 text-right">{Math.round(pct)}%</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* CA par site */}
       {bookings.bySite.length > 0 && (() => {
+        const abonnementIds = new Set(["__group_abonnements"])
         // Collect all product IDs that appear across sites
         const allProductIds = new Set<string>()
         bookings.bySite.forEach((site) => {
           const data = revenueByProductBySiteId.get(site.siteId)
-          if (data) data.products.forEach((_, pid) => allProductIds.add(pid))
+          if (data) data.products.forEach((_, pid) => {
+            if (!excludeAbonnements || !abonnementIds.has(pid)) allProductIds.add(pid)
+          })
         })
         // Sort products by total revenue descending (largest at bottom of stack)
         const productIds = Array.from(allProductIds).sort((a, b) => {
@@ -456,15 +594,18 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
           return totalB - totalA
         })
 
-        // Build chart data: each site has a key per product
+        // Build chart data: each site has a key per product (filtered)
         const siteChartData = bookings.bySite
           .map((site) => {
             const data = revenueByProductBySiteId.get(site.siteId)
             const row: Record<string, string | number> = { name: site.siteName }
+            let filteredTotal = 0
             for (const pid of productIds) {
-              row[pid] = data?.products.get(pid) || 0
+              const val = data?.products.get(pid) || 0
+              row[pid] = val
+              filteredTotal += val
             }
-            row._total = data?.total || 0
+            row._total = filteredTotal
             return row
           })
           .sort((a, b) => (b._total as number) - (a._total as number))
@@ -475,8 +616,12 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         const productNameMap = new Map<string, string>()
         productKpis.forEach((p) => productNameMap.set(p.productId, p.productName))
 
+        // Filtered product list for legend
+        const legendProducts = excludeAbonnements
+          ? productKpis.filter((p) => !abonnementIds.has(p.productId))
+          : productKpis
+
         // Build per-site pie data (exclude sites with 0€)
-        const zeroSites = siteChartData.filter((site) => (site._total as number) === 0).map((site) => site.name as string)
         const sitePies = siteChartData.filter((site) => (site._total as number) > 0).map((site) => {
           const slices = productIds
             .map((pid) => ({
@@ -493,6 +638,30 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             <div className="flex items-center gap-3 mb-4">
               <Building2 className="h-5 w-5 text-muted-foreground" />
               <h3 className="font-header text-lg uppercase tracking-wide">CA par site</h3>
+              <div className="flex items-center rounded-full bg-muted p-0.5 text-[10px] font-medium">
+                <button
+                  onClick={() => setExcludeAbonnements(true)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 transition-colors",
+                    excludeAbonnements
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Hors abo.
+                </button>
+                <button
+                  onClick={() => setExcludeAbonnements(false)}
+                  className={cn(
+                    "rounded-full px-2.5 py-1 transition-colors",
+                    !excludeAbonnements
+                      ? "bg-foreground text-background"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Avec abo.
+                </button>
+              </div>
               <span className="font-header text-2xl tabular-nums ml-auto text-emerald-600">
                 {formatEuro(totalSiteRevenue)}
               </span>
@@ -536,7 +705,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             </div>
             {/* Legend */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 pt-4">
-              {productKpis.map((p) => (
+              {legendProducts.map((p) => (
                 <div key={p.productId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
