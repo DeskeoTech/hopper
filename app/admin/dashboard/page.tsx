@@ -740,7 +740,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     // Food & Beverage: café, coffee, espresso, latte, juice, color latte, infinity coffee
     if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice") || n.includes("café à la carte")) return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     // Crédits → Factures
-    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_factures", productName: "Factures" }
+    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_factures", productName: "Pass Résident" }
     return match
   }
 
@@ -777,12 +777,12 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
     // 6. Fallback: facture → Factures
-    if (desc.includes("facture")) return { productId: "__group_factures", productName: "Factures" }
+    if (desc.includes("facture")) return { productId: "__group_factures", productName: "Pass Résident" }
     // 7. Fallback: subscription/souscription → Abonnements
     if (desc.includes("subscription") || desc.includes("souscription") || desc.includes("inscription") || desc.includes("abonnement")) {
       return { productId: "__group_abonnements", productName: "Abonnements" }
     }
-    return { productId: "__group_factures", productName: "Factures" }
+    return { productId: "__group_factures", productName: "Pass Résident" }
   }
 
   // Match + normalize into groups, with amount-based fallback
