@@ -175,8 +175,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   const [page, setPage] = useState(1)
   const [detailModal, setDetailModal] = useState<string | null>(null)
   const [showCaDetail, setShowCaDetail] = useState(false)
-  const [excludeAbonnements, setExcludeAbonnements] = useState(true)
-  const [excludeAboDailyChart, setExcludeAboDailyChart] = useState(true)
+  const [excludeResidents, setExcludeResidents] = useState(true)
 
   const productFilterOptions = useMemo(() => [
     { value: "all", label: "Tous les produits" },
@@ -352,14 +351,49 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       <div className={cn("space-y-4 transition-opacity duration-200", isPending && "opacity-40 pointer-events-none")}>
 
       {/* Combined total */}
+      {(() => {
+        const aboRevenue = productKpis
+          .filter((p) => p.productId === "__group_abonnements")
+          .reduce((s, p) => s + p.kpis.totalRevenue, 0)
+        const aboTransactions = productKpis
+          .filter((p) => p.productId === "__group_abonnements")
+          .reduce((s, p) => s + p.kpis.transactionCount, 0)
+        const displayRevenue = excludeResidents ? totalKpis.totalRevenue - aboRevenue : totalKpis.totalRevenue
+        const displayTransactions = excludeResidents ? totalKpis.transactionCount - aboTransactions : totalKpis.transactionCount
+        const displayAvg = displayTransactions > 0 ? displayRevenue / displayTransactions : 0
+        return (
       <div className="rounded-[20px] bg-card p-5 sm:p-6 cursor-pointer transition-all hover:shadow-md hover:scale-[1.005]" onClick={() => setShowCaDetail(true)}>
         <div className="flex items-center gap-3 mb-1">
           <TrendingUp className="h-5 w-5 text-emerald-600" />
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Chiffre d&apos;affaires Hopper</p>
+          <div className="flex items-center rounded-full bg-muted p-0.5 text-[10px] font-medium" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setExcludeResidents(true)}
+              className={cn(
+                "rounded-full px-2.5 py-1 transition-colors",
+                excludeResidents
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Hors résidents
+            </button>
+            <button
+              onClick={() => setExcludeResidents(false)}
+              className={cn(
+                "rounded-full px-2.5 py-1 transition-colors",
+                !excludeResidents
+                  ? "bg-foreground text-background"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Avec résidents
+            </button>
+          </div>
         </div>
         <div className="flex items-baseline gap-3">
-          <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{Math.round(totalKpis.totalRevenue).toLocaleString("fr-FR")} €</p>
-          {revenueEvolution !== null && (
+          <p className="font-header text-3xl sm:text-4xl text-emerald-600 tabular-nums">{Math.round(displayRevenue).toLocaleString("fr-FR")} €</p>
+          {revenueEvolution !== null && !excludeResidents && (
             <span className={cn(
               "text-sm font-medium tabular-nums",
               revenueEvolution >= 0 ? "text-emerald-600" : "text-red-500"
@@ -368,56 +402,31 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             </span>
           )}
         </div>
-        {totalKpis.netRevenue !== totalKpis.totalRevenue && (
+        {totalKpis.netRevenue !== totalKpis.totalRevenue && !excludeResidents && (
           <p className="text-sm text-muted-foreground mt-1">Net (après remboursements) : {formatEuro(totalKpis.netRevenue)}</p>
         )}
         <p className="text-xs text-muted-foreground mt-1">
-          {totalKpis.transactionCount} paiement{totalKpis.transactionCount > 1 ? "s" : ""} — Moy./paiement {formatEuro(totalKpis.avgTransaction)}
+          {displayTransactions} paiement{displayTransactions > 1 ? "s" : ""} — Moy./paiement {formatEuro(displayAvg)}
           {(() => {
             const succeeded = payments.filter((p) => p.status === "succeeded")
             const totalPersons = succeeded.reduce((s, p) => s + p.quantity, 0)
-            const avgPerPerson = totalPersons > 0 ? totalKpis.totalRevenue / totalPersons : 0
-            const avgPerPersonPerDay = totalPersons > 0 && businessDays > 0 ? totalKpis.totalRevenue / totalPersons / businessDays : 0
+            const avgPerPersonPerDay = totalPersons > 0 && businessDays > 0 ? displayRevenue / totalPersons / businessDays : 0
             return <> — {totalPersons} desks — Moy./desk/jour {formatEuro(avgPerPersonPerDay)}</>
           })()}
         </p>
       </div>
+        )
+      })()}
 
       {/* Revenue curve */}
       {revenueOverTime.length > 1 && (
         <div className="rounded-[20px] bg-card p-4 sm:p-5">
-          <div className="flex items-center gap-3 mb-3">
-            <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground">CA quotidien</h3>
-            <div className="flex items-center rounded-full bg-muted p-0.5 text-[10px] font-medium">
-              <button
-                onClick={() => setExcludeAboDailyChart(true)}
-                className={cn(
-                  "rounded-full px-2.5 py-1 transition-colors",
-                  excludeAboDailyChart
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Hors abo.
-              </button>
-              <button
-                onClick={() => setExcludeAboDailyChart(false)}
-                className={cn(
-                  "rounded-full px-2.5 py-1 transition-colors",
-                  !excludeAboDailyChart
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                Avec abo.
-              </button>
-            </div>
-          </div>
+          <h3 className="font-header text-sm uppercase tracking-wide text-muted-foreground mb-3">CA quotidien</h3>
           <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               {(() => {
                 const spacebringEnd = "02 mars"
-                const caKey = excludeAboDailyChart ? "caHorsAbo" : "ca"
+                const caKey = excludeResidents ? "caHorsAbo" : "ca"
                 const chartData = revenueOverTime.map((d) => ({ ...d, label: new Date(d.date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }) }))
                 const hasSpacebringDate = chartData.some((d) => d.label === spacebringEnd)
                 return (
@@ -431,7 +440,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
                     <XAxis dataKey="label" tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
                     <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} tickFormatter={(v) => v >= 1000 ? `${Math.round(v / 1000)}k€` : `${v}€`} />
                     <Tooltip
-                      formatter={(value: number) => [formatEuro(value), excludeAboDailyChart ? "CA hors abo." : "CA du jour"]}
+                      formatter={(value: number) => [formatEuro(value), excludeResidents ? "CA hors résidents" : "CA du jour"]}
                       contentStyle={{ borderRadius: 12, fontSize: 12 }}
                     />
                     {hasSpacebringDate && (
@@ -612,7 +621,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         bookings.bySite.forEach((site) => {
           const data = revenueByProductBySiteId.get(site.siteId)
           if (data) data.products.forEach((_, pid) => {
-            if (!excludeAbonnements || !abonnementIds.has(pid)) allProductIds.add(pid)
+            if (!excludeResidents || !abonnementIds.has(pid)) allProductIds.add(pid)
           })
         })
         // Sort products by total revenue descending (largest at bottom of stack)
@@ -645,7 +654,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
         productKpis.forEach((p) => productNameMap.set(p.productId, p.productName))
 
         // Filtered product list for legend
-        const legendProducts = excludeAbonnements
+        const legendProducts = excludeResidents
           ? productKpis.filter((p) => !abonnementIds.has(p.productId))
           : productKpis
 
@@ -668,26 +677,26 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
               <h3 className="font-header text-lg uppercase tracking-wide">CA par site</h3>
               <div className="flex items-center rounded-full bg-muted p-0.5 text-[10px] font-medium">
                 <button
-                  onClick={() => setExcludeAbonnements(true)}
+                  onClick={() => setExcludeResidents(true)}
                   className={cn(
                     "rounded-full px-2.5 py-1 transition-colors",
-                    excludeAbonnements
+                    excludeResidents
                       ? "bg-foreground text-background"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Hors abo.
+                  Hors résidents
                 </button>
                 <button
-                  onClick={() => setExcludeAbonnements(false)}
+                  onClick={() => setExcludeResidents(false)}
                   className={cn(
                     "rounded-full px-2.5 py-1 transition-colors",
-                    !excludeAbonnements
+                    !excludeResidents
                       ? "bg-foreground text-background"
                       : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  Avec abo.
+                  Avec résidents
                 </button>
               </div>
               <span className="font-header text-2xl tabular-nums ml-auto text-emerald-600">
