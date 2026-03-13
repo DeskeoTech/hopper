@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { ArrowDown, ArrowUp, ArrowUpDown, Building2, ChevronLeft, ChevronRight, Download, ExternalLink, Info, Search, TrendingUp } from "lucide-react"
 import {
@@ -145,19 +145,20 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
   function handlePeriodChange(newPeriod: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "sales")
     params.set("period", newPeriod)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   function handleModeChange(newMode: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "sales")
     params.set("mode", newMode)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
@@ -335,6 +336,8 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
           </>
         )}
       </div>
+
+      <div className={cn("space-y-4 transition-opacity duration-200", isPending && "opacity-40 pointer-events-none")}>
 
       {/* Combined total */}
       <div className="rounded-[20px] bg-card p-5 sm:p-6">
@@ -662,6 +665,7 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )

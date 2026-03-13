@@ -1,5 +1,6 @@
 "use client"
 
+import { useTransition } from "react"
 import { useRouter, usePathname, useSearchParams } from "next/navigation"
 import { Building2 } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -112,19 +113,20 @@ export function OverviewTab({
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const [isPending, startTransition] = useTransition()
 
   function handlePeriodChange(newPeriod: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "overview")
     params.set("period", newPeriod)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   function handleModeChange(newMode: string) {
     const params = new URLSearchParams(searchParams.toString())
     params.set("tab", "overview")
     params.set("mode", newMode)
-    router.push(`${pathname}?${params.toString()}`)
+    startTransition(() => router.push(`${pathname}?${params.toString()}`))
   }
 
   const showModeToggle = period === "week" || period === "month" || period === "3months" || period === "6months" || period === "year"
@@ -171,6 +173,7 @@ export function OverviewTab({
         )}
       </div>
 
+      <div className={cn("space-y-4 transition-opacity duration-200", isPending && "opacity-40 pointer-events-none")}>
       {/* Row 1: KPI metrics (clickable with detail dialogs) */}
       <KpiGrid
         companiesCount={companiesCount}
@@ -243,6 +246,7 @@ export function OverviewTab({
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
         <TopMeetingRoomsCard rooms={topMeetingRooms} maxBookings={maxMeetingRoomBookings} periodLabel={pLabel} />
         <TopSitesCard sites={topSites} maxBookings={maxSiteBookings} periodLabel={pLabel} />
+      </div>
       </div>
     </div>
   )
