@@ -186,7 +186,13 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
   // Build a color map for consistent badge colors in the table
   const productColorMap = useMemo(() => {
     const map = new Map<string, number>()
-    productKpis.forEach((p, i) => map.set(p.productId, i))
+    const count = productKpis.length
+    const maxIdx = PRODUCT_CARD_COLORS.length - 1
+    productKpis.forEach((p, i) => {
+      // Spread evenly across the full palette
+      const colorIdx = count <= 1 ? 0 : Math.round((i / (count - 1)) * maxIdx)
+      map.set(p.productId, colorIdx)
+    })
     return map
   }, [productKpis])
 
@@ -374,11 +380,11 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       {/* Product cards */}
       {productKpis.length > 0 && (
         <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {productKpis.map((product, index) => (
+          {productKpis.map((product) => (
             <ProductCard
               key={product.productId}
               product={product}
-              colorIndex={index}
+              colorIndex={productColorMap.get(product.productId) ?? 0}
               onClick={() => setDetailModal(product.productId)}
             />
           ))}
@@ -386,13 +392,13 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
       )}
 
       {/* Product detail modals */}
-      {productKpis.map((product, index) => (
+      {productKpis.map((product) => (
         <ProductDetailModal
           key={product.productId}
           open={detailModal === product.productId}
           onOpenChange={(open) => !open && setDetailModal(null)}
           product={product}
-          colorIndex={index}
+          colorIndex={productColorMap.get(product.productId) ?? 0}
           payments={payments.filter((p) => p.productId === product.productId)}
           period={period}
         />
@@ -492,11 +498,11 @@ export function SalesTab({ totalKpis, productKpis, payments, companies, period, 
             </div>
             {/* Legend */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 pt-4">
-              {productKpis.map((p, i) => (
+              {productKpis.map((p) => (
                 <div key={p.productId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <span
                     className="h-2.5 w-2.5 rounded-full shrink-0"
-                    style={{ backgroundColor: PRODUCT_CARD_COLORS[i % PRODUCT_CARD_COLORS.length].chart }}
+                    style={{ backgroundColor: PRODUCT_CARD_COLORS[productColorMap.get(p.productId) ?? 0].chart }}
                   />
                   <span className="truncate">{p.productName}</span>
                 </div>
