@@ -716,19 +716,16 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     piToProduct.set(s.paymentIntentId, { productId: s.productId, productName: s.productName, quantity: s.quantity })
   }
 
-  // Revenue over time (daily cumulative)
+  // Revenue over time (daily)
   const revenueByDay = new Map<string, number>()
   for (const c of allCharges) {
     if (c.status !== "succeeded") continue
     const day = new Date(c.created * 1000).toISOString().split("T")[0]
     revenueByDay.set(day, (revenueByDay.get(day) || 0) + c.amount / 100)
   }
-  const sortedDays = Array.from(revenueByDay.entries()).sort((a, b) => a[0].localeCompare(b[0]))
-  let cumul = 0
-  const revenueOverTime = sortedDays.map(([date, amount]) => {
-    cumul += amount
-    return { date, ca: Math.round(cumul) }
-  })
+  const revenueOverTime = Array.from(revenueByDay.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, amount]) => ({ date, ca: Math.round(amount) }))
 
   // Previous period revenue
   const allPrevCharges = [...prevCoworkingCharges, ...prevIcadeCharges, ...prevCollectionCharges]
@@ -754,7 +751,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     // Food & Beverage: café, coffee, espresso, latte, juice, color latte, infinity coffee
     if (n.includes("café") || n.includes("coffee") || n.includes("espresso") || n.includes("latte") || n.includes("juice") || n.includes("café à la carte")) return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     // Crédits → Factures
-    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_factures", productName: "Pass Résident" }
+    if (n.includes("crédit") || n.includes("credit")) return { productId: "__group_abonnements", productName: "Abonnements" }
     return match
   }
 
@@ -791,19 +788,19 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
     // 6. Fallback: facture → Factures
-    if (desc.includes("facture")) return { productId: "__group_factures", productName: "Pass Résident" }
+    if (desc.includes("facture")) return { productId: "__group_abonnements", productName: "Abonnements" }
     // 7. Fallback: subscription/souscription → Abonnements
     if (desc.includes("subscription") || desc.includes("souscription") || desc.includes("inscription") || desc.includes("abonnement")) {
       return { productId: "__group_abonnements", productName: "Abonnements" }
     }
-    return { productId: "__group_factures", productName: "Pass Résident" }
+    return { productId: "__group_abonnements", productName: "Abonnements" }
   }
 
   // Match + normalize into groups, with amount-based fallback
   function matchChargeToProduct(charge: CachedCharge): { productId: string; productName: string } {
     const result = normalizeToGroup(matchChargeToRawProduct(charge))
     // Amount-based fallback: < 71€ and not a multiple of 36€ → Café & Beverage
-    if (result.productId === "__group_factures" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
+    if (result.productId === "__group_abonnements" && charge.amount > 0 && charge.amount < 7100 && charge.amount % 3600 !== 0) {
       return { productId: "__group_cafe", productName: "Abonnement Café & Beverage" }
     }
     return result
@@ -816,8 +813,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       "__group_pass_day": ["pass day"],
       "__group_pass_week": ["pass week"],
       "__group_pass_month": ["pass month", "pass mois"],
-      "__group_abonnements": ["résident", "formule"],
-      "__group_factures": ["crédit", "credit"],
+      "__group_abonnements": ["résident", "formule", "crédit", "credit"],
       "__group_cafe": ["café", "coffee", "espresso", "latte", "juice"],
     }
     const keywords = groupKeywords[groupId]
@@ -846,8 +842,8 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
     }
   }
 
-  // Compute total seats for companies that paid invoices (Factures)
-  const facturesData = chargesByProduct.get("__group_factures")
+  // Compute total seats for companies that paid abonnements
+  const facturesData = chargesByProduct.get("__group_abonnements")
   let facturesTotalSeats = 0
   if (facturesData) {
     const uniqueCompanyIds = new Set<string>()
@@ -867,12 +863,24 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       productName: data.productName,
       unitPrice: data.unitPrice,
       kpis: computeAccountKpis(data.charges),
-      ...(productId === "__group_factures" && facturesTotalSeats > 0
+      ...(productId === "__group_abonnements" && facturesTotalSeats > 0
         ? { totalSeats: facturesTotalSeats }
         : {}),
     }))
     .filter((p) => p.kpis.transactionCount > 0)
-    .sort((a, b) => b.kpis.totalRevenue - a.kpis.totalRevenue)
+    .sort((a, b) => {
+      const order: Record<string, number> = {
+        "__group_pass_day": 0,
+        "__group_pass_week": 1,
+        "__group_pass_month": 2,
+        "__group_abonnements": 3,
+        "__group_cafe": 4,
+      }
+      const oa = order[a.productId] ?? 99
+      const ob = order[b.productId] ?? 99
+      if (oa !== ob) return oa - ob
+      return b.kpis.totalRevenue - a.kpis.totalRevenue
+    })
 
   // Map charges to StripePayment format
   function mapCharges(charges: CachedCharge[]) {
@@ -965,6 +973,7 @@ async function loadSalesData(now: Date, period: string, periodMode: string = "ca
       bookings={{ total: totalBookingCount, bySite: bookingsBySite }}
       revenueEvolution={revenueEvolution}
       revenueOverTime={revenueOverTime}
+      businessDays={salesBusinessDays}
     />
   )
 }
