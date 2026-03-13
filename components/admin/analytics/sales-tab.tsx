@@ -101,18 +101,18 @@ const statusColors: Record<string, string> = {
   failed: "bg-red-100 text-red-700",
 }
 
-// Gradient from light (highest CA) to dark (lowest CA) — assigned by revenue rank
+// Gradient from dark (highest CA) to light (lowest CA) — assigned by revenue rank
 const PRODUCT_CARD_COLORS = [
-  { bg: "bg-[#F2E7DC]/40", accent: "text-stone-800", badge: "bg-[#F2E7DC] text-stone-700", border: "border-[#E8D5C0]", chart: "#F2E7DC", chartLight: "#F7F0E8" },
-  { bg: "bg-[#E8D5C0]/40", accent: "text-stone-800", badge: "bg-[#E8D5C0] text-stone-700", border: "border-[#D4B896]", chart: "#E8D5C0", chartLight: "#F0E2D2" },
-  { bg: "bg-[#D4B896]/30", accent: "text-stone-800", badge: "bg-[#D4B896] text-stone-700", border: "border-[#C4A882]", chart: "#D4B896", chartLight: "#DFCAAA" },
-  { bg: "bg-[#C4A882]/30", accent: "text-stone-800", badge: "bg-[#C4A882] text-stone-700", border: "border-[#A08060]", chart: "#C4A882", chartLight: "#D0B894" },
-  { bg: "bg-[#A08060]/20", accent: "text-stone-800", badge: "bg-[#A08060] text-white", border: "border-[#8B7355]", chart: "#A08060", chartLight: "#B89878" },
-  { bg: "bg-[#8B7355]/20", accent: "text-stone-800", badge: "bg-[#8B7355] text-white", border: "border-[#6B5B4A]", chart: "#8B7355", chartLight: "#A08868" },
-  { bg: "bg-[#6B5B4A]/15", accent: "text-stone-800", badge: "bg-[#6B5B4A] text-white", border: "border-[#4A3F35]", chart: "#6B5B4A", chartLight: "#7D6D5C" },
-  { bg: "bg-[#4A3F35]/15", accent: "text-stone-900", badge: "bg-[#4A3F35] text-white", border: "border-[#3D3330]", chart: "#4A3F35", chartLight: "#5C5145" },
-  { bg: "bg-[#3D3330]/10", accent: "text-stone-900", badge: "bg-[#3D3330] text-white", border: "border-[#1B1918]", chart: "#3D3330", chartLight: "#4F4440" },
   { bg: "bg-[#1B1918]/10", accent: "text-stone-900", badge: "bg-[#1B1918] text-white", border: "border-[#1B1918]", chart: "#1B1918", chartLight: "#2E2825" },
+  { bg: "bg-[#3D3330]/10", accent: "text-stone-900", badge: "bg-[#3D3330] text-white", border: "border-[#1B1918]", chart: "#3D3330", chartLight: "#4F4440" },
+  { bg: "bg-[#4A3F35]/15", accent: "text-stone-900", badge: "bg-[#4A3F35] text-white", border: "border-[#3D3330]", chart: "#4A3F35", chartLight: "#5C5145" },
+  { bg: "bg-[#6B5B4A]/15", accent: "text-stone-800", badge: "bg-[#6B5B4A] text-white", border: "border-[#4A3F35]", chart: "#6B5B4A", chartLight: "#7D6D5C" },
+  { bg: "bg-[#8B7355]/20", accent: "text-stone-800", badge: "bg-[#8B7355] text-white", border: "border-[#6B5B4A]", chart: "#8B7355", chartLight: "#A08868" },
+  { bg: "bg-[#A08060]/20", accent: "text-stone-800", badge: "bg-[#A08060] text-white", border: "border-[#8B7355]", chart: "#A08060", chartLight: "#B89878" },
+  { bg: "bg-[#C4A882]/30", accent: "text-stone-800", badge: "bg-[#C4A882] text-stone-700", border: "border-[#A08060]", chart: "#C4A882", chartLight: "#D0B894" },
+  { bg: "bg-[#D4B896]/30", accent: "text-stone-800", badge: "bg-[#D4B896] text-stone-700", border: "border-[#C4A882]", chart: "#D4B896", chartLight: "#DFCAAA" },
+  { bg: "bg-[#E8D5C0]/40", accent: "text-stone-800", badge: "bg-[#E8D5C0] text-stone-700", border: "border-[#D4B896]", chart: "#E8D5C0", chartLight: "#F0E2D2" },
+  { bg: "bg-[#F2E7DC]/40", accent: "text-stone-800", badge: "bg-[#F2E7DC] text-stone-700", border: "border-[#E8D5C0]", chart: "#F2E7DC", chartLight: "#F7F0E8" },
 ]
 
 const statusFilterOptions = [
